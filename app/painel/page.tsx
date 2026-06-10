@@ -1,39 +1,52 @@
-/* eslint-disable react-hooks/set-state-in-effect */
 "use client";
 
 import { useEffect, useState } from "react";
+import { ref, onValue, update, remove } from "firebase/database";
+import { db } from "../services/firebase";
 
 export default function Painel() {
   const [nome, setNome] = useState("Nenhuma solicitação");
   const [motivo, setMotivo] = useState("Aguardando visitante");
   const [status, setStatus] = useState("Sem chamado ativo");
   const [historicoNome, setHistoricoNome] = useState("");
-const [historicoMotivo, setHistoricoMotivo] = useState("");
+  const [historicoMotivo, setHistoricoMotivo] = useState("");
 
   useEffect(() => {
-    const dadosSalvos = localStorage.getItem("solicitacaoAtual");
+    const referencia = ref(db, "solicitacaoAtual");
 
-    if (dadosSalvos) {
-      const dados = JSON.parse(dadosSalvos);
+    const pararDeOuvir = onValue(referencia, (snapshot) => {
+      const dados = snapshot.val();
 
-      setNome(dados.nome);
-      setMotivo(dados.motivo);
-      setStatus(dados.status);
-    }
+      if (dados) {
+        setNome(dados.nome);
+        setMotivo(dados.motivo);
+        setStatus(dados.status);
+      } else {
+        setNome("Nenhuma solicitação");
+        setMotivo("Aguardando visitante");
+        setStatus("Sem chamado ativo");
+      }
+    });
+
+    return () => pararDeOuvir();
   }, []);
 
-  function atenderSolicitacao() {
-    setStatus("Em atendimento");
+  async function atenderSolicitacao() {
+    await update(ref(db, "solicitacaoAtual"), {
+      status: "Em atendimento",
+    });
   }
 
-  function finalizarSolicitacao() {
-  setHistoricoNome(nome);
-  setHistoricoMotivo(motivo);
+  async function finalizarSolicitacao() {
+    setHistoricoNome(nome);
+    setHistoricoMotivo(motivo);
 
-  setNome("Nenhuma solicitação");
-  setMotivo("Aguardando visitante");
-  setStatus("Sem chamado ativo");
-}
+    await remove(ref(db, "solicitacaoAtual"));
+
+    setNome("Nenhuma solicitação");
+    setMotivo("Aguardando visitante");
+    setStatus("Sem chamado ativo");
+  }
 
   return (
     <main className="min-h-screen flex items-center justify-center bg-slate-950 text-white p-4">
@@ -55,39 +68,24 @@ const [historicoMotivo, setHistoricoMotivo] = useState("");
           >
             ATENDER
           </button>
-          <div className="mt-8 border-t border-slate-700 pt-6">
-  <h2 className="text-xl font-bold mb-4">
-    📋 Histórico
-  </h2>
 
-  <div className="bg-slate-800 rounded-xl p-4">
-    <div className="text-sm">
-  {historicoNome ? (
-  <div className="text-sm">
-    <p className="text-green-400 font-bold">
-      🔔 {historicoNome}
-    </p>
+          <hr className="border-slate-700 my-6" />
 
-    <p className="text-slate-300">
-      Motivo: {historicoMotivo}
-    </p>
+          <h3 className="text-2xl font-bold mb-4">📋 Histórico</h3>
 
-    <p className="text-yellow-400">
-      Status: Finalizado
-    </p>
-  </div>
-) : (
-  <p className="text-green-400">
-    🔔 Nenhum atendimento finalizado
-  </p>
-)}
-</div>
-  </div>
-</div>
+          {historicoNome ? (
+            <p className="text-green-400 text-sm">
+              Último atendimento: {historicoNome} - {historicoMotivo}
+            </p>
+          ) : (
+            <p className="text-green-400 text-sm">
+              🔔 Nenhum atendimento finalizado
+            </p>
+          )}
 
           <button
             onClick={finalizarSolicitacao}
-            className="w-full mt-3 bg-slate-600 text-white font-bold py-2 rounded-xl"
+            className="w-full mt-6 bg-slate-500 text-white font-bold py-2 rounded-xl"
           >
             FINALIZAR
           </button>
