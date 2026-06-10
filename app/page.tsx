@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { ref, set } from "firebase/database";
+import { db } from "./services/firebase";
 
 export default function Home() {
   const [nome, setNome] = useState("");
@@ -14,9 +16,8 @@ export default function Home() {
   };
 
   const codigoQr = "residencial-bela-vista";
-  const linkChamada = `https://qrporteiro.com/c/${codigoQr}`;
 
-  function chamarResponsavel() {
+  async function chamarResponsavel() {
     if (!nome.trim()) {
       alert("Digite seu nome antes de chamar.");
       return;
@@ -31,9 +32,10 @@ export default function Home() {
       nome,
       motivo,
       status: "Aguardando atendimento",
+      criadoEm: new Date().toISOString(),
     };
 
-    localStorage.setItem("solicitacaoAtual", JSON.stringify(novaSolicitacao));
+    await set(ref(db, "solicitacaoAtual"), novaSolicitacao);
 
     setChamando(true);
   }
