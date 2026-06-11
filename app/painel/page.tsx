@@ -24,6 +24,8 @@ export default function Painel() {
   setStatus(dados.status);
 
   if (dados.notificar) {
+  testarSom();
+
     console.log("🔔 Novo evento para notificação");
 
     if (audioRef.current) {
@@ -57,12 +59,37 @@ export default function Painel() {
     setMotivo("Aguardando visitante");
     setStatus("Sem chamado ativo");
   }
+function testarSom() {
+  const audioContext = new AudioContext();
+  const oscillator = audioContext.createOscillator();
+  const gainNode = audioContext.createGain();
 
+  oscillator.connect(gainNode);
+  gainNode.connect(audioContext.destination);
+
+  oscillator.frequency.value = 880;
+  oscillator.type = "sine";
+
+  gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+  gainNode.gain.exponentialRampToValueAtTime(
+    0.01,
+    audioContext.currentTime + 0.5
+  );
+
+  oscillator.start();
+  oscillator.stop(audioContext.currentTime + 0.5);
+}
   return (
     <main className="min-h-screen flex items-center justify-center bg-slate-950 text-white p-4">
       
             <div className="w-full max-w-md bg-slate-900 rounded-2xl p-8">
         <h1 className="text-4xl font-bold mb-2">🏠 Painel do Morador</h1>
+        <button
+  onClick={testarSom}
+  className="w-full mt-4 mb-4 bg-blue-500 text-white font-bold py-2 rounded-xl"
+>
+  🔊 Testar Som
+</button>
         
 
         <p className="text-slate-400 mb-6">Solicitações recebidas</p>

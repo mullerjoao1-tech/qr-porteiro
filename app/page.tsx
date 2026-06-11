@@ -60,7 +60,12 @@ export default function Home() {
     setChamando(true);
     setStatus("Aguardando atendimento");
   }
+async function cancelarChamada() {
+  await set(ref(db, "solicitacaoAtual"), null);
 
+  setChamando(false);
+  setStatus("");
+}
   return (
     <main className="min-h-screen flex items-center justify-center bg-slate-950 text-white p-4">
       <div className="w-full max-w-md bg-slate-900 rounded-2xl p-8 text-center">
@@ -118,7 +123,14 @@ export default function Home() {
             ? "CHAMANDO..."
             : "CHAMAR"}
         </button>
-
+{chamando && (
+  <button
+    onClick={cancelarChamada}
+    className="w-full mt-3 bg-red-600 hover:bg-red-500 text-white font-bold px-6 py-3 rounded-xl"
+  >
+    CANCELAR CHAMADA
+  </button>
+)}
         <p className="text-xs text-slate-500 mt-6">{cliente.slogan}</p>
 
         {chamando && (
