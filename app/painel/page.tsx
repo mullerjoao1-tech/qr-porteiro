@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ref, onValue, update, remove } from "firebase/database";
 import { db } from "../services/firebase";
 
@@ -8,6 +8,7 @@ export default function Painel() {
   const [nome, setNome] = useState("Nenhuma solicitação");
   const [motivo, setMotivo] = useState("Aguardando visitante");
   const [status, setStatus] = useState("Sem chamado ativo");
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const [historicoNome, setHistoricoNome] = useState("");
   const [historicoMotivo, setHistoricoMotivo] = useState("");
 
@@ -17,15 +18,24 @@ export default function Painel() {
     const pararDeOuvir = onValue(referencia, (snapshot) => {
       const dados = snapshot.val();
 
-      if (dados) {
-        setNome(dados.nome);
-        setMotivo(dados.motivo);
-        setStatus(dados.status);
-      } else {
-        setNome("Nenhuma solicitação");
-        setMotivo("Aguardando visitante");
-        setStatus("Sem chamado ativo");
-      }
+     if (dados) {
+  setNome(dados.nome);
+  setMotivo(dados.motivo);
+  setStatus(dados.status);
+
+  if (dados.notificar) {
+    console.log("🔔 Novo evento para notificação");
+
+    if (audioRef.current) {
+      audioRef.current.play();
+    }
+  }
+
+} else {
+  setNome("Nenhuma solicitação");
+  setMotivo("Aguardando visitante");
+  setStatus("Sem chamado ativo");
+}
     });
 
     return () => pararDeOuvir();
@@ -50,6 +60,7 @@ export default function Painel() {
 
   return (
     <main className="min-h-screen flex items-center justify-center bg-slate-950 text-white p-4">
+      <audio ref={audioRef} src="/alerta.mp3" />
       <div className="w-full max-w-md bg-slate-900 rounded-2xl p-8">
         <h1 className="text-4xl font-bold mb-2">🏠 Painel do Morador</h1>
 

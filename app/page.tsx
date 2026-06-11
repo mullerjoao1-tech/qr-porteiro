@@ -48,11 +48,12 @@ export default function Home() {
     }
 
     const novaSolicitacao = {
-      nome,
-      motivo,
-      status: "Aguardando atendimento",
-      criadoEm: new Date().toISOString(),
-    };
+  nome,
+  motivo,
+  status: "Aguardando atendimento",
+  notificar: true,
+  criadoEm: new Date().toISOString(),
+};
 
     await set(ref(db, "solicitacaoAtual"), novaSolicitacao);
 
