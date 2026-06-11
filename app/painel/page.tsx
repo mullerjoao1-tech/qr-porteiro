@@ -16,21 +16,21 @@ export default function Painel() {
     const referencia = ref(db, "solicitacaoAtual");
 
     const pararDeOuvir = onValue(referencia, (snapshot) => {
-      const dados = snapshot.val();
+    const dados = snapshot.val();
 
-     if (dados) {
+if (dados) {
   setNome(dados.nome);
   setMotivo(dados.motivo);
   setStatus(dados.status);
 
   if (dados.notificar) {
-  testarSom();
+    testarSom();
+  }
 
-    console.log("🔔 Novo evento para notificação");
+  console.log("🔔 Novo evento para notificação");
 
-    if (audioRef.current) {
-      audioRef.current.play();
-    }
+  if (audioRef.current) {
+    audioRef.current.play();
   }
 
 } else {
@@ -43,11 +43,16 @@ export default function Painel() {
     return () => pararDeOuvir();
   }, []);
 
-  async function atenderSolicitacao() {
-    await update(ref(db, "solicitacaoAtual"), {
-      status: "Em atendimento",
-    });
+ async function atenderSolicitacao() {
+  if (status === "Sem chamado ativo") {
+    alert("Não existe chamada ativa para atender.");
+    return;
   }
+
+  await update(ref(db, "solicitacaoAtual"), {
+    status: "Em atendimento",
+  });
+}
 
   async function finalizarSolicitacao() {
     setHistoricoNome(nome);

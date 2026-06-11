@@ -133,7 +133,7 @@ async function cancelarChamada() {
 )}
         <p className="text-xs text-slate-500 mt-6">{cliente.slogan}</p>
 
-        {chamando && (
+        {status && (
           <div className="mt-6 bg-green-900/30 border border-green-500 rounded-xl p-4">
             <p className="text-green-400 font-bold">
               {status === "Em atendimento"
