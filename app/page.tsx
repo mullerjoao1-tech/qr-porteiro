@@ -1,13 +1,14 @@
 "use client";
 
-import { useState } from "react";
-import { ref, set } from "firebase/database";
+import { useEffect, useState } from "react";
+import { ref, set, onValue } from "firebase/database";
 import { db } from "./services/firebase";
 
 export default function Home() {
   const [nome, setNome] = useState("");
   const [motivo, setMotivo] = useState("");
   const [chamando, setChamando] = useState(false);
+  const [status, setStatus] = useState("");
 
   const cliente = {
     local: "Residencial Bela Vista",
@@ -16,6 +17,24 @@ export default function Home() {
   };
 
   const codigoQr = "residencial-bela-vista";
+
+  useEffect(() => {
+    const referencia = ref(db, "solicitacaoAtual");
+
+    const pararDeOuvir = onValue(referencia, (snapshot) => {
+      const dados = snapshot.val();
+
+      if (dados) {
+        setChamando(true);
+        setStatus(dados.status || "");
+      } else {
+        setChamando(false);
+        setStatus("");
+      }
+    });
+
+    return () => pararDeOuvir();
+  }, []);
 
   async function chamarResponsavel() {
     if (!nome.trim()) {
@@ -38,48 +57,40 @@ export default function Home() {
     await set(ref(db, "solicitacaoAtual"), novaSolicitacao);
 
     setChamando(true);
+    setStatus("Aguardando atendimento");
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-slate-950 text-white px-4">
-      <div className="w-full max-w-md text-center bg-slate-900 p-8 rounded-2xl shadow-lg">
-        <h1 className="text-5xl font-bold mb-2">🏠 QR Porteiro</h1>
-
-        <p className="text-slate-400 mb-6">
-          Seu porteiro digital inteligente
-        </p>
-
-        <p className="text-green-400 mb-6">{cliente.mensagem}</p>
-
+    <main className="min-h-screen flex items-center justify-center bg-slate-950 text-white p-4">
+      <div className="w-full max-w-md bg-slate-900 rounded-2xl p-8 text-center">
         <div className="bg-slate-800 rounded-xl p-4 mb-6">
-          <p className="text-xs text-slate-400 mb-3">QR Code do Cliente</p>
+          <p className="text-blue-300 text-sm mb-4">QR Code do Cliente</p>
 
-          <div className="bg-white w-40 h-40 mx-auto rounded-lg flex items-center justify-center">
-            <div className="text-black text-xs leading-3 font-bold">
-              ⬛⬛⬛⬛⬛
-              <br />
-              ⬛⬜⬛⬜⬛
-              <br />
-              ⬛⬛⬜⬛⬛
-              <br />
-              ⬛⬜⬛⬜⬛
-              <br />
-              ⬛⬛⬛⬛⬛
+          <div className="mx-auto w-40 h-40 bg-white rounded-lg flex items-center justify-center mb-2">
+            <div className="grid grid-cols-5 gap-1">
+              {codigoQr.split("").slice(0, 25).map((_, index) => (
+                <div
+                  key={index}
+                  className={`w-3 h-3 ${
+                    index % 2 === 0 ? "bg-black" : "bg-gray-300"
+                  }`}
+                />
+              ))}
             </div>
           </div>
         </div>
 
-        <p className="text-slate-300 mb-2">Você está chamando:</p>
+        <p className="mb-4">Você está chamando:</p>
 
-        <h2 className="text-2xl font-semibold mb-2">{cliente.local}</h2>
+        <h1 className="text-2xl font-bold mb-4">{cliente.local}</h1>
 
-        <p className="text-slate-400 mb-6">
+        <p className="text-slate-300 mb-6">
           Toque no botão abaixo para iniciar o atendimento.
         </p>
 
         <input
           type="text"
-          placeholder="Digite seu nome"
+          placeholder="Seu nome"
           value={nome}
           onChange={(e) => setNome(e.target.value)}
           disabled={chamando}
@@ -98,9 +109,13 @@ export default function Home() {
         <button
           onClick={chamarResponsavel}
           disabled={chamando}
-          className="w-full bg-green-500 hover:bg-green-400 text-black font-bold px-6 py-3 rounded-xl transition-all duration-300 disabled:opacity-50"
+          className="w-full bg-green-500 hover:bg-green-400 text-black font-bold px-6 py-3 rounded-xl transition-all"
         >
-          {chamando ? "CHAMANDO..." : "CHAMAR"}
+          {status === "Em atendimento"
+            ? "EM ATENDIMENTO"
+            : chamando
+            ? "CHAMANDO..."
+            : "CHAMAR"}
         </button>
 
         <p className="text-xs text-slate-500 mt-6">{cliente.slogan}</p>
@@ -108,11 +123,15 @@ export default function Home() {
         {chamando && (
           <div className="mt-6 bg-green-900/30 border border-green-500 rounded-xl p-4">
             <p className="text-green-400 font-bold">
-              🔔 Solicitação enviada!
+              {status === "Em atendimento"
+                ? "✅ O responsável está atendendo!"
+                : "🔔 Solicitação enviada!"}
             </p>
 
             <p className="text-sm text-slate-300 mt-2">
-              Aguarde. O responsável foi notificado.
+              {status === "Em atendimento"
+                ? "Aguarde. Seu atendimento foi iniciado."
+                : "Aguarde. O responsável foi notificado."}
             </p>
           </div>
         )}
