@@ -60,18 +60,10 @@ export default function Painel() {
 
   return (
     <main className="min-h-screen flex items-center justify-center bg-slate-950 text-white p-4">
-      <audio ref={audioRef} src="/alerta.wav"
-      <div className="w-full max-w-md bg-slate-900 rounded-2xl p-8">
+      
+            <div className="w-full max-w-md bg-slate-900 rounded-2xl p-8">
         <h1 className="text-4xl font-bold mb-2">🏠 Painel do Morador</h1>
-        <button
-  onClick={() => {
-    const audio = new Audio("/alerta.wav");
-    audio.play();
-  }}
-  className="w-full mt-4 mb-4 bg-blue-500 text-white font-bold py-2 rounded-xl"
->
-  🔊 Ativar som
-</button>
+        
 
         <p className="text-slate-400 mb-6">Solicitações recebidas</p>
 
