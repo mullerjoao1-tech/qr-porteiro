@@ -27,20 +27,35 @@ if (dados) {
   setModo(dados.modo || "");
 
   if (dados.notificar) {
-    iniciarToqueContinuo();
+  iniciarToqueContinuo();
+} else {
+  if (intervaloSomRef.current) {
+    clearInterval(intervaloSomRef.current);
+    intervaloSomRef.current = null;
   }
+}
 
   console.log("🔔 Novo evento para notificação");
 
   if (audioRef.current) {
     audioRef.current.loop = true;
 audioRef.current.play();
-  }
+  
+}
 
 } else {
   setNome("Nenhuma solicitação");
   setMotivo("Aguardando visitante");
   setStatus("Sem chamado ativo");
+}
+if (intervaloSomRef.current) {
+  clearInterval(intervaloSomRef.current);
+  intervaloSomRef.current = null;
+}
+
+if (audioRef.current) {
+  audioRef.current.pause();
+  audioRef.current.currentTime = 0;
 }
     });
 
@@ -96,13 +111,14 @@ if (intervaloSomRef.current) {
   }
 
   const permissao = await Notification.requestPermission();
-
+console.log("Permissão recebida:", permissao);
   if (permissao !== "granted") {
-    alert("Permissão para notificações negada.");
-    return;
-  }
-
+  alert("Permissão para notificações negada. Resultado: " + permissao);
+  return;
+}
+alert("Permissão aceita. Agora vou gerar o token.");
   const token = await getToken(messaging, {
+    
     vapidKey:
       "BIEIQutWLbP05G1xFN1Zvg_hMnc4OGOkHRf6yI1bT8Igfmm1G8vRjYQhZyDGc5M3X6yhHkoWdJj4a_atPGqX7sk",
   });
