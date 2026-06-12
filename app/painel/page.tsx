@@ -26,7 +26,7 @@ const pararDeOuvir = onValue(referencia, (snapshot) => {
     setMotivo("Aguardando visitante");
     setStatus("Sem chamado ativo");
     setHoraChamada("");
-setModo("");
+    setModo(""); 
 
     pararToqueContinuo();
     return;
@@ -35,11 +35,7 @@ setModo("");
   setNome(dados.nome);
   setMotivo(dados.motivo);
   setStatus(dados.status);
-  setHoraChamada(
-  dados.criadoEm
-    ? new Date(dados.criadoEm).toLocaleTimeString("pt-BR")
-    : ""
-);
+  setHoraChamada(dados.criadoEm || "");
   setModo(dados.modo || "");
 
   const deveTocar =
@@ -197,7 +193,9 @@ function testarSom() {
   Modo: {modo === "porteiro" ? "Portaria" : "Direto para morador"}
 </p>
           <p className="text-sm text-yellow-400 mt-2">Status: {status}</p>
-
+<p className="text-sm text-blue-300 mt-2">
+  Horário: {horaChamada}
+</p>
           <button
             onClick={atenderSolicitacao}
             className="w-full mt-4 bg-green-500 text-black font-bold py-2 rounded-xl"
