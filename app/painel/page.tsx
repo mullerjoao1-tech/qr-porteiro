@@ -1,14 +1,16 @@
 "use client";
-
 import { useEffect, useRef, useState } from "react";
+import { getToken } from "firebase/messaging";
 import { ref, onValue, update, remove } from "firebase/database";
-import { db } from "../services/firebase";
+import { db, messagingPromise } from "../services/firebase";
 
 export default function Painel() {
   const [nome, setNome] = useState("Nenhuma solicitação");
   const [motivo, setMotivo] = useState("Aguardando visitante");
   const [status, setStatus] = useState("Sem chamado ativo");
+  const [modo, setModo] = useState("");
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const intervaloSomRef = useRef<NodeJS.Timeout | null>(null);
   const [historicoNome, setHistoricoNome] = useState("");
   const [historicoMotivo, setHistoricoMotivo] = useState("");
 
@@ -22,15 +24,17 @@ if (dados) {
   setNome(dados.nome);
   setMotivo(dados.motivo);
   setStatus(dados.status);
+  setModo(dados.modo || "");
 
   if (dados.notificar) {
-    testarSom();
+    iniciarToqueContinuo();
   }
 
   console.log("🔔 Novo evento para notificação");
 
   if (audioRef.current) {
-    audioRef.current.play();
+    audioRef.current.loop = true;
+audioRef.current.play();
   }
 
 } else {
@@ -49,10 +53,19 @@ if (dados) {
     return;
   }
 
-  await update(ref(db, "solicitacaoAtual"), {
-    status: "Em atendimento",
-  });
+await update(ref(db, "solicitacaoAtual"), {
+  status: "Em atendimento",
+});
+await update(ref(db, "solicitacaoAtual"), {
+  status: "Em atendimento",
+});
+
+if (intervaloSomRef.current) {
+  clearInterval(intervaloSomRef.current);
+  intervaloSomRef.current = null;
 }
+}
+
 
   async function finalizarSolicitacao() {
     setHistoricoNome(nome);
@@ -64,6 +77,40 @@ if (dados) {
     setMotivo("Aguardando visitante");
     setStatus("Sem chamado ativo");
   }
+  function iniciarToqueContinuo() {
+  if (intervaloSomRef.current) {
+    return;
+  }
+
+  testarSom();
+
+  intervaloSomRef.current = setInterval(() => {
+    testarSom();
+  }, 2000);
+}async function ativarNotificacoes() {
+  const messaging = await messagingPromise;
+
+  if (!messaging) {
+    alert("Este navegador não suporta notificações.");
+    return;
+  }
+
+  const permissao = await Notification.requestPermission();
+
+  if (permissao !== "granted") {
+    alert("Permissão para notificações negada.");
+    return;
+  }
+
+  const token = await getToken(messaging, {
+    vapidKey:
+      "BIEIQutWLbP05G1xFN1Zvg_hMnc4OGOkHRf6yI1bT8Igfmm1G8vRjYQhZyDGc5M3X6yhHkoWdJj4a_atPGqX7sk",
+  });
+
+  console.log("Token do aparelho:", token);
+
+  alert("Notificações ativadas com sucesso!");
+}
 function testarSom() {
   const audioContext = new AudioContext();
   const oscillator = audioContext.createOscillator();
@@ -96,14 +143,21 @@ function testarSom() {
   🔊 Testar Som
 </button>
         
-
+<button
+  onClick={ativarNotificacoes}
+  className="w-full mt-2 mb-4 bg-yellow-500 text-black font-bold py-2 rounded-xl"
+>
+  🔔 Ativar Notificações
+</button>
         <p className="text-slate-400 mb-6">Solicitações recebidas</p>
 
         <div className="bg-slate-800 rounded-xl p-4 mb-4">
           <h2 className="font-bold text-green-400">🔔 {nome}</h2>
 
           <p className="text-sm text-slate-300 mt-2">Motivo: {motivo}</p>
-
+<p className="text-sm text-cyan-400 mt-2">
+  Modo: {modo === "porteiro" ? "Portaria" : "Direto para morador"}
+</p>
           <p className="text-sm text-yellow-400 mt-2">Status: {status}</p>
 
           <button

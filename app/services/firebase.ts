@@ -1,6 +1,6 @@
 import { initializeApp } from "firebase/app";
 import { getDatabase } from "firebase/database";
-
+import { getMessaging, isSupported } from "firebase/messaging";
 const firebaseConfig = {
   apiKey: "AIzaSyBAdV3dc8bN938ivb8YAwhQZ3vw6a24Bh0",
   authDomain: "qr-porteiro-app.firebaseapp.com",
@@ -14,5 +14,10 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 
 export const db = getDatabase(app);
-
+export const messagingPromise =
+  typeof window !== "undefined"
+    ? isSupported().then((supported) =>
+        supported ? getMessaging(app) : null
+      )
+    : Promise.resolve(null);
 export default app;

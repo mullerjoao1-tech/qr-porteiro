@@ -1,6 +1,6 @@
 "use client";
-
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { getToken } from "firebase/messaging";
 import { ref, set, onValue } from "firebase/database";
 import { db } from "./services/firebase";
 
@@ -11,12 +11,15 @@ export default function Home() {
   const [status, setStatus] = useState("");
 
   const cliente = {
-    local: "Residencial Bela Vista",
-    mensagem: "Escaneie o QR Code para chamar o responsável 🚀",
-    slogan: "Atendimento remoto • Seguro • Rápido",
-  };
+  local: "QR Acesso",
+  mensagem: "Controle inteligente de acesso",
+  slogan: "Campainha virtual • Atendimento remoto • Segurança",
+};
 
   const codigoQr = "residencial-bela-vista";
+  const modoCondominio = "porteiro";
+// use "porteiro" para condomínio com portaria
+// use "direto" para condomínio sem porteiro
 
   useEffect(() => {
     const referencia = ref(db, "solicitacaoAtual");
@@ -47,9 +50,10 @@ export default function Home() {
       return;
     }
 
-    const novaSolicitacao = {
+ const novaSolicitacao = {
   nome,
   motivo,
+  modo: modoCondominio,
   status: "Aguardando atendimento",
   notificar: true,
   criadoEm: new Date().toISOString(),
@@ -85,7 +89,12 @@ async function cancelarChamada() {
             </div>
           </div>
         </div>
-
+<p className="text-sm text-slate-400 mb-4">
+  Modo de atendimento:{" "}
+  {modoCondominio === "porteiro"
+    ? "Portaria"
+    : "Direto para o morador"}
+</p>
         <p className="mb-4">Você está chamando:</p>
 
         <h1 className="text-2xl font-bold mb-4">{cliente.local}</h1>
