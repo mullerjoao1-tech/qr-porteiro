@@ -37,26 +37,17 @@ if (dados) {
 
   console.log("🔔 Novo evento para notificação");
 
-  if (audioRef.current) {
-    audioRef.current.loop = true;
-audioRef.current.play();
-  
-}
+ 
 
 } else {
   setNome("Nenhuma solicitação");
   setMotivo("Aguardando visitante");
   setStatus("Sem chamado ativo");
-}
-if (intervaloSomRef.current) {
-  clearInterval(intervaloSomRef.current);
-  intervaloSomRef.current = null;
+
+  pararToqueContinuo();
 }
 
-if (audioRef.current) {
-  audioRef.current.pause();
-  audioRef.current.currentTime = 0;
-}
+
     });
 
     return () => pararDeOuvir();
@@ -75,10 +66,7 @@ await update(ref(db, "solicitacaoAtual"), {
   status: "Em atendimento",
 });
 
-if (intervaloSomRef.current) {
-  clearInterval(intervaloSomRef.current);
-  intervaloSomRef.current = null;
-}
+pararToqueContinuo();
 }
 
 
@@ -92,6 +80,18 @@ if (intervaloSomRef.current) {
     setMotivo("Aguardando visitante");
     setStatus("Sem chamado ativo");
   }
+
+function pararToqueContinuo() {
+  if (intervaloSomRef.current) {
+    clearInterval(intervaloSomRef.current);
+    intervaloSomRef.current = null;
+  }
+
+  if (audioRef.current) {
+    audioRef.current.pause();
+    audioRef.current.currentTime = 0;
+  }
+}
   function iniciarToqueContinuo() {
   if (intervaloSomRef.current) {
     return;
@@ -101,7 +101,7 @@ if (intervaloSomRef.current) {
 
   intervaloSomRef.current = setInterval(() => {
     testarSom();
-  }, 2000);
+  }, 800);
 }async function ativarNotificacoes() {
   const messaging = await messagingPromise;
 
