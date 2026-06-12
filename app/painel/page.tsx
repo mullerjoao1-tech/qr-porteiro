@@ -8,6 +8,7 @@ export default function Painel() {
   const [nome, setNome] = useState("Nenhuma solicitação");
   const [motivo, setMotivo] = useState("Aguardando visitante");
   const [status, setStatus] = useState("Sem chamado ativo");
+  const [horaChamada, setHoraChamada] = useState("");
   const [modo, setModo] = useState("");
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const intervaloSomRef = useRef<NodeJS.Timeout | null>(null);
@@ -24,7 +25,8 @@ const pararDeOuvir = onValue(referencia, (snapshot) => {
     setNome("Nenhuma solicitação");
     setMotivo("Aguardando visitante");
     setStatus("Sem chamado ativo");
-    setModo("");
+    setHoraChamada("");
+setModo("");
 
     pararToqueContinuo();
     return;
@@ -33,6 +35,11 @@ const pararDeOuvir = onValue(referencia, (snapshot) => {
   setNome(dados.nome);
   setMotivo(dados.motivo);
   setStatus(dados.status);
+  setHoraChamada(
+  dados.criadoEm
+    ? new Date(dados.criadoEm).toLocaleTimeString("pt-BR")
+    : ""
+);
   setModo(dados.modo || "");
 
   const deveTocar =
