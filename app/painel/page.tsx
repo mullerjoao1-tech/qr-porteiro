@@ -15,40 +15,42 @@ export default function Painel() {
   const [historicoMotivo, setHistoricoMotivo] = useState("");
 
   useEffect(() => {
-    const referencia = ref(db, "solicitacaoAtual");
+   const referencia = ref(db, "solicitacaoAtual");
 
-    const pararDeOuvir = onValue(referencia, (snapshot) => {
-    const dados = snapshot.val();
+const pararDeOuvir = onValue(referencia, (snapshot) => {
+  const dados = snapshot.val();
 
-if (dados) {
+  if (!dados) {
+    setNome("Nenhuma solicitação");
+    setMotivo("Aguardando visitante");
+    setStatus("Sem chamado ativo");
+    setModo("");
+
+    pararToqueContinuo();
+    return;
+  }
+
   setNome(dados.nome);
   setMotivo(dados.motivo);
   setStatus(dados.status);
   setModo(dados.modo || "");
 
-  if (dados.notificar) {
-  iniciarToqueContinuo();
-} else {
-  if (intervaloSomRef.current) {
-    clearInterval(intervaloSomRef.current);
-    intervaloSomRef.current = null;
+  const deveTocar =
+    dados.notificar === true && dados.status === "Aguardando atendimento";
+
+  if (deveTocar) {
+    iniciarToqueContinuo();
+  } else {
+    pararToqueContinuo();
   }
-}
 
   console.log("🔔 Novo evento para notificação");
+});
 
- 
-
-} else {
-  setNome("Nenhuma solicitação");
-  setMotivo("Aguardando visitante");
-  setStatus("Sem chamado ativo");
-
+return () => {
   pararToqueContinuo();
-}
-
-
-    });
+  pararDeOuvir();
+};
 
     return () => pararDeOuvir();
   }, []);
@@ -117,15 +119,23 @@ console.log("Permissão recebida:", permissao);
   return;
 }
 alert("Permissão aceita. Agora vou gerar o token.");
+  try {
   const token = await getToken(messaging, {
-    
     vapidKey:
       "BIEIQutWLbP05G1xFN1Zvg_hMnc4OGOkHRf6yI1bT8Igfmm1G8vRjYQhZyDGc5M3X6yhHkoWdJj4a_atPGqX7sk",
   });
 
   console.log("Token do aparelho:", token);
 
+  await update(ref(db, "configuracoes"), {
+    tokenMorador: token,
+  });
+
   alert("Notificações ativadas com sucesso!");
+} catch (erro) {
+  console.error("Erro ao gerar token:", erro);
+  alert("Erro ao gerar token. Veja o console.");
+  }
 }
 function testarSom() {
   const audioContext = new AudioContext();
