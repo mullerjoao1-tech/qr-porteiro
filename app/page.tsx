@@ -1,6 +1,6 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
-import { getToken } from "firebase/messaging";
+
+import { useEffect, useState } from "react";
 import { ref, set, onValue } from "firebase/database";
 import { db } from "./services/firebase";
 
@@ -60,6 +60,9 @@ export default function Home() {
 };
 
     await set(ref(db, "solicitacaoAtual"), novaSolicitacao);
+    await fetch("/api/enviar-push", {
+  method: "POST",
+});
 
     setChamando(true);
     setStatus("Aguardando atendimento");
