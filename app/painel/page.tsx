@@ -120,10 +120,15 @@ console.log("Permissão recebida:", permissao);
 }
 alert("Permissão aceita. Agora vou gerar o token.");
   try {
-  const token = await getToken(messaging, {
-    vapidKey:
-      "BIEIQutWLbP05G1xFN1Zvg_hMnc4OGOkHRf6yI1bT8Igfmm1G8vRjYQhZyDGc5M3X6yhHkoWdJj4a_atPGqX7sk",
-  });
+  const registroServiceWorker = await navigator.serviceWorker.register(
+  "/firebase-messaging-sw.js"
+);
+
+const token = await getToken(messaging, {
+  vapidKey:
+    "BIEIQutWLbP05G1xFN1Zvg_hMnc4OGOkHRf6yI1bT8Igfmm1G8vRjYQhZyDGc5M3X6yhHkoWdJj4a_atPGqX7sk",
+  serviceWorkerRegistration: registroServiceWorker,
+});
 
   console.log("Token do aparelho:", token);
 
