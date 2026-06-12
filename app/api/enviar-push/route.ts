@@ -37,13 +37,18 @@ export async function POST() {
         { status: 400 }
       );
     }
+const solicitacao = await db.ref("solicitacaoAtual").get();
 
+const dados = solicitacao.val();
+
+const nome = dados?.nome || "Visitante";
+const motivo = dados?.motivo || "Não informado";
     await getMessaging().send({
       token,
-      notification: {
-        title: "🔔 Nova chamada no QR Acesso",
-        body: "Um visitante está chamando você.",
-      },
+  notification: {
+  title: `🔔 ${nome} está chamando`,
+  body: `Motivo: ${motivo}`,
+},
       webpush: {
         fcmOptions: {
           link: "https://qr-porteiro-dov7.vercel.app/painel",
