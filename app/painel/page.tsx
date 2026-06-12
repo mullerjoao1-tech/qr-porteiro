@@ -35,7 +35,11 @@ const pararDeOuvir = onValue(referencia, (snapshot) => {
   setNome(dados.nome);
   setMotivo(dados.motivo);
   setStatus(dados.status);
-  setHoraChamada(dados.criadoEm || "");
+  setHoraChamada(
+  dados.criadoEm
+    ? new Date(dados.criadoEm).toLocaleString("pt-BR")
+    : ""
+);
   setModo(dados.modo || "");
 
   const deveTocar =
