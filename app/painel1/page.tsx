@@ -16,8 +16,7 @@ export default function Painel() {
   const [historicoMotivo, setHistoricoMotivo] = useState("");
 
   useEffect(() => {
-   const referencia = ref(db, "solicitacaoAtual");
-
+const referencia = ref(db, "qr1");
 const pararDeOuvir = onValue(referencia, (snapshot) => {
   const dados = snapshot.val();
 
