@@ -9,6 +9,7 @@ export default function Home() {
   const [motivo, setMotivo] = useState("");
   const [chamando, setChamando] = useState(false);
   const [status, setStatus] = useState("");
+  const [mensagemResponsavel, setMensagemResponsavel] = useState("");
 
   const cliente = {
     local: "QR Acesso",
@@ -28,9 +29,11 @@ export default function Home() {
       if (dados) {
         setChamando(true);
         setStatus(dados.status || "");
+        setMensagemResponsavel(dados.mensagemResponsavel || "");
       } else {
         setChamando(false);
         setStatus("");
+        setMensagemResponsavel("");
       }
     });
 
@@ -53,6 +56,7 @@ export default function Home() {
       motivo,
       modo: modoCondominio,
       status: "Aguardando atendimento",
+      mensagemResponsavel: "",
       notificar: true,
       criadoEm: new Date().toISOString(),
     };
@@ -66,6 +70,7 @@ export default function Home() {
 
     setChamando(true);
     setStatus("Aguardando atendimento");
+    setMensagemResponsavel("");
   }
 
   async function cancelarChamada() {
@@ -73,6 +78,7 @@ export default function Home() {
 
     setChamando(false);
     setStatus("");
+    setMensagemResponsavel("");
   }
 
   return (
@@ -165,6 +171,16 @@ export default function Home() {
                 ? "Aguarde. Seu atendimento foi iniciado."
                 : "Aguarde. O responsável foi notificado."}
             </p>
+          </div>
+        )}
+
+        {mensagemResponsavel && (
+          <div className="mt-4 bg-blue-900/40 border border-blue-400 rounded-xl p-4">
+            <p className="text-blue-300 font-bold">
+              💬 Mensagem do responsável:
+            </p>
+
+            <p className="text-white text-lg mt-2">{mensagemResponsavel}</p>
           </div>
         )}
       </div>

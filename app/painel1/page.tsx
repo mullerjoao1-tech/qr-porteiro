@@ -1,4 +1,5 @@
 "use client";
+
 import { useEffect, useRef, useState } from "react";
 import { getToken } from "firebase/messaging";
 import { ref, onValue, update, remove } from "firebase/database";
@@ -10,73 +11,81 @@ export default function Painel() {
   const [status, setStatus] = useState("Sem chamado ativo");
   const [horaChamada, setHoraChamada] = useState("");
   const [modo, setModo] = useState("");
+  const [mensagemResponsavel, setMensagemResponsavel] = useState("");
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const intervaloSomRef = useRef<NodeJS.Timeout | null>(null);
   const [historicoNome, setHistoricoNome] = useState("");
   const [historicoMotivo, setHistoricoMotivo] = useState("");
 
   useEffect(() => {
-const referencia = ref(db, "qr1");
-const pararDeOuvir = onValue(referencia, (snapshot) => {
-  const dados = snapshot.val();
+    const referencia = ref(db, "qr1");
 
-  if (!dados) {
-    setNome("Nenhuma solicitação");
-    setMotivo("Aguardando visitante");
-    setStatus("Sem chamado ativo");
-    setHoraChamada("");
-    setModo(""); 
+    const pararDeOuvir = onValue(referencia, (snapshot) => {
+      const dados = snapshot.val();
 
-    pararToqueContinuo();
-    return;
-  }
+      if (!dados) {
+        setNome("Nenhuma solicitação");
+        setMotivo("Aguardando visitante");
+        setStatus("Sem chamado ativo");
+        setHoraChamada("");
+        setModo("");
+        setMensagemResponsavel("");
+        pararToqueContinuo();
+        return;
+      }
 
-  setNome(dados.nome);
-  setMotivo(dados.motivo);
-  setStatus(dados.status);
-  setHoraChamada(
-  dados.criadoEm
-    ? new Date(dados.criadoEm).toLocaleString("pt-BR")
-    : ""
-);
-  setModo(dados.modo || "");
+      setNome(dados.nome);
+      setMotivo(dados.motivo);
+      setStatus(dados.status);
+      setHoraChamada(
+        dados.criadoEm ? new Date(dados.criadoEm).toLocaleString("pt-BR") : ""
+      );
+      setModo(dados.modo || "");
+      setMensagemResponsavel(dados.mensagemResponsavel || "");
 
-  const deveTocar =
-    dados.notificar === true && dados.status === "Aguardando atendimento";
+      const deveTocar =
+        dados.notificar === true && dados.status === "Aguardando atendimento";
 
-  if (deveTocar) {
-    iniciarToqueContinuo();
-  } else {
-    pararToqueContinuo();
-  }
+      if (deveTocar) {
+        iniciarToqueContinuo();
+      } else {
+        pararToqueContinuo();
+      }
+    });
 
-  console.log("🔔 Novo evento para notificação");
-});
-
-return () => {
-  pararToqueContinuo();
-  pararDeOuvir();
-};
-
-    return () => pararDeOuvir();
+    return () => {
+      pararToqueContinuo();
+      pararDeOuvir();
+    };
   }, []);
 
- async function atenderSolicitacao() {
-  if (status === "Sem chamado ativo") {
-    alert("Não existe chamada ativa para atender.");
-    return;
+  async function atenderSolicitacao() {
+    if (status === "Sem chamado ativo") {
+      alert("Não existe chamada ativa para atender.");
+      return;
+    }
+
+    await update(ref(db, "qr1"), {
+      status: "Em atendimento",
+    });
+
+    pararToqueContinuo();
   }
 
-await update(ref(db, "qr1"), {
-  status: "Em atendimento",
-});
-await update(ref(db, "qr1"), {
-  status: "Em atendimento",
-});
+  async function enviarMensagemRapida(mensagem: string) {
+    if (status === "Sem chamado ativo") {
+      alert("Não existe chamada ativa para responder.");
+      return;
+    }
 
-pararToqueContinuo();
-}
+    await update(ref(db, "qr1"), {
+      status: "Em atendimento",
+      mensagemResponsavel: mensagem,
+    });
 
+    setMensagemResponsavel(mensagem);
+    pararToqueContinuo();
+  }
 
   async function finalizarSolicitacao() {
     setHistoricoNome(nome);
@@ -84,127 +93,199 @@ pararToqueContinuo();
 
     await remove(ref(db, "qr1"));
 
-        setNome("Nenhuma solicitação");
+    setNome("Nenhuma solicitação");
     setMotivo("Aguardando visitante");
     setStatus("Sem chamado ativo");
+    setHoraChamada("");
+    setModo("");
+    setMensagemResponsavel("");
   }
 
-function pararToqueContinuo() {
-  if (intervaloSomRef.current) {
-    clearInterval(intervaloSomRef.current);
-    intervaloSomRef.current = null;
+  function pararToqueContinuo() {
+    if (intervaloSomRef.current) {
+      clearInterval(intervaloSomRef.current);
+      intervaloSomRef.current = null;
+    }
+
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
   }
 
-  if (audioRef.current) {
-    audioRef.current.pause();
-    audioRef.current.currentTime = 0;
-  }
-}
   function iniciarToqueContinuo() {
-  if (intervaloSomRef.current) {
-    return;
-  }
+    if (intervaloSomRef.current) {
+      return;
+    }
 
-  testarSom();
-
-  intervaloSomRef.current = setInterval(() => {
     testarSom();
-  }, 800);
-}async function ativarNotificacoes() {
-  const messaging = await messagingPromise;
 
-  if (!messaging) {
-    alert("Este navegador não suporta notificações.");
-    return;
+    intervaloSomRef.current = setInterval(() => {
+      testarSom();
+    }, 800);
   }
 
-  const permissao = await Notification.requestPermission();
-console.log("Permissão recebida:", permissao);
-  if (permissao !== "granted") {
-  alert("Permissão para notificações negada. Resultado: " + permissao);
-  return;
-}
-alert("Permissão aceita. Agora vou gerar o token.");
-  try {
-  const registroServiceWorker = await navigator.serviceWorker.register(
-  "/firebase-messaging-sw.js"
-);
+  async function ativarNotificacoes() {
+    const messaging = await messagingPromise;
 
-const token = await getToken(messaging, {
-  vapidKey:
-    "BIEIQutWLbP05G1xFN1Zvg_hMnc4OGOkHRf6yI1bT8Igfmm1G8vRjYQhZyDGc5M3X6yhHkoWdJj4a_atPGqX7sk",
-  serviceWorkerRegistration: registroServiceWorker,
-});
+    if (!messaging) {
+      alert("Este navegador não suporta notificações.");
+      return;
+    }
 
-  console.log("Token do aparelho:", token);
+    const permissao = await Notification.requestPermission();
 
-  await update(ref(db, "configuracoes"), {
-  tokenMorador1: token,
-});
+    console.log("Permissão recebida:", permissao);
 
-  alert("Notificações ativadas com sucesso!");
-} catch (erro) {
-  console.error("Erro ao gerar token:", erro);
-  alert("Erro ao gerar token. Veja o console.");
+    if (permissao !== "granted") {
+      alert("Permissão para notificações negada. Resultado: " + permissao);
+      return;
+    }
+
+    alert("Permissão aceita. Agora vou gerar o token.");
+
+    try {
+      const registroServiceWorker = await navigator.serviceWorker.register(
+        "/firebase-messaging-sw.js"
+      );
+
+      const token = await getToken(messaging, {
+        vapidKey:
+          "BIEIQutWLbP05G1xFN1Zvg_hMnc4OGOkHRf6yI1bT8Igfmm1G8vRjYQhZyDGc5M3X6yhHkoWdJj4a_atPGqX7sk",
+        serviceWorkerRegistration: registroServiceWorker,
+      });
+
+      console.log("Token do aparelho:", token);
+
+      await update(ref(db, "configuracoes"), {
+        tokenMorador1: token,
+      });
+
+      alert("Notificações ativadas com sucesso!");
+    } catch (erro) {
+      console.error("Erro ao gerar token:", erro);
+      alert("Erro ao gerar token. Veja o console.");
+    }
   }
-}
-function testarSom() {
-  const audioContext = new AudioContext();
-  const oscillator = audioContext.createOscillator();
-  const gainNode = audioContext.createGain();
 
-  oscillator.connect(gainNode);
-  gainNode.connect(audioContext.destination);
+  function testarSom() {
+    const audioContext = new AudioContext();
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
 
-  oscillator.frequency.value = 880;
-  oscillator.type = "sine";
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
 
-  gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-  gainNode.gain.exponentialRampToValueAtTime(
-    0.01,
-    audioContext.currentTime + 0.5
-  );
+    oscillator.frequency.value = 880;
+    oscillator.type = "sine";
 
-  oscillator.start();
-  oscillator.stop(audioContext.currentTime + 0.5);
-}
+    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(
+      0.01,
+      audioContext.currentTime + 0.5
+    );
+
+    oscillator.start();
+    oscillator.stop(audioContext.currentTime + 0.5);
+  }
+
   return (
     <main className="min-h-screen flex items-center justify-center bg-slate-950 text-white p-4">
-      
-            <div className="w-full max-w-md bg-slate-900 rounded-2xl p-8">
-        <h1 className="text-4xl font-bold mb-2">🏠 Painel do Morador</h1>
+      <div className="w-full max-w-md bg-slate-900 rounded-2xl p-8">
+        <h1 className="text-4xl font-bold mb-2">🏠 Painel do Morador 1</h1>
+
         <button
-  onClick={testarSom}
-  className="w-full mt-4 mb-4 bg-blue-500 text-white font-bold py-2 rounded-xl"
->
-  🔊 Testar Som
-</button>
-        
-<button
-  onClick={ativarNotificacoes}
-  className="w-full mt-2 mb-4 bg-yellow-500 text-black font-bold py-2 rounded-xl"
->
-  🔔 Ativar Notificações
-</button>
+          onClick={testarSom}
+          className="w-full mt-4 mb-4 bg-blue-500 text-white font-bold py-2 rounded-xl"
+        >
+          🔊 Testar Som
+        </button>
+
+        <button
+          onClick={ativarNotificacoes}
+          className="w-full mt-2 mb-4 bg-yellow-500 text-black font-bold py-2 rounded-xl"
+        >
+          🔔 Ativar Notificações
+        </button>
+
         <p className="text-slate-400 mb-6">Solicitações recebidas</p>
 
         <div className="bg-slate-800 rounded-xl p-4 mb-4">
           <h2 className="font-bold text-green-400">🔔 {nome}</h2>
 
           <p className="text-sm text-slate-300 mt-2">Motivo: {motivo}</p>
-<p className="text-sm text-cyan-400 mt-2">
-  Modo: {modo === "porteiro" ? "Portaria" : "Direto para morador"}
-</p>
+
+          <p className="text-sm text-cyan-400 mt-2">
+            Modo: {modo === "porteiro" ? "Portaria" : "Direto para morador"}
+          </p>
+
           <p className="text-sm text-yellow-400 mt-2">Status: {status}</p>
-<p className="text-sm text-blue-300 mt-2">
-  Horário: {horaChamada}
-</p>
+
+          <p className="text-sm text-blue-300 mt-2">Horário: {horaChamada}</p>
+
           <button
             onClick={atenderSolicitacao}
             className="w-full mt-4 bg-green-500 text-black font-bold py-2 rounded-xl"
           >
             ATENDER
           </button>
+
+          <div className="mt-5 bg-slate-900 border border-slate-700 rounded-xl p-4">
+            <h3 className="font-bold text-blue-300 mb-3">
+              💬 Respostas rápidas
+            </h3>
+
+            <button
+              onClick={() =>
+                enviarMensagemRapida("Olá, entendi. Já estou descendo.")
+              }
+              className="w-full mb-2 bg-blue-600 text-white font-bold py-2 rounded-xl"
+            >
+              Já estou descendo
+            </button>
+
+            <button
+              onClick={() =>
+                enviarMensagemRapida("Aguarde um momento, por favor.")
+              }
+              className="w-full mb-2 bg-blue-600 text-white font-bold py-2 rounded-xl"
+            >
+              Aguarde um momento
+            </button>
+
+            <button
+              onClick={() =>
+                enviarMensagemRapida("Pode deixar na portaria, obrigado.")
+              }
+              className="w-full mb-2 bg-blue-600 text-white font-bold py-2 rounded-xl"
+            >
+              Pode deixar na portaria
+            </button>
+
+            <button
+              onClick={() =>
+                enviarMensagemRapida("Não estou em casa no momento.")
+              }
+              className="w-full mb-2 bg-blue-600 text-white font-bold py-2 rounded-xl"
+            >
+              Não estou em casa
+            </button>
+
+            <button
+              onClick={() =>
+                enviarMensagemRapida("Estou indo retirar agora.")
+              }
+              className="w-full bg-blue-600 text-white font-bold py-2 rounded-xl"
+            >
+              Estou indo retirar
+            </button>
+
+            {mensagemResponsavel && (
+              <p className="text-sm text-green-400 mt-3">
+                Última mensagem enviada: {mensagemResponsavel}
+              </p>
+            )}
+          </div>
 
           <hr className="border-slate-700 my-6" />
 
