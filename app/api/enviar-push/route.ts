@@ -50,9 +50,15 @@ const motivo = dados?.motivo || "Não informado";
 
   token,
   notification: {
-    title: `🔔 ${nome} está chamando`,
-    body: `Motivo: ${motivo}`,
-  },
+  title: `🔔 ${nome} está chamando`,
+  body: `Motivo: ${motivo}`,
+},
+data: {
+  nome: String(nome),
+  motivo: String(motivo),
+  canal: String(canal),
+  painel: String(painel),
+},
   webpush: {
   fcmOptions: {
     link: `https://qr-porteiro-dov7.vercel.app/${painel}`,
