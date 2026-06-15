@@ -11,15 +11,13 @@ export default function Home() {
   const [status, setStatus] = useState("");
 
   const cliente = {
-  local: "QR Acesso",
-  mensagem: "Controle inteligente de acesso",
-  slogan: "Campainha virtual • Atendimento remoto • Segurança",
-};
+    local: "QR Acesso",
+    mensagem: "Controle inteligente de acesso",
+    slogan: "Campainha virtual • Atendimento remoto • Segurança",
+  };
 
   const codigoQr = "qr1";
   const modoCondominio = "porteiro";
-// use "porteiro" para condomínio com portaria
-// use "direto" para condomínio sem porteiro
 
   useEffect(() => {
     const referencia = ref(db, "qr1");
@@ -50,28 +48,33 @@ export default function Home() {
       return;
     }
 
- const novaSolicitacao = {
-  nome,
-  motivo,
-  modo: modoCondominio,
-  status: "Aguardando atendimento",
-  notificar: true,
-  criadoEm: new Date().toISOString(),
-};
+    const novaSolicitacao = {
+      nome,
+      motivo,
+      modo: modoCondominio,
+      status: "Aguardando atendimento",
+      notificar: true,
+      criadoEm: new Date().toISOString(),
+    };
 
-await fetch("/api/enviar-push", {
-  method: "POST",
-  body: JSON.stringify({ canal: "qr1" }),
-});
+    await set(ref(db, "qr1"), novaSolicitacao);
+
+    await fetch("/api/enviar-push", {
+      method: "POST",
+      body: JSON.stringify({ canal: "qr1" }),
+    });
+
     setChamando(true);
     setStatus("Aguardando atendimento");
   }
-async function cancelarChamada() {
-  await set(ref(db, "qr1"), null);
 
-  setChamando(false);
-  setStatus("");
-}
+  async function cancelarChamada() {
+    await set(ref(db, "qr1"), null);
+
+    setChamando(false);
+    setStatus("");
+  }
+
   return (
     <main className="min-h-screen flex items-center justify-center bg-slate-950 text-white p-4">
       <div className="w-full max-w-md bg-slate-900 rounded-2xl p-8 text-center">
@@ -80,23 +83,26 @@ async function cancelarChamada() {
 
           <div className="mx-auto w-40 h-40 bg-white rounded-lg flex items-center justify-center mb-2">
             <div className="grid grid-cols-5 gap-1">
-              {codigoQr.split("").slice(0, 25).map((_, index) => (
-                <div
-                  key={index}
-                  className={`w-3 h-3 ${
-                    index % 2 === 0 ? "bg-black" : "bg-gray-300"
-                  }`}
-                />
-              ))}
+              {codigoQr
+                .split("")
+                .slice(0, 25)
+                .map((_, index) => (
+                  <div
+                    key={index}
+                    className={`w-3 h-3 ${
+                      index % 2 === 0 ? "bg-black" : "bg-gray-300"
+                    }`}
+                  />
+                ))}
             </div>
           </div>
         </div>
-<p className="text-sm text-slate-400 mb-4">
-  Modo de atendimento:{" "}
-  {modoCondominio === "porteiro"
-    ? "Portaria"
-    : "Direto para o morador"}
-</p>
+
+        <p className="text-sm text-slate-400 mb-4">
+          Modo de atendimento:{" "}
+          {modoCondominio === "porteiro" ? "Portaria" : "Direto para o morador"}
+        </p>
+
         <p className="mb-4">Você está chamando:</p>
 
         <h1 className="text-2xl font-bold mb-4">{cliente.local}</h1>
@@ -134,14 +140,16 @@ async function cancelarChamada() {
             ? "CHAMANDO..."
             : "CHAMAR"}
         </button>
-{chamando && (
-  <button
-    onClick={cancelarChamada}
-    className="w-full mt-3 bg-red-600 hover:bg-red-500 text-white font-bold px-6 py-3 rounded-xl"
-  >
-    CANCELAR CHAMADA
-  </button>
-)}
+
+        {chamando && (
+          <button
+            onClick={cancelarChamada}
+            className="w-full mt-3 bg-red-600 hover:bg-red-500 text-white font-bold px-6 py-3 rounded-xl"
+          >
+            CANCELAR CHAMADA
+          </button>
+        )}
+
         <p className="text-xs text-slate-500 mt-6">{cliente.slogan}</p>
 
         {status && (
