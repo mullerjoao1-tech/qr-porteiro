@@ -59,9 +59,12 @@ export default function Home() {
   criadoEm: new Date().toISOString(),
 };
 
-    await set(ref(db, "qr2"), novaSolicitacao);
-    await fetch("/api/enviar-push", {
+await fetch("/api/enviar-push", {
   method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({ canal: "qr2" }),
 });
 
     setChamando(true);

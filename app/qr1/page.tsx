@@ -62,8 +62,8 @@ export default function Home() {
     await set(ref(db, "qr1"), novaSolicitacao);
     await fetch("/api/enviar-push", {
   method: "POST",
+  body: JSON.stringify({ canal: "qr1" }),
 });
-
     setChamando(true);
     setStatus("Aguardando atendimento");
   }
