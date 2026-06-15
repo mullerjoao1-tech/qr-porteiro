@@ -67,10 +67,10 @@ return () => {
     return;
   }
 
-await update(ref(db, "solicitacaoAtual"), {
+await update(ref(db, "qr1"), {
   status: "Em atendimento",
 });
-await update(ref(db, "solicitacaoAtual"), {
+await update(ref(db, "qr1"), {
   status: "Em atendimento",
 });
 
@@ -82,7 +82,7 @@ pararToqueContinuo();
     setHistoricoNome(nome);
     setHistoricoMotivo(motivo);
 
-    await remove(ref(db, "solicitacaoAtual"));
+    await remove(ref(db, "qr1"));
 
         setNome("Nenhuma solicitação");
     setMotivo("Aguardando visitante");
