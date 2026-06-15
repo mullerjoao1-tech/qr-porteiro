@@ -21,15 +21,9 @@ const pararDeOuvir = onValue(referencia, (snapshot) => {
   const dados = snapshot.val();
 console.log("DADOS DO PAINEL2:", dados);
   if (!dados) {
-    setNome("Nenhuma solicitação");
-    setMotivo("Aguardando visitante");
-    setStatus("Sem chamado ativo");
-    setHoraChamada("");
-    setModo(""); 
-
-    pararToqueContinuo();
-    return;
-  }
+  pararToqueContinuo();
+  return;
+}
 
   setNome(dados.nome);
   setMotivo(dados.motivo);
