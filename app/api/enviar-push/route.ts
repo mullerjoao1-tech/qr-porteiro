@@ -46,7 +46,8 @@ const solicitacao = await db.ref(canal).get()
 const dados = solicitacao.val();
 const nome = dados?.nome || "Visitante";
 const motivo = dados?.motivo || "Não informado";
-   await getMessaging().send({
+  const resposta = await getMessaging().send({
+
   token,
   notification: {
     title: `🔔 ${nome} está chamando`,
@@ -58,6 +59,7 @@ const motivo = dados?.motivo || "Não informado";
   },
 },
 });
+console.log("FCM RESPOSTA:", resposta);
 
 
     return NextResponse.json({
