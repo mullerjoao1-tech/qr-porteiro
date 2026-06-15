@@ -28,8 +28,8 @@ export async function POST() {
     iniciarFirebaseAdmin();
 
     const db = getDatabase();
-const snapshot = await db.ref("configuracoes/tokenMorador1").get();
-    const token = snapshot.val();
+const snapshot = await db.ref("configuracoes/tokenMorador2").get();    
+const token = snapshot.val();
 
     if (!token) {
       return NextResponse.json(
@@ -37,9 +37,8 @@ const snapshot = await db.ref("configuracoes/tokenMorador1").get();
         { status: 400 }
       );
     }
-const solicitacao = await db.ref("qr1").get();
+const solicitacao = await db.ref("qr2").get();
 const dados = solicitacao.val();
-
 const nome = dados?.nome || "Visitante";
 const motivo = dados?.motivo || "Não informado";
     await getMessaging().send({
