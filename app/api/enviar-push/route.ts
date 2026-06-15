@@ -41,22 +41,23 @@ const solicitacao = await db.ref("qr2").get();
 const dados = solicitacao.val();
 const nome = dados?.nome || "Visitante";
 const motivo = dados?.motivo || "Não informado";
-    await getMessaging().send({
-      token,
+   await getMessaging().send({
+  token,
   notification: {
-  title: `🔔 ${nome} está chamando`,
-  body: `Motivo: ${motivo}`,
-},
-      webpush: {
-        fcmOptions: {
-link: "https://qr-porteiro-dov7.vercel.app/painel1",        },
-      },
-    });
+    title: `🔔 ${nome} está chamando`,
+    body: `Motivo: ${motivo}`,
+  },
+  webpush: {
+    fcmOptions: {
+      link: "https://qr-porteiro-dov7.vercel.app/painel2",
+    },
+  },
+});
 
     return NextResponse.json({
-      ok: true,
-      mensagem: "Notificação enviada",
-    });
+  ok: true,
+  mensagem: "Notificação enviada",
+});
   } catch (erro) {
     console.error("Erro ao enviar push:", erro);
 
