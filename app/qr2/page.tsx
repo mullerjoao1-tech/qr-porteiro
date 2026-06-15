@@ -61,9 +61,6 @@ export default function Home() {
 
 await fetch("/api/enviar-push", {
   method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-  },
   body: JSON.stringify({ canal: "qr2" }),
 });
 
