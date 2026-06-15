@@ -64,12 +64,16 @@ const motivo = dados?.motivo || "Não informado";
   ok: true,
   mensagem: "Notificação enviada",
 });
-  } catch (erro) {
-    console.error("Erro ao enviar push:", erro);
+  } catch (erro: any) {
+  console.error("ERRO COMPLETO:", erro);
 
-    return NextResponse.json(
-      { ok: false, erro: "Erro ao enviar push" },
-      { status: 500 }
-    );
-  }
+  return NextResponse.json(
+    {
+      ok: false,
+      mensagem: String(erro),
+      detalhes: erro?.message || "sem detalhes",
+    },
+    { status: 500 }
+  );
+}
 }
