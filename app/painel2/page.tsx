@@ -16,10 +16,10 @@ export default function Painel() {
   const [historicoMotivo, setHistoricoMotivo] = useState("");
 
   useEffect(() => {
-const referencia = ref(db, "qr1");
+const referencia = ref(db, "qr2");
 const pararDeOuvir = onValue(referencia, (snapshot) => {
   const dados = snapshot.val();
-
+console.log("DADOS DO PAINEL2:", dados);
   if (!dados) {
     setNome("Nenhuma solicitação");
     setMotivo("Aguardando visitante");
@@ -67,10 +67,10 @@ return () => {
     return;
   }
 
-await update(ref(db, "qr1"), {
+await update(ref(db, "qr2"), {
   status: "Em atendimento",
 });
-await update(ref(db, "qr1"), {
+await update(ref(db, "qr2"), {
   status: "Em atendimento",
 });
 
@@ -82,7 +82,7 @@ pararToqueContinuo();
     setHistoricoNome(nome);
     setHistoricoMotivo(motivo);
 
-    await remove(ref(db, "qr1"));
+    await remove(ref(db, "qr2"));
 
         setNome("Nenhuma solicitação");
     setMotivo("Aguardando visitante");
@@ -139,7 +139,7 @@ const token = await getToken(messaging, {
   console.log("Token do aparelho:", token);
 
   await update(ref(db, "configuracoes"), {
-  tokenMorador1: token,
+  tokenMorador2: token,
 });
 
   alert("Notificações ativadas com sucesso!");
