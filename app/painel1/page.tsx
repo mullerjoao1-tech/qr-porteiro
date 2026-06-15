@@ -139,8 +139,8 @@ const token = await getToken(messaging, {
   console.log("Token do aparelho:", token);
 
   await update(ref(db, "configuracoes"), {
-    tokenMorador: token,
-  });
+  tokenMorador1: token,
+});
 
   alert("Notificações ativadas com sucesso!");
 } catch (erro) {

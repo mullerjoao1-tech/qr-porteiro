@@ -28,7 +28,7 @@ export async function POST() {
     iniciarFirebaseAdmin();
 
     const db = getDatabase();
-    const snapshot = await db.ref("configuracoes/tokenMorador").get();
+const snapshot = await db.ref("configuracoes/tokenMorador1").get();
     const token = snapshot.val();
 
     if (!token) {
@@ -37,8 +37,7 @@ export async function POST() {
         { status: 400 }
       );
     }
-const solicitacao = await db.ref("solicitacaoAtual").get();
-
+const solicitacao = await db.ref("qr1").get();
 const dados = solicitacao.val();
 
 const nome = dados?.nome || "Visitante";
@@ -51,8 +50,7 @@ const motivo = dados?.motivo || "Não informado";
 },
       webpush: {
         fcmOptions: {
-          link: "https://qr-porteiro-dov7.vercel.app/painel",
-        },
+link: "https://qr-porteiro-dov7.vercel.app/painel1",        },
       },
     });
 
