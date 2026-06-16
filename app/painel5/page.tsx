@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { getToken } from "firebase/messaging";
-import { ref, onValue, update, remove } from "firebase/database";
+import { ref, onValue, update, remove, push, set } from "firebase/database";
 import { db, messagingPromise } from "../services/firebase";
 
 export default function Painel() {
@@ -11,55 +11,185 @@ export default function Painel() {
   const [status, setStatus] = useState("Sem chamado ativo");
   const [horaChamada, setHoraChamada] = useState("");
   const [modo, setModo] = useState("");
+  const [mensagemResponsavel, setMensagemResponsavel] = useState("");
+  const [historicoLista, setHistoricoLista] = useState<any[]>([]);
+  const [avisoAuto, setAvisoAuto] = useState("");
+
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const intervaloSomRef = useRef<NodeJS.Timeout | null>(null);
-  const [historicoNome, setHistoricoNome] = useState("");
-  const [historicoMotivo, setHistoricoMotivo] = useState("");
+  const finalizacaoAutoRef = useRef<NodeJS.Timeout | null>(null);
+
+  const caminhoFirebase = "qr5";
+  const caminhoHistorico = "historico/qr5";
+
+  const TEMPO_AGUARDANDO = 5 * 60 * 1000;
+  const TEMPO_EM_ATENDIMENTO = 3 * 60 * 1000;
 
   useEffect(() => {
-    const referencia = ref(db, "qr5");
+    const referenciaHistorico = ref(db, caminhoHistorico);
+
+    const pararDeOuvirHistorico = onValue(referenciaHistorico, (snapshot) => {
+      const dados = snapshot.val();
+
+      if (!dados) {
+        setHistoricoLista([]);
+        return;
+      }
+
+      const lista = Object.values(dados) as any[];
+
+      const listaOrdenada = lista
+        .sort((a, b) => {
+          const dataA = new Date(a.finalizadoEm || 0).getTime();
+          const dataB = new Date(b.finalizadoEm || 0).getTime();
+          return dataB - dataA;
+        })
+        .slice(0, 10);
+
+      setHistoricoLista(listaOrdenada);
+    });
+
+    return () => pararDeOuvirHistorico();
+  }, []);
+
+  useEffect(() => {
+    const referencia = ref(db, caminhoFirebase);
 
     const pararDeOuvir = onValue(referencia, (snapshot) => {
       const dados = snapshot.val();
 
-      console.log("DADOS DO PAINEL5:", dados);
+      limparFinalizacaoAutomatica();
 
       if (!dados) {
-        pararToqueContinuo();
         setNome("Nenhuma solicitação");
         setMotivo("Aguardando visitante");
         setStatus("Sem chamado ativo");
         setHoraChamada("");
         setModo("");
+        setMensagemResponsavel("");
+        setAvisoAuto("");
+        pararToqueContinuo();
         return;
       }
 
-      setNome(dados.nome);
-      setMotivo(dados.motivo);
-      setStatus(dados.status);
+      setNome(dados.nome || "Nenhuma solicitação");
+      setMotivo(dados.motivo || "Aguardando visitante");
+      setStatus(dados.status || "Sem chamado ativo");
       setHoraChamada(
-        dados.criadoEm
-          ? new Date(dados.criadoEm).toLocaleString("pt-BR")
-          : ""
+        dados.criadoEm ? new Date(dados.criadoEm).toLocaleString("pt-BR") : ""
       );
       setModo(dados.modo || "");
+      setMensagemResponsavel(dados.mensagemResponsavel || "");
+
+      if (dados.status === "Encerrado") {
+        pararToqueContinuo();
+        setAvisoAuto("Atendimento encerrado. Limpando em instantes.");
+        return;
+      }
 
       const deveTocar =
-        dados.notificar === true &&
-        dados.status === "Aguardando atendimento";
+        dados.notificar === true && dados.status === "Aguardando atendimento";
 
       if (deveTocar) {
         iniciarToqueContinuo();
       } else {
         pararToqueContinuo();
       }
+
+      programarFinalizacaoAutomatica(dados);
     });
 
     return () => {
+      limparFinalizacaoAutomatica();
       pararToqueContinuo();
       pararDeOuvir();
     };
   }, []);
+
+  async function salvarHistorico(tipoFinalizacao: string) {
+    if (nome === "Nenhuma solicitação") return;
+
+    const agora = new Date();
+
+    const novoRegistro = {
+      nome,
+      motivo,
+      modo,
+      statusFinal: status,
+      tipoFinalizacao,
+      chamadoEm: horaChamada,
+      finalizadoEm: agora.toISOString(),
+      finalizadoEmFormatado: agora.toLocaleString("pt-BR"),
+    };
+
+    const novoItem = push(ref(db, caminhoHistorico));
+    await set(novoItem, novoRegistro);
+  }
+
+  function programarFinalizacaoAutomatica(dados: any) {
+    if (dados.status === "Encerrado") return;
+
+    const agora = Date.now();
+
+    let tempoLimite = TEMPO_AGUARDANDO;
+    let dataBase = dados.criadoEm;
+
+    if (dados.status === "Em atendimento") {
+      tempoLimite = TEMPO_EM_ATENDIMENTO;
+      dataBase = dados.atendidoEm || dados.criadoEm;
+    }
+
+    if (!dataBase) return;
+
+    const inicio = new Date(dataBase).getTime();
+    const tempoPassado = agora - inicio;
+    const tempoRestante = tempoLimite - tempoPassado;
+
+    if (tempoRestante <= 0) {
+      finalizarAutomaticamente();
+      return;
+    }
+
+    const minutos = Math.ceil(tempoRestante / 60000);
+    setAvisoAuto(`Finalização automática em até ${minutos} min.`);
+
+    finalizacaoAutoRef.current = setTimeout(() => {
+      finalizarAutomaticamente();
+    }, tempoRestante);
+  }
+
+  async function finalizarAutomaticamente() {
+    pararToqueContinuo();
+    limparFinalizacaoAutomatica();
+
+    await salvarHistorico("Automática");
+
+    await update(ref(db, caminhoFirebase), {
+      status: "Encerrado",
+      mensagemResponsavel: "ATENDIMENTO_ENCERRADO",
+      notificar: false,
+      encerradoEm: new Date().toISOString(),
+    });
+
+    setTimeout(async () => {
+      await remove(ref(db, caminhoFirebase));
+    }, 5000);
+
+    setNome("Nenhuma solicitação");
+    setMotivo("Aguardando visitante");
+    setStatus("Sem chamado ativo");
+    setHoraChamada("");
+    setModo("");
+    setMensagemResponsavel("");
+    setAvisoAuto("");
+  }
+
+  function limparFinalizacaoAutomatica() {
+    if (finalizacaoAutoRef.current) {
+      clearTimeout(finalizacaoAutoRef.current);
+      finalizacaoAutoRef.current = null;
+    }
+  }
 
   async function atenderSolicitacao() {
     if (status === "Sem chamado ativo") {
@@ -67,24 +197,55 @@ export default function Painel() {
       return;
     }
 
-    await update(ref(db, "qr5"), {
+    await update(ref(db, caminhoFirebase), {
       status: "Em atendimento",
+      notificar: false,
+      atendidoEm: new Date().toISOString(),
     });
 
     pararToqueContinuo();
   }
 
-  async function finalizarSolicitacao() {
-    setHistoricoNome(nome);
-    setHistoricoMotivo(motivo);
+  async function enviarMensagemRapida(mensagem: string) {
+    if (status === "Sem chamado ativo") {
+      alert("Não existe chamada ativa para responder.");
+      return;
+    }
 
-    await remove(ref(db, "qr5"));
+    await update(ref(db, caminhoFirebase), {
+      status: "Em atendimento",
+      mensagemResponsavel: mensagem,
+      notificar: false,
+      atendidoEm: new Date().toISOString(),
+    });
+
+    setMensagemResponsavel(mensagem);
+    pararToqueContinuo();
+  }
+
+  async function finalizarSolicitacao() {
+    await salvarHistorico("Manual");
+
+    limparFinalizacaoAutomatica();
+
+    await update(ref(db, caminhoFirebase), {
+      status: "Encerrado",
+      mensagemResponsavel: "ATENDIMENTO_ENCERRADO",
+      notificar: false,
+      encerradoEm: new Date().toISOString(),
+    });
+
+    setTimeout(async () => {
+      await remove(ref(db, caminhoFirebase));
+    }, 5000);
 
     setNome("Nenhuma solicitação");
     setMotivo("Aguardando visitante");
     setStatus("Sem chamado ativo");
     setHoraChamada("");
     setModo("");
+    setMensagemResponsavel("");
+    setAvisoAuto("");
   }
 
   function pararToqueContinuo() {
@@ -100,9 +261,7 @@ export default function Painel() {
   }
 
   function iniciarToqueContinuo() {
-    if (intervaloSomRef.current) {
-      return;
-    }
+    if (intervaloSomRef.current) return;
 
     testarSom();
 
@@ -139,8 +298,6 @@ export default function Painel() {
         serviceWorkerRegistration: registroServiceWorker,
       });
 
-      console.log("Token do aparelho:", token);
-
       await update(ref(db, "configuracoes"), {
         tokenMorador5: token,
       });
@@ -176,9 +333,7 @@ export default function Painel() {
   return (
     <main className="min-h-screen flex items-center justify-center bg-slate-950 text-white p-4">
       <div className="w-full max-w-md bg-slate-900 rounded-2xl p-8">
-        <h1 className="text-4xl font-bold mb-2">
-          🏠 Painel do Morador 5
-        </h1>
+        <h1 className="text-4xl font-bold mb-2">🏠 Painel do Morador 5</h1>
 
         <button
           onClick={testarSom}
@@ -194,32 +349,24 @@ export default function Painel() {
           🔔 Ativar Notificações
         </button>
 
-        <p className="text-slate-400 mb-6">
-          Solicitações recebidas
-        </p>
+        <p className="text-slate-400 mb-6">Solicitações recebidas</p>
 
         <div className="bg-slate-800 rounded-xl p-4 mb-4">
-          <h2 className="font-bold text-green-400">
-            🔔 {nome}
-          </h2>
+          <h2 className="font-bold text-green-400">🔔 {nome}</h2>
 
-          <p className="text-sm text-slate-300 mt-2">
-            Motivo: {motivo}
-          </p>
+          <p className="text-sm text-slate-300 mt-2">Motivo: {motivo}</p>
 
           <p className="text-sm text-cyan-400 mt-2">
-            Modo: {modo === "porteiro"
-              ? "Portaria"
-              : "Direto para morador"}
+            Modo: {modo === "porteiro" ? "Portaria" : "Direto para morador"}
           </p>
 
-          <p className="text-sm text-yellow-400 mt-2">
-            Status: {status}
-          </p>
+          <p className="text-sm text-yellow-400 mt-2">Status: {status}</p>
 
-          <p className="text-sm text-blue-300 mt-2">
-            Horário: {horaChamada}
-          </p>
+          <p className="text-sm text-blue-300 mt-2">Horário: {horaChamada}</p>
+
+          {avisoAuto && (
+            <p className="text-sm text-orange-300 mt-2">⏱ {avisoAuto}</p>
+          )}
 
           <button
             onClick={atenderSolicitacao}
@@ -228,16 +375,86 @@ export default function Painel() {
             ATENDER
           </button>
 
+          <div className="mt-5 bg-slate-900 border border-slate-700 rounded-xl p-4">
+            <h3 className="font-bold text-blue-300 mb-3">
+              💬 Respostas rápidas
+            </h3>
+
+            <button
+              onClick={() =>
+                enviarMensagemRapida("Olá, entendi. Já estou descendo.")
+              }
+              className="w-full mb-2 bg-blue-600 text-white font-bold py-2 rounded-xl"
+            >
+              Já estou descendo
+            </button>
+
+            <button
+              onClick={() =>
+                enviarMensagemRapida("Aguarde um momento, por favor.")
+              }
+              className="w-full mb-2 bg-blue-600 text-white font-bold py-2 rounded-xl"
+            >
+              Aguarde um momento
+            </button>
+
+            <button
+              onClick={() =>
+                enviarMensagemRapida("Pode deixar na portaria, obrigado.")
+              }
+              className="w-full mb-2 bg-blue-600 text-white font-bold py-2 rounded-xl"
+            >
+              Pode deixar na portaria
+            </button>
+
+            <button
+              onClick={() =>
+                enviarMensagemRapida("Não estou em casa no momento.")
+              }
+              className="w-full mb-2 bg-blue-600 text-white font-bold py-2 rounded-xl"
+            >
+              Não estou em casa
+            </button>
+
+            <button
+              onClick={() => enviarMensagemRapida("Estou indo retirar agora.")}
+              className="w-full bg-blue-600 text-white font-bold py-2 rounded-xl"
+            >
+              Estou indo retirar
+            </button>
+
+            {mensagemResponsavel && (
+              <p className="text-sm text-green-400 mt-3">
+                Última mensagem enviada: {mensagemResponsavel}
+              </p>
+            )}
+          </div>
+
           <hr className="border-slate-700 my-6" />
 
-          <h3 className="text-2xl font-bold mb-4">
-            📋 Histórico
-          </h3>
+          <h3 className="text-2xl font-bold mb-4">📋 Histórico</h3>
 
-          {historicoNome ? (
-            <p className="text-green-400 text-sm">
-              Último atendimento: {historicoNome} - {historicoMotivo}
-            </p>
+          {historicoLista.length > 0 ? (
+            <div className="space-y-3">
+              {historicoLista.map((item, index) => (
+                <div
+                  key={index}
+                  className="bg-slate-900 border border-slate-700 rounded-xl p-3"
+                >
+                  <p className="text-green-400 text-sm font-bold">
+                    {item.nome} - {item.motivo}
+                  </p>
+
+                  <p className="text-slate-400 text-xs mt-1">
+                    Finalizado em: {item.finalizadoEmFormatado}
+                  </p>
+
+                  <p className="text-blue-300 text-xs mt-1">
+                    Tipo: {item.tipoFinalizacao || "Não informado"}
+                  </p>
+                </div>
+              ))}
+            </div>
           ) : (
             <p className="text-green-400 text-sm">
               🔔 Nenhum atendimento finalizado
