@@ -14,13 +14,13 @@ export default function Painel() {
   const [historicoLista, setHistoricoLista] = useState<any[]>([]);
   const [contadorHistorico, setContadorHistorico] = useState(0);
   const [contadorRecebidas, setContadorRecebidas] = useState(0);
-
+const [online, setOnline] = useState(true);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const intervaloSomRef = useRef<NodeJS.Timeout | null>(null);
 
   const caminhoFirebase = "qr1";
 const caminhoHistorico = "historico/qr1";
-
+const caminhoStatus = "status/qr1";
   useEffect(() => {
     const referenciaHistorico = ref(db, caminhoHistorico);
 
@@ -127,7 +127,25 @@ const caminhoHistorico = "historico/qr1";
     const novoItem = push(ref(db, caminhoHistorico));
     await set(novoItem, novoRegistro);
   }
+async function alterarStatusOnline() {
+  const novoStatus = !online;
 
+  setOnline(novoStatus);
+
+  await set(ref(db, caminhoStatus), {
+    online: novoStatus,
+    atualizadoEm: new Date().toISOString(),
+  });
+}
+
+async function acionarPortao() {
+  await set(ref(db, "portao/qr1"), {
+    acionado: true,
+    acionadoEm: new Date().toISOString(),
+  });
+
+  alert("🚪 Portão acionado com sucesso.");
+}
   async function limparHistorico() {
     const confirmar = window.confirm(
       "Tem certeza que deseja limpar todo o histórico deste painel?"
@@ -265,7 +283,25 @@ const caminhoHistorico = "historico/qr1";
         </button>
 
         <p className="text-slate-400 mb-6">Solicitações recebidas</p>
+<div className="bg-slate-800 rounded-xl p-4 mb-4">
+  <p className={online ? "text-green-400 font-bold" : "text-red-400 font-bold"}>
+    {online ? "🟢 Disponível" : "🔴 Ausente"}
+  </p>
 
+  <button
+    onClick={alterarStatusOnline}
+    className="w-full mt-3 bg-slate-600 hover:bg-slate-500 text-white font-bold py-2 rounded-xl"
+  >
+    ALTERAR STATUS
+  </button>
+
+  <button
+    onClick={acionarPortao}
+    className="w-full mt-3 bg-purple-600 hover:bg-purple-500 text-white font-bold py-2 rounded-xl"
+  >
+    🚪 ABRIR PORTÃO
+  </button>
+</div>
         <div className="bg-slate-800 rounded-xl p-4 mb-4">
           <h2 className="font-bold text-green-400">🔔 {nome}</h2>
 
