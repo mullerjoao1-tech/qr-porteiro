@@ -13,16 +13,17 @@ export default function Home() {
   const [mostrarBalao, setMostrarBalao] = useState(false);
   const [mostrarEncerrado, setMostrarEncerrado] = useState(false);
   const [online, setOnline] = useState(true);
-  const [primeiraLeitura, setPrimeiraLeitura] = useState(true);
+
+  const codigoQr = "qr1";
+  const caminhoFirebase = "qr1";
+  const chaveAtendimento = "atendimentoAtivoQr1";
+  const modoCondominio = "porteiro";
 
   const cliente = {
     local: "QR Acesso",
     mensagem: "Controle inteligente de acesso",
     slogan: "Campainha virtual • Atendimento remoto • Segurança",
   };
-
-  const codigoQr = "qr1";
-  const modoCondominio = "porteiro";
 
   useEffect(() => {
     setOnline(navigator.onLine);
@@ -45,17 +46,17 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    const referencia = ref(db, "qr1");
+    const referencia = ref(db, caminhoFirebase);
 
     const pararDeOuvir = onValue(referencia, (snapshot) => {
       const dados = snapshot.val();
       const atendimentoAtivoSalvo =
-        localStorage.getItem("atendimentoAtivoQr1") === "true";
+        localStorage.getItem(chaveAtendimento) === "true";
 
       if (dados) {
         const novaMensagem = dados.mensagemResponsavel || "";
 
-        localStorage.setItem("atendimentoAtivoQr1", "true");
+        localStorage.setItem(chaveAtendimento, "true");
 
         setChamando(true);
         setStatus(dados.status || "");
@@ -65,24 +66,24 @@ export default function Home() {
         if (novaMensagem) {
           setMostrarBalao(true);
         }
-      } else {
-        if (!primeiraLeitura && atendimentoAtivoSalvo) {
-          setMostrarEncerrado(true);
-        }
 
-        localStorage.removeItem("atendimentoAtivoQr1");
-
-        setChamando(false);
-        setStatus("");
-        setMensagemResponsavel("");
-        setMostrarBalao(false);
+        return;
       }
 
-      setPrimeiraLeitura(false);
+      if (atendimentoAtivoSalvo) {
+        setMostrarEncerrado(true);
+      }
+
+      localStorage.removeItem(chaveAtendimento);
+
+      setChamando(false);
+      setStatus("");
+      setMensagemResponsavel("");
+      setMostrarBalao(false);
     });
 
     return () => pararDeOuvir();
-  }, [primeiraLeitura]);
+  }, []);
 
   async function chamarResponsavel() {
     if (!online) {
@@ -111,13 +112,13 @@ export default function Home() {
     };
 
     setMostrarEncerrado(false);
-    localStorage.setItem("atendimentoAtivoQr1", "true");
+    localStorage.setItem(chaveAtendimento, "true");
 
-    await set(ref(db, "qr1"), novaSolicitacao);
+    await set(ref(db, caminhoFirebase), novaSolicitacao);
 
     await fetch("/api/enviar-push", {
       method: "POST",
-      body: JSON.stringify({ canal: "qr1" }),
+      body: JSON.stringify({ canal: codigoQr }),
     });
 
     setChamando(true);
@@ -127,9 +128,9 @@ export default function Home() {
   }
 
   async function cancelarChamada() {
-    localStorage.removeItem("atendimentoAtivoQr1");
+    localStorage.removeItem(chaveAtendimento);
 
-    await set(ref(db, "qr1"), null);
+    await set(ref(db, caminhoFirebase), null);
 
     setChamando(false);
     setStatus("");
