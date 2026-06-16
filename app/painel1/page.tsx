@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { getToken } from "firebase/messaging";
-import { ref, onValue, update, remove } from "firebase/database";
+import { ref, onValue, update, remove, push, set } from "firebase/database";
 import { db, messagingPromise } from "../services/firebase";
 
 export default function Painel() {
@@ -14,6 +14,7 @@ export default function Painel() {
   const [mensagemResponsavel, setMensagemResponsavel] = useState("");
   const [historicoNome, setHistoricoNome] = useState("");
   const [historicoMotivo, setHistoricoMotivo] = useState("");
+  const [historicoData, setHistoricoData] = useState("");
   const [avisoAuto, setAvisoAuto] = useState("");
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -21,9 +22,31 @@ export default function Painel() {
   const finalizacaoAutoRef = useRef<NodeJS.Timeout | null>(null);
 
   const caminhoFirebase = "qr1";
+  const caminhoHistorico = "historico/qr1";
 
   const TEMPO_AGUARDANDO = 5 * 60 * 1000;
   const TEMPO_EM_ATENDIMENTO = 3 * 60 * 1000;
+
+  useEffect(() => {
+    const referenciaHistorico = ref(db, caminhoHistorico);
+
+    const pararDeOuvirHistorico = onValue(referenciaHistorico, (snapshot) => {
+      const dados = snapshot.val();
+
+      if (!dados) return;
+
+      const lista = Object.values(dados) as any[];
+      const ultimo = lista[lista.length - 1];
+
+      if (ultimo) {
+        setHistoricoNome(ultimo.nome || "");
+        setHistoricoMotivo(ultimo.motivo || "");
+        setHistoricoData(ultimo.finalizadoEmFormatado || "");
+      }
+    });
+
+    return () => pararDeOuvirHistorico();
+  }, []);
 
   useEffect(() => {
     const referencia = ref(db, caminhoFirebase);
@@ -79,6 +102,30 @@ export default function Painel() {
     };
   }, []);
 
+  async function salvarHistorico(tipoFinalizacao: string) {
+    if (nome === "Nenhuma solicitação") return;
+
+    const agora = new Date();
+
+    const novoRegistro = {
+      nome,
+      motivo,
+      modo,
+      statusFinal: status,
+      tipoFinalizacao,
+      chamadoEm: horaChamada,
+      finalizadoEm: agora.toISOString(),
+      finalizadoEmFormatado: agora.toLocaleString("pt-BR"),
+    };
+
+    const novoItem = push(ref(db, caminhoHistorico));
+    await set(novoItem, novoRegistro);
+
+    setHistoricoNome(nome);
+    setHistoricoMotivo(motivo);
+    setHistoricoData(agora.toLocaleString("pt-BR"));
+  }
+
   function programarFinalizacaoAutomatica(dados: any) {
     if (dados.status === "Encerrado") return;
 
@@ -114,6 +161,8 @@ export default function Painel() {
   async function finalizarAutomaticamente() {
     pararToqueContinuo();
     limparFinalizacaoAutomatica();
+
+    await salvarHistorico("Automática");
 
     await update(ref(db, caminhoFirebase), {
       status: "Encerrado",
@@ -175,8 +224,7 @@ export default function Painel() {
   }
 
   async function finalizarSolicitacao() {
-    setHistoricoNome(nome);
-    setHistoricoMotivo(motivo);
+    await salvarHistorico("Manual");
 
     limparFinalizacaoAutomatica();
 
@@ -387,9 +435,14 @@ export default function Painel() {
           <h3 className="text-2xl font-bold mb-4">📋 Histórico</h3>
 
           {historicoNome ? (
-            <p className="text-green-400 text-sm">
-              Último atendimento: {historicoNome} - {historicoMotivo}
-            </p>
+            <div className="text-green-400 text-sm">
+              <p>
+                Último atendimento: {historicoNome} - {historicoMotivo}
+              </p>
+              {historicoData && (
+                <p className="text-slate-400 mt-1">Finalizado em: {historicoData}</p>
+              )}
+            </div>
           ) : (
             <p className="text-green-400 text-sm">
               🔔 Nenhum atendimento finalizado
