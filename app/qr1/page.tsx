@@ -13,7 +13,7 @@ export default function Home() {
   const [mostrarBalao, setMostrarBalao] = useState(false);
   const [mostrarEncerrado, setMostrarEncerrado] = useState(false);
   const [online, setOnline] = useState(true);
-
+const [moradorDisponivel, setMoradorDisponivel] = useState(true);
   const codigoQr = "qr1";
   const caminhoFirebase = "qr1";
   const chaveAtendimento = "atendimentoAtivoQr1";
@@ -44,7 +44,22 @@ export default function Home() {
       window.removeEventListener("offline", ficouOffline);
     };
   }, []);
+useEffect(() => {
+  const referenciaStatus = ref(db, "status/qr1");
 
+  const pararDeOuvirStatus = onValue(referenciaStatus, (snapshot) => {
+    const dados = snapshot.val();
+
+    if (!dados) {
+      setMoradorDisponivel(true);
+      return;
+    }
+
+    setMoradorDisponivel(dados.online === true);
+  });
+
+  return () => pararDeOuvirStatus();
+}, []);
   useEffect(() => {
     const referencia = ref(db, caminhoFirebase);
 
@@ -254,7 +269,17 @@ export default function Home() {
         </p>
 
         <p className="mb-4">Você está chamando:</p>
-
+<div
+  className={`mb-4 rounded-xl px-4 py-3 font-bold ${
+    moradorDisponivel
+      ? "bg-green-900/40 border border-green-500 text-green-300"
+      : "bg-red-900/40 border border-red-500 text-red-300"
+  }`}
+>
+  {moradorDisponivel
+    ? "🟢 Morador disponível"
+    : "🔴 Morador ausente no momento"}
+</div>
         <h1 className="text-2xl font-bold mb-4">{cliente.local}</h1>
 
         <p className="text-slate-300 mb-6">
