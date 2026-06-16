@@ -1,7 +1,8 @@
 "use client";
+
 import { useEffect, useRef, useState } from "react";
 import { getToken } from "firebase/messaging";
-import { ref, onValue, update, remove } from "firebase/database";
+import { ref, onValue, update, remove, push, set } from "firebase/database";
 import { db, messagingPromise } from "../services/firebase";
 
 export default function Painel() {
@@ -10,196 +11,269 @@ export default function Painel() {
   const [status, setStatus] = useState("Sem chamado ativo");
   const [horaChamada, setHoraChamada] = useState("");
   const [modo, setModo] = useState("");
+  const [historicoLista, setHistoricoLista] = useState<any[]>([]);
+  const [contadorHistorico, setContadorHistorico] = useState(0);
+
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const intervaloSomRef = useRef<NodeJS.Timeout | null>(null);
-  const [historicoNome, setHistoricoNome] = useState("");
-  const [historicoMotivo, setHistoricoMotivo] = useState("");
+
+  const caminhoFirebase = "solicitacaoAtual";
+  const caminhoHistorico = "historico/painel";
 
   useEffect(() => {
-   const referencia = ref(db, "solicitacaoAtual");
+    const referenciaHistorico = ref(db, caminhoHistorico);
 
-const pararDeOuvir = onValue(referencia, (snapshot) => {
-  const dados = snapshot.val();
+    const pararDeOuvirHistorico = onValue(referenciaHistorico, (snapshot) => {
+      const dados = snapshot.val();
 
-  if (!dados) {
+      if (!dados) {
+        setHistoricoLista([]);
+        setContadorHistorico(0);
+        return;
+      }
+
+      const lista = Object.values(dados) as any[];
+
+      setContadorHistorico(lista.length);
+
+      const listaOrdenada = lista
+        .sort((a, b) => {
+          const dataA = new Date(a.finalizadoEm || 0).getTime();
+          const dataB = new Date(b.finalizadoEm || 0).getTime();
+          return dataB - dataA;
+        })
+        .slice(0, 10);
+
+      setHistoricoLista(listaOrdenada);
+    });
+
+    return () => pararDeOuvirHistorico();
+  }, []);
+
+  useEffect(() => {
+    const referencia = ref(db, caminhoFirebase);
+
+    const pararDeOuvir = onValue(referencia, (snapshot) => {
+      const dados = snapshot.val();
+
+      if (!dados) {
+        setNome("Nenhuma solicitação");
+        setMotivo("Aguardando visitante");
+        setStatus("Sem chamado ativo");
+        setHoraChamada("");
+        setModo("");
+        pararToqueContinuo();
+        return;
+      }
+
+      setNome(dados.nome || "Nenhuma solicitação");
+      setMotivo(dados.motivo || "Aguardando visitante");
+      setStatus(dados.status || "Sem chamado ativo");
+      setHoraChamada(
+        dados.criadoEm ? new Date(dados.criadoEm).toLocaleString("pt-BR") : ""
+      );
+      setModo(dados.modo || "");
+
+      const deveTocar =
+        dados.notificar === true && dados.status === "Aguardando atendimento";
+
+      if (deveTocar) {
+        iniciarToqueContinuo();
+      } else {
+        pararToqueContinuo();
+      }
+    });
+
+    return () => {
+      pararToqueContinuo();
+      pararDeOuvir();
+    };
+  }, []);
+
+  async function atenderSolicitacao() {
+    if (status === "Sem chamado ativo") {
+      alert("Não existe chamada ativa para atender.");
+      return;
+    }
+
+    await update(ref(db, caminhoFirebase), {
+      status: "Em atendimento",
+      notificar: false,
+    });
+
+    pararToqueContinuo();
+  }
+
+  async function salvarHistorico() {
+    if (nome === "Nenhuma solicitação") return;
+
+    const agora = new Date();
+
+    const novoRegistro = {
+      nome,
+      motivo,
+      modo,
+      statusFinal: status,
+      chamadoEm: horaChamada,
+      finalizadoEm: agora.toISOString(),
+      finalizadoEmFormatado: agora.toLocaleString("pt-BR"),
+      tipoFinalizacao: "Manual",
+    };
+
+    const novoItem = push(ref(db, caminhoHistorico));
+    await set(novoItem, novoRegistro);
+  }
+
+  async function limparHistorico() {
+    const confirmar = window.confirm(
+      "Tem certeza que deseja limpar todo o histórico deste painel?"
+    );
+
+    if (!confirmar) return;
+
+    await remove(ref(db, caminhoHistorico));
+
+    setHistoricoLista([]);
+    setContadorHistorico(0);
+
+    alert("Histórico limpo com sucesso.");
+  }
+
+  async function finalizarSolicitacao() {
+    if (status === "Sem chamado ativo") {
+      alert("Não existe chamada ativa para finalizar.");
+      return;
+    }
+
+    await salvarHistorico();
+
+    await remove(ref(db, caminhoFirebase));
+
     setNome("Nenhuma solicitação");
     setMotivo("Aguardando visitante");
     setStatus("Sem chamado ativo");
     setHoraChamada("");
-    setModo(""); 
+    setModo("");
 
     pararToqueContinuo();
-    return;
   }
 
-  setNome(dados.nome);
-  setMotivo(dados.motivo);
-  setStatus(dados.status);
-  setHoraChamada(
-  dados.criadoEm
-    ? new Date(dados.criadoEm).toLocaleString("pt-BR")
-    : ""
-);
-  setModo(dados.modo || "");
+  function pararToqueContinuo() {
+    if (intervaloSomRef.current) {
+      clearInterval(intervaloSomRef.current);
+      intervaloSomRef.current = null;
+    }
 
-  const deveTocar =
-    dados.notificar === true && dados.status === "Aguardando atendimento";
-
-  if (deveTocar) {
-    iniciarToqueContinuo();
-  } else {
-    pararToqueContinuo();
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
   }
 
-  console.log("🔔 Novo evento para notificação");
-});
-
-return () => {
-  pararToqueContinuo();
-  pararDeOuvir();
-};
-
-    return () => pararDeOuvir();
-  }, []);
-
- async function atenderSolicitacao() {
-  if (status === "Sem chamado ativo") {
-    alert("Não existe chamada ativa para atender.");
-    return;
-  }
-
-await update(ref(db, "solicitacaoAtual"), {
-  status: "Em atendimento",
-});
-await update(ref(db, "solicitacaoAtual"), {
-  status: "Em atendimento",
-});
-
-pararToqueContinuo();
-}
-
-
-  async function finalizarSolicitacao() {
-    setHistoricoNome(nome);
-    setHistoricoMotivo(motivo);
-
-    await remove(ref(db, "solicitacaoAtual"));
-
-        setNome("Nenhuma solicitação");
-    setMotivo("Aguardando visitante");
-    setStatus("Sem chamado ativo");
-  }
-
-function pararToqueContinuo() {
-  if (intervaloSomRef.current) {
-    clearInterval(intervaloSomRef.current);
-    intervaloSomRef.current = null;
-  }
-
-  if (audioRef.current) {
-    audioRef.current.pause();
-    audioRef.current.currentTime = 0;
-  }
-}
   function iniciarToqueContinuo() {
-  if (intervaloSomRef.current) {
-    return;
-  }
+    if (intervaloSomRef.current) return;
 
-  testarSom();
-
-  intervaloSomRef.current = setInterval(() => {
     testarSom();
-  }, 800);
-}async function ativarNotificacoes() {
-  const messaging = await messagingPromise;
 
-  if (!messaging) {
-    alert("Este navegador não suporta notificações.");
-    return;
+    intervaloSomRef.current = setInterval(() => {
+      testarSom();
+    }, 800);
   }
 
-  const permissao = await Notification.requestPermission();
-console.log("Permissão recebida:", permissao);
-  if (permissao !== "granted") {
-  alert("Permissão para notificações negada. Resultado: " + permissao);
-  return;
-}
-alert("Permissão aceita. Agora vou gerar o token.");
-  try {
-  const registroServiceWorker = await navigator.serviceWorker.register(
-  "/firebase-messaging-sw.js"
-);
+  async function ativarNotificacoes() {
+    const messaging = await messagingPromise;
 
-const token = await getToken(messaging, {
-  vapidKey:
-    "BIEIQutWLbP05G1xFN1Zvg_hMnc4OGOkHRf6yI1bT8Igfmm1G8vRjYQhZyDGc5M3X6yhHkoWdJj4a_atPGqX7sk",
-  serviceWorkerRegistration: registroServiceWorker,
-});
+    if (!messaging) {
+      alert("Este navegador não suporta notificações.");
+      return;
+    }
 
-  console.log("Token do aparelho:", token);
+    const permissao = await Notification.requestPermission();
 
-  await update(ref(db, "configuracoes"), {
-    tokenMorador: token,
-  });
+    if (permissao !== "granted") {
+      alert("Permissão para notificações negada. Resultado: " + permissao);
+      return;
+    }
 
-  alert("Notificações ativadas com sucesso!");
-} catch (erro) {
-  console.error("Erro ao gerar token:", erro);
-  alert("Erro ao gerar token. Veja o console.");
+    alert("Permissão aceita. Agora vou gerar o token.");
+
+    try {
+      const registroServiceWorker = await navigator.serviceWorker.register(
+        "/firebase-messaging-sw.js"
+      );
+
+      const token = await getToken(messaging, {
+        vapidKey:
+          "BIEIQutWLbP05G1xFN1Zvg_hMnc4OGOkHRf6yI1bT8Igfmm1G8vRjYQhZyDGc5M3X6yhHkoWdJj4a_atPGqX7sk",
+        serviceWorkerRegistration: registroServiceWorker,
+      });
+
+      await update(ref(db, "configuracoes"), {
+        tokenMorador: token,
+      });
+
+      alert("Notificações ativadas com sucesso!");
+    } catch (erro) {
+      console.error("Erro ao gerar token:", erro);
+      alert("Erro ao gerar token. Veja o console.");
+    }
   }
-}
-function testarSom() {
-  const audioContext = new AudioContext();
-  const oscillator = audioContext.createOscillator();
-  const gainNode = audioContext.createGain();
 
-  oscillator.connect(gainNode);
-  gainNode.connect(audioContext.destination);
+  function testarSom() {
+    const audioContext = new AudioContext();
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
 
-  oscillator.frequency.value = 880;
-  oscillator.type = "sine";
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
 
-  gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-  gainNode.gain.exponentialRampToValueAtTime(
-    0.01,
-    audioContext.currentTime + 0.5
-  );
+    oscillator.frequency.value = 880;
+    oscillator.type = "sine";
 
-  oscillator.start();
-  oscillator.stop(audioContext.currentTime + 0.5);
-}
+    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(
+      0.01,
+      audioContext.currentTime + 0.5
+    );
+
+    oscillator.start();
+    oscillator.stop(audioContext.currentTime + 0.5);
+  }
+
   return (
     <main className="min-h-screen flex items-center justify-center bg-slate-950 text-white p-4">
-      
-            <div className="w-full max-w-md bg-slate-900 rounded-2xl p-8">
+      <div className="w-full max-w-md bg-slate-900 rounded-2xl p-8">
         <h1 className="text-4xl font-bold mb-2">🏠 Painel do Morador</h1>
+
         <button
-  onClick={testarSom}
-  className="w-full mt-4 mb-4 bg-blue-500 text-white font-bold py-2 rounded-xl"
->
-  🔊 Testar Som
-</button>
-        
-<button
-  onClick={ativarNotificacoes}
-  className="w-full mt-2 mb-4 bg-yellow-500 text-black font-bold py-2 rounded-xl"
->
-  🔔 Ativar Notificações
-</button>
+          onClick={testarSom}
+          className="w-full mt-4 mb-4 bg-blue-500 text-white font-bold py-2 rounded-xl"
+        >
+          🔊 Testar Som
+        </button>
+
+        <button
+          onClick={ativarNotificacoes}
+          className="w-full mt-2 mb-4 bg-yellow-500 text-black font-bold py-2 rounded-xl"
+        >
+          🔔 Ativar Notificações
+        </button>
+
         <p className="text-slate-400 mb-6">Solicitações recebidas</p>
 
         <div className="bg-slate-800 rounded-xl p-4 mb-4">
           <h2 className="font-bold text-green-400">🔔 {nome}</h2>
 
           <p className="text-sm text-slate-300 mt-2">Motivo: {motivo}</p>
-<p className="text-sm text-cyan-400 mt-2">
-  Modo: {modo === "porteiro" ? "Portaria" : "Direto para morador"}
-</p>
+
+          <p className="text-sm text-cyan-400 mt-2">
+            Modo: {modo === "porteiro" ? "Portaria" : "Direto para morador"}
+          </p>
+
           <p className="text-sm text-yellow-400 mt-2">Status: {status}</p>
-<p className="text-sm text-blue-300 mt-2">
-  Horário: {horaChamada}
-</p>
+
+          <p className="text-sm text-blue-300 mt-2">Horário: {horaChamada}</p>
+
           <button
             onClick={atenderSolicitacao}
             className="w-full mt-4 bg-green-500 text-black font-bold py-2 rounded-xl"
@@ -209,12 +283,45 @@ function testarSom() {
 
           <hr className="border-slate-700 my-6" />
 
-          <h3 className="text-2xl font-bold mb-4">📋 Histórico</h3>
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-2xl font-bold">📋 Histórico</h3>
 
-          {historicoNome ? (
-            <p className="text-green-400 text-sm">
-              Último atendimento: {historicoNome} - {historicoMotivo}
-            </p>
+            <button
+              onClick={limparHistorico}
+              className="bg-red-600 hover:bg-red-500 text-white text-xs font-bold px-3 py-2 rounded-lg"
+            >
+              LIMPAR
+            </button>
+          </div>
+
+          <p className="text-sm text-slate-400 mb-4">
+            Total de atendimentos finalizados:{" "}
+            <span className="text-green-400 font-bold">
+              {contadorHistorico}
+            </span>
+          </p>
+
+          {historicoLista.length > 0 ? (
+            <div className="space-y-3">
+              {historicoLista.map((item, index) => (
+                <div
+                  key={index}
+                  className="bg-slate-900 border border-slate-700 rounded-xl p-3"
+                >
+                  <p className="text-green-400 text-sm font-bold">
+                    {item.nome} - {item.motivo}
+                  </p>
+
+                  <p className="text-slate-400 text-xs mt-1">
+                    Finalizado em: {item.finalizadoEmFormatado}
+                  </p>
+
+                  <p className="text-blue-300 text-xs mt-1">
+                    Tipo: {item.tipoFinalizacao || "Não informado"}
+                  </p>
+                </div>
+              ))}
+            </div>
           ) : (
             <p className="text-green-400 text-sm">
               🔔 Nenhum atendimento finalizado

@@ -13,6 +13,7 @@ export default function Painel() {
   const [modo, setModo] = useState("");
   const [mensagemResponsavel, setMensagemResponsavel] = useState("");
   const [historicoLista, setHistoricoLista] = useState<any[]>([]);
+  const [contadorHistorico, setContadorHistorico] = useState(0);
   const [avisoAuto, setAvisoAuto] = useState("");
   const [mostrarPopupChamada, setMostrarPopupChamada] = useState(false);
   const [tempoAtendimento, setTempoAtendimento] = useState("");
@@ -64,6 +65,8 @@ export default function Painel() {
       }
 
       const lista = Object.values(dados) as any[];
+
+setContadorHistorico(lista.length);
 
       const listaOrdenada = lista
         .sort((a, b) => {
@@ -548,8 +551,12 @@ export default function Painel() {
 
           <hr className="border-slate-700 my-6" />
 
-          <h3 className="text-2xl font-bold mb-4">📋 Histórico</h3>
+<h3 className="text-2xl font-bold mb-2">📋 Histórico</h3>
 
+<p className="text-sm text-slate-400 mb-4">
+  Total de atendimentos finalizados:{" "}
+  <span className="text-green-400 font-bold">{contadorHistorico}</span>
+</p>
           {historicoLista.length > 0 ? (
             <div className="space-y-3">
               {historicoLista.map((item, index) => (
