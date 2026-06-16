@@ -18,8 +18,8 @@ export default function Painel() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const intervaloSomRef = useRef<NodeJS.Timeout | null>(null);
 
-  const caminhoFirebase = "solicitacaoAtual";
-  const caminhoHistorico = "historico/painel";
+  const caminhoFirebase = "qr1";
+const caminhoHistorico = "historico/qr1";
 
   useEffect(() => {
     const referenciaHistorico = ref(db, caminhoHistorico);
@@ -214,7 +214,7 @@ export default function Painel() {
       });
 
       await update(ref(db, "configuracoes"), {
-        tokenMorador: token,
+        tokenMorador1: token,
       });
 
       alert("Notificações ativadas com sucesso!");
