@@ -1,165 +1,78 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { ref, set, onValue } from "firebase/database";
-import { db } from "./services/firebase";
+import Link from "next/link";
 
 export default function Home() {
-  const [nome, setNome] = useState("");
-  const [motivo, setMotivo] = useState("");
-  const [chamando, setChamando] = useState(false);
-  const [status, setStatus] = useState("");
+  const moradores = [
+    { nome: "Morador 1", link: "/painel1" },
+    { nome: "Morador 2", link: "/painel2" },
+    { nome: "Morador 3", link: "/painel3" },
+    { nome: "Morador 4", link: "/painel4" },
+    { nome: "Morador 5", link: "/painel5" },
+  ];
 
-  const cliente = {
-  local: "QR Acesso",
-  mensagem: "Controle inteligente de acesso",
-  slogan: "Campainha virtual • Atendimento remoto • Segurança",
-};
+  const visitantes = [
+    { nome: "QR 1", link: "/qr1" },
+    { nome: "QR 2", link: "/qr2" },
+    { nome: "QR 3", link: "/qr3" },
+    { nome: "QR 4", link: "/qr4" },
+    { nome: "QR 5", link: "/qr5" },
+  ];
 
-  const codigoQr = "residencial-bela-vista";
-  const modoCondominio = "porteiro";
-// use "porteiro" para condomínio com portaria
-// use "direto" para condomínio sem porteiro
-
-  useEffect(() => {
-    const referencia = ref(db, "solicitacaoAtual");
-
-    const pararDeOuvir = onValue(referencia, (snapshot) => {
-      const dados = snapshot.val();
-
-      if (dados) {
-        setChamando(true);
-        setStatus(dados.status || "");
-      } else {
-        setChamando(false);
-        setStatus("");
-      }
-    });
-
-    return () => pararDeOuvir();
-  }, []);
-
-  async function chamarResponsavel() {
-    if (!nome.trim()) {
-      alert("Digite seu nome antes de chamar.");
-      return;
-    }
-
-    if (!motivo.trim()) {
-      alert("Digite o motivo da visita antes de chamar.");
-      return;
-    }
-
- const novaSolicitacao = {
-  nome,
-  motivo,
-  modo: modoCondominio,
-  status: "Aguardando atendimento",
-  notificar: true,
-  criadoEm: new Date().toISOString(),
-};
-
-    await set(ref(db, "solicitacaoAtual"), novaSolicitacao);
-    await fetch("/api/enviar-push", {
-  method: "POST",
-});
-
-    setChamando(true);
-    setStatus("Aguardando atendimento");
-  }
-async function cancelarChamada() {
-  await set(ref(db, "solicitacaoAtual"), null);
-
-  setChamando(false);
-  setStatus("");
-}
   return (
-    <main className="min-h-screen flex items-center justify-center bg-slate-950 text-white p-4">
-      <div className="w-full max-w-md bg-slate-900 rounded-2xl p-8 text-center">
-        <div className="bg-slate-800 rounded-xl p-4 mb-6">
-          <p className="text-blue-300 text-sm mb-4">QR Code do Cliente</p>
+    <main className="min-h-screen bg-slate-950 text-white p-4 flex items-center justify-center">
+      <div className="w-full max-w-md bg-slate-900 rounded-3xl p-6 shadow-2xl">
+        <div className="text-center mb-8">
+          <div className="mx-auto w-20 h-20 rounded-2xl bg-green-500 flex items-center justify-center mb-4">
+            <span className="text-slate-950 font-black text-3xl">QR</span>
+          </div>
 
-          <div className="mx-auto w-40 h-40 bg-white rounded-lg flex items-center justify-center mb-2">
-            <div className="grid grid-cols-5 gap-1">
-              {codigoQr.split("").slice(0, 25).map((_, index) => (
-                <div
-                  key={index}
-                  className={`w-3 h-3 ${
-                    index % 2 === 0 ? "bg-black" : "bg-gray-300"
-                  }`}
-                />
-              ))}
-            </div>
+          <h1 className="text-4xl font-black">QR Acesso</h1>
+
+          <p className="text-slate-400 mt-2">
+            Controle inteligente de acesso
+          </p>
+
+          <p className="text-xs text-green-400 mt-3">
+            Campainha virtual • Atendimento remoto • Segurança
+          </p>
+        </div>
+
+        <div className="bg-slate-800 rounded-2xl p-4 mb-5">
+          <h2 className="text-xl font-bold mb-3">🏠 Moradores</h2>
+
+          <div className="space-y-3">
+            {moradores.map((item) => (
+              <Link
+                key={item.link}
+                href={item.link}
+                className="block w-full bg-green-500 hover:bg-green-400 text-slate-950 font-bold text-center py-3 rounded-xl transition-all"
+              >
+                {item.nome}
+              </Link>
+            ))}
           </div>
         </div>
-<p className="text-sm text-slate-400 mb-4">
-  Modo de atendimento:{" "}
-  {modoCondominio === "porteiro"
-    ? "Portaria"
-    : "Direto para o morador"}
-</p>
-        <p className="mb-4">Você está chamando:</p>
 
-        <h1 className="text-2xl font-bold mb-4">{cliente.local}</h1>
+        <div className="bg-slate-800 rounded-2xl p-4">
+          <h2 className="text-xl font-bold mb-3">📱 Visitantes</h2>
 
-        <p className="text-slate-300 mb-6">
-          Toque no botão abaixo para iniciar o atendimento.
-        </p>
-
-        <input
-          type="text"
-          placeholder="Seu nome"
-          value={nome}
-          onChange={(e) => setNome(e.target.value)}
-          disabled={chamando}
-          className="w-full mb-4 px-4 py-3 rounded-xl bg-white text-black"
-        />
-
-        <input
-          type="text"
-          placeholder="Motivo da visita"
-          value={motivo}
-          onChange={(e) => setMotivo(e.target.value)}
-          disabled={chamando}
-          className="w-full mb-4 px-4 py-3 rounded-xl bg-white text-black"
-        />
-
-        <button
-          onClick={chamarResponsavel}
-          disabled={chamando}
-          className="w-full bg-green-500 hover:bg-green-400 text-black font-bold px-6 py-3 rounded-xl transition-all"
-        >
-          {status === "Em atendimento"
-            ? "EM ATENDIMENTO"
-            : chamando
-            ? "CHAMANDO..."
-            : "CHAMAR"}
-        </button>
-{chamando && (
-  <button
-    onClick={cancelarChamada}
-    className="w-full mt-3 bg-red-600 hover:bg-red-500 text-white font-bold px-6 py-3 rounded-xl"
-  >
-    CANCELAR CHAMADA
-  </button>
-)}
-        <p className="text-xs text-slate-500 mt-6">{cliente.slogan}</p>
-
-        {status && (
-          <div className="mt-6 bg-green-900/30 border border-green-500 rounded-xl p-4">
-            <p className="text-green-400 font-bold">
-              {status === "Em atendimento"
-                ? "✅ O responsável está atendendo!"
-                : "🔔 Solicitação enviada!"}
-            </p>
-
-            <p className="text-sm text-slate-300 mt-2">
-              {status === "Em atendimento"
-                ? "Aguarde. Seu atendimento foi iniciado."
-                : "Aguarde. O responsável foi notificado."}
-            </p>
+          <div className="space-y-3">
+            {visitantes.map((item) => (
+              <Link
+                key={item.link}
+                href={item.link}
+                className="block w-full bg-blue-600 hover:bg-blue-500 text-white font-bold text-center py-3 rounded-xl transition-all"
+              >
+                {item.nome}
+              </Link>
+            ))}
           </div>
-        )}
+        </div>
+
+        <p className="text-center text-xs text-slate-500 mt-6">
+          Beta 1 • QR Acesso
+        </p>
       </div>
     </main>
   );
