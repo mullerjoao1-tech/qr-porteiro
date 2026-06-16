@@ -12,16 +12,24 @@ export default function Painel() {
   const [horaChamada, setHoraChamada] = useState("");
   const [modo, setModo] = useState("");
   const [mensagemResponsavel, setMensagemResponsavel] = useState("");
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const intervaloSomRef = useRef<NodeJS.Timeout | null>(null);
   const [historicoNome, setHistoricoNome] = useState("");
   const [historicoMotivo, setHistoricoMotivo] = useState("");
+  const [avisoAuto, setAvisoAuto] = useState("");
+
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const intervaloSomRef = useRef<NodeJS.Timeout | null>(null);
+  const finalizacaoAutoRef = useRef<NodeJS.Timeout | null>(null);
+
+  const TEMPO_AGUARDANDO = 5 * 60 * 1000;
+  const TEMPO_EM_ATENDIMENTO = 3 * 60 * 1000;
 
   useEffect(() => {
     const referencia = ref(db, "qr1");
 
     const pararDeOuvir = onValue(referencia, (snapshot) => {
       const dados = snapshot.val();
+
+      limparFinalizacaoAutomatica();
 
       if (!dados) {
         setNome("Nenhuma solicitação");
@@ -30,6 +38,7 @@ export default function Painel() {
         setHoraChamada("");
         setModo("");
         setMensagemResponsavel("");
+        setAvisoAuto("");
         pararToqueContinuo();
         return;
       }
@@ -51,13 +60,68 @@ export default function Painel() {
       } else {
         pararToqueContinuo();
       }
+
+      programarFinalizacaoAutomatica(dados);
     });
 
     return () => {
+      limparFinalizacaoAutomatica();
       pararToqueContinuo();
       pararDeOuvir();
     };
   }, []);
+
+  function programarFinalizacaoAutomatica(dados: any) {
+    const agora = Date.now();
+
+    let tempoLimite = TEMPO_AGUARDANDO;
+    let dataBase = dados.criadoEm;
+
+    if (dados.status === "Em atendimento") {
+      tempoLimite = TEMPO_EM_ATENDIMENTO;
+      dataBase = dados.atendidoEm || dados.criadoEm;
+    }
+
+    if (!dataBase) return;
+
+    const inicio = new Date(dataBase).getTime();
+    const tempoPassado = agora - inicio;
+    const tempoRestante = tempoLimite - tempoPassado;
+
+    if (tempoRestante <= 0) {
+      finalizarAutomaticamente();
+      return;
+    }
+
+    const minutos = Math.ceil(tempoRestante / 60000);
+    setAvisoAuto(`Finalização automática em até ${minutos} min.`);
+
+    finalizacaoAutoRef.current = setTimeout(() => {
+      finalizarAutomaticamente();
+    }, tempoRestante);
+  }
+
+  async function finalizarAutomaticamente() {
+    pararToqueContinuo();
+    limparFinalizacaoAutomatica();
+
+    await remove(ref(db, "qr1"));
+
+    setNome("Nenhuma solicitação");
+    setMotivo("Aguardando visitante");
+    setStatus("Sem chamado ativo");
+    setHoraChamada("");
+    setModo("");
+    setMensagemResponsavel("");
+    setAvisoAuto("");
+  }
+
+  function limparFinalizacaoAutomatica() {
+    if (finalizacaoAutoRef.current) {
+      clearTimeout(finalizacaoAutoRef.current);
+      finalizacaoAutoRef.current = null;
+    }
+  }
 
   async function atenderSolicitacao() {
     if (status === "Sem chamado ativo") {
@@ -67,6 +131,8 @@ export default function Painel() {
 
     await update(ref(db, "qr1"), {
       status: "Em atendimento",
+      notificar: false,
+      atendidoEm: new Date().toISOString(),
     });
 
     pararToqueContinuo();
@@ -78,11 +144,12 @@ export default function Painel() {
       return;
     }
 
-   await update(ref(db, "qr1"), {
-  status: "Em atendimento",
-  mensagemResponsavel: mensagem,
-  notificar: false,
-});
+    await update(ref(db, "qr1"), {
+      status: "Em atendimento",
+      mensagemResponsavel: mensagem,
+      notificar: false,
+      atendidoEm: new Date().toISOString(),
+    });
 
     setMensagemResponsavel(mensagem);
     pararToqueContinuo();
@@ -92,6 +159,7 @@ export default function Painel() {
     setHistoricoNome(nome);
     setHistoricoMotivo(motivo);
 
+    limparFinalizacaoAutomatica();
     await remove(ref(db, "qr1"));
 
     setNome("Nenhuma solicitação");
@@ -100,6 +168,7 @@ export default function Painel() {
     setHoraChamada("");
     setModo("");
     setMensagemResponsavel("");
+    setAvisoAuto("");
   }
 
   function pararToqueContinuo() {
@@ -115,9 +184,7 @@ export default function Painel() {
   }
 
   function iniciarToqueContinuo() {
-    if (intervaloSomRef.current) {
-      return;
-    }
+    if (intervaloSomRef.current) return;
 
     testarSom();
 
@@ -136,8 +203,6 @@ export default function Painel() {
 
     const permissao = await Notification.requestPermission();
 
-    console.log("Permissão recebida:", permissao);
-
     if (permissao !== "granted") {
       alert("Permissão para notificações negada. Resultado: " + permissao);
       return;
@@ -155,8 +220,6 @@ export default function Painel() {
           "BIEIQutWLbP05G1xFN1Zvg_hMnc4OGOkHRf6yI1bT8Igfmm1G8vRjYQhZyDGc5M3X6yhHkoWdJj4a_atPGqX7sk",
         serviceWorkerRegistration: registroServiceWorker,
       });
-
-      console.log("Token do aparelho:", token);
 
       await update(ref(db, "configuracoes"), {
         tokenMorador1: token,
@@ -224,6 +287,10 @@ export default function Painel() {
 
           <p className="text-sm text-blue-300 mt-2">Horário: {horaChamada}</p>
 
+          {avisoAuto && (
+            <p className="text-sm text-orange-300 mt-2">⏱ {avisoAuto}</p>
+          )}
+
           <button
             onClick={atenderSolicitacao}
             className="w-full mt-4 bg-green-500 text-black font-bold py-2 rounded-xl"
@@ -273,9 +340,7 @@ export default function Painel() {
             </button>
 
             <button
-              onClick={() =>
-                enviarMensagemRapida("Estou indo retirar agora.")
-              }
+              onClick={() => enviarMensagemRapida("Estou indo retirar agora.")}
               className="w-full bg-blue-600 text-white font-bold py-2 rounded-xl"
             >
               Estou indo retirar
