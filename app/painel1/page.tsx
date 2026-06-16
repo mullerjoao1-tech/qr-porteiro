@@ -14,6 +14,7 @@ export default function Painel() {
   const [mensagemResponsavel, setMensagemResponsavel] = useState("");
   const [historicoLista, setHistoricoLista] = useState<any[]>([]);
   const [avisoAuto, setAvisoAuto] = useState("");
+  const [mostrarPopupChamada, setMostrarPopupChamada] = useState(false);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const intervaloSomRef = useRef<NodeJS.Timeout | null>(null);
@@ -68,6 +69,7 @@ export default function Painel() {
         setModo("");
         setMensagemResponsavel("");
         setAvisoAuto("");
+        setMostrarPopupChamada(false);
         pararToqueContinuo();
         return;
       }
@@ -83,6 +85,7 @@ export default function Painel() {
 
       if (dados.status === "Encerrado") {
         pararToqueContinuo();
+        setMostrarPopupChamada(false);
         setAvisoAuto("Atendimento encerrado. Limpando em instantes.");
         return;
       }
@@ -91,8 +94,10 @@ export default function Painel() {
         dados.notificar === true && dados.status === "Aguardando atendimento";
 
       if (deveTocar) {
+        setMostrarPopupChamada(true);
         iniciarToqueContinuo();
       } else {
+        setMostrarPopupChamada(false);
         pararToqueContinuo();
       }
 
@@ -182,6 +187,7 @@ export default function Painel() {
     setModo("");
     setMensagemResponsavel("");
     setAvisoAuto("");
+    setMostrarPopupChamada(false);
   }
 
   function limparFinalizacaoAutomatica() {
@@ -203,6 +209,7 @@ export default function Painel() {
       atendidoEm: new Date().toISOString(),
     });
 
+    setMostrarPopupChamada(false);
     pararToqueContinuo();
   }
 
@@ -220,6 +227,7 @@ export default function Painel() {
     });
 
     setMensagemResponsavel(mensagem);
+    setMostrarPopupChamada(false);
     pararToqueContinuo();
   }
 
@@ -246,6 +254,7 @@ export default function Painel() {
     setModo("");
     setMensagemResponsavel("");
     setAvisoAuto("");
+    setMostrarPopupChamada(false);
   }
 
   function pararToqueContinuo() {
@@ -332,6 +341,52 @@ export default function Painel() {
 
   return (
     <main className="min-h-screen flex items-center justify-center bg-slate-950 text-white p-4">
+      {mostrarPopupChamada && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 px-4">
+          <div className="w-full max-w-md bg-slate-900 border-2 border-green-400 rounded-3xl p-6 shadow-2xl text-center">
+            <div className="mx-auto w-20 h-20 rounded-full bg-green-500 flex items-center justify-center mb-4 animate-pulse">
+              <span className="text-4xl">🔔</span>
+            </div>
+
+            <p className="text-green-400 font-black text-2xl mb-2">
+              NOVA VISITA
+            </p>
+
+            <p className="text-slate-400 text-sm mb-5">
+              Alguém está chamando o responsável
+            </p>
+
+            <div className="bg-slate-800 rounded-2xl p-5 mb-5">
+              <p className="text-white text-3xl font-black mb-3">{nome}</p>
+
+              <p className="text-slate-300 text-lg">
+                Motivo: <span className="font-bold">{motivo}</span>
+              </p>
+
+              {horaChamada && (
+                <p className="text-blue-300 text-sm mt-3">
+                  Horário: {horaChamada}
+                </p>
+              )}
+            </div>
+
+            <button
+              onClick={atenderSolicitacao}
+              className="w-full bg-green-500 hover:bg-green-400 text-black font-black py-4 rounded-xl text-lg"
+            >
+              ATENDER AGORA
+            </button>
+
+            <button
+              onClick={() => setMostrarPopupChamada(false)}
+              className="w-full mt-3 bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 rounded-xl"
+            >
+              VER NO PAINEL
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="w-full max-w-md bg-slate-900 rounded-2xl p-8">
         <h1 className="text-4xl font-bold mb-2">🏠 Painel do Morador 1</h1>
 
