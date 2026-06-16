@@ -10,6 +10,7 @@ export default function Home() {
   const [chamando, setChamando] = useState(false);
   const [status, setStatus] = useState("");
   const [mensagemResponsavel, setMensagemResponsavel] = useState("");
+  const [mostrarBalao, setMostrarBalao] = useState(false);
 
   const cliente = {
     local: "QR Acesso",
@@ -25,15 +26,22 @@ export default function Home() {
 
     const pararDeOuvir = onValue(referencia, (snapshot) => {
       const dados = snapshot.val();
-
+console.log("DADOS RECEBIDOS NO QR1:", dados);
       if (dados) {
+        const novaMensagem = dados.mensagemResponsavel || "";
+
         setChamando(true);
         setStatus(dados.status || "");
-        setMensagemResponsavel(dados.mensagemResponsavel || "");
+        setMensagemResponsavel(novaMensagem);
+
+        if (novaMensagem) {
+          setMostrarBalao(true);
+        }
       } else {
         setChamando(false);
         setStatus("");
         setMensagemResponsavel("");
+        setMostrarBalao(false);
       }
     });
 
@@ -71,6 +79,7 @@ export default function Home() {
     setChamando(true);
     setStatus("Aguardando atendimento");
     setMensagemResponsavel("");
+    setMostrarBalao(false);
   }
 
   async function cancelarChamada() {
@@ -79,11 +88,46 @@ export default function Home() {
     setChamando(false);
     setStatus("");
     setMensagemResponsavel("");
+    setMostrarBalao(false);
   }
 
   return (
     <main className="min-h-screen flex items-center justify-center bg-slate-950 text-white p-4">
+      {mensagemResponsavel && mostrarBalao && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
+          <div className="w-full max-w-md bg-blue-600 border-2 border-blue-300 rounded-3xl p-6 shadow-2xl text-center">
+            <p className="text-white font-bold text-2xl mb-2">
+              💬 NOVA MENSAGEM
+            </p>
+
+            <p className="text-blue-100 text-sm mb-4">
+              Resposta enviada pelo responsável
+            </p>
+
+            <p className="text-white text-3xl font-bold leading-snug">
+              {mensagemResponsavel}
+            </p>
+
+            <button
+              onClick={() => setMostrarBalao(false)}
+              className="w-full mt-6 bg-white text-blue-700 font-bold py-3 rounded-xl"
+            >
+              ENTENDI
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="w-full max-w-md bg-slate-900 rounded-2xl p-8 text-center">
+        {mensagemResponsavel && !mostrarBalao && (
+          <div className="mb-6 bg-blue-900/40 border border-blue-400 rounded-xl p-4">
+            <p className="text-blue-300 font-bold">
+              💬 Mensagem do responsável:
+            </p>
+            <p className="text-white text-lg mt-2">{mensagemResponsavel}</p>
+          </div>
+        )}
+
         <div className="bg-slate-800 rounded-xl p-4 mb-6">
           <p className="text-blue-300 text-sm mb-4">QR Code do Cliente</p>
 
@@ -171,16 +215,6 @@ export default function Home() {
                 ? "Aguarde. Seu atendimento foi iniciado."
                 : "Aguarde. O responsável foi notificado."}
             </p>
-          </div>
-        )}
-
-        {mensagemResponsavel && (
-          <div className="mt-4 bg-blue-900/40 border border-blue-400 rounded-xl p-4">
-            <p className="text-blue-300 font-bold">
-              💬 Mensagem do responsável:
-            </p>
-
-            <p className="text-white text-lg mt-2">{mensagemResponsavel}</p>
           </div>
         )}
       </div>

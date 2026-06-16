@@ -78,10 +78,11 @@ export default function Painel() {
       return;
     }
 
-    await update(ref(db, "qr1"), {
-      status: "Em atendimento",
-      mensagemResponsavel: mensagem,
-    });
+   await update(ref(db, "qr1"), {
+  status: "Em atendimento",
+  mensagemResponsavel: mensagem,
+  notificar: false,
+});
 
     setMensagemResponsavel(mensagem);
     pararToqueContinuo();
