@@ -11,47 +11,15 @@ export default function Painel() {
   const [status, setStatus] = useState("Sem chamado ativo");
   const [horaChamada, setHoraChamada] = useState("");
   const [modo, setModo] = useState("");
-  const [mensagemResponsavel, setMensagemResponsavel] = useState("");
   const [historicoLista, setHistoricoLista] = useState<any[]>([]);
   const [contadorHistorico, setContadorHistorico] = useState(0);
-  const [avisoAuto, setAvisoAuto] = useState("");
-  const [mostrarPopupChamada, setMostrarPopupChamada] = useState(false);
-  const [tempoAtendimento, setTempoAtendimento] = useState("");
+  const [contadorRecebidas, setContadorRecebidas] = useState(0);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const intervaloSomRef = useRef<NodeJS.Timeout | null>(null);
-  const finalizacaoAutoRef = useRef<NodeJS.Timeout | null>(null);
-  const tempoRef = useRef<string | null>(null);
 
-  const caminhoFirebase = "qr1";
-  const caminhoHistorico = "historico/qr1";
-
-  const TEMPO_AGUARDANDO = 5 * 60 * 1000;
-  const TEMPO_EM_ATENDIMENTO = 3 * 60 * 1000;
-
-  useEffect(() => {
-    const intervalo = setInterval(() => {
-      if (!tempoRef.current || status === "Sem chamado ativo") {
-        setTempoAtendimento("");
-        return;
-      }
-
-      const inicio = new Date(tempoRef.current).getTime();
-      const agora = Date.now();
-      const segundos = Math.max(0, Math.floor((agora - inicio) / 1000));
-      const minutos = Math.floor(segundos / 60);
-      const restoSegundos = segundos % 60;
-
-      setTempoAtendimento(
-        `${String(minutos).padStart(2, "0")}:${String(restoSegundos).padStart(
-          2,
-          "0"
-        )}`
-      );
-    }, 1000);
-
-    return () => clearInterval(intervalo);
-  }, [status]);
+  const caminhoFirebase = "solicitacaoAtual";
+  const caminhoHistorico = "historico/painel";
 
   useEffect(() => {
     const referenciaHistorico = ref(db, caminhoHistorico);
@@ -61,12 +29,15 @@ export default function Painel() {
 
       if (!dados) {
         setHistoricoLista([]);
+        setContadorHistorico(0);
+        setContadorRecebidas(0);
         return;
       }
 
       const lista = Object.values(dados) as any[];
 
-setContadorHistorico(lista.length);
+      setContadorHistorico(lista.length);
+      setContadorRecebidas(lista.length);
 
       const listaOrdenada = lista
         .sort((a, b) => {
@@ -88,19 +59,12 @@ setContadorHistorico(lista.length);
     const pararDeOuvir = onValue(referencia, (snapshot) => {
       const dados = snapshot.val();
 
-      limparFinalizacaoAutomatica();
-
       if (!dados) {
-        tempoRef.current = null;
-        setTempoAtendimento("");
         setNome("Nenhuma solicitação");
         setMotivo("Aguardando visitante");
         setStatus("Sem chamado ativo");
         setHoraChamada("");
         setModo("");
-        setMensagemResponsavel("");
-        setAvisoAuto("");
-        setMostrarPopupChamada(false);
         pararToqueContinuo();
         return;
       }
@@ -112,133 +76,22 @@ setContadorHistorico(lista.length);
         dados.criadoEm ? new Date(dados.criadoEm).toLocaleString("pt-BR") : ""
       );
       setModo(dados.modo || "");
-      setMensagemResponsavel(dados.mensagemResponsavel || "");
-
-      if (dados.status === "Aguardando atendimento") {
-        tempoRef.current = dados.criadoEm || null;
-      }
-
-      if (dados.status === "Em atendimento") {
-        tempoRef.current = dados.atendidoEm || dados.criadoEm || null;
-      }
-
-      if (dados.status === "Encerrado") {
-        tempoRef.current = null;
-        setTempoAtendimento("");
-        pararToqueContinuo();
-        setMostrarPopupChamada(false);
-        setAvisoAuto("Atendimento encerrado. Limpando em instantes.");
-        return;
-      }
 
       const deveTocar =
         dados.notificar === true && dados.status === "Aguardando atendimento";
 
       if (deveTocar) {
-        setMostrarPopupChamada(true);
         iniciarToqueContinuo();
       } else {
-        setMostrarPopupChamada(false);
         pararToqueContinuo();
       }
-
-      programarFinalizacaoAutomatica(dados);
     });
 
     return () => {
-      limparFinalizacaoAutomatica();
       pararToqueContinuo();
       pararDeOuvir();
     };
   }, []);
-
-  async function salvarHistorico(tipoFinalizacao: string) {
-    if (nome === "Nenhuma solicitação") return;
-
-    const agora = new Date();
-
-    const novoRegistro = {
-      nome,
-      motivo,
-      modo,
-      statusFinal: status,
-      tipoFinalizacao,
-      chamadoEm: horaChamada,
-      finalizadoEm: agora.toISOString(),
-      finalizadoEmFormatado: agora.toLocaleString("pt-BR"),
-    };
-
-    const novoItem = push(ref(db, caminhoHistorico));
-    await set(novoItem, novoRegistro);
-  }
-
-  function programarFinalizacaoAutomatica(dados: any) {
-    if (dados.status === "Encerrado") return;
-
-    const agora = Date.now();
-
-    let tempoLimite = TEMPO_AGUARDANDO;
-    let dataBase = dados.criadoEm;
-
-    if (dados.status === "Em atendimento") {
-      tempoLimite = TEMPO_EM_ATENDIMENTO;
-      dataBase = dados.atendidoEm || dados.criadoEm;
-    }
-
-    if (!dataBase) return;
-
-    const inicio = new Date(dataBase).getTime();
-    const tempoPassado = agora - inicio;
-    const tempoRestante = tempoLimite - tempoPassado;
-
-    if (tempoRestante <= 0) {
-      finalizarAutomaticamente();
-      return;
-    }
-
-    const minutos = Math.ceil(tempoRestante / 60000);
-    setAvisoAuto(`Finalização automática em até ${minutos} min.`);
-
-    finalizacaoAutoRef.current = setTimeout(() => {
-      finalizarAutomaticamente();
-    }, tempoRestante);
-  }
-
-  async function finalizarAutomaticamente() {
-    tempoRef.current = null;
-    setTempoAtendimento("");
-    pararToqueContinuo();
-    limparFinalizacaoAutomatica();
-
-    await salvarHistorico("Automática");
-
-    await update(ref(db, caminhoFirebase), {
-      status: "Encerrado",
-      mensagemResponsavel: "ATENDIMENTO_ENCERRADO",
-      notificar: false,
-      encerradoEm: new Date().toISOString(),
-    });
-
-    setTimeout(async () => {
-      await remove(ref(db, caminhoFirebase));
-    }, 5000);
-
-    setNome("Nenhuma solicitação");
-    setMotivo("Aguardando visitante");
-    setStatus("Sem chamado ativo");
-    setHoraChamada("");
-    setModo("");
-    setMensagemResponsavel("");
-    setAvisoAuto("");
-    setMostrarPopupChamada(false);
-  }
-
-  function limparFinalizacaoAutomatica() {
-    if (finalizacaoAutoRef.current) {
-      clearTimeout(finalizacaoAutoRef.current);
-      finalizacaoAutoRef.current = null;
-    }
-  }
 
   async function atenderSolicitacao() {
     if (status === "Sem chamado ativo") {
@@ -249,58 +102,65 @@ setContadorHistorico(lista.length);
     await update(ref(db, caminhoFirebase), {
       status: "Em atendimento",
       notificar: false,
-      atendidoEm: new Date().toISOString(),
     });
 
-    setMostrarPopupChamada(false);
     pararToqueContinuo();
   }
 
-  async function enviarMensagemRapida(mensagem: string) {
-    if (status === "Sem chamado ativo") {
-      alert("Não existe chamada ativa para responder.");
-      return;
-    }
+  async function salvarHistorico() {
+    if (nome === "Nenhuma solicitação") return;
 
-    await update(ref(db, caminhoFirebase), {
-      status: "Em atendimento",
-      mensagemResponsavel: mensagem,
-      notificar: false,
-      atendidoEm: new Date().toISOString(),
-    });
+    const agora = new Date();
 
-    setMensagemResponsavel(mensagem);
-    setMostrarPopupChamada(false);
-    pararToqueContinuo();
+    const novoRegistro = {
+      nome,
+      motivo,
+      modo,
+      statusFinal: status,
+      chamadoEm: horaChamada,
+      recebidoEm: agora.toISOString(),
+      finalizadoEm: agora.toISOString(),
+      finalizadoEmFormatado: agora.toLocaleString("pt-BR"),
+      tipoFinalizacao: "Manual",
+    };
+
+    const novoItem = push(ref(db, caminhoHistorico));
+    await set(novoItem, novoRegistro);
+  }
+
+  async function limparHistorico() {
+    const confirmar = window.confirm(
+      "Tem certeza que deseja limpar todo o histórico deste painel?"
+    );
+
+    if (!confirmar) return;
+
+    await remove(ref(db, caminhoHistorico));
+
+    setHistoricoLista([]);
+    setContadorHistorico(0);
+    setContadorRecebidas(0);
+
+    alert("Histórico limpo com sucesso.");
   }
 
   async function finalizarSolicitacao() {
-    tempoRef.current = null;
-    setTempoAtendimento("");
+    if (status === "Sem chamado ativo") {
+      alert("Não existe chamada ativa para finalizar.");
+      return;
+    }
 
-    await salvarHistorico("Manual");
+    await salvarHistorico();
 
-    limparFinalizacaoAutomatica();
-
-    await update(ref(db, caminhoFirebase), {
-      status: "Encerrado",
-      mensagemResponsavel: "ATENDIMENTO_ENCERRADO",
-      notificar: false,
-      encerradoEm: new Date().toISOString(),
-    });
-
-    setTimeout(async () => {
-      await remove(ref(db, caminhoFirebase));
-    }, 5000);
+    await remove(ref(db, caminhoFirebase));
 
     setNome("Nenhuma solicitação");
     setMotivo("Aguardando visitante");
     setStatus("Sem chamado ativo");
     setHoraChamada("");
     setModo("");
-    setMensagemResponsavel("");
-    setAvisoAuto("");
-    setMostrarPopupChamada(false);
+
+    pararToqueContinuo();
   }
 
   function pararToqueContinuo() {
@@ -354,7 +214,7 @@ setContadorHistorico(lista.length);
       });
 
       await update(ref(db, "configuracoes"), {
-        tokenMorador1: token,
+        tokenMorador: token,
       });
 
       alert("Notificações ativadas com sucesso!");
@@ -387,60 +247,8 @@ setContadorHistorico(lista.length);
 
   return (
     <main className="min-h-screen flex items-center justify-center bg-slate-950 text-white p-4">
-      {mostrarPopupChamada && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 px-4">
-          <div className="w-full max-w-md bg-slate-900 border-2 border-green-400 rounded-3xl p-6 shadow-2xl text-center">
-            <div className="mx-auto w-20 h-20 rounded-full bg-green-500 flex items-center justify-center mb-4 animate-pulse">
-              <span className="text-4xl">🔔</span>
-            </div>
-
-            <p className="text-green-400 font-black text-2xl mb-2">
-              NOVA VISITA
-            </p>
-
-            <p className="text-slate-400 text-sm mb-5">
-              Alguém está chamando o responsável
-            </p>
-
-            <div className="bg-slate-800 rounded-2xl p-5 mb-5">
-              <p className="text-white text-3xl font-black mb-3">{nome}</p>
-
-              <p className="text-slate-300 text-lg">
-                Motivo: <span className="font-bold">{motivo}</span>
-              </p>
-
-              {horaChamada && (
-                <p className="text-blue-300 text-sm mt-3">
-                  Horário: {horaChamada}
-                </p>
-              )}
-
-              {tempoAtendimento && status === "Aguardando atendimento" && (
-                <p className="text-orange-300 text-sm mt-3">
-                  ⏱ Aguardando há {tempoAtendimento}
-                </p>
-              )}
-            </div>
-
-            <button
-              onClick={atenderSolicitacao}
-              className="w-full bg-green-500 hover:bg-green-400 text-black font-black py-4 rounded-xl text-lg"
-            >
-              ATENDER AGORA
-            </button>
-
-            <button
-              onClick={() => setMostrarPopupChamada(false)}
-              className="w-full mt-3 bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 rounded-xl"
-            >
-              VER NO PAINEL
-            </button>
-          </div>
-        </div>
-      )}
-
       <div className="w-full max-w-md bg-slate-900 rounded-2xl p-8">
-        <h1 className="text-4xl font-bold mb-2">🏠 Painel do Morador 1</h1>
+        <h1 className="text-4xl font-bold mb-2">🏠 Painel do Morador</h1>
 
         <button
           onClick={testarSom}
@@ -471,22 +279,6 @@ setContadorHistorico(lista.length);
 
           <p className="text-sm text-blue-300 mt-2">Horário: {horaChamada}</p>
 
-          {tempoAtendimento && status === "Aguardando atendimento" && (
-            <p className="text-sm text-orange-300 mt-2">
-              ⏱ Aguardando há {tempoAtendimento}
-            </p>
-          )}
-
-          {tempoAtendimento && status === "Em atendimento" && (
-            <p className="text-sm text-green-400 mt-2">
-              ⏱ Em atendimento há {tempoAtendimento}
-            </p>
-          )}
-
-          {avisoAuto && (
-            <p className="text-sm text-orange-300 mt-2">⏱ {avisoAuto}</p>
-          )}
-
           <button
             onClick={atenderSolicitacao}
             className="w-full mt-4 bg-green-500 text-black font-bold py-2 rounded-xl"
@@ -494,69 +286,29 @@ setContadorHistorico(lista.length);
             ATENDER
           </button>
 
-          <div className="mt-5 bg-slate-900 border border-slate-700 rounded-xl p-4">
-            <h3 className="font-bold text-blue-300 mb-3">
-              💬 Respostas rápidas
-            </h3>
-
-            <button
-              onClick={() =>
-                enviarMensagemRapida("Olá, entendi. Já estou descendo.")
-              }
-              className="w-full mb-2 bg-blue-600 text-white font-bold py-2 rounded-xl"
-            >
-              Já estou descendo
-            </button>
-
-            <button
-              onClick={() =>
-                enviarMensagemRapida("Aguarde um momento, por favor.")
-              }
-              className="w-full mb-2 bg-blue-600 text-white font-bold py-2 rounded-xl"
-            >
-              Aguarde um momento
-            </button>
-
-            <button
-              onClick={() =>
-                enviarMensagemRapida("Pode deixar na portaria, obrigado.")
-              }
-              className="w-full mb-2 bg-blue-600 text-white font-bold py-2 rounded-xl"
-            >
-              Pode deixar na portaria
-            </button>
-
-            <button
-              onClick={() =>
-                enviarMensagemRapida("Não estou em casa no momento.")
-              }
-              className="w-full mb-2 bg-blue-600 text-white font-bold py-2 rounded-xl"
-            >
-              Não estou em casa
-            </button>
-
-            <button
-              onClick={() => enviarMensagemRapida("Estou indo retirar agora.")}
-              className="w-full bg-blue-600 text-white font-bold py-2 rounded-xl"
-            >
-              Estou indo retirar
-            </button>
-
-            {mensagemResponsavel && (
-              <p className="text-sm text-green-400 mt-3">
-                Última mensagem enviada: {mensagemResponsavel}
-              </p>
-            )}
-          </div>
-
           <hr className="border-slate-700 my-6" />
 
-<h3 className="text-2xl font-bold mb-2">📋 Histórico</h3>
+          <div className="bg-slate-900 border border-slate-700 rounded-xl p-3 mb-4">
+            <p className="text-yellow-400 font-bold">
+              🔔 Chamadas Recebidas: {contadorRecebidas}
+            </p>
 
-<p className="text-sm text-slate-400 mb-4">
-  Total de atendimentos finalizados:{" "}
-  <span className="text-green-400 font-bold">{contadorHistorico}</span>
-</p>
+            <p className="text-green-400 font-bold mt-2">
+              ✅ Chamadas Finalizadas: {contadorHistorico}
+            </p>
+          </div>
+
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-2xl font-bold">📋 Histórico</h3>
+
+            <button
+              onClick={limparHistorico}
+              className="bg-red-600 hover:bg-red-500 text-white text-xs font-bold px-3 py-2 rounded-lg"
+            >
+              LIMPAR
+            </button>
+          </div>
+
           {historicoLista.length > 0 ? (
             <div className="space-y-3">
               {historicoLista.map((item, index) => (
