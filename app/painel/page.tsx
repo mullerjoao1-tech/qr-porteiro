@@ -13,6 +13,7 @@ export default function Painel() {
   const [modo, setModo] = useState("");
   const [historicoLista, setHistoricoLista] = useState<any[]>([]);
   const [contadorHistorico, setContadorHistorico] = useState(0);
+  const [contadorRecebidas, setContadorRecebidas] = useState(0);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const intervaloSomRef = useRef<NodeJS.Timeout | null>(null);
@@ -29,12 +30,14 @@ export default function Painel() {
       if (!dados) {
         setHistoricoLista([]);
         setContadorHistorico(0);
+        setContadorRecebidas(0);
         return;
       }
 
       const lista = Object.values(dados) as any[];
 
       setContadorHistorico(lista.length);
+      setContadorRecebidas(lista.length);
 
       const listaOrdenada = lista
         .sort((a, b) => {
@@ -115,6 +118,7 @@ export default function Painel() {
       modo,
       statusFinal: status,
       chamadoEm: horaChamada,
+      recebidoEm: agora.toISOString(),
       finalizadoEm: agora.toISOString(),
       finalizadoEmFormatado: agora.toLocaleString("pt-BR"),
       tipoFinalizacao: "Manual",
@@ -135,6 +139,7 @@ export default function Painel() {
 
     setHistoricoLista([]);
     setContadorHistorico(0);
+    setContadorRecebidas(0);
 
     alert("Histórico limpo com sucesso.");
   }
@@ -283,6 +288,16 @@ export default function Painel() {
 
           <hr className="border-slate-700 my-6" />
 
+          <div className="bg-slate-900 border border-slate-700 rounded-xl p-3 mb-4">
+            <p className="text-yellow-400 font-bold">
+              🔔 Chamadas Recebidas: {contadorRecebidas}
+            </p>
+
+            <p className="text-green-400 font-bold mt-2">
+              ✅ Chamadas Finalizadas: {contadorHistorico}
+            </p>
+          </div>
+
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-2xl font-bold">📋 Histórico</h3>
 
@@ -293,13 +308,6 @@ export default function Painel() {
               LIMPAR
             </button>
           </div>
-
-          <p className="text-sm text-slate-400 mb-4">
-            Total de atendimentos finalizados:{" "}
-            <span className="text-green-400 font-bold">
-              {contadorHistorico}
-            </span>
-          </p>
 
           {historicoLista.length > 0 ? (
             <div className="space-y-3">
