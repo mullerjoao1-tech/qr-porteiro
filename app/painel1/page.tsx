@@ -20,11 +20,13 @@ export default function Painel() {
   const intervaloSomRef = useRef<NodeJS.Timeout | null>(null);
   const finalizacaoAutoRef = useRef<NodeJS.Timeout | null>(null);
 
+  const caminhoFirebase = "qr1";
+
   const TEMPO_AGUARDANDO = 5 * 60 * 1000;
   const TEMPO_EM_ATENDIMENTO = 3 * 60 * 1000;
 
   useEffect(() => {
-    const referencia = ref(db, "qr1");
+    const referencia = ref(db, caminhoFirebase);
 
     const pararDeOuvir = onValue(referencia, (snapshot) => {
       const dados = snapshot.val();
@@ -43,14 +45,20 @@ export default function Painel() {
         return;
       }
 
-      setNome(dados.nome);
-      setMotivo(dados.motivo);
-      setStatus(dados.status);
+      setNome(dados.nome || "Nenhuma solicitação");
+      setMotivo(dados.motivo || "Aguardando visitante");
+      setStatus(dados.status || "Sem chamado ativo");
       setHoraChamada(
         dados.criadoEm ? new Date(dados.criadoEm).toLocaleString("pt-BR") : ""
       );
       setModo(dados.modo || "");
       setMensagemResponsavel(dados.mensagemResponsavel || "");
+
+      if (dados.status === "Encerrado") {
+        pararToqueContinuo();
+        setAvisoAuto("Atendimento encerrado. Limpando em instantes.");
+        return;
+      }
 
       const deveTocar =
         dados.notificar === true && dados.status === "Aguardando atendimento";
@@ -72,6 +80,8 @@ export default function Painel() {
   }, []);
 
   function programarFinalizacaoAutomatica(dados: any) {
+    if (dados.status === "Encerrado") return;
+
     const agora = Date.now();
 
     let tempoLimite = TEMPO_AGUARDANDO;
@@ -105,7 +115,16 @@ export default function Painel() {
     pararToqueContinuo();
     limparFinalizacaoAutomatica();
 
-    await remove(ref(db, "qr1"));
+    await update(ref(db, caminhoFirebase), {
+      status: "Encerrado",
+      mensagemResponsavel: "ATENDIMENTO_ENCERRADO",
+      notificar: false,
+      encerradoEm: new Date().toISOString(),
+    });
+
+    setTimeout(async () => {
+      await remove(ref(db, caminhoFirebase));
+    }, 5000);
 
     setNome("Nenhuma solicitação");
     setMotivo("Aguardando visitante");
@@ -129,7 +148,7 @@ export default function Painel() {
       return;
     }
 
-    await update(ref(db, "qr1"), {
+    await update(ref(db, caminhoFirebase), {
       status: "Em atendimento",
       notificar: false,
       atendidoEm: new Date().toISOString(),
@@ -144,7 +163,7 @@ export default function Painel() {
       return;
     }
 
-    await update(ref(db, "qr1"), {
+    await update(ref(db, caminhoFirebase), {
       status: "Em atendimento",
       mensagemResponsavel: mensagem,
       notificar: false,
@@ -160,7 +179,17 @@ export default function Painel() {
     setHistoricoMotivo(motivo);
 
     limparFinalizacaoAutomatica();
-    await remove(ref(db, "qr1"));
+
+    await update(ref(db, caminhoFirebase), {
+      status: "Encerrado",
+      mensagemResponsavel: "ATENDIMENTO_ENCERRADO",
+      notificar: false,
+      encerradoEm: new Date().toISOString(),
+    });
+
+    setTimeout(async () => {
+      await remove(ref(db, caminhoFirebase));
+    }, 5000);
 
     setNome("Nenhuma solicitação");
     setMotivo("Aguardando visitante");

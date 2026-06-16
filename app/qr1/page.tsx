@@ -56,6 +56,17 @@ export default function Home() {
       if (dados) {
         const novaMensagem = dados.mensagemResponsavel || "";
 
+        if (novaMensagem === "ATENDIMENTO_ENCERRADO") {
+          localStorage.removeItem(chaveAtendimento);
+
+          setChamando(false);
+          setStatus("");
+          setMensagemResponsavel("");
+          setMostrarBalao(false);
+          setMostrarEncerrado(true);
+          return;
+        }
+
         localStorage.setItem(chaveAtendimento, "true");
 
         setChamando(true);
