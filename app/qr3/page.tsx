@@ -9,6 +9,15 @@ export default function Home() {
   const [motivo, setMotivo] = useState("");
   const [chamando, setChamando] = useState(false);
   const [status, setStatus] = useState("");
+  const [mensagemResponsavel, setMensagemResponsavel] = useState("");
+  const [mostrarBalao, setMostrarBalao] = useState(false);
+  const [mostrarEncerrado, setMostrarEncerrado] = useState(false);
+  const [online, setOnline] = useState(true);
+
+  const codigoQr = "qr3";
+  const caminhoFirebase = "qr3";
+  const chaveAtendimento = "atendimentoAtivoQr3";
+  const modoCondominio = "porteiro";
 
   const cliente = {
     local: "QR Acesso",
@@ -16,28 +25,83 @@ export default function Home() {
     slogan: "Campainha virtual • Atendimento remoto • Segurança",
   };
 
-  const codigoQr = "qr3";
-  const modoCondominio = "porteiro";
+  useEffect(() => {
+    setOnline(navigator.onLine);
+
+    function ficouOnline() {
+      setOnline(true);
+    }
+
+    function ficouOffline() {
+      setOnline(false);
+    }
+
+    window.addEventListener("online", ficouOnline);
+    window.addEventListener("offline", ficouOffline);
+
+    return () => {
+      window.removeEventListener("online", ficouOnline);
+      window.removeEventListener("offline", ficouOffline);
+    };
+  }, []);
 
   useEffect(() => {
-    const referencia = ref(db, "qr3");
+    const referencia = ref(db, caminhoFirebase);
 
     const pararDeOuvir = onValue(referencia, (snapshot) => {
       const dados = snapshot.val();
+      const atendimentoAtivoSalvo =
+        localStorage.getItem(chaveAtendimento) === "true";
 
       if (dados) {
+        const novaMensagem = dados.mensagemResponsavel || "";
+
+        if (novaMensagem === "ATENDIMENTO_ENCERRADO") {
+          localStorage.removeItem(chaveAtendimento);
+
+          setChamando(false);
+          setStatus("");
+          setMensagemResponsavel("");
+          setMostrarBalao(false);
+          setMostrarEncerrado(true);
+          return;
+        }
+
+        localStorage.setItem(chaveAtendimento, "true");
+
         setChamando(true);
         setStatus(dados.status || "");
-      } else {
-        setChamando(false);
-        setStatus("");
+        setMensagemResponsavel(novaMensagem);
+        setMostrarEncerrado(false);
+
+        if (novaMensagem) {
+          setMostrarBalao(true);
+        }
+
+        return;
       }
+
+      if (atendimentoAtivoSalvo) {
+        setMostrarEncerrado(true);
+      }
+
+      localStorage.removeItem(chaveAtendimento);
+
+      setChamando(false);
+      setStatus("");
+      setMensagemResponsavel("");
+      setMostrarBalao(false);
     });
 
     return () => pararDeOuvir();
   }, []);
 
   async function chamarResponsavel() {
+    if (!online) {
+      alert("Sem conexão com a internet. Verifique o sinal e tente novamente.");
+      return;
+    }
+
     if (!nome.trim()) {
       alert("Digite seu nome antes de chamar.");
       return;
@@ -53,31 +117,117 @@ export default function Home() {
       motivo,
       modo: modoCondominio,
       status: "Aguardando atendimento",
+      mensagemResponsavel: "",
       notificar: true,
       criadoEm: new Date().toISOString(),
     };
 
-    await set(ref(db, "qr3"), novaSolicitacao);
+    setMostrarEncerrado(false);
+    localStorage.setItem(chaveAtendimento, "true");
+
+    await set(ref(db, caminhoFirebase), novaSolicitacao);
 
     await fetch("/api/enviar-push", {
       method: "POST",
-      body: JSON.stringify({ canal: "qr3" }),
+      body: JSON.stringify({ canal: codigoQr }),
     });
 
     setChamando(true);
     setStatus("Aguardando atendimento");
+    setMensagemResponsavel("");
+    setMostrarBalao(false);
   }
 
   async function cancelarChamada() {
-    await set(ref(db, "qr3"), null);
+    localStorage.removeItem(chaveAtendimento);
+
+    await set(ref(db, caminhoFirebase), null);
 
     setChamando(false);
     setStatus("");
+    setMensagemResponsavel("");
+    setMostrarBalao(false);
+    setMostrarEncerrado(false);
+  }
+
+  function fecharEncerrado() {
+    setMostrarEncerrado(false);
+    setNome("");
+    setMotivo("");
   }
 
   return (
     <main className="min-h-screen flex items-center justify-center bg-slate-950 text-white p-4">
+      {mensagemResponsavel && mostrarBalao && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
+          <div className="w-full max-w-md bg-blue-600 border-2 border-blue-300 rounded-3xl p-6 shadow-2xl text-center">
+            <p className="text-white font-bold text-2xl mb-2">
+              💬 NOVA MENSAGEM
+            </p>
+
+            <p className="text-blue-100 text-sm mb-4">
+              Resposta enviada pelo responsável
+            </p>
+
+            <p className="text-white text-3xl font-bold leading-snug">
+              {mensagemResponsavel}
+            </p>
+
+            <button
+              onClick={() => setMostrarBalao(false)}
+              className="w-full mt-6 bg-white text-blue-700 font-bold py-3 rounded-xl"
+            >
+              ENTENDI
+            </button>
+          </div>
+        </div>
+      )}
+
+      {mostrarEncerrado && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
+          <div className="w-full max-w-md bg-green-600 border-2 border-green-300 rounded-3xl p-6 shadow-2xl text-center">
+            <p className="text-white font-bold text-2xl mb-2">
+              ✅ ATENDIMENTO ENCERRADO
+            </p>
+
+            <p className="text-green-100 text-sm mb-4">
+              Este atendimento foi finalizado automaticamente.
+            </p>
+
+            <p className="text-white text-xl font-bold leading-snug">
+              Para chamar novamente, preencha os dados e toque em CHAMAR.
+            </p>
+
+            <button
+              onClick={fecharEncerrado}
+              className="w-full mt-6 bg-white text-green-700 font-bold py-3 rounded-xl"
+            >
+              OK
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="w-full max-w-md bg-slate-900 rounded-2xl p-8 text-center">
+        <div
+          className={`mb-4 rounded-xl px-4 py-3 font-bold ${
+            online
+              ? "bg-green-900/40 border border-green-500 text-green-300"
+              : "bg-red-900/40 border border-red-500 text-red-300"
+          }`}
+        >
+          {online ? "🟢 Online" : "🔴 Sem conexão"}
+        </div>
+
+        {mensagemResponsavel && !mostrarBalao && (
+          <div className="mb-6 bg-blue-900/40 border border-blue-400 rounded-xl p-4">
+            <p className="text-blue-300 font-bold">
+              💬 Mensagem do responsável:
+            </p>
+            <p className="text-white text-lg mt-2">{mensagemResponsavel}</p>
+          </div>
+        )}
+
         <div className="bg-slate-800 rounded-xl p-4 mb-6">
           <p className="text-blue-300 text-sm mb-4">QR Code do Cliente</p>
 
@@ -131,10 +281,16 @@ export default function Home() {
 
         <button
           onClick={chamarResponsavel}
-          disabled={chamando}
-          className="w-full bg-green-500 hover:bg-green-400 text-black font-bold px-6 py-3 rounded-xl transition-all"
+          disabled={chamando || !online}
+          className={`w-full font-bold px-6 py-3 rounded-xl transition-all ${
+            online
+              ? "bg-green-500 hover:bg-green-400 text-black"
+              : "bg-slate-600 text-slate-300"
+          }`}
         >
-          {status === "Em atendimento"
+          {!online
+            ? "SEM CONEXÃO"
+            : status === "Em atendimento"
             ? "EM ATENDIMENTO"
             : chamando
             ? "CHAMANDO..."
