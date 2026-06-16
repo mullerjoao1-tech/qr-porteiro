@@ -11,7 +11,9 @@ export default function Home() {
   const [status, setStatus] = useState("");
   const [mensagemResponsavel, setMensagemResponsavel] = useState("");
   const [mostrarBalao, setMostrarBalao] = useState(false);
+  const [mostrarEncerrado, setMostrarEncerrado] = useState(false);
   const [online, setOnline] = useState(true);
+  const [primeiraLeitura, setPrimeiraLeitura] = useState(true);
 
   const cliente = {
     local: "QR Acesso",
@@ -47,27 +49,40 @@ export default function Home() {
 
     const pararDeOuvir = onValue(referencia, (snapshot) => {
       const dados = snapshot.val();
+      const atendimentoAtivoSalvo =
+        localStorage.getItem("atendimentoAtivoQr1") === "true";
 
       if (dados) {
         const novaMensagem = dados.mensagemResponsavel || "";
 
+        localStorage.setItem("atendimentoAtivoQr1", "true");
+
         setChamando(true);
         setStatus(dados.status || "");
         setMensagemResponsavel(novaMensagem);
+        setMostrarEncerrado(false);
 
         if (novaMensagem) {
           setMostrarBalao(true);
         }
       } else {
+        if (!primeiraLeitura && atendimentoAtivoSalvo) {
+          setMostrarEncerrado(true);
+        }
+
+        localStorage.removeItem("atendimentoAtivoQr1");
+
         setChamando(false);
         setStatus("");
         setMensagemResponsavel("");
         setMostrarBalao(false);
       }
+
+      setPrimeiraLeitura(false);
     });
 
     return () => pararDeOuvir();
-  }, []);
+  }, [primeiraLeitura]);
 
   async function chamarResponsavel() {
     if (!online) {
@@ -95,6 +110,9 @@ export default function Home() {
       criadoEm: new Date().toISOString(),
     };
 
+    setMostrarEncerrado(false);
+    localStorage.setItem("atendimentoAtivoQr1", "true");
+
     await set(ref(db, "qr1"), novaSolicitacao);
 
     await fetch("/api/enviar-push", {
@@ -109,12 +127,21 @@ export default function Home() {
   }
 
   async function cancelarChamada() {
+    localStorage.removeItem("atendimentoAtivoQr1");
+
     await set(ref(db, "qr1"), null);
 
     setChamando(false);
     setStatus("");
     setMensagemResponsavel("");
     setMostrarBalao(false);
+    setMostrarEncerrado(false);
+  }
+
+  function fecharEncerrado() {
+    setMostrarEncerrado(false);
+    setNome("");
+    setMotivo("");
   }
 
   return (
@@ -139,6 +166,31 @@ export default function Home() {
               className="w-full mt-6 bg-white text-blue-700 font-bold py-3 rounded-xl"
             >
               ENTENDI
+            </button>
+          </div>
+        </div>
+      )}
+
+      {mostrarEncerrado && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
+          <div className="w-full max-w-md bg-green-600 border-2 border-green-300 rounded-3xl p-6 shadow-2xl text-center">
+            <p className="text-white font-bold text-2xl mb-2">
+              ✅ ATENDIMENTO ENCERRADO
+            </p>
+
+            <p className="text-green-100 text-sm mb-4">
+              Este atendimento foi finalizado automaticamente.
+            </p>
+
+            <p className="text-white text-xl font-bold leading-snug">
+              Para chamar novamente, preencha os dados e toque em CHAMAR.
+            </p>
+
+            <button
+              onClick={fecharEncerrado}
+              className="w-full mt-6 bg-white text-green-700 font-bold py-3 rounded-xl"
+            >
+              OK
             </button>
           </div>
         </div>
