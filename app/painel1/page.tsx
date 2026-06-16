@@ -12,9 +12,7 @@ export default function Painel() {
   const [horaChamada, setHoraChamada] = useState("");
   const [modo, setModo] = useState("");
   const [mensagemResponsavel, setMensagemResponsavel] = useState("");
-  const [historicoNome, setHistoricoNome] = useState("");
-  const [historicoMotivo, setHistoricoMotivo] = useState("");
-  const [historicoData, setHistoricoData] = useState("");
+  const [historicoLista, setHistoricoLista] = useState<any[]>([]);
   const [avisoAuto, setAvisoAuto] = useState("");
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -33,16 +31,22 @@ export default function Painel() {
     const pararDeOuvirHistorico = onValue(referenciaHistorico, (snapshot) => {
       const dados = snapshot.val();
 
-      if (!dados) return;
+      if (!dados) {
+        setHistoricoLista([]);
+        return;
+      }
 
       const lista = Object.values(dados) as any[];
-      const ultimo = lista[lista.length - 1];
 
-      if (ultimo) {
-        setHistoricoNome(ultimo.nome || "");
-        setHistoricoMotivo(ultimo.motivo || "");
-        setHistoricoData(ultimo.finalizadoEmFormatado || "");
-      }
+      const listaOrdenada = lista
+        .sort((a, b) => {
+          const dataA = new Date(a.finalizadoEm || 0).getTime();
+          const dataB = new Date(b.finalizadoEm || 0).getTime();
+          return dataB - dataA;
+        })
+        .slice(0, 10);
+
+      setHistoricoLista(listaOrdenada);
     });
 
     return () => pararDeOuvirHistorico();
@@ -120,10 +124,6 @@ export default function Painel() {
 
     const novoItem = push(ref(db, caminhoHistorico));
     await set(novoItem, novoRegistro);
-
-    setHistoricoNome(nome);
-    setHistoricoMotivo(motivo);
-    setHistoricoData(agora.toLocaleString("pt-BR"));
   }
 
   function programarFinalizacaoAutomatica(dados: any) {
@@ -434,14 +434,26 @@ export default function Painel() {
 
           <h3 className="text-2xl font-bold mb-4">📋 Histórico</h3>
 
-          {historicoNome ? (
-            <div className="text-green-400 text-sm">
-              <p>
-                Último atendimento: {historicoNome} - {historicoMotivo}
-              </p>
-              {historicoData && (
-                <p className="text-slate-400 mt-1">Finalizado em: {historicoData}</p>
-              )}
+          {historicoLista.length > 0 ? (
+            <div className="space-y-3">
+              {historicoLista.map((item, index) => (
+                <div
+                  key={index}
+                  className="bg-slate-900 border border-slate-700 rounded-xl p-3"
+                >
+                  <p className="text-green-400 text-sm font-bold">
+                    {item.nome} - {item.motivo}
+                  </p>
+
+                  <p className="text-slate-400 text-xs mt-1">
+                    Finalizado em: {item.finalizadoEmFormatado}
+                  </p>
+
+                  <p className="text-blue-300 text-xs mt-1">
+                    Tipo: {item.tipoFinalizacao || "Não informado"}
+                  </p>
+                </div>
+              ))}
             </div>
           ) : (
             <p className="text-green-400 text-sm">
