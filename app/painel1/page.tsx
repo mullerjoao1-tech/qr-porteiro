@@ -15,16 +15,42 @@ export default function Painel() {
   const [historicoLista, setHistoricoLista] = useState<any[]>([]);
   const [avisoAuto, setAvisoAuto] = useState("");
   const [mostrarPopupChamada, setMostrarPopupChamada] = useState(false);
+  const [tempoAtendimento, setTempoAtendimento] = useState("");
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const intervaloSomRef = useRef<NodeJS.Timeout | null>(null);
   const finalizacaoAutoRef = useRef<NodeJS.Timeout | null>(null);
+  const tempoRef = useRef<string | null>(null);
 
   const caminhoFirebase = "qr1";
   const caminhoHistorico = "historico/qr1";
 
   const TEMPO_AGUARDANDO = 5 * 60 * 1000;
   const TEMPO_EM_ATENDIMENTO = 3 * 60 * 1000;
+
+  useEffect(() => {
+    const intervalo = setInterval(() => {
+      if (!tempoRef.current || status === "Sem chamado ativo") {
+        setTempoAtendimento("");
+        return;
+      }
+
+      const inicio = new Date(tempoRef.current).getTime();
+      const agora = Date.now();
+      const segundos = Math.max(0, Math.floor((agora - inicio) / 1000));
+      const minutos = Math.floor(segundos / 60);
+      const restoSegundos = segundos % 60;
+
+      setTempoAtendimento(
+        `${String(minutos).padStart(2, "0")}:${String(restoSegundos).padStart(
+          2,
+          "0"
+        )}`
+      );
+    }, 1000);
+
+    return () => clearInterval(intervalo);
+  }, [status]);
 
   useEffect(() => {
     const referenciaHistorico = ref(db, caminhoHistorico);
@@ -62,6 +88,8 @@ export default function Painel() {
       limparFinalizacaoAutomatica();
 
       if (!dados) {
+        tempoRef.current = null;
+        setTempoAtendimento("");
         setNome("Nenhuma solicitação");
         setMotivo("Aguardando visitante");
         setStatus("Sem chamado ativo");
@@ -83,7 +111,17 @@ export default function Painel() {
       setModo(dados.modo || "");
       setMensagemResponsavel(dados.mensagemResponsavel || "");
 
+      if (dados.status === "Aguardando atendimento") {
+        tempoRef.current = dados.criadoEm || null;
+      }
+
+      if (dados.status === "Em atendimento") {
+        tempoRef.current = dados.atendidoEm || dados.criadoEm || null;
+      }
+
       if (dados.status === "Encerrado") {
+        tempoRef.current = null;
+        setTempoAtendimento("");
         pararToqueContinuo();
         setMostrarPopupChamada(false);
         setAvisoAuto("Atendimento encerrado. Limpando em instantes.");
@@ -164,6 +202,8 @@ export default function Painel() {
   }
 
   async function finalizarAutomaticamente() {
+    tempoRef.current = null;
+    setTempoAtendimento("");
     pararToqueContinuo();
     limparFinalizacaoAutomatica();
 
@@ -232,6 +272,9 @@ export default function Painel() {
   }
 
   async function finalizarSolicitacao() {
+    tempoRef.current = null;
+    setTempoAtendimento("");
+
     await salvarHistorico("Manual");
 
     limparFinalizacaoAutomatica();
@@ -368,6 +411,12 @@ export default function Painel() {
                   Horário: {horaChamada}
                 </p>
               )}
+
+              {tempoAtendimento && status === "Aguardando atendimento" && (
+                <p className="text-orange-300 text-sm mt-3">
+                  ⏱ Aguardando há {tempoAtendimento}
+                </p>
+              )}
             </div>
 
             <button
@@ -418,6 +467,18 @@ export default function Painel() {
           <p className="text-sm text-yellow-400 mt-2">Status: {status}</p>
 
           <p className="text-sm text-blue-300 mt-2">Horário: {horaChamada}</p>
+
+          {tempoAtendimento && status === "Aguardando atendimento" && (
+            <p className="text-sm text-orange-300 mt-2">
+              ⏱ Aguardando há {tempoAtendimento}
+            </p>
+          )}
+
+          {tempoAtendimento && status === "Em atendimento" && (
+            <p className="text-sm text-green-400 mt-2">
+              ⏱ Em atendimento há {tempoAtendimento}
+            </p>
+          )}
 
           {avisoAuto && (
             <p className="text-sm text-orange-300 mt-2">⏱ {avisoAuto}</p>
