@@ -11,6 +11,7 @@ export default function Home() {
   const [status, setStatus] = useState("");
   const [mensagemResponsavel, setMensagemResponsavel] = useState("");
   const [mostrarBalao, setMostrarBalao] = useState(false);
+  const [online, setOnline] = useState(true);
 
   const cliente = {
     local: "QR Acesso",
@@ -22,11 +23,31 @@ export default function Home() {
   const modoCondominio = "porteiro";
 
   useEffect(() => {
+    setOnline(navigator.onLine);
+
+    function ficouOnline() {
+      setOnline(true);
+    }
+
+    function ficouOffline() {
+      setOnline(false);
+    }
+
+    window.addEventListener("online", ficouOnline);
+    window.addEventListener("offline", ficouOffline);
+
+    return () => {
+      window.removeEventListener("online", ficouOnline);
+      window.removeEventListener("offline", ficouOffline);
+    };
+  }, []);
+
+  useEffect(() => {
     const referencia = ref(db, "qr1");
 
     const pararDeOuvir = onValue(referencia, (snapshot) => {
       const dados = snapshot.val();
-console.log("DADOS RECEBIDOS NO QR1:", dados);
+
       if (dados) {
         const novaMensagem = dados.mensagemResponsavel || "";
 
@@ -49,6 +70,11 @@ console.log("DADOS RECEBIDOS NO QR1:", dados);
   }, []);
 
   async function chamarResponsavel() {
+    if (!online) {
+      alert("Sem conexão com a internet. Verifique o sinal e tente novamente.");
+      return;
+    }
+
     if (!nome.trim()) {
       alert("Digite seu nome antes de chamar.");
       return;
@@ -119,6 +145,16 @@ console.log("DADOS RECEBIDOS NO QR1:", dados);
       )}
 
       <div className="w-full max-w-md bg-slate-900 rounded-2xl p-8 text-center">
+        <div
+          className={`mb-4 rounded-xl px-4 py-3 font-bold ${
+            online
+              ? "bg-green-900/40 border border-green-500 text-green-300"
+              : "bg-red-900/40 border border-red-500 text-red-300"
+          }`}
+        >
+          {online ? "🟢 Online" : "🔴 Sem conexão"}
+        </div>
+
         {mensagemResponsavel && !mostrarBalao && (
           <div className="mb-6 bg-blue-900/40 border border-blue-400 rounded-xl p-4">
             <p className="text-blue-300 font-bold">
@@ -181,10 +217,16 @@ console.log("DADOS RECEBIDOS NO QR1:", dados);
 
         <button
           onClick={chamarResponsavel}
-          disabled={chamando}
-          className="w-full bg-green-500 hover:bg-green-400 text-black font-bold px-6 py-3 rounded-xl transition-all"
+          disabled={chamando || !online}
+          className={`w-full font-bold px-6 py-3 rounded-xl transition-all ${
+            online
+              ? "bg-green-500 hover:bg-green-400 text-black"
+              : "bg-slate-600 text-slate-300"
+          }`}
         >
-          {status === "Em atendimento"
+          {!online
+            ? "SEM CONEXÃO"
+            : status === "Em atendimento"
             ? "EM ATENDIMENTO"
             : chamando
             ? "CHAMANDO..."
