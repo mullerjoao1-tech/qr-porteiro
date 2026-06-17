@@ -15,6 +15,8 @@ export default function Painel() {
   const [contadorHistorico, setContadorHistorico] = useState(0);
   const [contadorRecebidas, setContadorRecebidas] = useState(0);
 const [online, setOnline] = useState(true);
+const [fotoCameraAtualizadaEm, setFotoCameraAtualizadaEm] = useState(Date.now());
+const [capturandoCamera, setCapturandoCamera] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const intervaloSomRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -293,11 +295,12 @@ async function acionarPortao() {
   </p>
 
   <img
-    src="/camera-qr1.jpg"
-    alt="Foto da câmera do portão"
-    className="w-full rounded-xl mt-3 border border-slate-700"
-  />
+  src={`/camera-qr1.jpg?t=${fotoCameraAtualizadaEm}`}
+  alt="Câmera do portão"
+  className="w-full rounded-lg border border-slate-600 mt-2"
+/>
 
+  
   <p className="text-slate-400 text-xs mt-2">
     Imagem capturada pelo RTSP da câmera.
   </p>
@@ -309,6 +312,23 @@ async function acionarPortao() {
     }
     className="w-full mt-3 bg-purple-600 hover:bg-purple-500 text-white font-bold py-2 rounded-xl"
   >
+    <button
+  onClick={async () => {
+    setCapturandoCamera(true);
+
+    try {
+      await fetch("/api/capturar-camera");
+      setFotoCameraAtualizadaEm(Date.now());
+    } catch (erro) {
+      alert("Erro ao atualizar foto da câmera.");
+    }
+
+    setCapturandoCamera(false);
+  }}
+  className="w-full mt-3 bg-green-600 hover:bg-green-500 text-white font-bold py-2 rounded-xl"
+>
+  {capturandoCamera ? "📸 Atualizando..." : "📸 Atualizar foto da câmera"}
+</button>
     📹 Abrir câmera no VLC
   </button>
 </div>
