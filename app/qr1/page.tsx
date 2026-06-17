@@ -14,6 +14,7 @@ export default function Home() {
   const [mostrarEncerrado, setMostrarEncerrado] = useState(false);
   const [online, setOnline] = useState(true);
 const [moradorDisponivel, setMoradorDisponivel] = useState(true);
+const [fotoVisitante, setFotoVisitante] = useState("");
   const codigoQr = "qr1";
   const caminhoFirebase = "qr1";
   const chaveAtendimento = "atendimentoAtivoQr1";
@@ -270,6 +271,7 @@ useEffect(() => {
 
         <p className="mb-4">Você está chamando:</p>
 <div
+
   className={`mb-4 rounded-xl px-4 py-3 font-bold ${
     moradorDisponivel
       ? "bg-green-900/40 border border-green-500 text-green-300"
@@ -280,7 +282,9 @@ useEffect(() => {
     ? "🟢 Morador disponível"
     : "🔴 Morador ausente no momento"}
 </div>
-        <h1 className="text-2xl font-bold mb-4">{cliente.local}</h1>
+
+<h1 className="text-2xl font-bold mb-4">{cliente.local}</h1>
+  
 
         <p className="text-slate-300 mb-6">
           Toque no botão abaixo para iniciar o atendimento.
@@ -303,7 +307,41 @@ useEffect(() => {
           disabled={chamando}
           className="w-full mb-4 px-4 py-3 rounded-xl bg-white text-black"
         />
+<div className="mb-4 text-left">
+  <p className="text-sm text-slate-300 mb-2">
+    📷 Foto do visitante (recomendado)
+  </p>
 
+  <input
+    type="file"
+    accept="image/*"
+    capture="user"
+    onChange={(e) => {
+      const arquivo = e.target.files?.[0];
+
+      if (!arquivo) return;
+
+      const url = URL.createObjectURL(arquivo);
+
+      setFotoVisitante(url);
+    }}
+    className="w-full text-sm"
+  />
+
+  {fotoVisitante && (
+    <div className="mt-3">
+      <p className="text-green-400 text-sm mb-2">
+        ✅ Foto selecionada
+      </p>
+
+      <img
+        src={fotoVisitante}
+        alt="Visitante"
+        className="w-32 h-32 object-cover rounded-xl border border-green-500"
+      />
+    </div>
+  )}
+</div>
         <button
           onClick={chamarResponsavel}
           disabled={chamando || !online}
