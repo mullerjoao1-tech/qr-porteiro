@@ -443,14 +443,52 @@ async function limparHistorico() {
               ✅ ATENDER AGORA
             </button>
 
-            <button
-              onClick={() =>
-                enviarMensagemRapida("Aguarde um momento, por favor.")
-              }
-              className="w-full mt-3 bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-2xl"
-            >
-              💬 ENVIAR: AGUARDE UM MOMENTO
-            </button>
+            <div className="mt-3 space-y-2">
+  <button
+    onClick={() =>
+      enviarMensagemRapida("Aguarde um momento, por favor.")
+    }
+    className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-2xl"
+  >
+    💬 Aguarde um momento
+  </button>
+
+  <button
+    onClick={() =>
+      enviarMensagemRapida("Olá, entendi. Já estou descendo.")
+    }
+    className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-2xl"
+  >
+    🚶 Já estou descendo
+  </button>
+
+  <button
+    onClick={() =>
+      enviarMensagemRapida("Pode deixar na portaria, obrigado.")
+    }
+    className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-2xl"
+  >
+    📦 Pode deixar na portaria
+  </button>
+
+  <button
+    onClick={() =>
+      enviarMensagemRapida("Não estou em casa no momento.")
+    }
+    className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-2xl"
+  >
+    🏠 Não estou em casa
+  </button>
+
+  <button
+    onClick={() =>
+      enviarMensagemRapida("Estou indo retirar agora.")
+    }
+    className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-2xl"
+  >
+    🚶 Estou indo retirar
+  </button>
+</div>
 
             <button
               onClick={finalizarSolicitacao}
