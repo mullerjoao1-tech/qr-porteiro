@@ -283,6 +283,29 @@ async function acionarPortao() {
         </button>
 
         <p className="text-slate-400 mb-6">Solicitações recebidas</p>
+        <div className="bg-slate-800 rounded-xl p-4 mb-4">
+  <h2 className="font-bold text-white mb-2">
+    📹 Câmera do Portão
+  </h2>
+
+  <p className="text-green-400 text-sm font-bold">
+    ✅ Câmera RTSP encontrada
+  </p>
+
+  <p className="text-slate-300 text-xs break-all mt-2">
+    rtsp://192.168.15.13:554/onvif1
+  </p>
+
+  <button
+    onClick={() =>
+      (window.location.href =
+        "rtsp://192.168.15.13:554/onvif1")
+    }
+    className="w-full mt-3 bg-purple-600 hover:bg-purple-500 text-white font-bold py-2 rounded-xl"
+  >
+    📹 Abrir câmera no VLC
+  </button>
+</div>
 <div className="bg-slate-800 rounded-xl p-4 mb-4">
   <p className={online ? "text-green-400 font-bold" : "text-red-400 font-bold"}>
     {online ? "🟢 Disponível" : "🔴 Ausente"}
