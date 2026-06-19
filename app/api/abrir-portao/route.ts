@@ -69,12 +69,12 @@ export async function GET() {
     console.log("STATUS DEPOIS DO COMANDO:", status);
 
     return Response.json({
-      success: acionar.success === true,
-      mensagem: "Comando OFF → ON enviado ao portão",
-      desligarAntes,
-      acionar,
-      status,
-    });
+  success: desligarAntes.success === true && acionar.success === true,
+  mensagem: "Comando OFF → ON enviado ao portão",
+  desligarAntes,
+  acionar,
+  status,
+});
   } catch (error) {
     console.error("ERRO TUYA SDK:", error);
 
