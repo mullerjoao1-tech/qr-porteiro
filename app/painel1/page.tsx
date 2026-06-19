@@ -17,6 +17,8 @@ export default function Painel() {
   const [online, setOnline] = useState(true);
   const [fotoCameraAtualizadaEm, setFotoCameraAtualizadaEm] = useState(Date.now());
   const [capturandoCamera, setCapturandoCamera] = useState(false);
+  const [abrindoPortao, setAbrindoPortao] = useState(false);
+  const [statusPortao, setStatusPortao] = useState("");
 
   const intervaloSomRef = useRef<NodeJS.Timeout | null>(null);
   const finalizacaoAutoRef = useRef<NodeJS.Timeout | null>(null);
@@ -251,19 +253,21 @@ export default function Painel() {
     setMensagemResponsavel(mensagem);
     pararToqueContinuo();
   }
-async function limparHistorico() {
-  const confirmar = window.confirm(
-    "Tem certeza que deseja limpar todo o histórico?"
-  );
 
-  if (!confirmar) return;
+  async function limparHistorico() {
+    const confirmar = window.confirm(
+      "Tem certeza que deseja limpar todo o histórico?"
+    );
 
-  await remove(ref(db, caminhoHistorico));
+    if (!confirmar) return;
 
-  setHistoricoLista([]);
+    await remove(ref(db, caminhoHistorico));
 
-  alert("Histórico limpo com sucesso.");
-}
+    setHistoricoLista([]);
+
+    alert("Histórico limpo com sucesso.");
+  }
+
   async function finalizarSolicitacao() {
     if (status === "Sem chamado ativo") {
       alert("Não existe chamada ativa para finalizar.");
@@ -362,12 +366,30 @@ async function limparHistorico() {
   }
 
   async function acionarPortao() {
-    await set(ref(db, "portao/qr1"), {
-      acionado: true,
-      acionadoEm: new Date().toISOString(),
-    });
+    if (abrindoPortao) return;
 
-    alert("🚪 Portão acionado com sucesso.");
+    try {
+      setAbrindoPortao(true);
+      setStatusPortao("⏳ Abrindo portão...");
+
+      const resposta = await fetch("/api/abrir-portao");
+      const dados = await resposta.json();
+
+      if (dados.success) {
+        setStatusPortao("✅ Portão aberto com sucesso");
+      } else {
+        setStatusPortao("❌ Falha ao abrir portão");
+        console.error("Erro Tuya:", dados);
+      }
+    } catch (erro) {
+      setStatusPortao("❌ Erro ao abrir portão");
+      console.error("Erro ao abrir portão:", erro);
+    } finally {
+      setTimeout(() => {
+        setAbrindoPortao(false);
+        setStatusPortao("");
+      }, 7000);
+    }
   }
 
   async function ativarNotificacoes() {
@@ -444,51 +466,51 @@ async function limparHistorico() {
             </button>
 
             <div className="mt-3 space-y-2">
-  <button
-    onClick={() =>
-      enviarMensagemRapida("Aguarde um momento, por favor.")
-    }
-    className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-2xl"
-  >
-    💬 Aguarde um momento
-  </button>
+              <button
+                onClick={() =>
+                  enviarMensagemRapida("Aguarde um momento, por favor.")
+                }
+                className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-2xl"
+              >
+                💬 Aguarde um momento
+              </button>
 
-  <button
-    onClick={() =>
-      enviarMensagemRapida("Olá, entendi. Já estou descendo.")
-    }
-    className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-2xl"
-  >
-    🚶 Já estou descendo
-  </button>
+              <button
+                onClick={() =>
+                  enviarMensagemRapida("Olá, entendi. Já estou descendo.")
+                }
+                className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-2xl"
+              >
+                🚶 Já estou descendo
+              </button>
 
-  <button
-    onClick={() =>
-      enviarMensagemRapida("Pode deixar na portaria, obrigado.")
-    }
-    className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-2xl"
-  >
-    📦 Pode deixar na portaria
-  </button>
+              <button
+                onClick={() =>
+                  enviarMensagemRapida("Pode deixar na portaria, obrigado.")
+                }
+                className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-2xl"
+              >
+                📦 Pode deixar na portaria
+              </button>
 
-  <button
-    onClick={() =>
-      enviarMensagemRapida("Não estou em casa no momento.")
-    }
-    className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-2xl"
-  >
-    🏠 Não estou em casa
-  </button>
+              <button
+                onClick={() =>
+                  enviarMensagemRapida("Não estou em casa no momento.")
+                }
+                className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-2xl"
+              >
+                🏠 Não estou em casa
+              </button>
 
-  <button
-    onClick={() =>
-      enviarMensagemRapida("Estou indo retirar agora.")
-    }
-    className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-2xl"
-  >
-    🚶 Estou indo retirar
-  </button>
-</div>
+              <button
+                onClick={() =>
+                  enviarMensagemRapida("Estou indo retirar agora.")
+                }
+                className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-2xl"
+              >
+                🚶 Estou indo retirar
+              </button>
+            </div>
 
             <button
               onClick={finalizarSolicitacao}
@@ -574,10 +596,17 @@ async function limparHistorico() {
 
           <button
             onClick={acionarPortao}
-            className="w-full mt-3 bg-purple-600 hover:bg-purple-500 text-white font-bold py-2 rounded-xl"
+            disabled={abrindoPortao}
+            className="w-full mt-3 bg-purple-600 hover:bg-purple-500 disabled:bg-gray-500 text-white font-bold py-2 rounded-xl"
           >
-            🚪 ABRIR PORTÃO
+            {abrindoPortao ? "⏳ ABRINDO..." : "🚪 ABRIR PORTÃO"}
           </button>
+
+          {statusPortao && (
+            <p className="mt-3 text-center text-green-400 font-bold">
+              {statusPortao}
+            </p>
+          )}
         </div>
 
         <div className="bg-slate-800 rounded-xl p-4 mb-4">
@@ -661,16 +690,17 @@ async function limparHistorico() {
 
           <hr className="border-slate-700 my-6" />
 
-<div className="flex items-center justify-between mb-4">
-  <h3 className="text-2xl font-bold">📋 Histórico</h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-2xl font-bold">📋 Histórico</h3>
 
-  <button
-    onClick={limparHistorico}
-    className="bg-red-600 hover:bg-red-500 text-white text-xs font-bold px-3 py-2 rounded-lg"
-  >
-    LIMPAR
-  </button>
-</div>
+            <button
+              onClick={limparHistorico}
+              className="bg-red-600 hover:bg-red-500 text-white text-xs font-bold px-3 py-2 rounded-lg"
+            >
+              LIMPAR
+            </button>
+          </div>
+
           {historicoLista.length > 0 ? (
             <div className="space-y-3">
               {historicoLista.map((item, index) => (
