@@ -12,7 +12,9 @@ export async function GET() {
     const accessKey = process.env.TUYA_ACCESS_SECRET?.trim();
     const endpoint = process.env.TUYA_ENDPOINT?.trim().replace(/\/$/, "");
     const deviceId = process.env.TUYA_DEVICE_ID?.trim();
-
+console.log("ENV ACCESS ID:", accessId);
+console.log("ENV ENDPOINT:", endpoint);
+console.log("ENV DEVICE ID:", deviceId);
     if (!accessId || !accessKey || !endpoint || !deviceId) {
       throw new Error("Variáveis Tuya ausentes no .env.local.");
     }
@@ -58,7 +60,9 @@ export async function GET() {
     });
 
     console.log("TUYA ON:", acionar);
-
+if (!acionar.success) {
+  console.log("ERRO DETALHADO ON:", JSON.stringify(acionar, null, 2));
+}
     await esperar(1500);
 
     const status = await tuya.request({
