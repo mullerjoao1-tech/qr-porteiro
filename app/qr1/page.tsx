@@ -7,18 +7,27 @@ import { db } from "../services/firebase";
 export default function Home() {
   const [nome, setNome] = useState("");
   const [motivo, setMotivo] = useState("");
+  const [tipoChamada, setTipoChamada] = useState("entrega");
   const [chamando, setChamando] = useState(false);
   const [status, setStatus] = useState("");
   const [mensagemResponsavel, setMensagemResponsavel] = useState("");
   const [mostrarBalao, setMostrarBalao] = useState(false);
   const [mostrarEncerrado, setMostrarEncerrado] = useState(false);
   const [online, setOnline] = useState(true);
-const [moradorDisponivel, setMoradorDisponivel] = useState(true);
-const [fotoVisitante, setFotoVisitante] = useState("");
+  const [moradorDisponivel, setMoradorDisponivel] = useState(true);
+  const [fotoVisitante, setFotoVisitante] = useState("");
+
   const codigoQr = "qr1";
   const caminhoFirebase = "qr1";
   const chaveAtendimento = "atendimentoAtivoQr1";
   const modoCondominio = "porteiro";
+
+  const tiposChamada = [
+    { id: "entrega", label: "📦 Entrega" },
+    { id: "visita", label: "👤 Visita" },
+    { id: "prestador", label: "🔧 Prestador" },
+    { id: "outro", label: "✍ Outro" },
+  ];
 
   const cliente = {
     local: "QR Acesso",
@@ -45,22 +54,24 @@ const [fotoVisitante, setFotoVisitante] = useState("");
       window.removeEventListener("offline", ficouOffline);
     };
   }, []);
-useEffect(() => {
-  const referenciaStatus = ref(db, "status/qr1");
 
-  const pararDeOuvirStatus = onValue(referenciaStatus, (snapshot) => {
-    const dados = snapshot.val();
+  useEffect(() => {
+    const referenciaStatus = ref(db, "status/qr1");
 
-    if (!dados) {
-      setMoradorDisponivel(true);
-      return;
-    }
+    const pararDeOuvirStatus = onValue(referenciaStatus, (snapshot) => {
+      const dados = snapshot.val();
 
-    setMoradorDisponivel(dados.online === true);
-  });
+      if (!dados) {
+        setMoradorDisponivel(true);
+        return;
+      }
 
-  return () => pararDeOuvirStatus();
-}, []);
+      setMoradorDisponivel(dados.online === true);
+    });
+
+    return () => pararDeOuvirStatus();
+  }, []);
+
   useEffect(() => {
     const referencia = ref(db, caminhoFirebase);
 
@@ -123,18 +134,32 @@ useEffect(() => {
       return;
     }
 
-    if (!motivo.trim()) {
-      alert("Digite o motivo da visita antes de chamar.");
+    if (!tipoChamada) {
+      alert("Selecione o tipo de atendimento.");
       return;
     }
 
+    if (tipoChamada === "outro" && !motivo.trim()) {
+      alert("Digite o motivo do atendimento.");
+      return;
+    }
+
+    const tipoSelecionado =
+      tiposChamada.find((item) => item.id === tipoChamada)?.label || "Outro";
+
+    const motivoFinal =
+      tipoChamada === "outro" ? motivo.trim() : tipoSelecionado;
+
     const novaSolicitacao = {
-      nome,
-      motivo,
+      nome: nome.trim(),
+      motivo: motivoFinal,
+      tipoChamada,
+      tipoChamadaLabel: tipoSelecionado,
       modo: modoCondominio,
       status: "Aguardando atendimento",
       mensagemResponsavel: "",
       notificar: true,
+      fotoVisitante,
       criadoEm: new Date().toISOString(),
     };
 
@@ -170,6 +195,8 @@ useEffect(() => {
     setMostrarEncerrado(false);
     setNome("");
     setMotivo("");
+    setTipoChamada("entrega");
+    setFotoVisitante("");
   }
 
   return (
@@ -270,21 +297,20 @@ useEffect(() => {
         </p>
 
         <p className="mb-4">Você está chamando:</p>
-<div
 
-  className={`mb-4 rounded-xl px-4 py-3 font-bold ${
-    moradorDisponivel
-      ? "bg-green-900/40 border border-green-500 text-green-300"
-      : "bg-red-900/40 border border-red-500 text-red-300"
-  }`}
->
-  {moradorDisponivel
-    ? "🟢 Morador disponível"
-    : "🔴 Morador ausente no momento"}
-</div>
+        <div
+          className={`mb-4 rounded-xl px-4 py-3 font-bold ${
+            moradorDisponivel
+              ? "bg-green-900/40 border border-green-500 text-green-300"
+              : "bg-red-900/40 border border-red-500 text-red-300"
+          }`}
+        >
+          {moradorDisponivel
+            ? "🟢 Morador disponível"
+            : "🔴 Morador ausente no momento"}
+        </div>
 
-<h1 className="text-2xl font-bold mb-4">{cliente.local}</h1>
-  
+        <h1 className="text-2xl font-bold mb-4">{cliente.local}</h1>
 
         <p className="text-slate-300 mb-6">
           Toque no botão abaixo para iniciar o atendimento.
@@ -292,56 +318,81 @@ useEffect(() => {
 
         <input
           type="text"
-          placeholder="Seu nome"
+          placeholder="Digite seu nome"
           value={nome}
           onChange={(e) => setNome(e.target.value)}
           disabled={chamando}
           className="w-full mb-4 px-4 py-3 rounded-xl bg-white text-black"
         />
 
-        <input
-          type="text"
-          placeholder="Motivo da visita"
-          value={motivo}
-          onChange={(e) => setMotivo(e.target.value)}
-          disabled={chamando}
-          className="w-full mb-4 px-4 py-3 rounded-xl bg-white text-black"
-        />
-<div className="mb-4 text-left">
-  <p className="text-sm text-slate-300 mb-2">
-    📷 Foto do visitante (recomendado)
-  </p>
+        <div className="mb-4 text-left">
+          <p className="text-sm text-slate-300 mb-2">Tipo de atendimento</p>
 
-  <input
-    type="file"
-    accept="image/*"
-    capture="user"
-    onChange={(e) => {
-      const arquivo = e.target.files?.[0];
+          <div className="grid grid-cols-2 gap-2">
+            {tiposChamada.map((tipo) => (
+              <button
+                key={tipo.id}
+                type="button"
+                disabled={chamando}
+                onClick={() => setTipoChamada(tipo.id)}
+                className={`rounded-xl px-3 py-3 text-sm font-bold border ${
+                  tipoChamada === tipo.id
+                    ? "bg-green-500 text-black border-green-300"
+                    : "bg-slate-800 text-white border-slate-600"
+                }`}
+              >
+                {tipo.label}
+              </button>
+            ))}
+          </div>
+        </div>
 
-      if (!arquivo) return;
+        {tipoChamada === "outro" && (
+          <input
+            type="text"
+            placeholder="Digite o motivo"
+            value={motivo}
+            onChange={(e) => setMotivo(e.target.value)}
+            disabled={chamando}
+            className="w-full mb-4 px-4 py-3 rounded-xl bg-white text-black"
+          />
+        )}
 
-      const url = URL.createObjectURL(arquivo);
+        <div className="mb-4 text-left">
+          <p className="text-sm text-slate-300 mb-2">
+            📷 Foto do visitante (recomendado)
+          </p>
 
-      setFotoVisitante(url);
-    }}
-    className="w-full text-sm"
-  />
+          <input
+            type="file"
+            accept="image/*"
+            capture="user"
+            disabled={chamando}
+            onChange={(e) => {
+              const arquivo = e.target.files?.[0];
 
-  {fotoVisitante && (
-    <div className="mt-3">
-      <p className="text-green-400 text-sm mb-2">
-        ✅ Foto selecionada
-      </p>
+              if (!arquivo) return;
 
-      <img
-        src={fotoVisitante}
-        alt="Visitante"
-        className="w-32 h-32 object-cover rounded-xl border border-green-500"
-      />
-    </div>
-  )}
-</div>
+              const url = URL.createObjectURL(arquivo);
+
+              setFotoVisitante(url);
+            }}
+            className="w-full text-sm"
+          />
+
+          {fotoVisitante && (
+            <div className="mt-3">
+              <p className="text-green-400 text-sm mb-2">✅ Foto selecionada</p>
+
+              <img
+                src={fotoVisitante}
+                alt="Visitante"
+                className="w-32 h-32 object-cover rounded-xl border border-green-500"
+              />
+            </div>
+          )}
+        </div>
+
         <button
           onClick={chamarResponsavel}
           disabled={chamando || !online}

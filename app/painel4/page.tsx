@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { getToken } from "firebase/messaging";
-import { ref, onValue, update, remove, push, set } from "firebase/database";
+import { ref, onValue, update, remove, push, set, get } from "firebase/database";
 import { db, messagingPromise } from "../services/firebase";
 
 export default function Painel() {
@@ -14,17 +14,101 @@ export default function Painel() {
   const [mensagemResponsavel, setMensagemResponsavel] = useState("");
   const [historicoLista, setHistoricoLista] = useState<any[]>([]);
   const [avisoAuto, setAvisoAuto] = useState("");
-
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [online, setOnline] = useState(true);
+  const [fotoCameraAtual, setFotoCameraAtual] = useState("");
+  const [fotoCameraAtualizadaEm, setFotoCameraAtualizadaEm] = useState(Date.now());
+  const [capturandoCamera, setCapturandoCamera] = useState(false);
+  const [abrindoPortao, setAbrindoPortao] = useState(false);
+  const [statusPortao, setStatusPortao] = useState("");
+const [analytics, setAnalytics] = useState({
+  recebidas: 0,
+  atendidas: 0,
+  falhas: 0,
+});
   const intervaloSomRef = useRef<NodeJS.Timeout | null>(null);
   const finalizacaoAutoRef = useRef<NodeJS.Timeout | null>(null);
+  const ultimaCapturaCameraRef = useRef("");
+  const audioContextRef = useRef<AudioContext | null>(null);
 
   const caminhoFirebase = "qr4";
   const caminhoHistorico = "historico/qr4";
+  const caminhoStatus = "status/qr4";
 
   const TEMPO_AGUARDANDO = 5 * 60 * 1000;
   const TEMPO_EM_ATENDIMENTO = 3 * 60 * 1000;
 
+  const chamadaAtiva =
+    nome !== "Nenhuma solicitação" && status === "Aguardando atendimento";
+
+  async function registrarLog(tipo: string, detalhes: string) {
+    try {
+      const novoLog = push(ref(db, "logs/qr4"));
+
+      await set(novoLog, {
+        tipo,
+        detalhes,
+        timestamp: new Date().toISOString(),
+        nomeAtual: nome,
+        statusAtual: status,
+        navegador:
+          typeof navigator !== "undefined" ? navigator.userAgent : "indisponivel",
+      });
+
+      console.log("Log registrado:", tipo, detalhes);
+    } catch (erro) {
+      console.error("Erro ao salvar log:", erro);
+    }
+  }
+
+  async function registrarAnalytics(evento: string) {
+    try {
+      const referencia = ref(db, "analytics/qr4");
+      const snapshot = await get(referencia);
+
+      const dados = snapshot.val() || {
+        recebidas: 0,
+        atendidas: 0,
+        finalizadas: 0,
+        timeouts: 0,
+        falhas: 0,
+      };
+
+      if (evento === "recebida") dados.recebidas++;
+      if (evento === "atendida") dados.atendidas++;
+      if (evento === "finalizada") dados.finalizadas++;
+      if (evento === "timeout") dados.timeouts++;
+      if (evento === "falha") dados.falhas++;
+
+      await update(referencia, dados);
+    } catch (erro) {
+      console.error("Erro analytics:", erro);
+    }
+  }
+useEffect(() => {
+  const referenciaAnalytics = ref(db, "analytics/qr4");
+
+  const pararDeOuvirAnalytics = onValue(referenciaAnalytics, (snapshot) => {
+    const dados = snapshot.val();
+
+    if (!dados) {
+      setAnalytics({
+        recebidas: 0,
+        atendidas: 0,
+        falhas: 0,
+      });
+
+      return;
+    }
+
+    setAnalytics({
+      recebidas: dados.recebidas || 0,
+      atendidas: dados.atendidas || 0,
+      falhas: dados.falhas || 0,
+    });
+  });
+
+  return () => pararDeOuvirAnalytics();
+}, []);
   useEffect(() => {
     const referenciaHistorico = ref(db, caminhoHistorico);
 
@@ -92,6 +176,17 @@ export default function Painel() {
 
       if (deveTocar) {
         iniciarToqueContinuo();
+
+        const idChamada = dados.criadoEm || dados.nome || "";
+
+        if (idChamada && ultimaCapturaCameraRef.current !== idChamada) {
+          ultimaCapturaCameraRef.current = idChamada;
+
+          registrarAnalytics("recebida");
+          registrarLog("chamada_recebida", "Nova chamada recebida no painel");
+
+          capturarFotoCamera();
+        }
       } else {
         pararToqueContinuo();
       }
@@ -105,6 +200,41 @@ export default function Painel() {
       pararDeOuvir();
     };
   }, []);
+
+  async function capturarFotoCamera() {
+    setCapturandoCamera(true);
+
+    try {
+      await registrarLog("camera_tentativa", "Tentando capturar foto da câmera");
+
+      const resposta = await fetch(`/api/capturar-camera?cache=${Date.now()}`);
+      const dados = await resposta.json();
+
+      if (dados.sucesso && dados.imagem) {
+        setFotoCameraAtual(dados.imagem);
+        setFotoCameraAtualizadaEm(Date.now());
+
+        await registrarLog(
+          "camera_sucesso",
+          "Foto da câmera capturada com sucesso"
+        );
+      } else {
+        await registrarLog("erro_camera", "A câmera não retornou imagem válida");
+        alert("A câmera não retornou imagem.");
+      }
+    } catch (erro) {
+      console.error("Erro ao capturar foto da câmera:", erro);
+
+      await registrarLog(
+        "erro_camera",
+        "Erro ao atualizar foto da câmera: " + String(erro)
+      );
+
+      alert("Erro ao atualizar foto da câmera.");
+    }
+
+    setCapturandoCamera(false);
+  }
 
   async function salvarHistorico(tipoFinalizacao: string) {
     if (nome === "Nenhuma solicitação") return;
@@ -120,6 +250,7 @@ export default function Painel() {
       chamadoEm: horaChamada,
       finalizadoEm: agora.toISOString(),
       finalizadoEmFormatado: agora.toLocaleString("pt-BR"),
+      fotoCamera: fotoCameraAtual || "",
     };
 
     const novoItem = push(ref(db, caminhoHistorico));
@@ -162,6 +293,9 @@ export default function Painel() {
     pararToqueContinuo();
     limparFinalizacaoAutomatica();
 
+    await registrarAnalytics("timeout");
+    await registrarLog("timeout_atendimento", "Chamada finalizada automaticamente");
+
     await salvarHistorico("Automática");
 
     await update(ref(db, caminhoFirebase), {
@@ -174,14 +308,6 @@ export default function Painel() {
     setTimeout(async () => {
       await remove(ref(db, caminhoFirebase));
     }, 5000);
-
-    setNome("Nenhuma solicitação");
-    setMotivo("Aguardando visitante");
-    setStatus("Sem chamado ativo");
-    setHoraChamada("");
-    setModo("");
-    setMensagemResponsavel("");
-    setAvisoAuto("");
   }
 
   function limparFinalizacaoAutomatica() {
@@ -192,38 +318,91 @@ export default function Painel() {
   }
 
   async function atenderSolicitacao() {
-    if (status === "Sem chamado ativo") {
-      alert("Não existe chamada ativa para atender.");
-      return;
-    }
-
-    await update(ref(db, caminhoFirebase), {
-      status: "Em atendimento",
-      notificar: false,
-      atendidoEm: new Date().toISOString(),
-    });
-
-    pararToqueContinuo();
+  if (status === "Sem chamado ativo") {
+    alert("Não existe chamada ativa para atender.");
+    return;
   }
 
+  if (status === "Em atendimento") {
+    alert("Esta chamada já está em atendimento.");
+    return;
+  }
+
+  await registrarAnalytics("atendida");
+  await registrarLog("chamada_atendida", "Chamada atendida pelo painel");
+
+  await update(ref(db, caminhoFirebase), {
+    status: "Em atendimento",
+    notificar: false,
+    atendidoEm: new Date().toISOString(),
+  });
+
+  pararToqueContinuo();
+}
+
   async function enviarMensagemRapida(mensagem: string) {
-    if (status === "Sem chamado ativo") {
-      alert("Não existe chamada ativa para responder.");
-      return;
-    }
+  if (status === "Sem chamado ativo") {
+    alert("Não existe chamada ativa para responder.");
+    return;
+  }
 
-    await update(ref(db, caminhoFirebase), {
-      status: "Em atendimento",
-      mensagemResponsavel: mensagem,
-      notificar: false,
-      atendidoEm: new Date().toISOString(),
-    });
+  if (status !== "Em atendimento") {
+    await registrarAnalytics("atendida");
+  }
 
-    setMensagemResponsavel(mensagem);
-    pararToqueContinuo();
+  await registrarLog("mensagem_rapida", "Mensagem enviada: " + mensagem);
+
+  await update(ref(db, caminhoFirebase), {
+    status: "Em atendimento",
+    mensagemResponsavel: mensagem,
+    notificar: false,
+    atendidoEm: new Date().toISOString(),
+  });
+
+  setMensagemResponsavel(mensagem);
+  pararToqueContinuo();
+}
+
+async function zerarMetricas() {
+  const confirmar = window.confirm(
+    "Tem certeza que deseja zerar todas as métricas?"
+  );
+
+  if (!confirmar) return;
+
+  await set(ref(db, "analytics/qr4"), {
+    recebidas: 0,
+    atendidas: 0,
+    finalizadas: 0,
+    timeouts: 0,
+    falhas: 0,
+  });
+
+  alert("Métricas zeradas com sucesso.");
+}
+
+async function limparHistorico() {
+
+    const confirmar = window.confirm(
+      "Tem certeza que deseja limpar todo o histórico?"
+    );
+
+    if (!confirmar) return;
+
+    await remove(ref(db, caminhoHistorico));
+    setHistoricoLista([]);
+    alert("Histórico limpo com sucesso.");
   }
 
   async function finalizarSolicitacao() {
+    if (status === "Sem chamado ativo") {
+      alert("Não existe chamada ativa para finalizar.");
+      return;
+    }
+
+    await registrarAnalytics("finalizada");
+    await registrarLog("chamada_finalizada", "Chamada finalizada manualmente");
+
     await salvarHistorico("Manual");
 
     limparFinalizacaoAutomatica();
@@ -239,13 +418,54 @@ export default function Painel() {
       await remove(ref(db, caminhoFirebase));
     }, 5000);
 
-    setNome("Nenhuma solicitação");
-    setMotivo("Aguardando visitante");
-    setStatus("Sem chamado ativo");
-    setHoraChamada("");
-    setModo("");
-    setMensagemResponsavel("");
-    setAvisoAuto("");
+    pararToqueContinuo();
+  }
+
+  function tocarBip() {
+    try {
+      const AudioContextClass =
+        window.AudioContext || (window as any).webkitAudioContext;
+
+      if (!audioContextRef.current) {
+        audioContextRef.current = new AudioContextClass();
+      }
+
+      const audioContext = audioContextRef.current;
+
+      if (audioContext.state === "suspended") {
+        audioContext.resume();
+      }
+
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+
+      oscillator.frequency.value = 880;
+      oscillator.type = "sine";
+
+      gainNode.gain.setValueAtTime(0.35, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(
+        0.01,
+        audioContext.currentTime + 0.45
+      );
+
+      oscillator.start();
+      oscillator.stop(audioContext.currentTime + 0.45);
+    } catch (erro) {
+      console.error("Erro ao tocar bip:", erro);
+    }
+  }
+
+  function iniciarToqueContinuo() {
+    if (intervaloSomRef.current) return;
+
+    tocarBip();
+
+    intervaloSomRef.current = setInterval(() => {
+      tocarBip();
+    }, 900);
   }
 
   function pararToqueContinuo() {
@@ -253,27 +473,64 @@ export default function Painel() {
       clearInterval(intervaloSomRef.current);
       intervaloSomRef.current = null;
     }
-
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.currentTime = 0;
-    }
   }
 
-  function iniciarToqueContinuo() {
-    if (intervaloSomRef.current) return;
+  async function alterarStatusOnline() {
+    const novoStatus = !online;
 
-    testarSom();
+    setOnline(novoStatus);
 
-    intervaloSomRef.current = setInterval(() => {
-      testarSom();
-    }, 800);
+    await set(ref(db, caminhoStatus), {
+      online: novoStatus,
+      atualizadoEm: new Date().toISOString(),
+    });
+  }
+
+  async function acionarPortao() {
+    if (abrindoPortao) return;
+
+    try {
+      setAbrindoPortao(true);
+      setStatusPortao("⏳ Abrindo portão...");
+
+      await registrarLog("portao_tentativa", "Tentativa de abertura do portão");
+
+      const resposta = await fetch("/api/abrir-portao");
+      const dados = await resposta.json();
+
+      if (dados.success) {
+        setStatusPortao("✅ Portão aberto com sucesso");
+        await registrarLog("portao_sucesso", "Portão aberto com sucesso");
+      } else {
+        setStatusPortao("❌ Falha ao abrir portão");
+        await registrarLog(
+          "erro_portao",
+          "API respondeu falha ao abrir portão"
+        );
+      }
+    } catch (erro) {
+      setStatusPortao("❌ Erro ao abrir portão");
+
+      await registrarLog("erro_portao", "Erro inesperado: " + String(erro));
+
+      console.error("Erro ao abrir portão:", erro);
+    } finally {
+      setTimeout(() => {
+        setAbrindoPortao(false);
+        setStatusPortao("");
+      }, 7000);
+    }
   }
 
   async function ativarNotificacoes() {
     const messaging = await messagingPromise;
 
     if (!messaging) {
+      await registrarLog(
+        "push_nao_suportado",
+        "Este navegador não suporta notificações"
+      );
+
       alert("Este navegador não suporta notificações.");
       return;
     }
@@ -281,6 +538,11 @@ export default function Painel() {
     const permissao = await Notification.requestPermission();
 
     if (permissao !== "granted") {
+      await registrarLog(
+        "push_permissao_negada",
+        "Permissão para notificações negada: " + permissao
+      );
+
       alert("Permissão para notificações negada. Resultado: " + permissao);
       return;
     }
@@ -302,41 +564,134 @@ export default function Painel() {
         tokenMorador4: token,
       });
 
+      await registrarLog(
+        "push_token_salvo",
+        "Token de notificação salvo com sucesso"
+      );
+
       alert("Notificações ativadas com sucesso!");
     } catch (erro) {
       console.error("Erro ao gerar token:", erro);
+
+      await registrarLog(
+        "push_erro_token",
+        "Erro ao gerar token: " + String(erro)
+      );
+
       alert("Erro ao gerar token. Veja o console.");
     }
   }
 
-  function testarSom() {
-    const audioContext = new AudioContext();
-    const oscillator = audioContext.createOscillator();
-    const gainNode = audioContext.createGain();
-
-    oscillator.connect(gainNode);
-    gainNode.connect(audioContext.destination);
-
-    oscillator.frequency.value = 880;
-    oscillator.type = "sine";
-
-    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-    gainNode.gain.exponentialRampToValueAtTime(
-      0.01,
-      audioContext.currentTime + 0.5
-    );
-
-    oscillator.start();
-    oscillator.stop(audioContext.currentTime + 0.5);
-  }
-
   return (
-    <main className="min-h-screen flex items-center justify-center bg-slate-950 text-white p-4">
+    <main className="min-h-screen flex items-center justify-center bg-slate-950 text-white p-4 relative">
+      {chamadaAtiva && (
+        <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4">
+          <div className="w-full max-w-md bg-slate-900 border-4 border-green-400 rounded-3xl p-6 text-center shadow-2xl">
+            <p className="text-6xl mb-4">🚨</p>
+
+            <h2 className="text-3xl font-black text-green-400 mb-2">
+              CHAMADA RECEBIDA
+            </h2>
+
+            <p className="text-xl font-bold text-white mt-4">{nome}</p>
+            <p className="text-slate-300 mt-2">Motivo: {motivo}</p>
+            <p className="text-yellow-400 mt-2 font-bold">Status: {status}</p>
+
+            <div className="mt-4 bg-slate-800 rounded-xl p-3">
+              <p className="text-green-400 text-sm font-bold mb-2">
+                📷 Câmera Yoosee
+              </p>
+
+              {fotoCameraAtual ? (
+                <img
+                  src={`${fotoCameraAtual}?t=${fotoCameraAtualizadaEm}`}
+                  alt="Câmera do portão"
+                  className="w-full rounded-lg border border-slate-600"
+                />
+              ) : (
+                <p className="text-slate-400 text-sm">Capturando imagem...</p>
+              )}
+            </div>
+
+            <button
+              onClick={atenderSolicitacao}
+              className="w-full mt-5 bg-green-500 hover:bg-green-400 text-black text-xl font-black py-4 rounded-2xl"
+            >
+              ✅ ATENDER AGORA
+            </button>
+
+            <button
+              onClick={acionarPortao}
+              disabled={abrindoPortao}
+              className="w-full mt-3 bg-purple-600 hover:bg-purple-500 disabled:bg-gray-500 text-white font-bold py-3 rounded-2xl"
+            >
+              {abrindoPortao ? "⏳ ABRINDO..." : "🚪 ABRIR PORTÃO"}
+            </button>
+
+            {statusPortao && (
+              <p className="mt-2 text-green-400 font-bold">{statusPortao}</p>
+            )}
+
+            <div className="mt-3 space-y-2">
+              <button
+                onClick={() =>
+                  enviarMensagemRapida("Aguarde um momento, por favor.")
+                }
+                className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-2xl"
+              >
+                💬 Aguarde um momento
+              </button>
+
+              <button
+                onClick={() =>
+                  enviarMensagemRapida("Olá, entendi. Já estou descendo.")
+                }
+                className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-2xl"
+              >
+                🚶 Já estou descendo
+              </button>
+
+              <button
+                onClick={() =>
+                  enviarMensagemRapida("Pode deixar na portaria, obrigado.")
+                }
+                className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-2xl"
+              >
+                📦 Pode deixar na portaria
+              </button>
+
+              <button
+                onClick={() =>
+                  enviarMensagemRapida("Não estou em casa no momento.")
+                }
+                className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-2xl"
+              >
+                🏠 Não estou em casa
+              </button>
+
+              <button
+                onClick={() => enviarMensagemRapida("Estou indo retirar agora.")}
+                className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-2xl"
+              >
+                🚶 Estou indo retirar
+              </button>
+            </div>
+
+            <button
+              onClick={finalizarSolicitacao}
+              className="w-full mt-3 bg-red-600 hover:bg-red-500 text-white font-bold py-3 rounded-2xl"
+            >
+              ❌ FINALIZAR
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="w-full max-w-md bg-slate-900 rounded-2xl p-8">
         <h1 className="text-4xl font-bold mb-2">🏠 Painel do Morador 4</h1>
 
         <button
-          onClick={testarSom}
+          onClick={tocarBip}
           className="w-full mt-4 mb-4 bg-blue-500 text-white font-bold py-2 rounded-xl"
         >
           🔊 Testar Som
@@ -350,6 +705,118 @@ export default function Painel() {
         </button>
 
         <p className="text-slate-400 mb-6">Solicitações recebidas</p>
+<div className="bg-slate-800 rounded-xl p-4 mb-4 border border-blue-500/30">
+  <div className="flex items-center justify-between mb-3">
+  <h2 className="font-bold text-blue-300">
+    📊 Métricas do qr4
+  </h2>
+
+  <button
+    onClick={zerarMetricas}
+    className="bg-red-600 hover:bg-red-500 text-white text-xs font-bold px-3 py-1 rounded-lg"
+  >
+    ZERAR
+  </button>
+</div>
+
+  <div className="grid grid-cols-2 gap-3 text-center">
+    <div className="bg-slate-900 rounded-xl p-3">
+      <p className="text-2xl font-black text-white">
+        {analytics.recebidas}
+      </p>
+      <p className="text-xs text-slate-400">Recebidas</p>
+    </div>
+
+    <div className="bg-slate-900 rounded-xl p-3">
+      <p className="text-2xl font-black text-green-400">
+        {analytics.atendidas}
+      </p>
+      <p className="text-xs text-slate-400">Atendidas</p>
+    </div>
+
+    <div className="bg-slate-900 rounded-xl p-3">
+      <p className="text-2xl font-black text-red-400">
+        {analytics.falhas}
+      </p>
+      <p className="text-xs text-slate-400">Falhas</p>
+    </div>
+
+    <div className="bg-slate-900 rounded-xl p-3">
+      <p className="text-2xl font-black text-yellow-400">
+                {analytics.recebidas > 0
+  ? Math.min(
+      100,
+      Math.round(
+        (Math.min(
+          analytics.atendidas,
+          analytics.recebidas
+        ) /
+          analytics.recebidas) *
+          100
+      )
+    )
+  : 0}
+%
+      </p>
+      <p className="text-xs text-slate-400">Taxa sucesso</p>
+    </div>
+  </div>
+</div>
+        <div className="bg-slate-800 rounded-xl p-4 mb-4">
+          <h2 className="font-bold text-white mb-2">📷 Câmera do Portão</h2>
+
+          {fotoCameraAtual ? (
+            <img
+              src={`${fotoCameraAtual}?t=${fotoCameraAtualizadaEm}`}
+              alt="Câmera do portão"
+              className="w-full rounded-lg border border-slate-600 mt-2"
+            />
+          ) : (
+            <p className="text-slate-400 text-sm">
+              Nenhuma foto capturada ainda.
+            </p>
+          )}
+
+          <button
+            onClick={capturarFotoCamera}
+            className="w-full mt-3 bg-green-600 hover:bg-green-500 text-white font-bold py-2 rounded-xl"
+          >
+            {capturandoCamera
+              ? "📸 Atualizando..."
+              : "📸 Atualizar foto da câmera"}
+          </button>
+        </div>
+
+        <div className="bg-slate-800 rounded-xl p-4 mb-4">
+          <p
+            className={
+              online ? "text-green-400 font-bold" : "text-red-400 font-bold"
+            }
+          >
+            {online ? "🟢 Disponível" : "🔴 Ausente"}
+          </p>
+
+          <button
+            onClick={alterarStatusOnline}
+            className="w-full mt-3 bg-slate-600 hover:bg-slate-500 text-white font-bold py-2 rounded-xl"
+          >
+            ALTERAR STATUS
+          </button>
+
+          <button
+            onClick={acionarPortao}
+            disabled={abrindoPortao}
+            className="w-full mt-3 bg-purple-600 hover:bg-purple-500 disabled:bg-gray-500 text-white font-bold py-2 rounded-xl"
+          >
+            {abrindoPortao ? "⏳ ABRINDO..." : "🚪 ABRIR PORTÃO"}
+          </button>
+
+          {statusPortao && (
+            <p className="mt-3 text-center text-green-400 font-bold">
+              {statusPortao}
+            </p>
+          )}
+        </div>
 
         <div className="bg-slate-800 rounded-xl p-4 mb-4">
           <h2 className="font-bold text-green-400">🔔 {nome}</h2>
@@ -411,14 +878,14 @@ export default function Painel() {
               onClick={() =>
                 enviarMensagemRapida("Não estou em casa no momento.")
               }
-              className="w-full mb-2 bg-blue-600 text-white font-bold py-2 rounded-xl"
+              className="w-full bg-blue-600 text-white font-bold py-2 rounded-xl"
             >
               Não estou em casa
             </button>
 
             <button
               onClick={() => enviarMensagemRapida("Estou indo retirar agora.")}
-              className="w-full bg-blue-600 text-white font-bold py-2 rounded-xl"
+              className="w-full mt-2 bg-blue-600 text-white font-bold py-2 rounded-xl"
             >
               Estou indo retirar
             </button>
@@ -432,7 +899,16 @@ export default function Painel() {
 
           <hr className="border-slate-700 my-6" />
 
-          <h3 className="text-2xl font-bold mb-4">📋 Histórico</h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-2xl font-bold">📋 Histórico</h3>
+
+            <button
+              onClick={limparHistorico}
+              className="bg-red-600 hover:bg-red-500 text-white text-xs font-bold px-3 py-2 rounded-lg"
+            >
+              LIMPAR
+            </button>
+          </div>
 
           {historicoLista.length > 0 ? (
             <div className="space-y-3">
@@ -445,7 +921,15 @@ export default function Painel() {
                     {item.nome} - {item.motivo}
                   </p>
 
-                  <p className="text-slate-400 text-xs mt-1">
+                  {item.fotoCamera && (
+                    <img
+                      src={item.fotoCamera}
+                      alt="Snapshot da câmera"
+                      className="w-full mt-3 rounded-lg border border-slate-600"
+                    />
+                  )}
+
+                  <p className="text-slate-400 text-xs mt-3">
                     Finalizado em: {item.finalizadoEmFormatado}
                   </p>
 

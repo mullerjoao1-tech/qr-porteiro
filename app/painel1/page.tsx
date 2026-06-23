@@ -20,7 +20,11 @@ export default function Painel() {
   const [capturandoCamera, setCapturandoCamera] = useState(false);
   const [abrindoPortao, setAbrindoPortao] = useState(false);
   const [statusPortao, setStatusPortao] = useState("");
-
+const [analytics, setAnalytics] = useState({
+  recebidas: 0,
+  atendidas: 0,
+  falhas: 0,
+});
   const intervaloSomRef = useRef<NodeJS.Timeout | null>(null);
   const finalizacaoAutoRef = useRef<NodeJS.Timeout | null>(null);
   const ultimaCapturaCameraRef = useRef("");
@@ -80,7 +84,31 @@ export default function Painel() {
       console.error("Erro analytics:", erro);
     }
   }
+useEffect(() => {
+  const referenciaAnalytics = ref(db, "analytics/qr1");
 
+  const pararDeOuvirAnalytics = onValue(referenciaAnalytics, (snapshot) => {
+    const dados = snapshot.val();
+
+    if (!dados) {
+      setAnalytics({
+        recebidas: 0,
+        atendidas: 0,
+        falhas: 0,
+      });
+
+      return;
+    }
+
+    setAnalytics({
+      recebidas: dados.recebidas || 0,
+      atendidas: dados.atendidas || 0,
+      falhas: dados.falhas || 0,
+    });
+  });
+
+  return () => pararDeOuvirAnalytics();
+}, []);
   useEffect(() => {
     const referenciaHistorico = ref(db, caminhoHistorico);
 
@@ -290,44 +318,71 @@ export default function Painel() {
   }
 
   async function atenderSolicitacao() {
-    if (status === "Sem chamado ativo") {
-      alert("Não existe chamada ativa para atender.");
-      return;
-    }
-
-    await registrarAnalytics("atendida");
-    await registrarLog("chamada_atendida", "Chamada atendida pelo painel");
-
-    await update(ref(db, caminhoFirebase), {
-      status: "Em atendimento",
-      notificar: false,
-      atendidoEm: new Date().toISOString(),
-    });
-
-    pararToqueContinuo();
+  if (status === "Sem chamado ativo") {
+    alert("Não existe chamada ativa para atender.");
+    return;
   }
+
+  if (status === "Em atendimento") {
+    alert("Esta chamada já está em atendimento.");
+    return;
+  }
+
+  await registrarAnalytics("atendida");
+  await registrarLog("chamada_atendida", "Chamada atendida pelo painel");
+
+  await update(ref(db, caminhoFirebase), {
+    status: "Em atendimento",
+    notificar: false,
+    atendidoEm: new Date().toISOString(),
+  });
+
+  pararToqueContinuo();
+}
 
   async function enviarMensagemRapida(mensagem: string) {
-    if (status === "Sem chamado ativo") {
-      alert("Não existe chamada ativa para responder.");
-      return;
-    }
-
-    await registrarAnalytics("atendida");
-    await registrarLog("mensagem_rapida", "Mensagem enviada: " + mensagem);
-
-    await update(ref(db, caminhoFirebase), {
-      status: "Em atendimento",
-      mensagemResponsavel: mensagem,
-      notificar: false,
-      atendidoEm: new Date().toISOString(),
-    });
-
-    setMensagemResponsavel(mensagem);
-    pararToqueContinuo();
+  if (status === "Sem chamado ativo") {
+    alert("Não existe chamada ativa para responder.");
+    return;
   }
 
-  async function limparHistorico() {
+  if (status !== "Em atendimento") {
+    await registrarAnalytics("atendida");
+  }
+
+  await registrarLog("mensagem_rapida", "Mensagem enviada: " + mensagem);
+
+  await update(ref(db, caminhoFirebase), {
+    status: "Em atendimento",
+    mensagemResponsavel: mensagem,
+    notificar: false,
+    atendidoEm: new Date().toISOString(),
+  });
+
+  setMensagemResponsavel(mensagem);
+  pararToqueContinuo();
+}
+
+async function zerarMetricas() {
+  const confirmar = window.confirm(
+    "Tem certeza que deseja zerar todas as métricas?"
+  );
+
+  if (!confirmar) return;
+
+  await set(ref(db, "analytics/qr1"), {
+    recebidas: 0,
+    atendidas: 0,
+    finalizadas: 0,
+    timeouts: 0,
+    falhas: 0,
+  });
+
+  alert("Métricas zeradas com sucesso.");
+}
+
+async function limparHistorico() {
+
     const confirmar = window.confirm(
       "Tem certeza que deseja limpar todo o histórico?"
     );
@@ -650,7 +705,63 @@ export default function Painel() {
         </button>
 
         <p className="text-slate-400 mb-6">Solicitações recebidas</p>
+<div className="bg-slate-800 rounded-xl p-4 mb-4 border border-blue-500/30">
+  <div className="flex items-center justify-between mb-3">
+  <h2 className="font-bold text-blue-300">
+    📊 Métricas do QR1
+  </h2>
 
+  <button
+    onClick={zerarMetricas}
+    className="bg-red-600 hover:bg-red-500 text-white text-xs font-bold px-3 py-1 rounded-lg"
+  >
+    ZERAR
+  </button>
+</div>
+
+  <div className="grid grid-cols-2 gap-3 text-center">
+    <div className="bg-slate-900 rounded-xl p-3">
+      <p className="text-2xl font-black text-white">
+        {analytics.recebidas}
+      </p>
+      <p className="text-xs text-slate-400">Recebidas</p>
+    </div>
+
+    <div className="bg-slate-900 rounded-xl p-3">
+      <p className="text-2xl font-black text-green-400">
+        {analytics.atendidas}
+      </p>
+      <p className="text-xs text-slate-400">Atendidas</p>
+    </div>
+
+    <div className="bg-slate-900 rounded-xl p-3">
+      <p className="text-2xl font-black text-red-400">
+        {analytics.falhas}
+      </p>
+      <p className="text-xs text-slate-400">Falhas</p>
+    </div>
+
+    <div className="bg-slate-900 rounded-xl p-3">
+      <p className="text-2xl font-black text-yellow-400">
+                {analytics.recebidas > 0
+  ? Math.min(
+      100,
+      Math.round(
+        (Math.min(
+          analytics.atendidas,
+          analytics.recebidas
+        ) /
+          analytics.recebidas) *
+          100
+      )
+    )
+  : 0}
+%
+      </p>
+      <p className="text-xs text-slate-400">Taxa sucesso</p>
+    </div>
+  </div>
+</div>
         <div className="bg-slate-800 rounded-xl p-4 mb-4">
           <h2 className="font-bold text-white mb-2">📷 Câmera do Portão</h2>
 
