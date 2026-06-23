@@ -7,7 +7,7 @@ export async function GET(): Promise<Response> {
   const caminhoArquivo = `public/${nomeArquivo}`;
   const caminhoPublico = `/${nomeArquivo}`;
 
-  const comando = `ffmpeg -y -rtsp_transport udp -i "rtsp://admin:teste123@192.168.15.13:554/onvif1" -frames:v 1 -q:v 2 "${caminhoArquivo}"`;
+  const comando = `ffmpeg -y -rtsp_transport udp -i "rtsp://admin:teste123@192.168.15.16:554/onvif1" -frames:v 1 -q:v 2 "${caminhoArquivo}"`;
 
   return new Promise<Response>((resolve) => {
     exec(comando, { timeout: 15000 }, (erro) => {
