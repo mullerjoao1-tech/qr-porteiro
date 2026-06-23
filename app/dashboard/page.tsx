@@ -78,7 +78,38 @@ export default function Dashboard() {
             Controle de acesso • Segurança • Gestão • Automação • IA
           </p>
         </div>
+<div className="bg-gradient-to-r from-blue-600 to-cyan-500 rounded-2xl p-6 mb-8 shadow-lg">
+  <h2 className="text-2xl font-black mb-2">
+    🚀 Capacidade da Plataforma
+  </h2>
 
+  <p className="text-lg font-semibold">
+    Projetado para atender desde residências até condomínios com
+    1000+ unidades
+  </p>
+
+  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
+    <div className="bg-black/20 rounded-xl p-4 text-center">
+      <p className="text-sm text-slate-200">Pequeno Porte</p>
+      <p className="text-xl font-bold">1–20</p>
+    </div>
+
+    <div className="bg-black/20 rounded-xl p-4 text-center">
+      <p className="text-sm text-slate-200">Médio Porte</p>
+      <p className="text-xl font-bold">20–100</p>
+    </div>
+
+    <div className="bg-black/20 rounded-xl p-4 text-center">
+      <p className="text-sm text-slate-200">Grande Porte</p>
+      <p className="text-xl font-bold">100–500</p>
+    </div>
+
+    <div className="bg-black/20 rounded-xl p-4 text-center">
+      <p className="text-sm text-slate-200">Multi Torre</p>
+      <p className="text-xl font-bold">1000+</p>
+    </div>
+  </div>
+</div>
         <div className="grid md:grid-cols-5 gap-4 mb-10">
           <div className="bg-slate-900 rounded-2xl p-5 border border-slate-800">
             <p className="text-slate-400 text-sm">Unidades Ativas</p>
