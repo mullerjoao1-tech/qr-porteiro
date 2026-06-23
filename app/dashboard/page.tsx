@@ -70,9 +70,17 @@ export default function Dashboard() {
     <main className="min-h-screen bg-slate-950 text-white p-6">
       <div className="max-w-7xl mx-auto">
         <div className="mb-10">
-          <h1 className="text-5xl font-black mb-3 text-blue-400">
-            🛡️ QR Acesso Dashboard
-          </h1>
+         <div className="flex items-center gap-4 mb-3">
+  <img
+  src="/logo-oficial.png"
+  alt="QR Acesso"
+  className="h-20 w-auto object-contain"
+/>
+
+  <h1 className="text-5xl font-black text-blue-400">
+    QR Acesso Dashboard
+  </h1>
+</div>
 
           <p className="text-slate-400 text-lg">
             Controle de acesso • Segurança • Gestão • Automação • IA

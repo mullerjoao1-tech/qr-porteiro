@@ -17,9 +17,9 @@ export default function Home() {
   const [moradorDisponivel, setMoradorDisponivel] = useState(true);
   const [fotoVisitante, setFotoVisitante] = useState("");
 
-  const codigoQr = "qr4";
-  const caminhoFirebase = "qr4";
-  const chaveAtendimento = "atendimentoAtivoqr4";
+  const codigoQr = "qr1";
+  const caminhoFirebase = "qr1";
+  const chaveAtendimento = "atendimentoAtivoQr1";
   const modoCondominio = "porteiro";
 
   const tiposChamada = [
@@ -56,7 +56,7 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    const referenciaStatus = ref(db, "status/qr4");
+    const referenciaStatus = ref(db, "status/qr1");
 
     const pararDeOuvirStatus = onValue(referenciaStatus, (snapshot) => {
       const dados = snapshot.val();
@@ -271,25 +271,13 @@ export default function Home() {
           </div>
         )}
 
-        <div className="bg-slate-800 rounded-xl p-4 mb-6">
-          <p className="text-blue-300 text-sm mb-4">QR Code do Cliente</p>
-
-          <div className="mx-auto w-40 h-40 bg-white rounded-lg flex items-center justify-center mb-2">
-            <div className="grid grid-cols-5 gap-1">
-              {codigoQr
-                .split("")
-                .slice(0, 25)
-                .map((_, index) => (
-                  <div
-                    key={index}
-                    className={`w-3 h-3 ${
-                      index % 2 === 0 ? "bg-black" : "bg-gray-300"
-                    }`}
-                  />
-                ))}
-            </div>
-          </div>
-        </div>
+    <div className="bg-slate-800 rounded-xl p-4 mb-6 flex flex-col items-center">
+  <img
+    src="/logo-oficial.png"
+    alt="QR Acesso"
+    className="h-32 w-auto object-contain"
+  />
+</div>
 
         <p className="text-sm text-slate-400 mb-4">
           Modo de atendimento:{" "}
@@ -310,7 +298,9 @@ export default function Home() {
             : "🔴 Morador ausente no momento"}
         </div>
 
-        <h1 className="text-2xl font-bold mb-4">{cliente.local}</h1>
+        
+  
+
 
         <p className="text-slate-300 mb-6">
           Toque no botão abaixo para iniciar o atendimento.
