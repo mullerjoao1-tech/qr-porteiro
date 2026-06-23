@@ -2,11 +2,15 @@ import { NextResponse } from "next/server";
 import { exec } from "child_process";
 
 export async function GET(): Promise<Response> {
-  const comando =
-    'ffmpeg -y -rtsp_transport tcp -i "rtsp://admin:teste123@192.168.15.13:554/onvif1" -frames:v 1 public/camera-qr1.jpg';
+  const agora = Date.now();
+  const nomeArquivo = `camera-qr1-${agora}.jpg`;
+  const caminhoArquivo = `public/${nomeArquivo}`;
+  const caminhoPublico = `/${nomeArquivo}`;
+
+  const comando = `ffmpeg -y -rtsp_transport udp -i "rtsp://admin:teste123@192.168.15.13:554/onvif1" -frames:v 1 -q:v 2 "${caminhoArquivo}"`;
 
   return new Promise<Response>((resolve) => {
-    exec(comando, (erro) => {
+    exec(comando, { timeout: 15000 }, (erro) => {
       if (erro) {
         console.error("Erro ao capturar imagem:", erro);
 
@@ -27,7 +31,7 @@ export async function GET(): Promise<Response> {
         NextResponse.json({
           sucesso: true,
           mensagem: "Foto capturada com sucesso.",
-          imagem: "/camera-qr1.jpg",
+          imagem: caminhoPublico,
           atualizadoEm: new Date().toISOString(),
         })
       );

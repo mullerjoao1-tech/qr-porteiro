@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { getToken } from "firebase/messaging";
-import { ref, onValue, update, remove, push, set } from "firebase/database";
+import { ref, onValue, update, remove, push, set, get } from "firebase/database";
 import { db, messagingPromise } from "../services/firebase";
 
 export default function Painel() {
@@ -15,6 +15,7 @@ export default function Painel() {
   const [historicoLista, setHistoricoLista] = useState<any[]>([]);
   const [avisoAuto, setAvisoAuto] = useState("");
   const [online, setOnline] = useState(true);
+  const [fotoCameraAtual, setFotoCameraAtual] = useState("");
   const [fotoCameraAtualizadaEm, setFotoCameraAtualizadaEm] = useState(Date.now());
   const [capturandoCamera, setCapturandoCamera] = useState(false);
   const [abrindoPortao, setAbrindoPortao] = useState(false);
@@ -34,6 +35,51 @@ export default function Painel() {
 
   const chamadaAtiva =
     nome !== "Nenhuma solicitação" && status === "Aguardando atendimento";
+
+  async function registrarLog(tipo: string, detalhes: string) {
+    try {
+      const novoLog = push(ref(db, "logs/qr1"));
+
+      await set(novoLog, {
+        tipo,
+        detalhes,
+        timestamp: new Date().toISOString(),
+        nomeAtual: nome,
+        statusAtual: status,
+        navegador:
+          typeof navigator !== "undefined" ? navigator.userAgent : "indisponivel",
+      });
+
+      console.log("Log registrado:", tipo, detalhes);
+    } catch (erro) {
+      console.error("Erro ao salvar log:", erro);
+    }
+  }
+
+  async function registrarAnalytics(evento: string) {
+    try {
+      const referencia = ref(db, "analytics/qr1");
+      const snapshot = await get(referencia);
+
+      const dados = snapshot.val() || {
+        recebidas: 0,
+        atendidas: 0,
+        finalizadas: 0,
+        timeouts: 0,
+        falhas: 0,
+      };
+
+      if (evento === "recebida") dados.recebidas++;
+      if (evento === "atendida") dados.atendidas++;
+      if (evento === "finalizada") dados.finalizadas++;
+      if (evento === "timeout") dados.timeouts++;
+      if (evento === "falha") dados.falhas++;
+
+      await update(referencia, dados);
+    } catch (erro) {
+      console.error("Erro analytics:", erro);
+    }
+  }
 
   useEffect(() => {
     const referenciaHistorico = ref(db, caminhoHistorico);
@@ -107,6 +153,10 @@ export default function Painel() {
 
         if (idChamada && ultimaCapturaCameraRef.current !== idChamada) {
           ultimaCapturaCameraRef.current = idChamada;
+
+          registrarAnalytics("recebida");
+          registrarLog("chamada_recebida", "Nova chamada recebida no painel");
+
           capturarFotoCamera();
         }
       } else {
@@ -127,10 +177,31 @@ export default function Painel() {
     setCapturandoCamera(true);
 
     try {
-      await fetch("/api/capturar-camera");
-      setFotoCameraAtualizadaEm(Date.now());
+      await registrarLog("camera_tentativa", "Tentando capturar foto da câmera");
+
+      const resposta = await fetch(`/api/capturar-camera?cache=${Date.now()}`);
+      const dados = await resposta.json();
+
+      if (dados.sucesso && dados.imagem) {
+        setFotoCameraAtual(dados.imagem);
+        setFotoCameraAtualizadaEm(Date.now());
+
+        await registrarLog(
+          "camera_sucesso",
+          "Foto da câmera capturada com sucesso"
+        );
+      } else {
+        await registrarLog("erro_camera", "A câmera não retornou imagem válida");
+        alert("A câmera não retornou imagem.");
+      }
     } catch (erro) {
       console.error("Erro ao capturar foto da câmera:", erro);
+
+      await registrarLog(
+        "erro_camera",
+        "Erro ao atualizar foto da câmera: " + String(erro)
+      );
+
       alert("Erro ao atualizar foto da câmera.");
     }
 
@@ -151,6 +222,7 @@ export default function Painel() {
       chamadoEm: horaChamada,
       finalizadoEm: agora.toISOString(),
       finalizadoEmFormatado: agora.toLocaleString("pt-BR"),
+      fotoCamera: fotoCameraAtual || "",
     };
 
     const novoItem = push(ref(db, caminhoHistorico));
@@ -193,6 +265,9 @@ export default function Painel() {
     pararToqueContinuo();
     limparFinalizacaoAutomatica();
 
+    await registrarAnalytics("timeout");
+    await registrarLog("timeout_atendimento", "Chamada finalizada automaticamente");
+
     await salvarHistorico("Automática");
 
     await update(ref(db, caminhoFirebase), {
@@ -205,14 +280,6 @@ export default function Painel() {
     setTimeout(async () => {
       await remove(ref(db, caminhoFirebase));
     }, 5000);
-
-    setNome("Nenhuma solicitação");
-    setMotivo("Aguardando visitante");
-    setStatus("Sem chamado ativo");
-    setHoraChamada("");
-    setModo("");
-    setMensagemResponsavel("");
-    setAvisoAuto("");
   }
 
   function limparFinalizacaoAutomatica() {
@@ -228,6 +295,9 @@ export default function Painel() {
       return;
     }
 
+    await registrarAnalytics("atendida");
+    await registrarLog("chamada_atendida", "Chamada atendida pelo painel");
+
     await update(ref(db, caminhoFirebase), {
       status: "Em atendimento",
       notificar: false,
@@ -242,6 +312,9 @@ export default function Painel() {
       alert("Não existe chamada ativa para responder.");
       return;
     }
+
+    await registrarAnalytics("atendida");
+    await registrarLog("mensagem_rapida", "Mensagem enviada: " + mensagem);
 
     await update(ref(db, caminhoFirebase), {
       status: "Em atendimento",
@@ -262,9 +335,7 @@ export default function Painel() {
     if (!confirmar) return;
 
     await remove(ref(db, caminhoHistorico));
-
     setHistoricoLista([]);
-
     alert("Histórico limpo com sucesso.");
   }
 
@@ -273,6 +344,9 @@ export default function Painel() {
       alert("Não existe chamada ativa para finalizar.");
       return;
     }
+
+    await registrarAnalytics("finalizada");
+    await registrarLog("chamada_finalizada", "Chamada finalizada manualmente");
 
     await salvarHistorico("Manual");
 
@@ -288,14 +362,6 @@ export default function Painel() {
     setTimeout(async () => {
       await remove(ref(db, caminhoFirebase));
     }, 5000);
-
-    setNome("Nenhuma solicitação");
-    setMotivo("Aguardando visitante");
-    setStatus("Sem chamado ativo");
-    setHoraChamada("");
-    setModo("");
-    setMensagemResponsavel("");
-    setAvisoAuto("");
 
     pararToqueContinuo();
   }
@@ -372,17 +438,26 @@ export default function Painel() {
       setAbrindoPortao(true);
       setStatusPortao("⏳ Abrindo portão...");
 
+      await registrarLog("portao_tentativa", "Tentativa de abertura do portão");
+
       const resposta = await fetch("/api/abrir-portao");
       const dados = await resposta.json();
 
       if (dados.success) {
         setStatusPortao("✅ Portão aberto com sucesso");
+        await registrarLog("portao_sucesso", "Portão aberto com sucesso");
       } else {
         setStatusPortao("❌ Falha ao abrir portão");
-        console.error("Erro Tuya:", dados);
+        await registrarLog(
+          "erro_portao",
+          "API respondeu falha ao abrir portão"
+        );
       }
     } catch (erro) {
       setStatusPortao("❌ Erro ao abrir portão");
+
+      await registrarLog("erro_portao", "Erro inesperado: " + String(erro));
+
       console.error("Erro ao abrir portão:", erro);
     } finally {
       setTimeout(() => {
@@ -396,6 +471,11 @@ export default function Painel() {
     const messaging = await messagingPromise;
 
     if (!messaging) {
+      await registrarLog(
+        "push_nao_suportado",
+        "Este navegador não suporta notificações"
+      );
+
       alert("Este navegador não suporta notificações.");
       return;
     }
@@ -403,6 +483,11 @@ export default function Painel() {
     const permissao = await Notification.requestPermission();
 
     if (permissao !== "granted") {
+      await registrarLog(
+        "push_permissao_negada",
+        "Permissão para notificações negada: " + permissao
+      );
+
       alert("Permissão para notificações negada. Resultado: " + permissao);
       return;
     }
@@ -424,9 +509,20 @@ export default function Painel() {
         tokenMorador1: token,
       });
 
+      await registrarLog(
+        "push_token_salvo",
+        "Token de notificação salvo com sucesso"
+      );
+
       alert("Notificações ativadas com sucesso!");
     } catch (erro) {
       console.error("Erro ao gerar token:", erro);
+
+      await registrarLog(
+        "push_erro_token",
+        "Erro ao gerar token: " + String(erro)
+      );
+
       alert("Erro ao gerar token. Veja o console.");
     }
   }
@@ -451,11 +547,15 @@ export default function Painel() {
                 📷 Câmera Yoosee
               </p>
 
-              <img
-                src={`/camera-qr1.jpg?t=${fotoCameraAtualizadaEm}`}
-                alt="Câmera do portão"
-                className="w-full rounded-lg border border-slate-600"
-              />
+              {fotoCameraAtual ? (
+                <img
+                  src={`${fotoCameraAtual}?t=${fotoCameraAtualizadaEm}`}
+                  alt="Câmera do portão"
+                  className="w-full rounded-lg border border-slate-600"
+                />
+              ) : (
+                <p className="text-slate-400 text-sm">Capturando imagem...</p>
+              )}
             </div>
 
             <button
@@ -464,6 +564,18 @@ export default function Painel() {
             >
               ✅ ATENDER AGORA
             </button>
+
+            <button
+              onClick={acionarPortao}
+              disabled={abrindoPortao}
+              className="w-full mt-3 bg-purple-600 hover:bg-purple-500 disabled:bg-gray-500 text-white font-bold py-3 rounded-2xl"
+            >
+              {abrindoPortao ? "⏳ ABRINDO..." : "🚪 ABRIR PORTÃO"}
+            </button>
+
+            {statusPortao && (
+              <p className="mt-2 text-green-400 font-bold">{statusPortao}</p>
+            )}
 
             <div className="mt-3 space-y-2">
               <button
@@ -503,9 +615,7 @@ export default function Painel() {
               </button>
 
               <button
-                onClick={() =>
-                  enviarMensagemRapida("Estou indo retirar agora.")
-                }
+                onClick={() => enviarMensagemRapida("Estou indo retirar agora.")}
                 className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-2xl"
               >
                 🚶 Estou indo retirar
@@ -544,19 +654,17 @@ export default function Painel() {
         <div className="bg-slate-800 rounded-xl p-4 mb-4">
           <h2 className="font-bold text-white mb-2">📷 Câmera do Portão</h2>
 
-          <p className="text-green-400 text-sm font-bold">
-            ✅ Foto capturada da câmera Yoosee
-          </p>
-
-          <img
-            src={`/camera-qr1.jpg?t=${fotoCameraAtualizadaEm}`}
-            alt="Câmera do portão"
-            className="w-full rounded-lg border border-slate-600 mt-2"
-          />
-
-          <p className="text-slate-400 text-xs mt-2">
-            Imagem capturada pelo RTSP da câmera.
-          </p>
+          {fotoCameraAtual ? (
+            <img
+              src={`${fotoCameraAtual}?t=${fotoCameraAtualizadaEm}`}
+              alt="Câmera do portão"
+              className="w-full rounded-lg border border-slate-600 mt-2"
+            />
+          ) : (
+            <p className="text-slate-400 text-sm">
+              Nenhuma foto capturada ainda.
+            </p>
+          )}
 
           <button
             onClick={capturarFotoCamera}
@@ -565,16 +673,6 @@ export default function Painel() {
             {capturandoCamera
               ? "📸 Atualizando..."
               : "📸 Atualizar foto da câmera"}
-          </button>
-
-          <button
-            onClick={() =>
-              (window.location.href =
-                "rtsp://admin:teste123@192.168.15.13:554/onvif1")
-            }
-            className="w-full mt-3 bg-purple-600 hover:bg-purple-500 text-white font-bold py-2 rounded-xl"
-          >
-            📹 Abrir câmera no VLC
           </button>
         </div>
 
@@ -669,14 +767,14 @@ export default function Painel() {
               onClick={() =>
                 enviarMensagemRapida("Não estou em casa no momento.")
               }
-              className="w-full mb-2 bg-blue-600 text-white font-bold py-2 rounded-xl"
+              className="w-full bg-blue-600 text-white font-bold py-2 rounded-xl"
             >
               Não estou em casa
             </button>
 
             <button
               onClick={() => enviarMensagemRapida("Estou indo retirar agora.")}
-              className="w-full bg-blue-600 text-white font-bold py-2 rounded-xl"
+              className="w-full mt-2 bg-blue-600 text-white font-bold py-2 rounded-xl"
             >
               Estou indo retirar
             </button>
@@ -712,7 +810,15 @@ export default function Painel() {
                     {item.nome} - {item.motivo}
                   </p>
 
-                  <p className="text-slate-400 text-xs mt-1">
+                  {item.fotoCamera && (
+                    <img
+                      src={item.fotoCamera}
+                      alt="Snapshot da câmera"
+                      className="w-full mt-3 rounded-lg border border-slate-600"
+                    />
+                  )}
+
+                  <p className="text-slate-400 text-xs mt-3">
                     Finalizado em: {item.finalizadoEmFormatado}
                   </p>
 
