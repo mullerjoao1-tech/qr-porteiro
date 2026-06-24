@@ -56,7 +56,7 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    const referenciaStatus = ref(db, "status/qr1");
+    const referenciaStatus = ref(db, "status/qr5");
 
     const pararDeOuvirStatus = onValue(referenciaStatus, (snapshot) => {
       const dados = snapshot.val();

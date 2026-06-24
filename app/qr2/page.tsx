@@ -17,8 +17,8 @@ export default function Home() {
   const [moradorDisponivel, setMoradorDisponivel] = useState(true);
   const [fotoVisitante, setFotoVisitante] = useState("");
 
-  const codigoQr = "qr1";
-  const caminhoFirebase = "qr1";
+  const codigoQr = "qr2";
+  const caminhoFirebase = "qr2";
   const chaveAtendimento = "atendimentoAtivoQr2";
   const modoCondominio = "porteiro";
 
@@ -56,7 +56,7 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    const referenciaStatus = ref(db, "status/qr1");
+    const referenciaStatus = ref(db, "status/qr2");
 
     const pararDeOuvirStatus = onValue(referenciaStatus, (snapshot) => {
       const dados = snapshot.val();
