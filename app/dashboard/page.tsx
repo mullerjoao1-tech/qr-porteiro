@@ -1,9 +1,58 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { ref, onValue } from "firebase/database";
+import { db } from "../services/firebase";
 
 export default function Dashboard() {
   const [mostrarExpansao, setMostrarExpansao] = useState(false);
+  const [qrs, setQrs] = useState([
+    { nome: "QR1", codigo: "qr1", status: "🟢 Disponível" },
+    { nome: "QR2", codigo: "qr2", status: "🟢 Disponível" },
+    { nome: "QR3", codigo: "qr3", status: "🟢 Disponível" },
+    { nome: "QR4", codigo: "qr4", status: "🟢 Disponível" },
+    { nome: "QR5", codigo: "qr5", status: "🟢 Disponível" },
+  ]);
+
+  useEffect(() => {
+    const codigos = ["qr1", "qr2", "qr3", "qr4", "qr5"];
+    const desligarEscutas: (() => void)[] = [];
+
+    codigos.forEach((codigo, index) => {
+      const qrRef = ref(db, codigo);
+
+      const desligar = onValue(qrRef, (snapshot) => {
+        const dados = snapshot.val();
+
+        let novoStatus = "🟢 Disponível";
+
+        if (dados?.status === "Aguardando atendimento") {
+          novoStatus = "🟡 Em chamada";
+        }
+
+        if (dados?.status === "Em atendimento") {
+          novoStatus = "🔵 Em atendimento";
+        }
+
+        setQrs((qrsAtuais) => {
+          const copia = [...qrsAtuais];
+
+          copia[index] = {
+            ...copia[index],
+            status: novoStatus,
+          };
+
+          return copia;
+        });
+      });
+
+      desligarEscutas.push(desligar);
+    });
+
+    return () => {
+      desligarEscutas.forEach((desligar) => desligar());
+    };
+  }, []);
 
   const modulosDoCondominio = {
     access: true,
@@ -98,13 +147,9 @@ export default function Dashboard() {
   const previewModulos = modulosDisponiveis.slice(0, 3);
   const quantidadeRestante = modulosDisponiveis.length - previewModulos.length;
 
-  const qrs = [
-    { nome: "QR1", status: "🟢 Disponível" },
-    { nome: "QR2", status: "🟢 Disponível" },
-    { nome: "QR3", status: "🟢 Disponível" },
-    { nome: "QR4", status: "🟢 Disponível" },
-    { nome: "QR5", status: "🟢 Disponível" },
-  ];
+  const chamadasAtivas = qrs.filter(
+    (qr) => qr.status === "🟡 Em chamada" || qr.status === "🔵 Em atendimento"
+  ).length;
 
   return (
     <main className="min-h-screen bg-slate-950 text-white p-4 md:p-6">
@@ -149,7 +194,7 @@ export default function Dashboard() {
 
             <div className="bg-black/20 rounded-xl p-4 text-center">
               <p className="text-sm text-slate-200">Chamadas</p>
-              <p className="text-2xl font-bold">0</p>
+              <p className="text-2xl font-bold">{chamadasAtivas}</p>
             </div>
 
             <div className="bg-black/20 rounded-xl p-4 text-center">
@@ -257,9 +302,10 @@ export default function Dashboard() {
                 </div>
               )}
             </div>
-<div className="bg-blue-600 hover:bg-blue-500 shadow-lg shadow-blue-500/20 text-white font-bold px-4 py-2 rounded-xl transition-all text-sm">
-  {mostrarExpansao ? "Fechar" : "Ver"}
-</div>
+
+            <div className="bg-blue-600 hover:bg-blue-500 shadow-lg shadow-blue-500/20 text-white font-bold px-4 py-2 rounded-xl transition-all text-sm">
+              {mostrarExpansao ? "Fechar" : "Ver"}
+            </div>
           </button>
 
           {mostrarExpansao && (
