@@ -1,6 +1,21 @@
 export default function Dashboard() {
+  const modulosDoCondominio = {
+    access: true,
+    security: true,
+    monitoring: false,
+    admin: false,
+    services: false,
+    ai: false,
+    airbnb: false,
+  };
+
+  const modulosDoMorador = {
+    care: true,
+  };
+
   const modulos = [
     {
+      id: "access",
       nome: "QR Access",
       descricao: "Portaria, visitantes, entregas, portões e controle de acesso.",
       status: "🟢 Em operação",
@@ -8,41 +23,47 @@ export default function Dashboard() {
       cor: "text-green-400",
     },
     {
+      id: "security",
       nome: "QR Security",
       descricao: "Proteção contra invasões, sensores, perímetro e alertas silenciosos.",
-      status: "🟡 Em breve",
+      status: "🟢 Ativo",
       destaque: "Segurança inteligente para áreas internas e externas",
-      cor: "text-yellow-400",
+      cor: "text-green-400",
     },
     {
+      id: "monitoring",
       nome: "QR Monitoring",
       descricao: "Monitoramento online em tempo real para câmeras, portões e eventos.",
-      status: "🟡 Em breve",
+      status: "🟡 Disponível",
       destaque: "Central de acompanhamento do condomínio",
       cor: "text-yellow-400",
     },
     {
+      id: "care",
       nome: "QR Care Family",
       descricao: "Cuidado remoto para idosos e familiares com alertas de rotina.",
-      status: "🟡 Em breve",
+      status: "🟢 Ativo individual",
       destaque: "Mais segurança para famílias e moradores vulneráveis",
-      cor: "text-yellow-400",
+      cor: "text-green-400",
     },
     {
+      id: "admin",
       nome: "QR Admin",
       descricao: "Gestão entre síndico, administradora e moradores.",
-      status: "🔵 Planejado",
+      status: "🔵 Disponível",
       destaque: "Comunicados, relatórios, documentos e permissões",
       cor: "text-blue-400",
     },
     {
+      id: "services",
       nome: "QR Services",
       descricao: "Prestadores avaliados estilo Google para o condomínio.",
-      status: "🔵 Planejado",
+      status: "🔵 Disponível",
       destaque: "Avaliações, reviews e faixa de preço",
       cor: "text-blue-400",
     },
     {
+      id: "ai",
       nome: "QR AI Concierge",
       descricao: "Assistente inteligente para moradores, síndico e administradora.",
       status: "🟣 Futuro premium",
@@ -50,13 +71,24 @@ export default function Dashboard() {
       cor: "text-purple-400",
     },
     {
+      id: "airbnb",
       nome: "QR Airbnb",
       descricao: "Acesso temporário, check-in remoto e apoio para locações.",
-      status: "🔵 Planejado",
+      status: "🔵 Disponível",
       destaque: "PIN/QR temporário, limpeza e controle de chaves",
       cor: "text-blue-400",
     },
   ];
+
+  function moduloAtivo(id: string) {
+    return (
+      modulosDoCondominio[id as keyof typeof modulosDoCondominio] === true ||
+      modulosDoMorador[id as keyof typeof modulosDoMorador] === true
+    );
+  }
+
+  const modulosAtivos = modulos.filter((modulo) => moduloAtivo(modulo.id));
+  const modulosDisponiveis = modulos.filter((modulo) => !moduloAtivo(modulo.id));
 
   const qrs = [
     { nome: "QR1", status: "🟢 Disponível" },
@@ -67,110 +99,78 @@ export default function Dashboard() {
   ];
 
   return (
-    <main className="min-h-screen bg-slate-950 text-white p-6">
+    <main className="min-h-screen bg-slate-950 text-white p-4 md:p-6">
       <div className="max-w-7xl mx-auto">
-        <div className="mb-10">
-         <div className="flex items-center gap-4 mb-3">
-  <img
-  src="/logo-oficial.png"
-  alt="QR Acesso"
-  className="h-20 w-auto object-contain"
-/>
+        <div className="mb-8">
+          <div className="flex items-center gap-3 mb-3">
+            <img
+              src="/logo-oficial.png"
+              alt="QR Acesso"
+              className="h-14 md:h-20 w-auto object-contain"
+            />
 
-  <h1 className="text-5xl font-black text-blue-400">
-    QR Acesso Dashboard
-  </h1>
-</div>
+            <h1 className="text-3xl md:text-5xl font-black text-blue-400">
+              QR Dashboard
+            </h1>
+          </div>
 
-          <p className="text-slate-400 text-lg">
+          <p className="text-slate-400 text-sm md:text-lg">
             Controle de acesso • Segurança • Gestão • Automação • IA
           </p>
         </div>
-<div className="bg-gradient-to-r from-blue-600 to-cyan-500 rounded-2xl p-6 mb-8 shadow-lg">
-  <h2 className="text-2xl font-black mb-2">
-    🚀 Capacidade da Plataforma
-  </h2>
 
-  <p className="text-lg font-semibold">
-    Projetado para atender desde residências até condomínios com
-    1000+ unidades
-  </p>
+        <div className="bg-gradient-to-r from-blue-600 to-cyan-500 rounded-2xl p-5 md:p-6 mb-8 shadow-lg">
+          <h2 className="text-xl md:text-2xl font-black mb-2">
+            🟢 Tudo normal
+          </h2>
 
-  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
-    <div className="bg-black/20 rounded-xl p-4 text-center">
-      <p className="text-sm text-slate-200">Pequeno Porte</p>
-      <p className="text-xl font-bold">1–20</p>
-    </div>
+          <p className="text-sm md:text-lg font-semibold">
+            Condomínio em operação com {modulosAtivos.length} módulos ativos.
+          </p>
 
-    <div className="bg-black/20 rounded-xl p-4 text-center">
-      <p className="text-sm text-slate-200">Médio Porte</p>
-      <p className="text-xl font-bold">20–100</p>
-    </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-5">
+            <div className="bg-black/20 rounded-xl p-4 text-center">
+              <p className="text-sm text-slate-200">Unidades</p>
+              <p className="text-2xl font-bold">5</p>
+            </div>
 
-    <div className="bg-black/20 rounded-xl p-4 text-center">
-      <p className="text-sm text-slate-200">Grande Porte</p>
-      <p className="text-xl font-bold">100–500</p>
-    </div>
+            <div className="bg-black/20 rounded-xl p-4 text-center">
+              <p className="text-sm text-slate-200">Online</p>
+              <p className="text-2xl font-bold">5</p>
+            </div>
 
-    <div className="bg-black/20 rounded-xl p-4 text-center">
-      <p className="text-sm text-slate-200">Multi Torre</p>
-      <p className="text-xl font-bold">1000+</p>
-    </div>
-  </div>
-</div>
-        <div className="grid md:grid-cols-5 gap-4 mb-10">
-          <div className="bg-slate-900 rounded-2xl p-5 border border-slate-800">
-            <p className="text-slate-400 text-sm">Unidades Ativas</p>
-            <p className="text-3xl font-bold text-green-400">5</p>
-          </div>
+            <div className="bg-black/20 rounded-xl p-4 text-center">
+              <p className="text-sm text-slate-200">Chamadas</p>
+              <p className="text-2xl font-bold">0</p>
+            </div>
 
-          <div className="bg-slate-900 rounded-2xl p-5 border border-slate-800">
-            <p className="text-slate-400 text-sm">Moradores Online</p>
-            <p className="text-3xl font-bold text-blue-400">5</p>
-          </div>
-
-          <div className="bg-slate-900 rounded-2xl p-5 border border-slate-800">
-            <p className="text-slate-400 text-sm">Chamadas Hoje</p>
-            <p className="text-3xl font-bold text-yellow-400">0</p>
-          </div>
-
-          <div className="bg-slate-900 rounded-2xl p-5 border border-slate-800">
-            <p className="text-slate-400 text-sm">Taxa Atendimento</p>
-            <p className="text-3xl font-bold text-green-400">0%</p>
-          </div>
-
-          <div className="bg-slate-900 rounded-2xl p-5 border border-slate-800">
-            <p className="text-slate-400 text-sm">Alertas Ativos</p>
-            <p className="text-3xl font-bold text-red-400">0</p>
+            <div className="bg-black/20 rounded-xl p-4 text-center">
+              <p className="text-sm text-slate-200">Alertas</p>
+              <p className="text-2xl font-bold">0</p>
+            </div>
           </div>
         </div>
 
-        <div className="bg-slate-900 rounded-2xl p-6 mb-10 border border-blue-500/20">
-          <div className="flex items-center justify-between mb-5">
-            <div>
-              <h2 className="text-2xl font-bold text-blue-300">
-                Ecossistema QR Acesso
-              </h2>
+        <div className="bg-slate-900 rounded-2xl p-5 md:p-6 mb-8 border border-green-500/20">
+          <div className="mb-5">
+            <h2 className="text-2xl font-bold text-green-300">
+              Seus Módulos Ativos
+            </h2>
 
-              <p className="text-slate-400 text-sm mt-1">
-                Uma plataforma completa para operação, segurança e gestão condominial.
-              </p>
-            </div>
-
-            <span className="bg-blue-500/20 text-blue-300 text-sm font-bold px-4 py-2 rounded-full">
-              Beta V1
-            </span>
+            <p className="text-slate-400 text-sm mt-1">
+              Esta tela mostra apenas o que este cliente ou morador possui ativo.
+            </p>
           </div>
 
-          <div className="grid md:grid-cols-4 gap-4">
-            {modulos.map((modulo) => (
+          <div className="grid md:grid-cols-3 gap-4">
+            {modulosAtivos.map((modulo) => (
               <div
                 key={modulo.nome}
-                className="bg-slate-800 rounded-xl p-4 border border-slate-700 hover:border-blue-400 transition-all"
+                className="bg-slate-800 rounded-xl p-4 border border-green-500/30 hover:border-green-400 transition-all"
               >
                 <p className="font-bold text-lg">{modulo.nome}</p>
 
-                <p className="text-sm text-slate-300 mt-2 min-h-[66px]">
+                <p className="text-sm text-slate-300 mt-2">
                   {modulo.descricao}
                 </p>
 
@@ -186,8 +186,47 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="grid lg:grid-cols-2 gap-6 mb-10">
-          <div className="bg-slate-900 rounded-2xl p-6 border border-slate-800">
+        <div className="bg-slate-900 rounded-2xl p-5 md:p-6 mb-8 border border-blue-500/20">
+          <div className="mb-5">
+            <h2 className="text-2xl font-bold text-blue-300">
+              Expanda sua plataforma
+            </h2>
+
+            <p className="text-slate-400 text-sm mt-1">
+              Módulos disponíveis para contratação conforme a necessidade.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-4 gap-4">
+            {modulosDisponiveis.map((modulo) => (
+              <div
+                key={modulo.nome}
+                className="bg-slate-800 rounded-xl p-4 border border-slate-700 hover:border-blue-400 transition-all opacity-80"
+              >
+                <p className="font-bold text-lg">{modulo.nome}</p>
+
+                <p className="text-sm text-slate-300 mt-2">
+                  {modulo.descricao}
+                </p>
+
+                <p className={`mt-3 font-bold ${modulo.cor}`}>
+                  {modulo.status}
+                </p>
+
+                <p className="text-xs text-slate-500 mt-3">
+                  {modulo.destaque}
+                </p>
+
+                <button className="mt-4 w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 rounded-lg transition-all">
+                  Conhecer
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="grid lg:grid-cols-2 gap-6 mb-8">
+          <div className="bg-slate-900 rounded-2xl p-5 md:p-6 border border-slate-800">
             <h2 className="text-2xl font-bold text-blue-300 mb-5">
               Status em Tempo Real
             </h2>
@@ -205,7 +244,7 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div className="bg-slate-900 rounded-2xl p-6 border border-slate-800">
+          <div className="bg-slate-900 rounded-2xl p-5 md:p-6 border border-slate-800">
             <h2 className="text-2xl font-bold text-blue-300 mb-5">
               Insights da IA
             </h2>
@@ -226,7 +265,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="bg-slate-900 rounded-2xl p-6 border border-slate-800">
+        <div className="bg-slate-900 rounded-2xl p-5 md:p-6 border border-slate-800">
           <h2 className="text-2xl font-bold text-blue-300 mb-5">
             Chamadas Recentes
           </h2>
