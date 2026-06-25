@@ -118,7 +118,7 @@ export default function Dashboard() {
             />
 
             <h1 className="text-3xl md:text-5xl font-black text-blue-400">
-              QR Dashboard
+              QR Central
             </h1>
           </div>
 
