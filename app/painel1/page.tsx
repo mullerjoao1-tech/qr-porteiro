@@ -38,8 +38,8 @@ export default function Painel() {
   const caminhoHistorico = "historico/qr1";
   const caminhoStatus = "status/qr1";
 
-  const TEMPO_AGUARDANDO = 30 * 1000;
-const TEMPO_EM_ATENDIMENTO = 20 * 1000;
+  const TEMPO_AGUARDANDO = 5 * 60 * 1000;
+const TEMPO_EM_ATENDIMENTO = 3 * 60 * 1000;
 
   const chamadaAtiva =
     nome !== "Nenhuma solicitação" && status === "Aguardando atendimento";
