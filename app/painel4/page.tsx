@@ -747,7 +747,7 @@ const TEMPO_EM_ATENDIMENTO = 3 * 60 * 1000;
       )}
 
       <div className="w-full max-w-md bg-slate-900 rounded-2xl p-8">
-        <h1 className="text-4xl font-bold mb-2">🏠 Painel do Morador 1</h1>
+        <h1 className="text-4xl font-bold mb-2">🏠 Painel do Morador 4</h1>
 
         <button
           onClick={tocarBip}
