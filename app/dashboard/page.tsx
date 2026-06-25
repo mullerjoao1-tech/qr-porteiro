@@ -152,74 +152,35 @@ export default function Dashboard() {
         </div>
 
         <div className="bg-slate-900 rounded-2xl p-5 md:p-6 mb-8 border border-green-500/20">
-          <div className="mb-5">
-            <h2 className="text-2xl font-bold text-green-300">
-              Seus Módulos Ativos
-            </h2>
+          <h2 className="text-2xl font-bold text-green-300">
+            Seus Módulos Ativos
+          </h2>
 
-            <p className="text-slate-400 text-sm mt-1">
-              Esta tela mostra apenas o que este cliente ou morador possui ativo.
-            </p>
-          </div>
+          <p className="text-slate-400 text-sm mt-1 mb-5">
+            Esta tela mostra apenas o que este cliente ou morador possui ativo.
+          </p>
 
           <div className="grid md:grid-cols-3 gap-4">
             {modulosAtivos.map((modulo) => (
               <div
-                key={modulo.nome}
+                key={modulo.id}
                 className="bg-slate-800 rounded-xl p-4 border border-green-500/30 hover:border-green-400 transition-all"
               >
-                <p className="font-bold text-lg">{modulo.nome}</p>
+                <h3 className="font-bold text-xl mb-3 text-white">
+                  {modulo.nome}
+                </h3>
 
-                <p className="text-sm text-slate-300 mt-2">
+                <p className="text-sm text-slate-300">
                   {modulo.descricao}
                 </p>
 
-                <p className={`mt-3 font-bold ${modulo.cor}`}>
+                <p className={`mt-4 font-bold ${modulo.cor}`}>
                   {modulo.status}
                 </p>
 
                 <p className="text-xs text-slate-500 mt-3">
                   {modulo.destaque}
                 </p>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="bg-slate-900 rounded-2xl p-5 md:p-6 mb-8 border border-blue-500/20">
-          <div className="mb-5">
-            <h2 className="text-2xl font-bold text-blue-300">
-              Expanda sua plataforma
-            </h2>
-
-            <p className="text-slate-400 text-sm mt-1">
-              Módulos disponíveis para contratação conforme a necessidade.
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-4 gap-4">
-            {modulosDisponiveis.map((modulo) => (
-              <div
-                key={modulo.nome}
-                className="bg-slate-800 rounded-xl p-4 border border-slate-700 hover:border-blue-400 transition-all opacity-80"
-              >
-                <p className="font-bold text-lg">{modulo.nome}</p>
-
-                <p className="text-sm text-slate-300 mt-2">
-                  {modulo.descricao}
-                </p>
-
-                <p className={`mt-3 font-bold ${modulo.cor}`}>
-                  {modulo.status}
-                </p>
-
-                <p className="text-xs text-slate-500 mt-3">
-                  {modulo.destaque}
-                </p>
-
-                <button className="mt-4 w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 rounded-lg transition-all">
-                  Conhecer
-                </button>
               </div>
             ))}
           </div>
@@ -246,33 +207,72 @@ export default function Dashboard() {
 
           <div className="bg-slate-900 rounded-2xl p-5 md:p-6 border border-slate-800">
             <h2 className="text-2xl font-bold text-blue-300 mb-5">
-              Insights da IA
+              Chamadas Recentes
             </h2>
 
             <div className="space-y-3">
-              <div className="bg-slate-800 rounded-xl p-4 border border-purple-500/20">
-                🤖 QR AI Concierge poderá resumir alertas, chamados e prioridades do dia.
-              </div>
-
-              <div className="bg-slate-800 rounded-xl p-4 border border-purple-500/20">
-                📦 Entregas poderão gerar recomendação para locker conforme volume.
-              </div>
-
-              <div className="bg-slate-800 rounded-xl p-4 border border-purple-500/20">
-                🛡️ Padrões fora do normal poderão virar alertas preventivos.
+              <div className="bg-slate-800 rounded-xl p-4">
+                Nenhuma chamada recente registrada nesta dashboard beta.
               </div>
             </div>
           </div>
         </div>
 
+        <div className="bg-slate-900 rounded-2xl p-5 md:p-6 mb-8 border border-blue-500/20">
+          <h2 className="text-2xl font-bold text-blue-300">
+            Expanda sua plataforma
+          </h2>
+
+          <p className="text-slate-400 text-sm mt-1 mb-5">
+            Módulos disponíveis para contratação conforme a necessidade.
+          </p>
+
+          <div className="grid md:grid-cols-4 gap-4">
+            {modulosDisponiveis.map((modulo) => (
+              <div
+                key={modulo.id}
+                className="bg-slate-800 rounded-xl p-4 border border-slate-700 hover:border-blue-400 transition-all"
+              >
+                <h3 className="font-bold text-xl mb-3 text-white">
+                  {modulo.nome}
+                </h3>
+
+                <p className="text-sm text-slate-300">
+                  {modulo.descricao}
+                </p>
+
+                <p className={`mt-4 font-bold ${modulo.cor}`}>
+                  {modulo.status}
+                </p>
+
+                <p className="text-xs text-slate-500 mt-3">
+                  {modulo.destaque}
+                </p>
+
+                <button className="mt-4 w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 rounded-lg transition-all">
+                  Conhecer
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+
         <div className="bg-slate-900 rounded-2xl p-5 md:p-6 border border-slate-800">
           <h2 className="text-2xl font-bold text-blue-300 mb-5">
-            Chamadas Recentes
+            Insights da IA
           </h2>
 
           <div className="space-y-3">
-            <div className="bg-slate-800 rounded-xl p-4">
-              Nenhuma chamada recente registrada nesta dashboard beta.
+            <div className="bg-slate-800 rounded-xl p-4 border border-purple-500/20">
+              🤖 QR AI Concierge poderá resumir alertas, chamados e prioridades do dia.
+            </div>
+
+            <div className="bg-slate-800 rounded-xl p-4 border border-purple-500/20">
+              📦 Entregas poderão gerar recomendação para locker conforme volume.
+            </div>
+
+            <div className="bg-slate-800 rounded-xl p-4 border border-purple-500/20">
+              🛡️ Padrões fora do normal poderão virar alertas preventivos.
             </div>
           </div>
         </div>
