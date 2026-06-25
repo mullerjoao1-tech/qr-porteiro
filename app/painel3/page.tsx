@@ -249,7 +249,7 @@ const TEMPO_EM_ATENDIMENTO = 3 * 60 * 1000;
         );
       } else {
         await registrarLog("erro_camera", "A câmera não retornou imagem válida");
-        alert("A câmera não retornou imagem.");
+        console.log("A câmera não retornou imagem.");
       }
     } catch (erro) {
       console.error("Erro ao capturar foto da câmera:", erro);
@@ -620,7 +620,7 @@ const TEMPO_EM_ATENDIMENTO = 3 * 60 * 1000;
       });
 
       await update(ref(db, "configuracoes"), {
-        tokenMorador1: token,
+        tokenMorador3: token,
       });
 
       await registrarLog(
