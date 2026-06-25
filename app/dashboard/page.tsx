@@ -114,7 +114,7 @@ export default function Dashboard() {
             <img
               src="/logo-oficial.png"
               alt="QR Acesso"
-              className="h-14 md:h-20 w-auto object-contain"
+              className="h-10 md:h-20 w-auto object-contain"
             />
 
             <h1 className="text-3xl md:text-5xl font-black text-blue-400">
@@ -257,10 +257,9 @@ export default function Dashboard() {
                 </div>
               )}
             </div>
-
-            <div className="bg-blue-600 hover:bg-blue-500 text-white font-bold px-4 py-2 rounded-xl transition-all text-sm">
-              {mostrarExpansao ? "Fechar" : "Ver"}
-            </div>
+<div className="bg-blue-600 hover:bg-blue-500 shadow-lg shadow-blue-500/20 text-white font-bold px-4 py-2 rounded-xl transition-all text-sm">
+  {mostrarExpansao ? "Fechar" : "Ver"}
+</div>
           </button>
 
           {mostrarExpansao && (
