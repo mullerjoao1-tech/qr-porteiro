@@ -1,4 +1,10 @@
+"use client";
+
+import { useState } from "react";
+
 export default function Dashboard() {
+  const [mostrarExpansao, setMostrarExpansao] = useState(false);
+
   const modulosDoCondominio = {
     access: true,
     security: true,
@@ -89,6 +95,8 @@ export default function Dashboard() {
 
   const modulosAtivos = modulos.filter((modulo) => moduloAtivo(modulo.id));
   const modulosDisponiveis = modulos.filter((modulo) => !moduloAtivo(modulo.id));
+  const previewModulos = modulosDisponiveis.slice(0, 3);
+  const quantidadeRestante = modulosDisponiveis.length - previewModulos.length;
 
   const qrs = [
     { nome: "QR1", status: "🟢 Disponível" },
@@ -170,9 +178,7 @@ export default function Dashboard() {
                   {modulo.nome}
                 </h3>
 
-                <p className="text-sm text-slate-300">
-                  {modulo.descricao}
-                </p>
+                <p className="text-sm text-slate-300">{modulo.descricao}</p>
 
                 <p className={`mt-4 font-bold ${modulo.cor}`}>
                   {modulo.status}
@@ -218,43 +224,81 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="bg-slate-900 rounded-2xl p-5 md:p-6 mb-8 border border-blue-500/20">
-          <h2 className="text-2xl font-bold text-blue-300">
-            Expanda sua plataforma
-          </h2>
+        <div className="bg-slate-900 rounded-2xl p-4 md:p-6 mb-8 border border-blue-500/20">
+          <button
+            onClick={() => setMostrarExpansao(!mostrarExpansao)}
+            className="w-full flex items-center justify-between gap-4 text-left"
+          >
+            <div className="flex-1">
+              <h2 className="text-xl md:text-2xl font-bold text-blue-300">
+                Expanda sua plataforma
+              </h2>
 
-          <p className="text-slate-400 text-sm mt-1 mb-5">
-            Módulos disponíveis para contratação conforme a necessidade.
-          </p>
+              <p className="text-slate-400 text-xs md:text-sm mt-1">
+                {modulosDisponiveis.length} módulos disponíveis para contratar.
+              </p>
 
-          <div className="grid md:grid-cols-4 gap-4">
-            {modulosDisponiveis.map((modulo) => (
-              <div
-                key={modulo.id}
-                className="bg-slate-800 rounded-xl p-4 border border-slate-700 hover:border-blue-400 transition-all"
-              >
-                <h3 className="font-bold text-xl mb-3 text-white">
-                  {modulo.nome}
-                </h3>
+              {!mostrarExpansao && (
+                <div className="flex flex-wrap gap-2 mt-3">
+                  {previewModulos.map((modulo) => (
+                    <span
+                      key={modulo.id}
+                      className="bg-slate-800 border border-blue-500/30 text-blue-200 text-xs font-bold px-3 py-1 rounded-full"
+                    >
+                      {modulo.nome}
+                    </span>
+                  ))}
 
-                <p className="text-sm text-slate-300">
-                  {modulo.descricao}
-                </p>
+                  {quantidadeRestante > 0 && (
+                    <span className="bg-blue-600/20 border border-blue-400/40 text-blue-200 text-xs font-bold px-3 py-1 rounded-full">
+                      +{quantidadeRestante}
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
 
-                <p className={`mt-4 font-bold ${modulo.cor}`}>
-                  {modulo.status}
-                </p>
+            <div className="bg-blue-600 hover:bg-blue-500 text-white font-bold px-4 py-2 rounded-xl transition-all text-sm">
+              {mostrarExpansao ? "Fechar" : "Ver"}
+            </div>
+          </button>
 
-                <p className="text-xs text-slate-500 mt-3">
-                  {modulo.destaque}
-                </p>
+          {mostrarExpansao && (
+            <div className="mt-5">
+              <p className="text-slate-400 text-sm mb-5">
+                Módulos disponíveis para contratação conforme a necessidade.
+              </p>
 
-                <button className="mt-4 w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 rounded-lg transition-all">
-                  Conhecer
-                </button>
+              <div className="grid md:grid-cols-4 gap-4">
+                {modulosDisponiveis.map((modulo) => (
+                  <div
+                    key={modulo.id}
+                    className="bg-slate-800 rounded-xl p-4 border border-slate-700 hover:border-blue-400 transition-all"
+                  >
+                    <h3 className="font-bold text-xl mb-3 text-white">
+                      {modulo.nome}
+                    </h3>
+
+                    <p className="text-sm text-slate-300">
+                      {modulo.descricao}
+                    </p>
+
+                    <p className={`mt-4 font-bold ${modulo.cor}`}>
+                      {modulo.status}
+                    </p>
+
+                    <p className="text-xs text-slate-500 mt-3">
+                      {modulo.destaque}
+                    </p>
+
+                    <button className="mt-4 w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 rounded-lg transition-all">
+                      Conhecer
+                    </button>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            </div>
+          )}
         </div>
 
         <div className="bg-slate-900 rounded-2xl p-5 md:p-6 border border-slate-800">
@@ -264,7 +308,8 @@ export default function Dashboard() {
 
           <div className="space-y-3">
             <div className="bg-slate-800 rounded-xl p-4 border border-purple-500/20">
-              🤖 QR AI Concierge poderá resumir alertas, chamados e prioridades do dia.
+              🤖 QR AI Concierge poderá resumir alertas, chamados e prioridades
+              do dia.
             </div>
 
             <div className="bg-slate-800 rounded-xl p-4 border border-purple-500/20">
