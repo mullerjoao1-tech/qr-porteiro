@@ -224,7 +224,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="bg-slate-900 rounded-2xl p-4 md:p-6 mb-8 border border-blue-500/20">
+        <div className="bg-slate-900 rounded-2xl p-4 md:p-6 mb-8 border border-blue-400/40 shadow-lg shadow-blue-500/10">
           <button
             onClick={() => setMostrarExpansao(!mostrarExpansao)}
             className="w-full flex items-center justify-between gap-4 text-left"
