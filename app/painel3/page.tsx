@@ -20,22 +20,26 @@ export default function Painel() {
   const [capturandoCamera, setCapturandoCamera] = useState(false);
   const [abrindoPortao, setAbrindoPortao] = useState(false);
   const [statusPortao, setStatusPortao] = useState("");
-const [analytics, setAnalytics] = useState({
-  recebidas: 0,
-  atendidas: 0,
-  falhas: 0,
-});
+
+  const [analytics, setAnalytics] = useState({
+    recebidas: 0,
+    atendidas: 0,
+    falhas: 0,
+  });
+
   const intervaloSomRef = useRef<NodeJS.Timeout | null>(null);
   const finalizacaoAutoRef = useRef<NodeJS.Timeout | null>(null);
   const ultimaCapturaCameraRef = useRef("");
   const audioContextRef = useRef<AudioContext | null>(null);
+  const ultimaChamadaAtivaRef = useRef(false);
+  const ultimaChamadaDadosRef = useRef<any>(null);
 
   const caminhoFirebase = "qr3";
   const caminhoHistorico = "historico/qr3";
   const caminhoStatus = "status/qr3";
 
   const TEMPO_AGUARDANDO = 5 * 60 * 1000;
-  const TEMPO_EM_ATENDIMENTO = 3 * 60 * 1000;
+const TEMPO_EM_ATENDIMENTO = 3 * 60 * 1000;
 
   const chamadaAtiva =
     nome !== "Nenhuma solicitação" && status === "Aguardando atendimento";
@@ -84,31 +88,33 @@ const [analytics, setAnalytics] = useState({
       console.error("Erro analytics:", erro);
     }
   }
-useEffect(() => {
-  const referenciaAnalytics = ref(db, "analytics/qr3");
 
-  const pararDeOuvirAnalytics = onValue(referenciaAnalytics, (snapshot) => {
-    const dados = snapshot.val();
+  useEffect(() => {
+    const referenciaAnalytics = ref(db, "analytics/qr3");
 
-    if (!dados) {
+    const pararDeOuvirAnalytics = onValue(referenciaAnalytics, (snapshot) => {
+      const dados = snapshot.val();
+
+      if (!dados) {
+        setAnalytics({
+          recebidas: 0,
+          atendidas: 0,
+          falhas: 0,
+        });
+
+        return;
+      }
+
       setAnalytics({
-        recebidas: 0,
-        atendidas: 0,
-        falhas: 0,
+        recebidas: dados.recebidas || 0,
+        atendidas: dados.atendidas || 0,
+        falhas: dados.falhas || 0,
       });
-
-      return;
-    }
-
-    setAnalytics({
-      recebidas: dados.recebidas || 0,
-      atendidas: dados.atendidas || 0,
-      falhas: dados.falhas || 0,
     });
-  });
 
-  return () => pararDeOuvirAnalytics();
-}, []);
+    return () => pararDeOuvirAnalytics();
+  }, []);
+
   useEffect(() => {
     const referenciaHistorico = ref(db, caminhoHistorico);
 
@@ -139,12 +145,29 @@ useEffect(() => {
   useEffect(() => {
     const referencia = ref(db, caminhoFirebase);
 
-    const pararDeOuvir = onValue(referencia, (snapshot) => {
+    const pararDeOuvir = onValue(referencia, async (snapshot) => {
       const dados = snapshot.val();
 
       limparFinalizacaoAutomatica();
 
       if (!dados) {
+        if (ultimaChamadaAtivaRef.current && ultimaChamadaDadosRef.current) {
+          await registrarAnalytics("falha");
+
+          await registrarLog(
+            "chamada_cancelada_visitante",
+            "Visitante cancelou antes do atendimento"
+          );
+
+          await salvarHistoricoComDados(
+            "Cancelada pelo visitante",
+            ultimaChamadaDadosRef.current
+          );
+        }
+
+        ultimaChamadaAtivaRef.current = false;
+        ultimaChamadaDadosRef.current = null;
+
         setNome("Nenhuma solicitação");
         setMotivo("Aguardando visitante");
         setStatus("Sem chamado ativo");
@@ -156,6 +179,9 @@ useEffect(() => {
         return;
       }
 
+      ultimaChamadaAtivaRef.current = true;
+      ultimaChamadaDadosRef.current = dados;
+
       setNome(dados.nome || "Nenhuma solicitação");
       setMotivo(dados.motivo || "Aguardando visitante");
       setStatus(dados.status || "Sem chamado ativo");
@@ -166,6 +192,9 @@ useEffect(() => {
       setMensagemResponsavel(dados.mensagemResponsavel || "");
 
       if (dados.status === "Encerrado") {
+        ultimaChamadaAtivaRef.current = false;
+        ultimaChamadaDadosRef.current = null;
+
         pararToqueContinuo();
         setAvisoAuto("Atendimento encerrado. Limpando em instantes.");
         return;
@@ -236,6 +265,29 @@ useEffect(() => {
     setCapturandoCamera(false);
   }
 
+  async function salvarHistoricoComDados(tipoFinalizacao: string, dados: any) {
+    if (!dados || !dados.nome) return;
+
+    const agora = new Date();
+
+    const novoRegistro = {
+      nome: dados.nome || "Visitante",
+      motivo: dados.motivo || "Não informado",
+      modo: dados.modo || "",
+      statusFinal: dados.status || "Sem status",
+      tipoFinalizacao,
+      chamadoEm: dados.criadoEm
+        ? new Date(dados.criadoEm).toLocaleString("pt-BR")
+        : "",
+      finalizadoEm: agora.toISOString(),
+      finalizadoEmFormatado: agora.toLocaleString("pt-BR"),
+      fotoCamera: fotoCameraAtual || "",
+    };
+
+    const novoItem = push(ref(db, caminhoHistorico));
+    await set(novoItem, novoRegistro);
+  }
+
   async function salvarHistorico(tipoFinalizacao: string) {
     if (nome === "Nenhuma solicitação") return;
 
@@ -293,6 +345,8 @@ useEffect(() => {
     pararToqueContinuo();
     limparFinalizacaoAutomatica();
 
+    ultimaChamadaAtivaRef.current = false;
+
     await registrarAnalytics("timeout");
     await registrarLog("timeout_atendimento", "Chamada finalizada automaticamente");
 
@@ -304,6 +358,8 @@ useEffect(() => {
       notificar: false,
       encerradoEm: new Date().toISOString(),
     });
+
+    ultimaChamadaDadosRef.current = null;
 
     setTimeout(async () => {
       await remove(ref(db, caminhoFirebase));
@@ -318,71 +374,70 @@ useEffect(() => {
   }
 
   async function atenderSolicitacao() {
-  if (status === "Sem chamado ativo") {
-    alert("Não existe chamada ativa para atender.");
-    return;
+    if (status === "Sem chamado ativo") {
+      alert("Não existe chamada ativa para atender.");
+      return;
+    }
+
+    if (status === "Em atendimento") {
+      alert("Esta chamada já está em atendimento.");
+      return;
+    }
+
+    await registrarAnalytics("atendida");
+    await registrarLog("chamada_atendida", "Chamada atendida pelo painel");
+
+    await update(ref(db, caminhoFirebase), {
+      status: "Em atendimento",
+      notificar: false,
+      atendidoEm: new Date().toISOString(),
+    });
+
+    pararToqueContinuo();
   }
-
-  if (status === "Em atendimento") {
-    alert("Esta chamada já está em atendimento.");
-    return;
-  }
-
-  await registrarAnalytics("atendida");
-  await registrarLog("chamada_atendida", "Chamada atendida pelo painel");
-
-  await update(ref(db, caminhoFirebase), {
-    status: "Em atendimento",
-    notificar: false,
-    atendidoEm: new Date().toISOString(),
-  });
-
-  pararToqueContinuo();
-}
 
   async function enviarMensagemRapida(mensagem: string) {
-  if (status === "Sem chamado ativo") {
-    alert("Não existe chamada ativa para responder.");
-    return;
+    if (status === "Sem chamado ativo") {
+      alert("Não existe chamada ativa para responder.");
+      return;
+    }
+
+    if (status !== "Em atendimento") {
+      await registrarAnalytics("atendida");
+    }
+
+    await registrarLog("mensagem_rapida", "Mensagem enviada: " + mensagem);
+
+    await update(ref(db, caminhoFirebase), {
+      status: "Em atendimento",
+      mensagemResponsavel: mensagem,
+      notificar: false,
+      atendidoEm: new Date().toISOString(),
+    });
+
+    setMensagemResponsavel(mensagem);
+    pararToqueContinuo();
   }
 
-  if (status !== "Em atendimento") {
-    await registrarAnalytics("atendida");
+  async function zerarMetricas() {
+    const confirmar = window.confirm(
+      "Tem certeza que deseja zerar todas as métricas?"
+    );
+
+    if (!confirmar) return;
+
+    await set(ref(db, "analytics/qr3"), {
+      recebidas: 0,
+      atendidas: 0,
+      finalizadas: 0,
+      timeouts: 0,
+      falhas: 0,
+    });
+
+    alert("Métricas zeradas com sucesso.");
   }
 
-  await registrarLog("mensagem_rapida", "Mensagem enviada: " + mensagem);
-
-  await update(ref(db, caminhoFirebase), {
-    status: "Em atendimento",
-    mensagemResponsavel: mensagem,
-    notificar: false,
-    atendidoEm: new Date().toISOString(),
-  });
-
-  setMensagemResponsavel(mensagem);
-  pararToqueContinuo();
-}
-
-async function zerarMetricas() {
-  const confirmar = window.confirm(
-    "Tem certeza que deseja zerar todas as métricas?"
-  );
-
-  if (!confirmar) return;
-
-  await set(ref(db, "analytics/qr3"), {
-    recebidas: 0,
-    atendidas: 0,
-    finalizadas: 0,
-    timeouts: 0,
-    falhas: 0,
-  });
-
-  alert("Métricas zeradas com sucesso.");
-}
-
-async function limparHistorico() {
-
+  async function limparHistorico() {
     const confirmar = window.confirm(
       "Tem certeza que deseja limpar todo o histórico?"
     );
@@ -400,6 +455,8 @@ async function limparHistorico() {
       return;
     }
 
+    ultimaChamadaAtivaRef.current = false;
+
     await registrarAnalytics("finalizada");
     await registrarLog("chamada_finalizada", "Chamada finalizada manualmente");
 
@@ -413,6 +470,8 @@ async function limparHistorico() {
       notificar: false,
       encerradoEm: new Date().toISOString(),
     });
+
+    ultimaChamadaDadosRef.current = null;
 
     setTimeout(async () => {
       await remove(ref(db, caminhoFirebase));
@@ -561,7 +620,7 @@ async function limparHistorico() {
       });
 
       await update(ref(db, "configuracoes"), {
-        tokenMorador3: token,
+        tokenMorador1: token,
       });
 
       await registrarLog(
@@ -688,7 +747,7 @@ async function limparHistorico() {
       )}
 
       <div className="w-full max-w-md bg-slate-900 rounded-2xl p-8">
-        <h1 className="text-4xl font-bold mb-2">🏠 Painel do Morador 3</h1>
+        <h1 className="text-4xl font-bold mb-2">🏠 Painel do Morador 1</h1>
 
         <button
           onClick={tocarBip}
@@ -705,63 +764,60 @@ async function limparHistorico() {
         </button>
 
         <p className="text-slate-400 mb-6">Solicitações recebidas</p>
-<div className="bg-slate-800 rounded-xl p-4 mb-4 border border-blue-500/30">
-  <div className="flex items-center justify-between mb-3">
-  <h2 className="font-bold text-blue-300">
-    📊 Métricas do qr3
-  </h2>
 
-  <button
-    onClick={zerarMetricas}
-    className="bg-red-600 hover:bg-red-500 text-white text-xs font-bold px-3 py-1 rounded-lg"
-  >
-    ZERAR
-  </button>
-</div>
+        <div className="bg-slate-800 rounded-xl p-4 mb-4 border border-blue-500/30">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="font-bold text-blue-300">📊 Métricas do qr3</h2>
 
-  <div className="grid grid-cols-2 gap-3 text-center">
-    <div className="bg-slate-900 rounded-xl p-3">
-      <p className="text-2xl font-black text-white">
-        {analytics.recebidas}
-      </p>
-      <p className="text-xs text-slate-400">Recebidas</p>
-    </div>
+            <button
+              onClick={zerarMetricas}
+              className="bg-red-600 hover:bg-red-500 text-white text-xs font-bold px-3 py-1 rounded-lg"
+            >
+              ZERAR
+            </button>
+          </div>
 
-    <div className="bg-slate-900 rounded-xl p-3">
-      <p className="text-2xl font-black text-green-400">
-        {analytics.atendidas}
-      </p>
-      <p className="text-xs text-slate-400">Atendidas</p>
-    </div>
+          <div className="grid grid-cols-2 gap-3 text-center">
+            <div className="bg-slate-900 rounded-xl p-3">
+              <p className="text-2xl font-black text-white">
+                {analytics.recebidas}
+              </p>
+              <p className="text-xs text-slate-400">Recebidas</p>
+            </div>
 
-    <div className="bg-slate-900 rounded-xl p-3">
-      <p className="text-2xl font-black text-red-400">
-        {analytics.falhas}
-      </p>
-      <p className="text-xs text-slate-400">Falhas</p>
-    </div>
+            <div className="bg-slate-900 rounded-xl p-3">
+              <p className="text-2xl font-black text-green-400">
+                {analytics.atendidas}
+              </p>
+              <p className="text-xs text-slate-400">Atendidas</p>
+            </div>
 
-    <div className="bg-slate-900 rounded-xl p-3">
-      <p className="text-2xl font-black text-yellow-400">
+            <div className="bg-slate-900 rounded-xl p-3">
+              <p className="text-2xl font-black text-red-400">
+                {analytics.falhas}
+              </p>
+              <p className="text-xs text-slate-400">Falhas</p>
+            </div>
+
+            <div className="bg-slate-900 rounded-xl p-3">
+              <p className="text-2xl font-black text-yellow-400">
                 {analytics.recebidas > 0
-  ? Math.min(
-      100,
-      Math.round(
-        (Math.min(
-          analytics.atendidas,
-          analytics.recebidas
-        ) /
-          analytics.recebidas) *
-          100
-      )
-    )
-  : 0}
-%
-      </p>
-      <p className="text-xs text-slate-400">Taxa sucesso</p>
-    </div>
-  </div>
-</div>
+                  ? Math.min(
+                      100,
+                      Math.round(
+                        (Math.min(analytics.atendidas, analytics.recebidas) /
+                          analytics.recebidas) *
+                          100
+                      )
+                    )
+                  : 0}
+                %
+              </p>
+              <p className="text-xs text-slate-400">Taxa sucesso</p>
+            </div>
+          </div>
+        </div>
+
         <div className="bg-slate-800 rounded-xl p-4 mb-4">
           <h2 className="font-bold text-white mb-2">📷 Câmera do Portão</h2>
 

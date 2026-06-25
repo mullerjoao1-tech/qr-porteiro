@@ -19,7 +19,7 @@ export default function Home() {
 
   const codigoQr = "qr3";
   const caminhoFirebase = "qr3";
-  const chaveAtendimento = "atendimentoAtivoQr3";
+  const chaveAtendimento = "atendimentoAtivoqr3";
   const modoCondominio = "porteiro";
 
   const tiposChamada = [
