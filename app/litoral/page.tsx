@@ -1,6 +1,6 @@
 export default function LitoralPage() {
   const whatsapp =
-    "https://wa.me/5541999821219?text=Ol%C3%A1!%20Quero%20uma%20demonstra%C3%A7%C3%A3o%20gratuita%20do%20QR%20Acesso%20para%20condom%C3%ADnios%20no%20litoral.";
+    "https://wa.me/5541999821219?text=Ol%C3%A1!%20Quero%20reservar%20uma%20das%20vagas%20do%20piloto%20do%20QR%20Acesso%20no%20litoral.";
 
   return (
     <main className="min-h-screen bg-slate-950 text-white">
@@ -44,7 +44,7 @@ export default function LitoralPage() {
               rel="noreferrer"
               className="inline-block bg-green-500 hover:bg-green-600 text-white px-8 py-4 rounded-xl text-lg font-bold"
             >
-              Quero uma demonstração gratuita
+              Reservar uma das vagas do piloto
             </a>
 
             <p className="text-sm text-slate-400 mt-3">
@@ -191,17 +191,15 @@ export default function LitoralPage() {
         </h2>
 
         <p className="text-xl text-slate-300 max-w-3xl mx-auto mb-8">
-          Estamos selecionando condomínios para demonstração inicial com
-          condições especiais.
+          Estamos abrindo poucas vagas para condomínios participarem do piloto
+          de lançamento.
         </p>
 
         <div className="grid md:grid-cols-4 gap-4 max-w-5xl mx-auto mb-10">
           <div className="bg-white/10 rounded-xl p-4">
             ✅ Sem instalação complexa
           </div>
-          <div className="bg-white/10 rounded-xl p-4">
-            ✅ Sem passar fios pelo condomínio
-          </div>
+          <div className="bg-white/10 rounded-xl p-4">✅ Sem cabeamento extra</div>
           <div className="bg-white/10 rounded-xl p-4">✅ Mais segurança</div>
           <div className="bg-white/10 rounded-xl p-4">✅ Suporte próximo</div>
         </div>
@@ -212,7 +210,7 @@ export default function LitoralPage() {
           rel="noreferrer"
           className="inline-block bg-green-500 hover:bg-green-600 px-10 py-5 rounded-xl text-xl font-bold"
         >
-          Solicitar demonstração gratuita
+          Reservar uma das vagas do piloto
         </a>
       </section>
 
