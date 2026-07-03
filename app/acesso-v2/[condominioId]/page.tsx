@@ -387,7 +387,13 @@ export default function AcessoV2Condominio() {
               {unidadesFiltradas.length > 0 ? (
                 <div className="space-y-3">
                   {unidadesFiltradas.map((unidade) => {
-                    const ocupada = !!unidade.chamada;
+                    const statusChamada = unidade.chamada?.status || "";
+
+const ocupada =
+  !!unidade.chamada &&
+  statusChamada !== "Finalizado" &&
+  statusChamada !== "Cancelado pelo visitante" &&
+  statusChamada !== "Atendimento encerrado";
 
                     return (
                       <button
