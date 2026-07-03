@@ -398,10 +398,16 @@ console.log("RESPOSTA PUSH V2:", dadosPush);
               {unidadesFiltradas.length > 0 ? (
                 <div className="space-y-3">
                   {unidadesFiltradas.map((unidade) => {
-                    const statusChamada = unidade.chamada?.status || "";
+                    
+
+const statusChamada = unidade.chamada?.status || "";
+const temNome = unidade.chamada?.nome || "";
+const temMotivo = unidade.chamada?.motivo || "";
 
 const ocupada =
   !!unidade.chamada &&
+  !!temNome &&
+  !!temMotivo &&
   statusChamada !== "Encerrado" &&
   statusChamada !== "Finalizado" &&
   statusChamada !== "Cancelado pelo visitante" &&
