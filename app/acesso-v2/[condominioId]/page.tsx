@@ -402,8 +402,10 @@ console.log("RESPOSTA PUSH V2:", dadosPush);
 
 const ocupada =
   !!unidade.chamada &&
+  statusChamada !== "Encerrado" &&
   statusChamada !== "Finalizado" &&
   statusChamada !== "Cancelado pelo visitante" &&
+  statusChamada !== "Cancelada pelo visitante" &&
   statusChamada !== "Atendimento encerrado";
 
                     return (
