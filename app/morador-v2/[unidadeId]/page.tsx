@@ -30,6 +30,8 @@ const slug = String(
   const [capturandoCamera, setCapturandoCamera] = useState(false);
   const [abrindoPortao, setAbrindoPortao] = useState(false);
   const [statusPortao, setStatusPortao] = useState("");
+  const [instalavel, setInstalavel] = useState(false);
+const [installPrompt, setInstallPrompt] = useState<any>(null);
   const [visitanteVisualizou, setVisitanteVisualizou] = useState(false);
 
   const intervaloSomRef = useRef<NodeJS.Timeout | null>(null);
@@ -94,7 +96,30 @@ const slug = String(
       console.error("Erro analytics:", erro);
     }
   }
+useEffect(() => {
+  const handler = (e: any) => {
+    e.preventDefault();
+    setInstallPrompt(e);
+    setInstalavel(true);
+  };
 
+  window.addEventListener("beforeinstallprompt", handler);
+async function instalarApp() {
+  if (!installPrompt) return;
+
+  installPrompt.prompt();
+
+  const escolha = await installPrompt.userChoice;
+
+  if (escolha?.outcome === "accepted") {
+    setInstalavel(false);
+    setInstallPrompt(null);
+  }
+}
+  return () => {
+    window.removeEventListener("beforeinstallprompt", handler);
+  };
+}, []);
   useEffect(() => {
     const referenciaStatus = ref(db, caminhoStatus);
 
