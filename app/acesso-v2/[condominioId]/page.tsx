@@ -211,7 +211,7 @@ export default function AcessoV2Condominio() {
         mensagemMorador: null,
         enviadoEm: null,
       });
-await fetch("/api/enviar-notificacao-v2", {
+const respostaPush = await fetch("/api/enviar-notificacao-v2", {
   method: "POST",
   headers: {
     "Content-Type": "application/json",
@@ -220,6 +220,9 @@ await fetch("/api/enviar-notificacao-v2", {
     unidadeId: unidadeSelecionada.id,
   }),
 });
+
+const dadosPush = await respostaPush.json();
+console.log("RESPOSTA PUSH V2:", dadosPush);
       setMensagem(`✅ Chamada enviada para ${unidadeSelecionada.nome}. Aguarde o atendimento.`);
     } catch (erro) {
       console.error("Erro ao chamar unidade:", erro);
