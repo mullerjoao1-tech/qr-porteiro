@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "next/navigation";
-import { ref, onValue, update } from "firebase/database";
+import { ref, onValue, update, remove } from "firebase/database";
 import { db } from "../../services/firebase";
 
 type Unidade = {
@@ -15,6 +15,12 @@ type Unidade = {
     motivo?: string;
     status?: string;
     criadoEm?: string;
+    mensagemRapida?: string;
+    respostaRapida?: string;
+    resposta?: string;
+    mensagemMorador?: string;
+    mensagemResponsavel?: string;
+    enviadoEm?: number;
   };
 };
 
@@ -35,6 +41,13 @@ export default function AcessoV2Condominio() {
 
   const [enviando, setEnviando] = useState(false);
   const [mensagem, setMensagem] = useState("");
+
+  const [popupTexto, setPopupTexto] = useState("");
+  const [popupTipo, setPopupTipo] = useState<"mensagem" | "encerrado">("mensagem");
+
+  const chamadaAtivaRef = useRef(false);
+  const chamadaFoiEnviadaRef = useRef(false);
+  const ultimoPopupRef = useRef("");
 
   useEffect(() => {
     const referencia = ref(db, "unidades-v2");
@@ -60,6 +73,52 @@ export default function AcessoV2Condominio() {
 
     return () => pararDeOuvir();
   }, []);
+
+  useEffect(() => {
+    if (!unidadeSelecionada) return;
+
+    const referencia = ref(db, `unidades-v2/${unidadeSelecionada.id}/chamada`);
+
+    const pararDeOuvir = onValue(referencia, (snapshot) => {
+      const chamada = snapshot.val();
+
+      if (!chamada) {
+        if (chamadaAtivaRef.current && chamadaFoiEnviadaRef.current) {
+          setPopupTipo("encerrado");
+          setPopupTexto("Atendimento encerrado pelo responsável.");
+        }
+
+        chamadaAtivaRef.current = false;
+        chamadaFoiEnviadaRef.current = false;
+        ultimoPopupRef.current = "";
+        return;
+      }
+
+      if (!chamadaFoiEnviadaRef.current) {
+        return;
+      }
+
+      chamadaAtivaRef.current = true;
+
+      const textoResposta =
+        chamada.mensagemRapida ||
+        chamada.respostaRapida ||
+        chamada.mensagemResponsavel ||
+        chamada.resposta ||
+        chamada.mensagemMorador ||
+        "";
+
+      const idMensagem = `${textoResposta}-${chamada.enviadoEm || ""}`;
+
+      if (textoResposta && idMensagem !== ultimoPopupRef.current) {
+        ultimoPopupRef.current = idMensagem;
+        setPopupTipo("mensagem");
+        setPopupTexto(textoResposta);
+      }
+    });
+
+    return () => pararDeOuvir();
+  }, [unidadeSelecionada]);
 
   const blocos = useMemo(() => {
     const lista = unidades
@@ -94,7 +153,12 @@ export default function AcessoV2Condominio() {
   const precisaNome = motivo === "Visitante";
   const precisaDescricao = motivo === "Outros";
 
-  async function chamarUnidade() {
+  
+     async function chamarUnidade() {
+    if (!unidadeSelecionada) {
+      alert("Selecione uma unidade.");
+      return;
+    }
     if (!unidadeSelecionada) {
       alert("Selecione uma unidade.");
       return;
@@ -126,6 +190,10 @@ export default function AcessoV2Condominio() {
     try {
       setEnviando(true);
       setMensagem("");
+      setPopupTexto("");
+      ultimoPopupRef.current = "";
+      chamadaFoiEnviadaRef.current = true;
+      chamadaAtivaRef.current = true;
 
       await update(ref(db, `unidades-v2/${unidadeSelecionada.id}/chamada`), {
         nome: nomeFinal,
@@ -135,6 +203,13 @@ export default function AcessoV2Condominio() {
         notificar: true,
         condominioId,
         origem: "acesso-v2",
+
+        mensagemRapida: null,
+        respostaRapida: null,
+        mensagemResponsavel: null,
+        resposta: null,
+        mensagemMorador: null,
+        enviadoEm: null,
       });
 
       setMensagem(`✅ Chamada enviada para ${unidadeSelecionada.nome}. Aguarde o atendimento.`);
@@ -145,13 +220,45 @@ export default function AcessoV2Condominio() {
       setEnviando(false);
     }
   }
+  async function cancelarChamada() {
+  if (!unidadeSelecionada) return;
 
+  try {
+    await update(
+      ref(db, `unidades-v2/${unidadeSelecionada.id}/chamada`),
+      {
+        status: "Cancelado pelo visitante",
+        notificar: false,
+        canceladoEm: Date.now(),
+      }
+    );
+
+    await remove(ref(db, `unidades-v2/${unidadeSelecionada.id}/chamada`));
+
+    setMensagem("");
+    setPopupTexto("");
+    setUnidadeSelecionada(null);
+    setNome("");
+    setMotivo("");
+    setOutroMotivo("");
+
+    chamadaAtivaRef.current = false;
+    chamadaFoiEnviadaRef.current = false;
+    ultimoPopupRef.current = "";
+  } catch (erro) {
+    console.error("Erro ao cancelar:", erro);
+  }
+}
   function limparSelecao() {
     setUnidadeSelecionada(null);
     setNome("");
     setMotivo("");
     setOutroMotivo("");
     setMensagem("");
+    setPopupTexto("");
+    chamadaAtivaRef.current = false;
+    chamadaFoiEnviadaRef.current = false;
+    ultimoPopupRef.current = "";
   }
 
   function voltarBloco() {
@@ -162,10 +269,58 @@ export default function AcessoV2Condominio() {
     setMotivo("");
     setOutroMotivo("");
     setMensagem("");
+    setPopupTexto("");
+    chamadaAtivaRef.current = false;
+    chamadaFoiEnviadaRef.current = false;
+    ultimoPopupRef.current = "";
   }
 
   return (
     <main className="min-h-screen bg-slate-950 text-white p-4 flex justify-center">
+      {popupTexto && (
+        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-5">
+          <div
+            className={
+              popupTipo === "encerrado"
+                ? "w-full max-w-xl bg-green-600 border-4 border-green-300 rounded-3xl p-8 text-center shadow-2xl"
+                : "w-full max-w-xl bg-blue-600 border-4 border-blue-300 rounded-3xl p-8 text-center shadow-2xl"
+            }
+          >
+            <p className="text-5xl mb-4">
+              {popupTipo === "encerrado" ? "✅" : "💬"}
+            </p>
+
+            <h2 className="text-2xl font-black mb-3">
+              {popupTipo === "encerrado"
+                ? "ATENDIMENTO ENCERRADO"
+                : "NOVA MENSAGEM"}
+            </h2>
+
+            <p className="text-3xl font-black leading-relaxed py-6">
+              {popupTexto}
+            </p>
+
+            <button
+              onClick={async () => {
+  if (unidadeSelecionada) {
+    await update(
+      ref(db, `unidades-v2/${unidadeSelecionada.id}/chamada`),
+      {
+        visualizadoPeloVisitante: true,
+      }
+    );
+  }
+
+  setPopupTexto("");
+}}
+              className="mt-7 w-full bg-white text-black text-2xl font-black py-5 rounded-2xl"
+            >
+              ENTENDI
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="w-full max-w-xl">
         <section className="bg-slate-900 border border-slate-700 rounded-3xl p-6 mb-5 text-center">
           <p className="text-green-400 font-black text-sm mb-2">
@@ -216,9 +371,7 @@ export default function AcessoV2Condominio() {
                 </button>
               )}
 
-              <h2 className="text-2xl font-black mb-4">
-                Escolha a unidade
-              </h2>
+              <h2 className="text-2xl font-black mb-4">Escolha a unidade</h2>
 
               <label className="text-sm text-slate-300 font-bold">
                 Buscar unidade
@@ -361,7 +514,7 @@ export default function AcessoV2Condominio() {
               </div>
             )}
 
-            <button
+                       <button
               onClick={chamarUnidade}
               disabled={enviando || !motivo}
               className="w-full bg-green-500 hover:bg-green-400 disabled:bg-gray-500 text-black text-xl font-black py-4 rounded-2xl"
@@ -369,9 +522,18 @@ export default function AcessoV2Condominio() {
               {enviando ? "Enviando..." : "🔔 CHAMAR"}
             </button>
 
-            {mensagem && (
-              <div className="mt-5 bg-green-500/15 border border-green-500 rounded-2xl p-4 text-green-300 font-bold text-center">
-                {mensagem}
+                        {mensagem && (
+              <div className="mt-5 space-y-4">
+                <div className="bg-green-500/15 border border-green-500 rounded-2xl p-4 text-green-300 font-bold text-center">
+                  {mensagem}
+                </div>
+
+                <button
+                  onClick={cancelarChamada}
+                  className="w-full bg-red-600 hover:bg-red-500 text-white text-xl font-black py-4 rounded-2xl"
+                >
+                  ❌ CANCELAR CHAMADA
+                </button>
               </div>
             )}
           </section>
