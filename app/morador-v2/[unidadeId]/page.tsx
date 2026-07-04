@@ -104,6 +104,11 @@ useEffect(() => {
   };
 
   window.addEventListener("beforeinstallprompt", handler);
+
+  return () => {
+    window.removeEventListener("beforeinstallprompt", handler);
+  };
+}, []);
 async function instalarApp() {
   if (!installPrompt) return;
 
@@ -116,10 +121,6 @@ async function instalarApp() {
     setInstallPrompt(null);
   }
 }
-  return () => {
-    window.removeEventListener("beforeinstallprompt", handler);
-  };
-}, []);
   useEffect(() => {
     const referenciaStatus = ref(db, caminhoStatus);
 
@@ -769,22 +770,12 @@ async function instalarApp() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3 mt-5">
-          <button
-            onClick={tocarBip}
-            className="bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold py-3 rounded-2xl"
-          >
-            🔊 Testar Som
-          </button>
-
-          <button
-            onClick={ativarNotificacoes}
-            className="bg-yellow-500 hover:bg-yellow-400 text-black text-sm font-bold py-3 rounded-2xl"
-          >
-            🔔 Notificações
-          </button>
-        </div>
-
+        <button
+  onClick={instalarApp}
+  className="w-full mt-3 bg-green-500 hover:bg-green-400 text-black text-sm font-black py-3 rounded-2xl"
+>
+  📲 INSTALAR APP NO CELULAR
+</button>
         <div className="grid grid-cols-2 gap-3 mt-3">
           <button
             onClick={capturarFotoCamera}
