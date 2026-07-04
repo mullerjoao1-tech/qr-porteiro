@@ -89,6 +89,7 @@ export default function Dashboard() {
     const locaisRef = ref(db, "qrCentral/locais");
 
     const desligar = onValue(locaisRef, (snapshot) => {
+      
       const dados = snapshot.val();
 
       if (!dados) {
@@ -108,7 +109,7 @@ export default function Dashboard() {
   }, []);
 
   useEffect(() => {
-    const unidadesRef = ref(db, "qrCentral/unidades");
+    const unidadesRef = ref(db, "unidades-v2");
 
     const desligar = onValue(unidadesRef, (snapshot) => {
       const dados = snapshot.val();
@@ -130,7 +131,7 @@ export default function Dashboard() {
   }, []);
 
   useEffect(() => {
-    const moradoresRef = ref(db, "qrCentral/moradores");
+    const moradoresRef = ref(db, "moradores-v2");
 
     const desligar = onValue(moradoresRef, (snapshot) => {
       const dados = snapshot.val();
