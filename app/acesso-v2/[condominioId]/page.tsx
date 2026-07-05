@@ -400,23 +400,14 @@ export default function AcessoV2Condominio() {
   }
 
   function limparSelecao() {
-    if (chamadaSelecionadaAtiva || chamadaAtivaRef.current) {
-      setMensagem(
-        "⚠️ Existe uma chamada ativa. Cancele ou aguarde o atendimento antes de trocar a unidade."
-      );
-      return;
-    }
-
-    setUnidadeSelecionada(null);
-    setNome("");
-    setMotivo("");
-    setOutroMotivo("");
-    setMensagem("");
-    setPopupTexto("");
-    chamadaAtivaRef.current = false;
-    chamadaFoiEnviadaRef.current = false;
-    ultimoPopupRef.current = "";
-  }
+  setUnidadeSelecionada(null);
+  setNome("");
+  setMotivo("");
+  setOutroMotivo("");
+  setMensagem("");
+  setPopupTexto("");
+  ultimoPopupRef.current = "";
+}
 
   function voltarBloco() {
     setBlocoSelecionado("");
