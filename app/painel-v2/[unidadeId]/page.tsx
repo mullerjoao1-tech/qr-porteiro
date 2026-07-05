@@ -220,10 +220,17 @@ export default function PainelV2Central() {
               <button
                 key={unidade.id}
                 onClick={() => setUnidadeAberta(unidade)}
-                className={`border-2 rounded-2xl p-3 text-left shadow-xl hover:scale-[1.02] transition ${corStatus(
-                  unidade
-                )}`}
+               className={`border-2 rounded-2xl p-3 text-left shadow-xl hover:scale-[1.02] transition relative ${
+  unidade.chamada?.status === "Aguardando atendimento"
+    ? "animate-pulse ring-4 ring-green-400/40"
+    : ""
+} ${corStatus(unidade)}`}
               >
+                {unidade.chamada?.status === "Aguardando atendimento" && (
+  <div className="mb-2 bg-green-500 text-black text-[10px] font-black px-2 py-1 rounded-lg text-center animate-pulse">
+    🔔 CHAMADO AQUI
+  </div>
+)}
                 <div className="flex justify-between items-center mb-2">
                   <span>🏠</span>
                   <span>{bolinhaStatus(unidade)}</span>
