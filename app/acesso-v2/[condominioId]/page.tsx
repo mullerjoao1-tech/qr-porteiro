@@ -93,7 +93,11 @@ export default function AcessoV2Condominio() {
 
   const [enviando, setEnviando] = useState(false);
   const [mensagem, setMensagem] = useState("");
+const [gravandoAudio, setGravandoAudio] = useState(false);
+const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
 
+const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+const audioChunksRef = useRef<Blob[]>([]);
   const [popupTexto, setPopupTexto] = useState("");
   const [popupTipo, setPopupTipo] = useState<"mensagem" | "encerrado">(
     "mensagem"
@@ -278,7 +282,80 @@ export default function AcessoV2Condominio() {
 
   const precisaNome = motivo === "Visitante";
   const precisaDescricao = motivo === "Outros";
+async function iniciarGravacao() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      audio: true,
+    });
 
+    const recorder = new MediaRecorder(stream);
+
+    audioChunksRef.current = [];
+
+    recorder.ondataavailable = (event) => {
+      if (event.data.size > 0) {
+        audioChunksRef.current.push(event.data);
+      }
+    };
+
+    recorder.onstop = () => {
+      const blob = new Blob(audioChunksRef.current, {
+        type: "audio/webm",
+      });
+
+      setAudioBlob(blob);
+
+      stream.getTracks().forEach((track) => track.stop());
+    };
+
+    mediaRecorderRef.current = recorder;
+    recorder.start();
+
+    setGravandoAudio(true);
+
+    setTimeout(() => {
+      if (recorder.state === "recording") {
+        pararGravacao();
+      }
+    }, 15000);
+  } catch (erro) {
+    alert("Não foi possível acessar o microfone.");
+    console.error(erro);
+  }
+}
+
+function pararGravacao() {
+  if (
+    mediaRecorderRef.current &&
+    mediaRecorderRef.current.state === "recording"
+  ) {
+    mediaRecorderRef.current.stop();
+  }
+
+  setGravandoAudio(false);
+}
+<div className="mt-4 space-y-3">
+  <button
+    onClick={gravandoAudio ? pararGravacao : iniciarGravacao}
+    className={
+      gravandoAudio
+        ? "w-full bg-red-600 text-white text-xl font-black py-4 rounded-2xl animate-pulse"
+        : "w-full bg-blue-600 text-white text-xl font-black py-4 rounded-2xl"
+    }
+  >
+    {gravandoAudio
+      ? "⏹️ PARAR GRAVAÇÃO"
+      : "🎙️ GRAVAR ÁUDIO (15s)"}
+  </button>
+
+  {audioBlob && (
+    <audio
+      controls
+      className="w-full"
+      src={URL.createObjectURL(audioBlob)}
+    />
+  )}
+</div>
   async function chamarUnidade() {
     const unidadeAtual = unidadeAtualSelecionada || unidadeSelecionada;
 
@@ -695,7 +772,28 @@ export default function AcessoV2Condominio() {
                 ? "Enviando..."
                 : "🔔 CHAMAR"}
             </button>
+<div className="mt-4 space-y-3">
+  <button
+    onClick={gravandoAudio ? pararGravacao : iniciarGravacao}
+    className={
+      gravandoAudio
+        ? "w-full bg-red-600 text-white text-xl font-black py-4 rounded-2xl animate-pulse"
+        : "w-full bg-blue-600 text-white text-xl font-black py-4 rounded-2xl"
+    }
+  >
+    {gravandoAudio
+      ? "⏹️ PARAR GRAVAÇÃO"
+      : "🎙️ GRAVAR ÁUDIO (15s)"}
+  </button>
 
+  {audioBlob && (
+    <audio
+      controls
+      className="w-full"
+      src={URL.createObjectURL(audioBlob)}
+    />
+  )}
+</div>
             {mensagem && (
               <div className="mt-5 space-y-4">
                 <div
