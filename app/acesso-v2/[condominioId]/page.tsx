@@ -15,14 +15,64 @@ type Unidade = {
     motivo?: string;
     status?: string;
     criadoEm?: string;
+    atendidoEm?: string;
     mensagemRapida?: string;
     respostaRapida?: string;
     resposta?: string;
     mensagemMorador?: string;
     mensagemResponsavel?: string;
     enviadoEm?: number;
+    ultimaAtividade?: number;
   };
 };
+
+const TEMPO_AGUARDANDO_MS = 5 * 60 * 1000;
+const TEMPO_EM_ATENDIMENTO_MS = 3 * 60 * 1000;
+
+function chamadaEstaAtiva(chamada?: Unidade["chamada"]) {
+  if (!chamada) return false;
+
+  const status = chamada.status || "";
+
+  return (
+    status === "Aguardando atendimento" ||
+    status === "Em atendimento"
+  );
+}
+
+function textoStatusChamada(chamada?: Unidade["chamada"]) {
+  if (!chamada) return "Disponível";
+
+  if (chamada.status === "Aguardando atendimento") {
+    return "Chamando";
+  }
+
+  if (chamada.status === "Em atendimento") {
+    return "Em atendimento";
+  }
+
+  return "Disponível";
+}
+
+function pegarTempoBase(chamada: Unidade["chamada"]) {
+  if (!chamada) return Date.now();
+
+  if (chamada.ultimaAtividade) return chamada.ultimaAtividade;
+
+  if (chamada.enviadoEm) return chamada.enviadoEm;
+
+  if (chamada.atendidoEm) {
+    const tempo = new Date(chamada.atendidoEm).getTime();
+    if (!Number.isNaN(tempo)) return tempo;
+  }
+
+  if (chamada.criadoEm) {
+    const tempo = new Date(chamada.criadoEm).getTime();
+    if (!Number.isNaN(tempo)) return tempo;
+  }
+
+  return Date.now();
+}
 
 export default function AcessoV2Condominio() {
   const params = useParams();
@@ -33,7 +83,9 @@ export default function AcessoV2Condominio() {
 
   const [busca, setBusca] = useState("");
   const [blocoSelecionado, setBlocoSelecionado] = useState("");
-  const [unidadeSelecionada, setUnidadeSelecionada] = useState<Unidade | null>(null);
+  const [unidadeSelecionada, setUnidadeSelecionada] = useState<Unidade | null>(
+    null
+  );
 
   const [nome, setNome] = useState("");
   const [motivo, setMotivo] = useState("");
@@ -43,11 +95,14 @@ export default function AcessoV2Condominio() {
   const [mensagem, setMensagem] = useState("");
 
   const [popupTexto, setPopupTexto] = useState("");
-  const [popupTipo, setPopupTipo] = useState<"mensagem" | "encerrado">("mensagem");
+  const [popupTipo, setPopupTipo] = useState<"mensagem" | "encerrado">(
+    "mensagem"
+  );
 
   const chamadaAtivaRef = useRef(false);
   const chamadaFoiEnviadaRef = useRef(false);
   const ultimoPopupRef = useRef("");
+  const timerAutomaticoRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const referencia = ref(db, "unidades-v2");
@@ -69,6 +124,13 @@ export default function AcessoV2Condominio() {
       lista.sort((a, b) => a.nome.localeCompare(b.nome));
       setUnidades(lista);
       setCarregando(false);
+
+      setUnidadeSelecionada((unidadeAtual) => {
+        if (!unidadeAtual) return null;
+
+        const unidadeAtualizada = lista.find((u) => u.id === unidadeAtual.id);
+        return unidadeAtualizada || unidadeAtual;
+      });
     });
 
     return () => pararDeOuvir();
@@ -79,8 +141,17 @@ export default function AcessoV2Condominio() {
 
     const referencia = ref(db, `unidades-v2/${unidadeSelecionada.id}/chamada`);
 
+    const limparTimerAutomatico = () => {
+      if (timerAutomaticoRef.current) {
+        clearTimeout(timerAutomaticoRef.current);
+        timerAutomaticoRef.current = null;
+      }
+    };
+
     const pararDeOuvir = onValue(referencia, (snapshot) => {
       const chamada = snapshot.val();
+
+      limparTimerAutomatico();
 
       if (!chamada) {
         if (chamadaAtivaRef.current && chamadaFoiEnviadaRef.current) {
@@ -91,6 +162,7 @@ export default function AcessoV2Condominio() {
         chamadaAtivaRef.current = false;
         chamadaFoiEnviadaRef.current = false;
         ultimoPopupRef.current = "";
+        setMensagem("");
         return;
       }
 
@@ -99,6 +171,44 @@ export default function AcessoV2Condominio() {
       }
 
       chamadaAtivaRef.current = true;
+
+      if (chamada.status === "Aguardando atendimento") {
+        const tempoBase = pegarTempoBase(chamada);
+        const tempoRestante = Math.max(
+          TEMPO_AGUARDANDO_MS - (Date.now() - tempoBase),
+          1000
+        );
+
+        timerAutomaticoRef.current = setTimeout(async () => {
+          await update(ref(db, `unidades-v2/${unidadeSelecionada.id}/chamada`), {
+            status: "Cancelado automaticamente",
+            notificar: false,
+            canceladoEm: Date.now(),
+            motivoCancelamento: "Expirado sem atendimento",
+          });
+
+          await remove(ref(db, `unidades-v2/${unidadeSelecionada.id}/chamada`));
+        }, tempoRestante);
+      }
+
+      if (chamada.status === "Em atendimento") {
+        const tempoBase = pegarTempoBase(chamada);
+        const tempoRestante = Math.max(
+          TEMPO_EM_ATENDIMENTO_MS - (Date.now() - tempoBase),
+          1000
+        );
+
+        timerAutomaticoRef.current = setTimeout(async () => {
+          await update(ref(db, `unidades-v2/${unidadeSelecionada.id}/chamada`), {
+            status: "Finalizado automaticamente",
+            notificar: false,
+            finalizadoEm: Date.now(),
+            motivoFinalizacao: "Finalização automática por tempo",
+          });
+
+          await remove(ref(db, `unidades-v2/${unidadeSelecionada.id}/chamada`));
+        }, tempoRestante);
+      }
 
       const textoResposta =
         chamada.mensagemRapida ||
@@ -117,7 +227,10 @@ export default function AcessoV2Condominio() {
       }
     });
 
-    return () => pararDeOuvir();
+    return () => {
+      limparTimerAutomatico();
+      pararDeOuvir();
+    };
   }, [unidadeSelecionada]);
 
   const blocos = useMemo(() => {
@@ -150,17 +263,34 @@ export default function AcessoV2Condominio() {
     );
   }, [busca, unidadesDoBloco]);
 
+  const unidadeAtualSelecionada = useMemo(() => {
+    if (!unidadeSelecionada) return null;
+
+    return (
+      unidades.find((unidade) => unidade.id === unidadeSelecionada.id) ||
+      unidadeSelecionada
+    );
+  }, [unidades, unidadeSelecionada]);
+
+  const chamadaSelecionadaAtiva = chamadaEstaAtiva(
+    unidadeAtualSelecionada?.chamada
+  );
+
   const precisaNome = motivo === "Visitante";
   const precisaDescricao = motivo === "Outros";
 
-  
-     async function chamarUnidade() {
-    if (!unidadeSelecionada) {
+  async function chamarUnidade() {
+    const unidadeAtual = unidadeAtualSelecionada || unidadeSelecionada;
+
+    if (!unidadeAtual) {
       alert("Selecione uma unidade.");
       return;
     }
-    if (!unidadeSelecionada) {
-      alert("Selecione uma unidade.");
+
+    if (chamadaEstaAtiva(unidadeAtual.chamada) || chamadaAtivaRef.current) {
+      setMensagem(
+        "⚠️ Já existe uma chamada ativa para essa unidade. Aguarde o atendimento ou cancele a chamada anterior."
+      );
       return;
     }
 
@@ -195,11 +325,12 @@ export default function AcessoV2Condominio() {
       chamadaFoiEnviadaRef.current = true;
       chamadaAtivaRef.current = true;
 
-      await update(ref(db, `unidades-v2/${unidadeSelecionada.id}/chamada`), {
+      await update(ref(db, `unidades-v2/${unidadeAtual.id}/chamada`), {
         nome: nomeFinal,
         motivo: motivoFinal,
         status: "Aguardando atendimento",
         criadoEm: new Date().toISOString(),
+        ultimaAtividade: Date.now(),
         notificar: true,
         condominioId,
         origem: "acesso-v2",
@@ -210,57 +341,72 @@ export default function AcessoV2Condominio() {
         resposta: null,
         mensagemMorador: null,
         enviadoEm: null,
+        visualizadoPeloVisitante: false,
       });
-const respostaPush = await fetch("/api/enviar-notificacao-v2", {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-  },
-  body: JSON.stringify({
-    unidadeId: unidadeSelecionada.id,
-  }),
-});
 
-const dadosPush = await respostaPush.json();
-console.log("RESPOSTA PUSH V2:", dadosPush);
-      setMensagem(`✅ Chamada enviada para ${unidadeSelecionada.nome}. Aguarde o atendimento.`);
+      const respostaPush = await fetch("/api/enviar-notificacao-v2", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          unidadeId: unidadeAtual.id,
+        }),
+      });
+
+      const dadosPush = await respostaPush.json();
+      console.log("RESPOSTA PUSH V2:", dadosPush);
+
+      setMensagem(
+        `✅ Chamada enviada para ${unidadeAtual.nome}. Aguarde o atendimento.`
+      );
     } catch (erro) {
       console.error("Erro ao chamar unidade:", erro);
       alert("Erro ao enviar chamada. Tente novamente.");
+      chamadaAtivaRef.current = false;
+      chamadaFoiEnviadaRef.current = false;
     } finally {
       setEnviando(false);
     }
   }
-  async function cancelarChamada() {
-  if (!unidadeSelecionada) return;
 
-  try {
-    await update(
-      ref(db, `unidades-v2/${unidadeSelecionada.id}/chamada`),
-      {
+  async function cancelarChamada() {
+    const unidadeAtual = unidadeAtualSelecionada || unidadeSelecionada;
+
+    if (!unidadeAtual) return;
+
+    try {
+      await update(ref(db, `unidades-v2/${unidadeAtual.id}/chamada`), {
         status: "Cancelado pelo visitante",
         notificar: false,
         canceladoEm: Date.now(),
-      }
-    );
+      });
 
-    await remove(ref(db, `unidades-v2/${unidadeSelecionada.id}/chamada`));
+      await remove(ref(db, `unidades-v2/${unidadeAtual.id}/chamada`));
 
-    setMensagem("");
-    setPopupTexto("");
-    setUnidadeSelecionada(null);
-    setNome("");
-    setMotivo("");
-    setOutroMotivo("");
+      setMensagem("");
+      setPopupTexto("");
+      setUnidadeSelecionada(null);
+      setNome("");
+      setMotivo("");
+      setOutroMotivo("");
 
-    chamadaAtivaRef.current = false;
-    chamadaFoiEnviadaRef.current = false;
-    ultimoPopupRef.current = "";
-  } catch (erro) {
-    console.error("Erro ao cancelar:", erro);
+      chamadaAtivaRef.current = false;
+      chamadaFoiEnviadaRef.current = false;
+      ultimoPopupRef.current = "";
+    } catch (erro) {
+      console.error("Erro ao cancelar:", erro);
+    }
   }
-}
+
   function limparSelecao() {
+    if (chamadaSelecionadaAtiva || chamadaAtivaRef.current) {
+      setMensagem(
+        "⚠️ Existe uma chamada ativa. Cancele ou aguarde o atendimento antes de trocar a unidade."
+      );
+      return;
+    }
+
     setUnidadeSelecionada(null);
     setNome("");
     setMotivo("");
@@ -313,17 +459,18 @@ console.log("RESPOSTA PUSH V2:", dadosPush);
 
             <button
               onClick={async () => {
-  if (unidadeSelecionada) {
-    await update(
-      ref(db, `unidades-v2/${unidadeSelecionada.id}/chamada`),
-      {
-        visualizadoPeloVisitante: true,
-      }
-    );
-  }
+                if (unidadeAtualSelecionada) {
+                  await update(
+                    ref(db, `unidades-v2/${unidadeAtualSelecionada.id}/chamada`),
+                    {
+                      visualizadoPeloVisitante: true,
+                      ultimaAtividade: Date.now(),
+                    }
+                  );
+                }
 
-  setPopupTexto("");
-}}
+                setPopupTexto("");
+              }}
               className="mt-7 w-full bg-white text-black text-2xl font-black py-5 rounded-2xl"
             >
               ENTENDI
@@ -398,21 +545,8 @@ console.log("RESPOSTA PUSH V2:", dadosPush);
               {unidadesFiltradas.length > 0 ? (
                 <div className="space-y-3">
                   {unidadesFiltradas.map((unidade) => {
-                    
-
-const statusChamada = unidade.chamada?.status || "";
-const temNome = unidade.chamada?.nome || "";
-const temMotivo = unidade.chamada?.motivo || "";
-
-const ocupada =
-  !!unidade.chamada &&
-  !!temNome &&
-  !!temMotivo &&
-  statusChamada !== "Encerrado" &&
-  statusChamada !== "Finalizado" &&
-  statusChamada !== "Cancelado pelo visitante" &&
-  statusChamada !== "Cancelada pelo visitante" &&
-  statusChamada !== "Atendimento encerrado";
+                    const ocupada = chamadaEstaAtiva(unidade.chamada);
+                    const statusTexto = textoStatusChamada(unidade.chamada);
 
                     return (
                       <button
@@ -445,7 +579,7 @@ const ocupada =
                                 : "text-green-400 text-sm font-bold"
                             }
                           >
-                            {ocupada ? "Em atendimento" : "Disponível"}
+                            {statusTexto}
                           </span>
                         </div>
                       </button>
@@ -461,7 +595,13 @@ const ocupada =
           )}
 
         {unidadeSelecionada && (
-          <section className="bg-slate-900 border border-green-500 rounded-3xl p-5">
+          <section
+            className={
+              chamadaSelecionadaAtiva
+                ? "bg-slate-900 border border-yellow-500 rounded-3xl p-5"
+                : "bg-slate-900 border border-green-500 rounded-3xl p-5"
+            }
+          >
             <button
               onClick={limparSelecao}
               className="mb-4 text-sm text-slate-300 underline"
@@ -472,11 +612,19 @@ const ocupada =
             <div className="bg-slate-800 rounded-2xl p-4 mb-5">
               <p className="text-sm text-slate-400">Unidade selecionada</p>
               <h2 className="text-2xl font-black text-green-400">
-                🏠 {unidadeSelecionada.nome}
+                🏠 {unidadeAtualSelecionada?.nome || unidadeSelecionada.nome}
               </h2>
               <p className="text-slate-400">
-                {unidadeSelecionada.tipo || "Unidade"}
+                {unidadeAtualSelecionada?.tipo ||
+                  unidadeSelecionada.tipo ||
+                  "Unidade"}
               </p>
+
+              {chamadaSelecionadaAtiva && (
+                <div className="mt-4 bg-yellow-500/15 border border-yellow-500 rounded-2xl p-3 text-yellow-300 font-bold text-center">
+                  ⚠️ Já existe uma chamada ativa para esta unidade.
+                </div>
+              )}
             </div>
 
             <p className="text-sm text-slate-300 font-bold mb-3">
@@ -484,25 +632,28 @@ const ocupada =
             </p>
 
             <div className="grid grid-cols-1 gap-3 mb-5">
-              {["Visitante", "Entrega", "Entrega de comida", "Outros"].map((item) => (
-                <button
-                  key={item}
-                  onClick={() => {
-                    setMotivo(item);
-                    setMensagem("");
-                  }}
-                  className={
-                    motivo === item
-                      ? "bg-green-500 text-black font-black py-4 rounded-2xl"
-                      : "bg-slate-800 text-white font-bold py-4 rounded-2xl border border-slate-600"
-                  }
-                >
-                  {item === "Visitante" && "👤 Visitante"}
-                  {item === "Entrega" && "📦 Entrega / encomenda"}
-                  {item === "Entrega de comida" && "🍔 Entrega de comida"}
-                  {item === "Outros" && "✍️ Outros"}
-                </button>
-              ))}
+              {["Visitante", "Entrega", "Entrega de comida", "Outros"].map(
+                (item) => (
+                  <button
+                    key={item}
+                    onClick={() => {
+                      setMotivo(item);
+                      setMensagem("");
+                    }}
+                    disabled={chamadaSelecionadaAtiva}
+                    className={
+                      motivo === item
+                        ? "bg-green-500 text-black font-black py-4 rounded-2xl disabled:bg-gray-500"
+                        : "bg-slate-800 text-white font-bold py-4 rounded-2xl border border-slate-600 disabled:opacity-50"
+                    }
+                  >
+                    {item === "Visitante" && "👤 Visitante"}
+                    {item === "Entrega" && "📦 Entrega / encomenda"}
+                    {item === "Entrega de comida" && "🍔 Entrega de comida"}
+                    {item === "Outros" && "✍️ Outros"}
+                  </button>
+                )
+              )}
             </div>
 
             {motivo === "Visitante" && (
@@ -513,8 +664,9 @@ const ocupada =
                 <input
                   value={nome}
                   onChange={(evento) => setNome(evento.target.value)}
+                  disabled={chamadaSelecionadaAtiva}
                   placeholder="Digite seu nome"
-                  className="w-full mt-2 mb-5 bg-slate-950 border border-slate-600 rounded-2xl px-4 py-4 text-white outline-none focus:border-green-400"
+                  className="w-full mt-2 mb-5 bg-slate-950 border border-slate-600 rounded-2xl px-4 py-4 text-white outline-none focus:border-green-400 disabled:opacity-50"
                 />
               </>
             )}
@@ -527,38 +679,52 @@ const ocupada =
                 <input
                   value={outroMotivo}
                   onChange={(evento) => setOutroMotivo(evento.target.value)}
+                  disabled={chamadaSelecionadaAtiva}
                   placeholder="Ex: reunião, manutenção, serviço..."
-                  className="w-full mt-2 mb-5 bg-slate-950 border border-slate-600 rounded-2xl px-4 py-4 text-white outline-none focus:border-green-400"
+                  className="w-full mt-2 mb-5 bg-slate-950 border border-slate-600 rounded-2xl px-4 py-4 text-white outline-none focus:border-green-400 disabled:opacity-50"
                 />
               </>
             )}
 
-            {(motivo === "Entrega" || motivo === "Entrega de comida") && (
-              <div className="mb-5 bg-blue-500/10 border border-blue-500/40 rounded-2xl p-4 text-blue-300 text-sm font-bold text-center">
-                Para esse tipo de chamada, não precisa informar nome.
-              </div>
-            )}
+            {(motivo === "Entrega" || motivo === "Entrega de comida") &&
+              !chamadaSelecionadaAtiva && (
+                <div className="mb-5 bg-blue-500/10 border border-blue-500/40 rounded-2xl p-4 text-blue-300 text-sm font-bold text-center">
+                  Para esse tipo de chamada, não precisa informar nome.
+                </div>
+              )}
 
-                       <button
+            <button
               onClick={chamarUnidade}
-              disabled={enviando || !motivo}
+              disabled={enviando || !motivo || chamadaSelecionadaAtiva}
               className="w-full bg-green-500 hover:bg-green-400 disabled:bg-gray-500 text-black text-xl font-black py-4 rounded-2xl"
             >
-              {enviando ? "Enviando..." : "🔔 CHAMAR"}
+              {chamadaSelecionadaAtiva
+                ? "⚠️ CHAMADA JÁ ATIVA"
+                : enviando
+                ? "Enviando..."
+                : "🔔 CHAMAR"}
             </button>
 
-                        {mensagem && (
+            {mensagem && (
               <div className="mt-5 space-y-4">
-                <div className="bg-green-500/15 border border-green-500 rounded-2xl p-4 text-green-300 font-bold text-center">
+                <div
+                  className={
+                    mensagem.startsWith("⚠️")
+                      ? "bg-yellow-500/15 border border-yellow-500 rounded-2xl p-4 text-yellow-300 font-bold text-center"
+                      : "bg-green-500/15 border border-green-500 rounded-2xl p-4 text-green-300 font-bold text-center"
+                  }
+                >
                   {mensagem}
                 </div>
 
-                <button
-                  onClick={cancelarChamada}
-                  className="w-full bg-red-600 hover:bg-red-500 text-white text-xl font-black py-4 rounded-2xl"
-                >
-                  ❌ CANCELAR CHAMADA
-                </button>
+                {chamadaAtivaRef.current && (
+                  <button
+                    onClick={cancelarChamada}
+                    className="w-full bg-red-600 hover:bg-red-500 text-white text-xl font-black py-4 rounded-2xl"
+                  >
+                    ❌ CANCELAR CHAMADA
+                  </button>
+                )}
               </div>
             )}
           </section>
