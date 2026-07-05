@@ -126,19 +126,37 @@ export default function PainelV2Central() {
   }
 
   async function atenderChamada(unidade: Unidade) {
-    await update(ref(db, `unidades-v2/${unidade.id}/chamada`), {
-      status: "Em atendimento",
-      atendidoEm: new Date().toISOString(),
+  await update(ref(db, `unidades-v2/${unidade.id}/chamada`), {
+    status: "Em atendimento",
+    atendidoEm: new Date().toISOString(),
+  });
+
+  setUnidadeAberta(null);
+
+  setTimeout(() => {
+    cardRefs.current[unidade.id]?.scrollIntoView({
+      behavior: "smooth",
+      block: "center",
     });
-  }
+  }, 300);
+}
 
   async function enviarMensagem(unidade: Unidade, mensagem: string) {
-    await update(ref(db, `unidades-v2/${unidade.id}/chamada`), {
-      status: "Em atendimento",
-      mensagemResponsavel: mensagem,
-      atendidoEm: new Date().toISOString(),
+  await update(ref(db, `unidades-v2/${unidade.id}/chamada`), {
+    status: "Em atendimento",
+    mensagemResponsavel: mensagem,
+    atendidoEm: new Date().toISOString(),
+  });
+
+  setUnidadeAberta(null);
+
+  setTimeout(() => {
+    cardRefs.current[unidade.id]?.scrollIntoView({
+      behavior: "smooth",
+      block: "center",
     });
-  }
+  }, 300);
+}
 
   async function finalizarChamada(unidade: Unidade) {
     const chamada = unidade.chamada;
