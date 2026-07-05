@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ref, onValue, set, update, remove } from "firebase/database";
 import { db } from "../../services/firebase";
 
@@ -27,6 +27,8 @@ export default function PainelV2Central() {
   const [filtro, setFiltro] = useState("todos");
   const [unidadeAberta, setUnidadeAberta] = useState<Unidade | null>(null);
 
+  const cardRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+
   useEffect(() => {
     const referencia = ref(db, "unidades-v2");
 
@@ -35,6 +37,7 @@ export default function PainelV2Central() {
 
       if (!dados) {
         const objetoInicial: Record<string, Unidade> = {};
+
         unidadesIniciais.forEach((unidade) => {
           objetoInicial[unidade.id] = unidade;
         });
@@ -52,16 +55,30 @@ export default function PainelV2Central() {
 
       lista.sort((a, b) => a.nome.localeCompare(b.nome));
 
+      setUnidades(lista);
+      setCarregando(false);
+
       const unidadeChamando = lista.find(
         (u) => u.chamada?.status === "Aguardando atendimento"
       );
 
       if (unidadeChamando) {
-        setUnidadeAberta(unidadeChamando);
+        setTimeout(() => {
+          cardRefs.current[unidadeChamando.id]?.scrollIntoView({
+            behavior: "smooth",
+            block: "center",
+          });
+        }, 200);
       }
 
-      setUnidades(lista);
-      setCarregando(false);
+      setUnidadeAberta((unidadeAtual) => {
+        if (unidadeAtual) {
+          const unidadeAtualizada = lista.find((u) => u.id === unidadeAtual.id);
+          return unidadeAtualizada || null;
+        }
+
+        return unidadeChamando || null;
+      });
     });
 
     return () => pararDeOuvir();
@@ -69,11 +86,21 @@ export default function PainelV2Central() {
 
   const unidadesFiltradas = useMemo(() => {
     if (filtro === "todos") return unidades;
-    if (filtro === "chamando")
-      return unidades.filter((u) => u.chamada?.status === "Aguardando atendimento");
-    if (filtro === "atendimento")
+
+    if (filtro === "chamando") {
+      return unidades.filter(
+        (u) => u.chamada?.status === "Aguardando atendimento"
+      );
+    }
+
+    if (filtro === "atendimento") {
       return unidades.filter((u) => u.chamada?.status === "Em atendimento");
-    if (filtro === "livres") return unidades.filter((u) => !u.chamada);
+    }
+
+    if (filtro === "livres") {
+      return unidades.filter((u) => !u.chamada);
+    }
+
     return unidades;
   }, [unidades, filtro]);
 
@@ -158,11 +185,14 @@ export default function PainelV2Central() {
           <p className="text-green-400 font-bold text-sm mb-1">
             QR ACESSO • CENTRAL V2
           </p>
+
           <h1 className="text-3xl md:text-5xl font-black">
             🏢 Painel Central do Condomínio
           </h1>
+
           <p className="text-slate-400 mt-2">
-            Visualize todas as unidades, chamadas, entregas e atendimentos em um só lugar.
+            Visualize todas as unidades, chamadas, entregas e atendimentos em um
+            só lugar.
           </p>
         </section>
 
@@ -173,12 +203,16 @@ export default function PainelV2Central() {
           </div>
 
           <div className="bg-slate-900 border border-green-700 rounded-2xl p-4 text-center">
-            <p className="text-3xl font-black text-green-400">{totalChamando}</p>
+            <p className="text-3xl font-black text-green-400">
+              {totalChamando}
+            </p>
             <p className="text-xs text-slate-400">Chamando</p>
           </div>
 
           <div className="bg-slate-900 border border-yellow-700 rounded-2xl p-4 text-center">
-            <p className="text-3xl font-black text-yellow-400">{totalAtendimento}</p>
+            <p className="text-3xl font-black text-yellow-400">
+              {totalAtendimento}
+            </p>
             <p className="text-xs text-slate-400">Em atendimento</p>
           </div>
 
@@ -219,18 +253,22 @@ export default function PainelV2Central() {
             {unidadesFiltradas.map((unidade) => (
               <button
                 key={unidade.id}
+                ref={(el) => {
+                  cardRefs.current[unidade.id] = el;
+                }}
                 onClick={() => setUnidadeAberta(unidade)}
-               className={`border-2 rounded-2xl p-3 text-left shadow-xl hover:scale-[1.02] transition relative ${
-  unidade.chamada?.status === "Aguardando atendimento"
-    ? "animate-pulse ring-4 ring-green-400/40"
-    : ""
-} ${corStatus(unidade)}`}
+                className={`border-2 rounded-2xl p-3 text-left shadow-xl hover:scale-[1.02] transition relative ${
+                  unidade.chamada?.status === "Aguardando atendimento"
+                    ? "animate-pulse ring-4 ring-green-400 shadow-green-500/50"
+                    : ""
+                } ${corStatus(unidade)}`}
               >
                 {unidade.chamada?.status === "Aguardando atendimento" && (
-  <div className="mb-2 bg-green-500 text-black text-[10px] font-black px-2 py-1 rounded-lg text-center animate-pulse">
-    🔔 CHAMADO AQUI
-  </div>
-)}
+                  <div className="mb-2 bg-green-500 text-black text-[10px] font-black px-2 py-1 rounded-lg text-center animate-pulse">
+                    🔔 CHAMADO AQUI
+                  </div>
+                )}
+
                 <div className="flex justify-between items-center mb-2">
                   <span>🏠</span>
                   <span>{bolinhaStatus(unidade)}</span>
@@ -255,7 +293,9 @@ export default function PainelV2Central() {
             <div className="flex justify-between items-start mb-6">
               <div>
                 <h2 className="text-3xl font-black">🏠 {unidadeAberta.nome}</h2>
-                <p className="text-slate-400">{unidadeAberta.tipo || "Unidade"}</p>
+                <p className="text-slate-400">
+                  {unidadeAberta.tipo || "Unidade"}
+                </p>
               </div>
 
               <button
@@ -271,9 +311,11 @@ export default function PainelV2Central() {
                 <p className="text-green-400 font-black text-xl">
                   {unidadeAberta.chamada.nome || "Visitante"}
                 </p>
+
                 <p className="text-slate-300 mt-1">
                   Motivo: {unidadeAberta.chamada.motivo || "Não informado"}
                 </p>
+
                 <p className="text-yellow-400 mt-1">
                   Status: {unidadeAberta.chamada.status || "Sem status"}
                 </p>
@@ -291,7 +333,10 @@ export default function PainelV2Central() {
 
                 <button
                   onClick={() =>
-                    enviarMensagem(unidadeAberta, "Aguarde um momento, por favor.")
+                    enviarMensagem(
+                      unidadeAberta,
+                      "Aguarde um momento, por favor."
+                    )
                   }
                   className="w-full bg-blue-600 py-4 rounded-xl font-bold"
                 >
@@ -322,7 +367,9 @@ export default function PainelV2Central() {
                 </button>
 
                 <button
-                  onClick={() => criarChamadaTeste(unidadeAberta, "Entrega de comida")}
+                  onClick={() =>
+                    criarChamadaTeste(unidadeAberta, "Entrega de comida")
+                  }
                   className="w-full bg-orange-600 py-4 rounded-xl font-bold"
                 >
                   Criar teste: 🍔 Comida
