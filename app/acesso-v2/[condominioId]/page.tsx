@@ -23,6 +23,12 @@ type Unidade = {
     mensagemResponsavel?: string;
     enviadoEm?: number;
     ultimaAtividade?: number;
+    chamada?: {
+  nome?: string;
+  motivo?: string;
+  status?: string;
+  audioBase64?: string;
+};
   };
 };
 
@@ -356,6 +362,19 @@ function pararGravacao() {
     />
   )}
 </div>
+function blobParaBase64(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.onloadend = () => {
+      resolve(reader.result as string);
+    };
+
+    reader.onerror = reject;
+
+    reader.readAsDataURL(blob);
+  });
+}
   async function chamarUnidade() {
     const unidadeAtual = unidadeAtualSelecionada || unidadeSelecionada;
 
@@ -387,7 +406,11 @@ function pararGravacao() {
     }
 
     const motivoFinal = motivo === "Outros" ? outroMotivo.trim() : motivo;
+let audioBase64 = null;
 
+if (audioBlob) {
+  audioBase64 = await blobParaBase64(audioBlob);
+}
     let nomeFinal = nome.trim();
 
     if (motivo === "Entrega") nomeFinal = "Entrega";
@@ -405,6 +428,7 @@ function pararGravacao() {
       await update(ref(db, `unidades-v2/${unidadeAtual.id}/chamada`), {
         nome: nomeFinal,
         motivo: motivoFinal,
+        audioBase64,
         status: "Aguardando atendimento",
         criadoEm: new Date().toISOString(),
         ultimaAtividade: Date.now(),
