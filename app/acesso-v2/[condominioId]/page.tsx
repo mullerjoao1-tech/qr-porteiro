@@ -5,48 +5,42 @@ import { useParams } from "next/navigation";
 import { ref, onValue, update, remove } from "firebase/database";
 import { db } from "../../services/firebase";
 
+type Chamada = {
+  nome?: string;
+  motivo?: string;
+  status?: string;
+  criadoEm?: string;
+  atendidoEm?: string;
+  mensagemRapida?: string;
+  respostaRapida?: string;
+  resposta?: string;
+  mensagemMorador?: string;
+  mensagemResponsavel?: string;
+  enviadoEm?: number;
+  ultimaAtividade?: number;
+  audioBase64?: string;
+};
+
 type Unidade = {
   id: string;
   nome: string;
   tipo?: string;
   bloco?: string;
-  chamada?: {
-    nome?: string;
-    motivo?: string;
-    status?: string;
-    criadoEm?: string;
-    atendidoEm?: string;
-    mensagemRapida?: string;
-    respostaRapida?: string;
-    resposta?: string;
-    mensagemMorador?: string;
-    mensagemResponsavel?: string;
-    enviadoEm?: number;
-    ultimaAtividade?: number;
-    chamada?: {
-  nome?: string;
-  motivo?: string;
-  status?: string;
-  audioBase64?: string;
-};
-  };
+  chamada?: Chamada;
 };
 
 const TEMPO_AGUARDANDO_MS = 5 * 60 * 1000;
 const TEMPO_EM_ATENDIMENTO_MS = 3 * 60 * 1000;
 
-function chamadaEstaAtiva(chamada?: Unidade["chamada"]) {
+function chamadaEstaAtiva(chamada?: Chamada) {
   if (!chamada) return false;
 
   const status = chamada.status || "";
 
-  return (
-    status === "Aguardando atendimento" ||
-    status === "Em atendimento"
-  );
+  return status === "Aguardando atendimento" || status === "Em atendimento";
 }
 
-function textoStatusChamada(chamada?: Unidade["chamada"]) {
+function textoStatusChamada(chamada?: Chamada) {
   if (!chamada) return "Disponível";
 
   if (chamada.status === "Aguardando atendimento") {
@@ -60,7 +54,7 @@ function textoStatusChamada(chamada?: Unidade["chamada"]) {
   return "Disponível";
 }
 
-function pegarTempoBase(chamada: Unidade["chamada"]) {
+function pegarTempoBase(chamada?: Chamada) {
   if (!chamada) return Date.now();
 
   if (chamada.ultimaAtividade) return chamada.ultimaAtividade;
@@ -78,6 +72,20 @@ function pegarTempoBase(chamada: Unidade["chamada"]) {
   }
 
   return Date.now();
+}
+
+function blobParaBase64(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.onloadend = () => {
+      resolve(reader.result as string);
+    };
+
+    reader.onerror = reject;
+
+    reader.readAsDataURL(blob);
+  });
 }
 
 export default function AcessoV2Condominio() {
@@ -99,15 +107,18 @@ export default function AcessoV2Condominio() {
 
   const [enviando, setEnviando] = useState(false);
   const [mensagem, setMensagem] = useState("");
-const [gravandoAudio, setGravandoAudio] = useState(false);
-const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
 
-const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-const audioChunksRef = useRef<Blob[]>([]);
+  const [gravandoAudio, setGravandoAudio] = useState(false);
+  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
+
   const [popupTexto, setPopupTexto] = useState("");
   const [popupTipo, setPopupTipo] = useState<"mensagem" | "encerrado">(
     "mensagem"
   );
+
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const chamarDepoisDoAudioRef = useRef(false);
 
   const chamadaAtivaRef = useRef(false);
   const chamadaFoiEnviadaRef = useRef(false);
@@ -288,95 +299,89 @@ const audioChunksRef = useRef<Blob[]>([]);
 
   const precisaNome = motivo === "Visitante";
   const precisaDescricao = motivo === "Outros";
-async function iniciarGravacao() {
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({
-      audio: true,
-    });
 
-    const recorder = new MediaRecorder(stream);
+  async function iniciarGravacao() {
+    if (!unidadeAtualSelecionada && !unidadeSelecionada) {
+      alert("Selecione uma unidade antes de gravar.");
+      return;
+    }
 
-    audioChunksRef.current = [];
+    if (chamadaSelecionadaAtiva) {
+      setMensagem(
+        "⚠️ Já existe uma chamada ativa para essa unidade. Aguarde o atendimento ou cancele a chamada anterior."
+      );
+      return;
+    }
 
-    recorder.ondataavailable = (event) => {
-      if (event.data.size > 0) {
-        audioChunksRef.current.push(event.data);
-      }
-    };
-
-    recorder.onstop = () => {
-      const blob = new Blob(audioChunksRef.current, {
-        type: "audio/webm",
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: true,
       });
 
-      setAudioBlob(blob);
+      const recorder = new MediaRecorder(stream);
 
-      stream.getTracks().forEach((track) => track.stop());
-    };
+      audioChunksRef.current = [];
+      chamarDepoisDoAudioRef.current = false;
 
-    mediaRecorderRef.current = recorder;
-    recorder.start();
+      recorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
 
-    setGravandoAudio(true);
+      recorder.onstop = async () => {
+        const blob = new Blob(audioChunksRef.current, {
+          type: "audio/webm",
+        });
 
-    setTimeout(() => {
-      if (recorder.state === "recording") {
-        pararGravacao();
-      }
-    }, 15000);
-  } catch (erro) {
-    alert("Não foi possível acessar o microfone.");
-    console.error(erro);
-  }
-}
+        setAudioBlob(blob);
+        setGravandoAudio(false);
 
-function pararGravacao() {
-  if (
-    mediaRecorderRef.current &&
-    mediaRecorderRef.current.state === "recording"
-  ) {
-    mediaRecorderRef.current.stop();
-  }
+        stream.getTracks().forEach((track) => track.stop());
 
-  setGravandoAudio(false);
-}
-<div className="mt-4 space-y-3">
-  <button
-    onClick={gravandoAudio ? pararGravacao : iniciarGravacao}
-    className={
-      gravandoAudio
-        ? "w-full bg-red-600 text-white text-xl font-black py-4 rounded-2xl animate-pulse"
-        : "w-full bg-blue-600 text-white text-xl font-black py-4 rounded-2xl"
+        if (chamarDepoisDoAudioRef.current) {
+          chamarDepoisDoAudioRef.current = false;
+
+          setTimeout(() => {
+            chamarUnidade(blob);
+          }, 300);
+        }
+      };
+
+      mediaRecorderRef.current = recorder;
+      recorder.start();
+
+      setAudioBlob(null);
+      setMensagem("");
+      setGravandoAudio(true);
+
+      setTimeout(() => {
+        if (recorder.state === "recording") {
+          pararGravacao();
+        }
+      }, 15000);
+    } catch (erro) {
+      alert("Não foi possível acessar o microfone.");
+      console.error(erro);
+      setGravandoAudio(false);
     }
-  >
-    {gravandoAudio
-      ? "⏹️ PARAR GRAVAÇÃO"
-      : "🎙️ GRAVAR ÁUDIO (15s)"}
-  </button>
+  }
 
-  {audioBlob && (
-    <audio
-      controls
-      className="w-full"
-      src={URL.createObjectURL(audioBlob)}
-    />
-  )}
-</div>
-function blobParaBase64(blob: Blob): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
+  function pararGravacao() {
+    if (
+      mediaRecorderRef.current &&
+      mediaRecorderRef.current.state === "recording"
+    ) {
+      chamarDepoisDoAudioRef.current = true;
+      mediaRecorderRef.current.stop();
+    } else {
+      setGravandoAudio(false);
+    }
+  }
 
-    reader.onloadend = () => {
-      resolve(reader.result as string);
-    };
-
-    reader.onerror = reject;
-
-    reader.readAsDataURL(blob);
-  });
-}
-  async function chamarUnidade() {
+  async function chamarUnidade(audioParaEnviar?: Blob) {
     const unidadeAtual = unidadeAtualSelecionada || unidadeSelecionada;
+    const blobFinal = audioParaEnviar || audioBlob;
 
     if (!unidadeAtual) {
       alert("Selecione uma unidade.");
@@ -390,8 +395,8 @@ function blobParaBase64(blob: Blob): Promise<string> {
       return;
     }
 
-    if (!motivo) {
-      alert("Escolha o motivo da chamada.");
+    if (!motivo && !blobFinal) {
+      alert("Escolha o motivo da chamada ou grave um áudio.");
       return;
     }
 
@@ -405,14 +410,21 @@ function blobParaBase64(blob: Blob): Promise<string> {
       return;
     }
 
-    const motivoFinal = motivo === "Outros" ? outroMotivo.trim() : motivo;
-let audioBase64 = null;
+    const motivoFinal = motivo
+      ? motivo === "Outros"
+        ? outroMotivo.trim()
+        : motivo
+      : "Áudio do visitante";
 
-if (audioBlob) {
-  audioBase64 = await blobParaBase64(audioBlob);
-}
+    let audioBase64 = null;
+
+    if (blobFinal) {
+      audioBase64 = await blobParaBase64(blobFinal);
+    }
+
     let nomeFinal = nome.trim();
 
+    if (!motivo && blobFinal) nomeFinal = "Áudio do visitante";
     if (motivo === "Entrega") nomeFinal = "Entrega";
     if (motivo === "Entrega de comida") nomeFinal = "Entrega de comida";
     if (motivo === "Outros" && !nomeFinal) nomeFinal = "Outro chamado";
@@ -459,7 +471,9 @@ if (audioBlob) {
       console.log("RESPOSTA PUSH V2:", dadosPush);
 
       setMensagem(
-        `✅ Chamada enviada para ${unidadeAtual.nome}. Aguarde o atendimento.`
+        audioBase64
+          ? `✅ Áudio enviado e chamada feita para ${unidadeAtual.nome}. Aguarde o atendimento.`
+          : `✅ Chamada enviada para ${unidadeAtual.nome}. Aguarde o atendimento.`
       );
     } catch (erro) {
       console.error("Erro ao chamar unidade:", erro);
@@ -491,6 +505,7 @@ if (audioBlob) {
       setNome("");
       setMotivo("");
       setOutroMotivo("");
+      setAudioBlob(null);
 
       chamadaAtivaRef.current = false;
       chamadaFoiEnviadaRef.current = false;
@@ -501,14 +516,15 @@ if (audioBlob) {
   }
 
   function limparSelecao() {
-  setUnidadeSelecionada(null);
-  setNome("");
-  setMotivo("");
-  setOutroMotivo("");
-  setMensagem("");
-  setPopupTexto("");
-  ultimoPopupRef.current = "";
-}
+    setUnidadeSelecionada(null);
+    setNome("");
+    setMotivo("");
+    setOutroMotivo("");
+    setMensagem("");
+    setPopupTexto("");
+    setAudioBlob(null);
+    ultimoPopupRef.current = "";
+  }
 
   function voltarBloco() {
     setBlocoSelecionado("");
@@ -519,6 +535,7 @@ if (audioBlob) {
     setOutroMotivo("");
     setMensagem("");
     setPopupTexto("");
+    setAudioBlob(null);
     chamadaAtivaRef.current = false;
     chamadaFoiEnviadaRef.current = false;
     ultimoPopupRef.current = "";
@@ -732,7 +749,7 @@ if (audioBlob) {
                       setMotivo(item);
                       setMensagem("");
                     }}
-                    disabled={chamadaSelecionadaAtiva}
+                    disabled={chamadaSelecionadaAtiva || gravandoAudio}
                     className={
                       motivo === item
                         ? "bg-green-500 text-black font-black py-4 rounded-2xl disabled:bg-gray-500"
@@ -756,7 +773,7 @@ if (audioBlob) {
                 <input
                   value={nome}
                   onChange={(evento) => setNome(evento.target.value)}
-                  disabled={chamadaSelecionadaAtiva}
+                  disabled={chamadaSelecionadaAtiva || gravandoAudio}
                   placeholder="Digite seu nome"
                   className="w-full mt-2 mb-5 bg-slate-950 border border-slate-600 rounded-2xl px-4 py-4 text-white outline-none focus:border-green-400 disabled:opacity-50"
                 />
@@ -771,7 +788,7 @@ if (audioBlob) {
                 <input
                   value={outroMotivo}
                   onChange={(evento) => setOutroMotivo(evento.target.value)}
-                  disabled={chamadaSelecionadaAtiva}
+                  disabled={chamadaSelecionadaAtiva || gravandoAudio}
                   placeholder="Ex: reunião, manutenção, serviço..."
                   className="w-full mt-2 mb-5 bg-slate-950 border border-slate-600 rounded-2xl px-4 py-4 text-white outline-none focus:border-green-400 disabled:opacity-50"
                 />
@@ -786,8 +803,8 @@ if (audioBlob) {
               )}
 
             <button
-              onClick={chamarUnidade}
-              disabled={enviando || !motivo || chamadaSelecionadaAtiva}
+              onClick={() => chamarUnidade()}
+              disabled={enviando || !motivo || chamadaSelecionadaAtiva || gravandoAudio}
               className="w-full bg-green-500 hover:bg-green-400 disabled:bg-gray-500 text-black text-xl font-black py-4 rounded-2xl"
             >
               {chamadaSelecionadaAtiva
@@ -796,28 +813,31 @@ if (audioBlob) {
                 ? "Enviando..."
                 : "🔔 CHAMAR"}
             </button>
-<div className="mt-4 space-y-3">
-  <button
-    onClick={gravandoAudio ? pararGravacao : iniciarGravacao}
-    className={
-      gravandoAudio
-        ? "w-full bg-red-600 text-white text-xl font-black py-4 rounded-2xl animate-pulse"
-        : "w-full bg-blue-600 text-white text-xl font-black py-4 rounded-2xl"
-    }
-  >
-    {gravandoAudio
-      ? "⏹️ PARAR GRAVAÇÃO"
-      : "🎙️ GRAVAR ÁUDIO (15s)"}
-  </button>
 
-  {audioBlob && (
-    <audio
-      controls
-      className="w-full"
-      src={URL.createObjectURL(audioBlob)}
-    />
-  )}
-</div>
+            <div className="mt-4 space-y-3">
+              <button
+                onClick={gravandoAudio ? pararGravacao : iniciarGravacao}
+                disabled={enviando || chamadaSelecionadaAtiva}
+                className={
+                  gravandoAudio
+                    ? "w-full bg-red-600 text-white text-xl font-black py-4 rounded-2xl animate-pulse"
+                    : "w-full bg-blue-600 text-white text-xl font-black py-4 rounded-2xl disabled:bg-gray-500"
+                }
+              >
+                {gravandoAudio
+                  ? "⏹️ PARAR E CHAMAR"
+                  : "🎙️ GRAVAR ÁUDIO E CHAMAR"}
+              </button>
+
+              {audioBlob && (
+                <audio
+                  controls
+                  className="w-full"
+                  src={URL.createObjectURL(audioBlob)}
+                />
+              )}
+            </div>
+
             {mensagem && (
               <div className="mt-5 space-y-4">
                 <div
