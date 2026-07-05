@@ -113,7 +113,17 @@ export default function PainelV2Central() {
   ).length;
 
   const totalLivres = unidades.filter((u) => !u.chamada).length;
+const chamadasOrdenadas = [...unidades]
+  .filter((u) => u.chamada?.status === "Aguardando atendimento")
+  .sort(
+    (a, b) =>
+      new Date(a.chamada?.criadoEm || 0).getTime() -
+      new Date(b.chamada?.criadoEm || 0).getTime()
+  );
 
+function prioridadeChamada(unidade: Unidade) {
+  return chamadasOrdenadas.findIndex((u) => u.id === unidade.id) + 1;
+}
   async function criarChamadaTeste(unidade: Unidade, motivo: string) {
     await update(ref(db, `unidades-v2/${unidade.id}`), {
       chamada: {
@@ -281,11 +291,29 @@ export default function PainelV2Central() {
                     : ""
                 } ${corStatus(unidade)}`}
               >
-                {unidade.chamada?.status === "Aguardando atendimento" && (
-                  <div className="mb-2 bg-green-500 text-black text-[10px] font-black px-2 py-1 rounded-lg text-center animate-pulse">
-                    🔔 CHAMADO AQUI
-                  </div>
-                )}
+               {unidade.chamada?.status === "Aguardando atendimento" && (() => {
+  const prioridade = prioridadeChamada(unidade);
+
+  const cor =
+    prioridade === 1
+      ? "bg-red-500"
+      : prioridade === 2
+      ? "bg-orange-500"
+      : "bg-green-500";
+
+  const texto =
+    prioridade === 1
+      ? `🚨 PRIORIDADE #${prioridade}`
+      : `🔔 CHAMADO #${prioridade}`;
+
+  return (
+    <div
+      className={`mb-2 ${cor} text-black text-[10px] font-black px-2 py-1 rounded-lg text-center animate-pulse`}
+    >
+      {texto}
+    </div>
+  );
+})()}
 
                 <div className="flex justify-between items-center mb-2">
                   <span>🏠</span>
