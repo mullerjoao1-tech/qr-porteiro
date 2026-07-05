@@ -19,16 +19,13 @@ type Unidade = {
 
 const unidadesIniciais: Unidade[] = [
   { id: "apto-101", nome: "Apto 101", tipo: "Apartamento" },
-  { id: "apto-102", nome: "Apto 102", tipo: "Apartamento" },
-  { id: "apto-201", nome: "Apto 201", tipo: "Apartamento" },
-  { id: "apto-202", nome: "Apto 202", tipo: "Apartamento" },
-  { id: "casa-5", nome: "Casa 5", tipo: "Casa" },
 ];
 
 export default function PainelV2Central() {
   const [unidades, setUnidades] = useState<Unidade[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [filtro, setFiltro] = useState("todos");
+  const [unidadeAberta, setUnidadeAberta] = useState<Unidade | null>(null);
 
   useEffect(() => {
     const referencia = ref(db, "unidades-v2");
@@ -38,7 +35,6 @@ export default function PainelV2Central() {
 
       if (!dados) {
         const objetoInicial: Record<string, Unidade> = {};
-
         unidadesIniciais.forEach((unidade) => {
           objetoInicial[unidade.id] = unidade;
         });
@@ -55,6 +51,15 @@ export default function PainelV2Central() {
       })) as Unidade[];
 
       lista.sort((a, b) => a.nome.localeCompare(b.nome));
+
+      const unidadeChamando = lista.find(
+        (u) => u.chamada?.status === "Aguardando atendimento"
+      );
+
+      if (unidadeChamando) {
+        setUnidadeAberta(unidadeChamando);
+      }
+
       setUnidades(lista);
       setCarregando(false);
     });
@@ -64,21 +69,11 @@ export default function PainelV2Central() {
 
   const unidadesFiltradas = useMemo(() => {
     if (filtro === "todos") return unidades;
-
-    if (filtro === "chamando") {
-      return unidades.filter(
-        (u) => u.chamada?.status === "Aguardando atendimento"
-      );
-    }
-
-    if (filtro === "atendimento") {
+    if (filtro === "chamando")
+      return unidades.filter((u) => u.chamada?.status === "Aguardando atendimento");
+    if (filtro === "atendimento")
       return unidades.filter((u) => u.chamada?.status === "Em atendimento");
-    }
-
-    if (filtro === "livres") {
-      return unidades.filter((u) => !u.chamada);
-    }
-
+    if (filtro === "livres") return unidades.filter((u) => !u.chamada);
     return unidades;
   }, [unidades, filtro]);
 
@@ -122,7 +117,7 @@ export default function PainelV2Central() {
     const chamada = unidade.chamada;
 
     if (chamada) {
-      const registro = {
+      await set(ref(db, `historico-v2/${unidade.id}/${Date.now()}`), {
         unidadeId: unidade.id,
         unidadeNome: unidade.nome,
         nome: chamada.nome || "Visitante",
@@ -131,12 +126,11 @@ export default function PainelV2Central() {
         finalizadoEm: new Date().toISOString(),
         finalizadoEmFormatado: new Date().toLocaleString("pt-BR"),
         tipoFinalizacao: "Manual pelo painel central",
-      };
-
-      await set(ref(db, `historico-v2/${unidade.id}/${Date.now()}`), registro);
+      });
     }
 
     await remove(ref(db, `unidades-v2/${unidade.id}/chamada`));
+    setUnidadeAberta(null);
   }
 
   function corStatus(unidade: Unidade) {
@@ -151,46 +145,10 @@ export default function PainelV2Central() {
     return "border-slate-700 bg-slate-900";
   }
 
-  function textoStatus(unidade: Unidade) {
-    if (unidade.chamada?.status === "Aguardando atendimento") {
-      return "🚨 Chamando";
-    }
-
-    if (unidade.chamada?.status === "Em atendimento") {
-      return "🟡 Em atendimento";
-    }
-
-    return "✅ Livre";
-  }
-
-  function tituloChamada(unidade: Unidade) {
-    const motivo = unidade.chamada?.motivo;
-
-    if (motivo === "Entrega de comida") return "🍔 ENTREGA DE COMIDA";
-    if (motivo === "Entrega") return "📦 ENTREGA / ENCOMENDA";
-    if (motivo === "Visitante") return "👤 VISITANTE";
-
-    return "✍️ OUTRO CHAMADO";
-  }
-
-  function descricaoChamada(unidade: Unidade) {
-    const chamada = unidade.chamada;
-
-    if (!chamada) return "";
-
-    if (chamada.motivo === "Visitante") {
-      return chamada.nome || "Visitante";
-    }
-
-    if (chamada.motivo === "Entrega de comida") {
-      return "Motoboy / entrega de comida";
-    }
-
-    if (chamada.motivo === "Entrega") {
-      return "Entrega / encomenda";
-    }
-
-    return chamada.motivo || "Outro motivo";
+  function bolinhaStatus(unidade: Unidade) {
+    if (unidade.chamada?.status === "Aguardando atendimento") return "🟢";
+    if (unidade.chamada?.status === "Em atendimento") return "🟡";
+    return "⚪";
   }
 
   return (
@@ -200,14 +158,11 @@ export default function PainelV2Central() {
           <p className="text-green-400 font-bold text-sm mb-1">
             QR ACESSO • CENTRAL V2
           </p>
-
           <h1 className="text-3xl md:text-5xl font-black">
             🏢 Painel Central do Condomínio
           </h1>
-
           <p className="text-slate-400 mt-2">
-            Visualize todas as unidades, chamadas, entregas e atendimentos em um
-            só lugar.
+            Visualize todas as unidades, chamadas, entregas e atendimentos em um só lugar.
           </p>
         </section>
 
@@ -218,16 +173,12 @@ export default function PainelV2Central() {
           </div>
 
           <div className="bg-slate-900 border border-green-700 rounded-2xl p-4 text-center">
-            <p className="text-3xl font-black text-green-400">
-              {totalChamando}
-            </p>
+            <p className="text-3xl font-black text-green-400">{totalChamando}</p>
             <p className="text-xs text-slate-400">Chamando</p>
           </div>
 
           <div className="bg-slate-900 border border-yellow-700 rounded-2xl p-4 text-center">
-            <p className="text-3xl font-black text-yellow-400">
-              {totalAtendimento}
-            </p>
+            <p className="text-3xl font-black text-yellow-400">{totalAtendimento}</p>
             <p className="text-xs text-slate-400">Em atendimento</p>
           </div>
 
@@ -239,41 +190,23 @@ export default function PainelV2Central() {
 
         <section className="bg-slate-900 border border-slate-700 rounded-3xl p-4 mb-6">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <button
-              onClick={() => setFiltro("todos")}
-              className={`py-3 rounded-xl font-bold ${
-                filtro === "todos" ? "bg-blue-600" : "bg-slate-800"
-              }`}
-            >
-              Todos
-            </button>
-
-            <button
-              onClick={() => setFiltro("chamando")}
-              className={`py-3 rounded-xl font-bold ${
-                filtro === "chamando" ? "bg-green-600" : "bg-slate-800"
-              }`}
-            >
-              Chamando
-            </button>
-
-            <button
-              onClick={() => setFiltro("atendimento")}
-              className={`py-3 rounded-xl font-bold ${
-                filtro === "atendimento" ? "bg-yellow-600" : "bg-slate-800"
-              }`}
-            >
-              Atendimento
-            </button>
-
-            <button
-              onClick={() => setFiltro("livres")}
-              className={`py-3 rounded-xl font-bold ${
-                filtro === "livres" ? "bg-slate-600" : "bg-slate-800"
-              }`}
-            >
-              Livres
-            </button>
+            {["todos", "chamando", "atendimento", "livres"].map((item) => (
+              <button
+                key={item}
+                onClick={() => setFiltro(item)}
+                className={`py-3 rounded-xl font-bold ${
+                  filtro === item ? "bg-blue-600" : "bg-slate-800"
+                }`}
+              >
+                {item === "todos"
+                  ? "Todos"
+                  : item === "chamando"
+                  ? "Chamando"
+                  : item === "atendimento"
+                  ? "Atendimento"
+                  : "Livres"}
+              </button>
+            ))}
           </div>
         </section>
 
@@ -282,121 +215,116 @@ export default function PainelV2Central() {
             Carregando unidades...
           </div>
         ) : (
-          <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+          <section className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3">
             {unidadesFiltradas.map((unidade) => (
-              <div
+              <button
                 key={unidade.id}
-                className={`border-2 rounded-3xl p-5 shadow-xl ${corStatus(
+                onClick={() => setUnidadeAberta(unidade)}
+                className={`border-2 rounded-2xl p-3 text-left shadow-xl hover:scale-[1.02] transition ${corStatus(
                   unidade
                 )}`}
               >
-                <div className="flex items-start justify-between gap-3 mb-4">
-                  <div>
-                    <h2 className="text-2xl font-black">🏠 {unidade.nome}</h2>
-                    <p className="text-slate-400 text-sm">
-                      {unidade.tipo || "Unidade"}
-                    </p>
-                  </div>
-
-                  <span className="bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs font-bold">
-                    {textoStatus(unidade)}
-                  </span>
+                <div className="flex justify-between items-center mb-2">
+                  <span>🏠</span>
+                  <span>{bolinhaStatus(unidade)}</span>
                 </div>
 
-                {unidade.chamada ? (
-                  <div className="bg-slate-950 border border-slate-700 rounded-2xl p-4 mb-4">
-                    <p className="text-xs text-slate-400 font-bold mb-2">
-                      {tituloChamada(unidade)}
-                    </p>
+                <h2 className="font-black text-sm md:text-base">
+                  {unidade.nome}
+                </h2>
 
-                    <p className="text-2xl font-black text-green-400">
-                      {descricaoChamada(unidade)}
-                    </p>
-
-                    <p className="text-yellow-400 text-sm mt-3">
-                      Status: {unidade.chamada.status || "Sem status"}
-                    </p>
-
-                    <p className="text-blue-300 text-xs mt-2">
-                      Horário:{" "}
-                      {unidade.chamada.criadoEm
-                        ? new Date(unidade.chamada.criadoEm).toLocaleString(
-                            "pt-BR"
-                          )
-                        : "Não informado"}
-                    </p>
-
-                    {unidade.chamada.mensagemResponsavel && (
-                      <p className="text-green-300 text-xs mt-2">
-                        Última mensagem: {unidade.chamada.mensagemResponsavel}
-                      </p>
-                    )}
-                  </div>
-                ) : (
-                  <div className="bg-slate-950 border border-slate-700 rounded-2xl p-4 mb-4 text-slate-400 text-sm">
-                    Nenhum chamado ativo nesta unidade.
-                  </div>
-                )}
-
-                {unidade.chamada ? (
-                  <div className="space-y-2">
-                    <button
-                      onClick={() => atenderChamada(unidade)}
-                      className="w-full bg-green-500 hover:bg-green-400 text-black font-black py-3 rounded-xl"
-                    >
-                      ✅ Atender
-                    </button>
-
-                    <button
-                      onClick={() =>
-                        enviarMensagem(
-                          unidade,
-                          "Aguarde um momento, por favor."
-                        )
-                      }
-                      className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl"
-                    >
-                      💬 Aguarde um momento
-                    </button>
-
-                    <button
-                      onClick={() => finalizarChamada(unidade)}
-                      className="w-full bg-red-600 hover:bg-red-500 text-white font-black py-3 rounded-xl"
-                    >
-                      ❌ Finalizar
-                    </button>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 gap-2">
-                    <button
-                      onClick={() => criarChamadaTeste(unidade, "Visitante")}
-                      className="w-full bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 rounded-xl"
-                    >
-                      Criar teste: Visitante
-                    </button>
-
-                    <button
-                      onClick={() => criarChamadaTeste(unidade, "Entrega")}
-                      className="w-full bg-blue-700 hover:bg-blue-600 text-white font-bold py-3 rounded-xl"
-                    >
-                      Criar teste: Entrega
-                    </button>
-
-                    <button
-                      onClick={() =>
-                        criarChamadaTeste(unidade, "Entrega de comida")
-                      }
-                      className="w-full bg-orange-600 hover:bg-orange-500 text-white font-bold py-3 rounded-xl"
-                    >
-                      Criar teste: 🍔 Comida
-                    </button>
-                  </div>
-                )}
-              </div>
+                <p className="text-xs text-slate-400 mt-1">
+                  {unidade.tipo || "Unidade"}
+                </p>
+              </button>
             ))}
           </section>
         )}
       </div>
+
+      {unidadeAberta && (
+        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-700 rounded-3xl w-full max-w-2xl p-6">
+            <div className="flex justify-between items-start mb-6">
+              <div>
+                <h2 className="text-3xl font-black">🏠 {unidadeAberta.nome}</h2>
+                <p className="text-slate-400">{unidadeAberta.tipo || "Unidade"}</p>
+              </div>
+
+              <button
+                onClick={() => setUnidadeAberta(null)}
+                className="bg-red-600 px-4 py-2 rounded-xl font-bold"
+              >
+                Fechar
+              </button>
+            </div>
+
+            {unidadeAberta.chamada && (
+              <div className="bg-slate-950 border border-slate-700 rounded-2xl p-4 mb-4">
+                <p className="text-green-400 font-black text-xl">
+                  {unidadeAberta.chamada.nome || "Visitante"}
+                </p>
+                <p className="text-slate-300 mt-1">
+                  Motivo: {unidadeAberta.chamada.motivo || "Não informado"}
+                </p>
+                <p className="text-yellow-400 mt-1">
+                  Status: {unidadeAberta.chamada.status || "Sem status"}
+                </p>
+              </div>
+            )}
+
+            {unidadeAberta.chamada ? (
+              <div className="space-y-3">
+                <button
+                  onClick={() => atenderChamada(unidadeAberta)}
+                  className="w-full bg-green-500 py-4 rounded-xl font-black text-black"
+                >
+                  ✅ Atender
+                </button>
+
+                <button
+                  onClick={() =>
+                    enviarMensagem(unidadeAberta, "Aguarde um momento, por favor.")
+                  }
+                  className="w-full bg-blue-600 py-4 rounded-xl font-bold"
+                >
+                  💬 Aguarde um momento
+                </button>
+
+                <button
+                  onClick={() => finalizarChamada(unidadeAberta)}
+                  className="w-full bg-red-600 py-4 rounded-xl font-black"
+                >
+                  ❌ Finalizar
+                </button>
+              </div>
+            ) : (
+              <div className="grid gap-3">
+                <button
+                  onClick={() => criarChamadaTeste(unidadeAberta, "Visitante")}
+                  className="w-full bg-slate-700 py-4 rounded-xl font-bold"
+                >
+                  Criar teste: Visitante
+                </button>
+
+                <button
+                  onClick={() => criarChamadaTeste(unidadeAberta, "Entrega")}
+                  className="w-full bg-blue-700 py-4 rounded-xl font-bold"
+                >
+                  Criar teste: Entrega
+                </button>
+
+                <button
+                  onClick={() => criarChamadaTeste(unidadeAberta, "Entrega de comida")}
+                  className="w-full bg-orange-600 py-4 rounded-xl font-bold"
+                >
+                  Criar teste: 🍔 Comida
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </main>
   );
 }
