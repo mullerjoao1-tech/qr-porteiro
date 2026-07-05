@@ -287,7 +287,7 @@ export default function AcessoV2Condominio() {
       return;
     }
 
-    if (chamadaEstaAtiva(unidadeAtual.chamada) || chamadaAtivaRef.current) {
+    if (chamadaEstaAtiva(unidadeAtual.chamada)) {
       setMensagem(
         "⚠️ Já existe uma chamada ativa para essa unidade. Aguarde o atendimento ou cancele a chamada anterior."
       );
