@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import MoradoresModal from "@/app/components/dashboard/MoradoresModal";
 
 type LocalCadastrado = {
@@ -50,6 +50,9 @@ type Props = {
   locais: LocalCadastrado[];
   unidades: UnidadeCadastrada[];
   moradores: MoradorCadastrado[];
+
+  unidadeParaAbrirId?: string;
+  limparUnidadeParaAbrir?: () => void;
 
   localSelecionadoId: string;
   setLocalSelecionadoId: (valor: string) => void;
@@ -150,6 +153,8 @@ export default function Unidades({
   locais,
   unidades,
   moradores,
+  unidadeParaAbrirId,
+  limparUnidadeParaAbrir,
   localSelecionadoId,
   setLocalSelecionadoId,
   blocoUnidade,
@@ -217,6 +222,17 @@ export default function Unidades({
 }: Props) {
   const [unidadeMoradoresAberta, setUnidadeMoradoresAberta] =
     useState<UnidadeCadastrada | null>(null);
+
+  useEffect(() => {
+    if (!unidadeParaAbrirId) return;
+
+    const unidade = unidades.find((item) => item.id === unidadeParaAbrirId);
+
+    if (!unidade) return;
+
+    setUnidadeMoradoresAberta(unidade);
+    limparUnidadeParaAbrir?.();
+  }, [unidadeParaAbrirId, unidades, limparUnidadeParaAbrir]);
 
   function textoModoChamado(modo?: string) {
     if (modo === "prioridade") return "Modo Prioridade";

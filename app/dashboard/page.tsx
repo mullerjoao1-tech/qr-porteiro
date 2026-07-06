@@ -69,6 +69,7 @@ type MoradorCadastrado = {
 
 export default function Dashboard() {
   const [telaAtiva, setTelaAtiva] = useState<Tela>("dashboard");
+  const [unidadeParaAbrirId, setUnidadeParaAbrirId] = useState("");
 
   const [salvando, setSalvando] = useState(false);
   const [salvandoUnidade, setSalvandoUnidade] = useState(false);
@@ -740,6 +741,19 @@ export default function Dashboard() {
     }
   }
 
+  function abrirUnidadePeloMorador(unidadeId: string) {
+    const unidade = unidades.find((item) => item.id === unidadeId);
+
+    if (!unidade) {
+      alert("Unidade não localizada.");
+      return;
+    }
+
+    setLocalSelecionadoId(unidade.localId);
+    setUnidadeParaAbrirId(unidade.id);
+    setTelaAtiva("unidades");
+  }
+
   const localSelecionado = locais.find((item) => item.id === localSelecionadoId);
   const modoCondominio = localSelecionado?.tipo === "condominio";
 
@@ -1009,6 +1023,8 @@ export default function Dashboard() {
               locais={locais}
               unidades={unidades}
               moradores={moradores}
+              unidadeParaAbrirId={unidadeParaAbrirId}
+              limparUnidadeParaAbrir={() => setUnidadeParaAbrirId("")}
               localSelecionadoId={localSelecionadoId}
               setLocalSelecionadoId={(valor) => {
                 setLocalSelecionadoId(valor);
@@ -1113,6 +1129,7 @@ export default function Dashboard() {
               setPodeAbrirPortao={setPodeAbrirPortao}
               cadastrarMorador={cadastrarMorador}
               salvandoMorador={salvandoMorador}
+              onAbrirUnidade={abrirUnidadePeloMorador}
             />
           )}
 

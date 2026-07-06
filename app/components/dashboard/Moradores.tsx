@@ -58,9 +58,15 @@ type Props = {
 
   cadastrarMorador: () => void;
   salvandoMorador: boolean;
+
+  onAbrirUnidade?: (unidadeId: string) => void;
 };
 
-export default function Moradores({ unidades, moradores }: Props) {
+export default function Moradores({
+  unidades,
+  moradores,
+  onAbrirUnidade,
+}: Props) {
   const [busca, setBusca] = useState("");
   const [filtroRapido, setFiltroRapido] = useState("todos");
   const [moradorSelecionado, setMoradorSelecionado] =
@@ -307,15 +313,13 @@ export default function Moradores({ unidades, moradores }: Props) {
       return;
     }
 
-    setBusca(unidade.nome);
-    setFiltroRapido("todos");
-    setMoradorSelecionado(null);
+    if (!onAbrirUnidade) {
+      alert("Navegação para unidade ainda não conectada.");
+      return;
+    }
 
-    alert(
-      `Unidade localizada:\n\n${unidade.localNome}\n${textoUnidadeCurta(
-        unidade
-      )}\n\nNa próxima etapa o sistema vai trocar automaticamente para a aba Unidades e abrir esta unidade.`
-    );
+    setMoradorSelecionado(null);
+    onAbrirUnidade(unidade.id);
   }
 
   return (
