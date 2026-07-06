@@ -214,13 +214,12 @@ export default function MoradoresModal({
           Fechar
         </button>
       </div>
-  
-   {abrirNovoMorador && (
+     {abrirNovoMorador && (
   <NovoMoradorModal
-    unidade={unidade}
-    onClose={() => setAbrirNovoMorador(false)}
-  />
-)}
-  </div>
+  unidade={unidade}
+  onClose={() => setAbrirNovoMorador(false)}
+/>
+      )}
+    </div>
   );
 }
