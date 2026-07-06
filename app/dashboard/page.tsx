@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ref, onValue, push, set } from "firebase/database";
+import { ref, onValue, push, set, update, remove } from "firebase/database";
 import { db } from "../services/firebase";
 import Unidades from "../components/dashboard/Unidades";
 import Moradores from "../components/dashboard/Moradores";
@@ -49,7 +49,8 @@ type UnidadeCadastrada = {
   status: string;
   possuiResponsavel?: boolean;
   responsavelAdministrativo?: ResponsavelAdministrativo | null;
-  criadoEm: string;
+  criadoEm?: string;
+  atualizadoEm?: string;
 };
 
 type MoradorCadastrado = {
@@ -71,6 +72,8 @@ export default function Dashboard() {
   const [salvando, setSalvando] = useState(false);
   const [salvandoUnidade, setSalvandoUnidade] = useState(false);
   const [salvandoMorador, setSalvandoMorador] = useState(false);
+  const [salvandoLote, setSalvandoLote] = useState(false);
+  const [salvandoEdicaoUnidade, setSalvandoEdicaoUnidade] = useState(false);
 
   const [nomeLocal, setNomeLocal] = useState("");
   const [tipoLocal, setTipoLocal] = useState("condominio");
@@ -88,6 +91,26 @@ export default function Dashboard() {
   const [nomeResponsavel, setNomeResponsavel] = useState("");
   const [telefoneResponsavel, setTelefoneResponsavel] = useState("");
   const [emailResponsavel, setEmailResponsavel] = useState("");
+
+  const [loteAberto, setLoteAberto] = useState(false);
+  const [textoLoteUnidades, setTextoLoteUnidades] = useState("");
+  const [blocoLote, setBlocoLote] = useState("");
+  const [tipoLote, setTipoLote] = useState("apartamento");
+  const [modoChamadoLote, setModoChamadoLote] = useState("familia");
+  const [statusLote, setStatusLote] = useState("pendente");
+
+  const [editandoUnidade, setEditandoUnidade] =
+    useState<UnidadeCadastrada | null>(null);
+  const [editBlocoUnidade, setEditBlocoUnidade] = useState("");
+  const [editNomeUnidade, setEditNomeUnidade] = useState("");
+  const [editTipoUnidade, setEditTipoUnidade] = useState("apartamento");
+  const [editModoChamadoUnidade, setEditModoChamadoUnidade] =
+    useState("familia");
+  const [editStatusUnidade, setEditStatusUnidade] = useState("pendente");
+  const [editPossuiResponsavel, setEditPossuiResponsavel] = useState(false);
+  const [editNomeResponsavel, setEditNomeResponsavel] = useState("");
+  const [editTelefoneResponsavel, setEditTelefoneResponsavel] = useState("");
+  const [editEmailResponsavel, setEditEmailResponsavel] = useState("");
 
   const [unidadeMoradorId, setUnidadeMoradorId] = useState("");
   const [nomeMorador, setNomeMorador] = useState("");
@@ -209,6 +232,50 @@ export default function Dashboard() {
       : unidade.nome;
   }
 
+  function normalizarUnidadeParaComparar(bloco: string, nome: string) {
+    return `${bloco.trim().toLowerCase()}|${nome.trim().toLowerCase()}`;
+  }
+
+  function separarUnidadesDoTexto(texto: string) {
+    return texto
+      .split(/[\n,; ]+/)
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }
+
+  function abrirEdicaoUnidade(unidade: UnidadeCadastrada) {
+    setEditandoUnidade(unidade);
+    setEditBlocoUnidade(unidade.bloco || "");
+    setEditNomeUnidade(unidade.nome || "");
+    setEditTipoUnidade(unidade.tipo || "apartamento");
+    setEditModoChamadoUnidade(unidade.modoChamado || "familia");
+    setEditStatusUnidade(unidade.status || "pendente");
+    setEditPossuiResponsavel(Boolean(unidade.possuiResponsavel));
+
+    setEditNomeResponsavel(
+      unidade.responsavelAdministrativo?.nome || ""
+    );
+    setEditTelefoneResponsavel(
+      unidade.responsavelAdministrativo?.telefone || ""
+    );
+    setEditEmailResponsavel(
+      unidade.responsavelAdministrativo?.email || ""
+    );
+  }
+
+  function fecharEdicaoUnidade() {
+    setEditandoUnidade(null);
+    setEditBlocoUnidade("");
+    setEditNomeUnidade("");
+    setEditTipoUnidade("apartamento");
+    setEditModoChamadoUnidade("familia");
+    setEditStatusUnidade("pendente");
+    setEditPossuiResponsavel(false);
+    setEditNomeResponsavel("");
+    setEditTelefoneResponsavel("");
+    setEditEmailResponsavel("");
+  }
+
   async function cadastrarLocal() {
     if (!nomeLocal.trim()) {
       alert("Digite o nome do local.");
@@ -288,6 +355,21 @@ export default function Dashboard() {
       return;
     }
 
+    const blocoFinal = local.tipo === "condominio" ? formatarNome(blocoUnidade) : "";
+    const nomeFinal = formatarNome(nomeUnidade);
+
+    const jaExiste = unidades.some(
+      (unidade) =>
+        unidade.localId === local.id &&
+        normalizarUnidadeParaComparar(unidade.bloco || "", unidade.nome) ===
+          normalizarUnidadeParaComparar(blocoFinal, nomeFinal)
+    );
+
+    if (jaExiste) {
+      alert("Esta unidade já está cadastrada neste local.");
+      return;
+    }
+
     setSalvandoUnidade(true);
 
     try {
@@ -301,8 +383,8 @@ export default function Dashboard() {
         localId: local.id,
         localNome: local.nome,
         tipoLocal: local.tipo,
-        bloco: local.tipo === "condominio" ? formatarNome(blocoUnidade) : "",
-        nome: formatarNome(nomeUnidade),
+        bloco: blocoFinal,
+        nome: nomeFinal,
         tipo: tipoUnidade,
         modoChamado: modoChamadoUnidade,
         status: statusUnidade,
@@ -334,6 +416,266 @@ export default function Dashboard() {
       alert("Erro ao cadastrar unidade.");
     } finally {
       setSalvandoUnidade(false);
+    }
+  }
+
+  async function cadastrarUnidadesEmLote() {
+    if (!localSelecionadoId) {
+      alert("Selecione um local antes de cadastrar em lote.");
+      return;
+    }
+
+    const local = locais.find((item) => item.id === localSelecionadoId);
+
+    if (!local) {
+      alert("Local não encontrado.");
+      return;
+    }
+
+    if (local.tipo === "condominio" && !blocoLote.trim()) {
+      alert("Informe o bloco/torre para o cadastro em lote.");
+      return;
+    }
+
+    const nomesExtraidos = separarUnidadesDoTexto(textoLoteUnidades);
+
+    if (nomesExtraidos.length === 0) {
+      alert("Digite ou cole pelo menos uma unidade.");
+      return;
+    }
+
+    const blocoFinal = local.tipo === "condominio" ? formatarNome(blocoLote) : "";
+
+    const unicosNoTexto: string[] = [];
+    const repetidosNoTexto: string[] = [];
+
+    nomesExtraidos.forEach((nome) => {
+      const nomeFormatado = formatarNome(nome);
+      const chave = normalizarUnidadeParaComparar(blocoFinal, nomeFormatado);
+
+      const jaEntrou = unicosNoTexto.some(
+        (existente) =>
+          normalizarUnidadeParaComparar(blocoFinal, existente) === chave
+      );
+
+      if (jaEntrou) {
+        repetidosNoTexto.push(nomeFormatado);
+      } else {
+        unicosNoTexto.push(nomeFormatado);
+      }
+    });
+
+    const jaExistem = unicosNoTexto.filter((nome) =>
+      unidades.some(
+        (unidade) =>
+          unidade.localId === local.id &&
+          normalizarUnidadeParaComparar(unidade.bloco || "", unidade.nome) ===
+            normalizarUnidadeParaComparar(blocoFinal, nome)
+      )
+    );
+
+    const paraCriar = unicosNoTexto.filter(
+      (nome) =>
+        !jaExistem.some(
+          (existente) =>
+            normalizarUnidadeParaComparar(blocoFinal, existente) ===
+            normalizarUnidadeParaComparar(blocoFinal, nome)
+        )
+    );
+
+    if (paraCriar.length === 0) {
+      alert("Nenhuma unidade nova para cadastrar. Todas já existem ou estão repetidas.");
+      return;
+    }
+
+    const confirmar = confirm(
+      `Criar ${paraCriar.length} unidade(s)?` +
+        (jaExistem.length > 0
+          ? `\n\nJá existem e serão ignoradas:\n${jaExistem.join(", ")}`
+          : "") +
+        (repetidosNoTexto.length > 0
+          ? `\n\nRepetidas no texto e serão ignoradas:\n${repetidosNoTexto.join(", ")}`
+          : "")
+    );
+
+    if (!confirmar) return;
+
+    setSalvandoLote(true);
+
+    try {
+      const unidadesRef = ref(db, "qrCentral/unidades");
+      const agora = new Date().toISOString();
+
+      await Promise.all(
+        paraCriar.map((nome, index) => {
+          const novaUnidadeRef = push(unidadesRef);
+          const codigo = `UNI-${String(unidades.length + index + 1).padStart(
+            4,
+            "0"
+          )}`;
+
+          return set(novaUnidadeRef, {
+            codigo,
+            localId: local.id,
+            localNome: local.nome,
+            tipoLocal: local.tipo,
+            bloco: blocoFinal,
+            nome,
+            tipo: tipoLote,
+            modoChamado: modoChamadoLote,
+            status: statusLote,
+            possuiResponsavel: false,
+            responsavelAdministrativo: null,
+            criadoEm: agora,
+          });
+        })
+      );
+
+      setTextoLoteUnidades("");
+      setBlocoLote("");
+      setTipoLote(local.tipo === "condominio" ? "apartamento" : "livre");
+      setModoChamadoLote("familia");
+      setStatusLote("pendente");
+      setLoteAberto(false);
+
+      alert(
+        `${paraCriar.length} unidade(s) cadastrada(s) com sucesso.` +
+          (jaExistem.length > 0
+            ? `\n\nIgnoradas porque já existiam: ${jaExistem.join(", ")}`
+            : "") +
+          (repetidosNoTexto.length > 0
+            ? `\n\nRepetidas ignoradas: ${repetidosNoTexto.join(", ")}`
+            : "")
+      );
+    } catch (erro) {
+      console.error(erro);
+      alert("Erro ao cadastrar unidades em lote.");
+    } finally {
+      setSalvandoLote(false);
+    }
+  }
+
+  async function salvarEdicaoUnidade() {
+    if (!editandoUnidade) return;
+
+    const local = locais.find((item) => item.id === editandoUnidade.localId);
+
+    if (!local) {
+      alert("Local da unidade não encontrado.");
+      return;
+    }
+
+    if (!editNomeUnidade.trim()) {
+      alert("Digite o nome ou número da unidade.");
+      return;
+    }
+
+    if (local.tipo === "condominio" && !editBlocoUnidade.trim()) {
+      alert("Para condomínio, informe o bloco/torre.");
+      return;
+    }
+
+    if (editPossuiResponsavel && !editNomeResponsavel.trim()) {
+      alert("Digite o nome do responsável administrativo.");
+      return;
+    }
+
+    const blocoFinal =
+      local.tipo === "condominio" ? formatarNome(editBlocoUnidade) : "";
+    const nomeFinal = formatarNome(editNomeUnidade);
+
+    const jaExiste = unidades.some(
+      (unidade) =>
+        unidade.id !== editandoUnidade.id &&
+        unidade.localId === editandoUnidade.localId &&
+        normalizarUnidadeParaComparar(unidade.bloco || "", unidade.nome) ===
+          normalizarUnidadeParaComparar(blocoFinal, nomeFinal)
+    );
+
+    if (jaExiste) {
+      alert("Já existe outra unidade com este bloco/nome neste local.");
+      return;
+    }
+
+    setSalvandoEdicaoUnidade(true);
+
+    try {
+      const unidadeRef = ref(db, `qrCentral/unidades/${editandoUnidade.id}`);
+
+      await update(unidadeRef, {
+        bloco: blocoFinal,
+        nome: nomeFinal,
+        tipo: editTipoUnidade,
+        modoChamado: editModoChamadoUnidade,
+        status: editStatusUnidade,
+        possuiResponsavel: editPossuiResponsavel,
+        responsavelAdministrativo: editPossuiResponsavel
+          ? {
+              nome: formatarNome(editNomeResponsavel),
+              telefone: editTelefoneResponsavel.trim(),
+              email: editEmailResponsavel.trim(),
+              podeSolicitarAlteracaoStatus: true,
+            }
+          : null,
+        atualizadoEm: new Date().toISOString(),
+      });
+
+      alert("Unidade atualizada com sucesso.");
+      fecharEdicaoUnidade();
+    } catch (erro) {
+      console.error(erro);
+      alert("Erro ao atualizar unidade.");
+    } finally {
+      setSalvandoEdicaoUnidade(false);
+    }
+  }
+
+  async function excluirUnidade(unidade: UnidadeCadastrada) {
+    const moradoresDaUnidade = moradores.filter(
+      (morador) => morador.unidadeId === unidade.id
+    );
+
+    if (moradoresDaUnidade.length > 0) {
+      alert(
+        `Esta unidade possui ${moradoresDaUnidade.length} morador(es). Remova ou transfira os moradores antes de excluir.`
+      );
+      return;
+    }
+
+    const confirmar = confirm(
+      `Excluir a unidade ${montarNomeUnidade(unidade)}?\n\nEsta ação não pode ser desfeita.`
+    );
+
+    if (!confirmar) return;
+
+    try {
+      const unidadeRef = ref(db, `qrCentral/unidades/${unidade.id}`);
+      await remove(unidadeRef);
+      alert("Unidade excluída com sucesso.");
+    } catch (erro) {
+      console.error(erro);
+      alert("Erro ao excluir unidade.");
+    }
+  }
+
+  async function desativarUnidade(unidade: UnidadeCadastrada) {
+    const confirmar = confirm(
+      `Desativar a unidade ${montarNomeUnidade(unidade)}?`
+    );
+
+    if (!confirmar) return;
+
+    try {
+      const unidadeRef = ref(db, `qrCentral/unidades/${unidade.id}`);
+      await update(unidadeRef, {
+        status: "desativada",
+        atualizadoEm: new Date().toISOString(),
+      });
+
+      alert("Unidade desativada com sucesso.");
+    } catch (erro) {
+      console.error(erro);
+      alert("Erro ao desativar unidade.");
     }
   }
 
@@ -663,6 +1005,7 @@ export default function Dashboard() {
               setModoChamadoUnidade={setModoChamadoUnidade}
               locais={locais}
               unidades={unidades}
+              moradores={moradores}
               localSelecionadoId={localSelecionadoId}
               setLocalSelecionadoId={(valor) => {
                 setLocalSelecionadoId(valor);
@@ -671,8 +1014,10 @@ export default function Dashboard() {
 
                 if (local?.tipo === "condominio") {
                   setTipoUnidade("apartamento");
+                  setTipoLote("apartamento");
                 } else {
                   setTipoUnidade("livre");
+                  setTipoLote("livre");
                 }
               }}
               blocoUnidade={blocoUnidade}
@@ -694,6 +1039,45 @@ export default function Dashboard() {
               setTelefoneResponsavel={setTelefoneResponsavel}
               emailResponsavel={emailResponsavel}
               setEmailResponsavel={setEmailResponsavel}
+              loteAberto={loteAberto}
+              setLoteAberto={setLoteAberto}
+              textoLoteUnidades={textoLoteUnidades}
+              setTextoLoteUnidades={setTextoLoteUnidades}
+              blocoLote={blocoLote}
+              setBlocoLote={setBlocoLote}
+              tipoLote={tipoLote}
+              setTipoLote={setTipoLote}
+              modoChamadoLote={modoChamadoLote}
+              setModoChamadoLote={setModoChamadoLote}
+              statusLote={statusLote}
+              setStatusLote={setStatusLote}
+              cadastrarUnidadesEmLote={cadastrarUnidadesEmLote}
+              salvandoLote={salvandoLote}
+              editandoUnidade={editandoUnidade}
+              abrirEdicaoUnidade={abrirEdicaoUnidade}
+              fecharEdicaoUnidade={fecharEdicaoUnidade}
+              salvarEdicaoUnidade={salvarEdicaoUnidade}
+              salvandoEdicaoUnidade={salvandoEdicaoUnidade}
+              editBlocoUnidade={editBlocoUnidade}
+              setEditBlocoUnidade={setEditBlocoUnidade}
+              editNomeUnidade={editNomeUnidade}
+              setEditNomeUnidade={setEditNomeUnidade}
+              editTipoUnidade={editTipoUnidade}
+              setEditTipoUnidade={setEditTipoUnidade}
+              editModoChamadoUnidade={editModoChamadoUnidade}
+              setEditModoChamadoUnidade={setEditModoChamadoUnidade}
+              editStatusUnidade={editStatusUnidade}
+              setEditStatusUnidade={setEditStatusUnidade}
+              editPossuiResponsavel={editPossuiResponsavel}
+              setEditPossuiResponsavel={setEditPossuiResponsavel}
+              editNomeResponsavel={editNomeResponsavel}
+              setEditNomeResponsavel={setEditNomeResponsavel}
+              editTelefoneResponsavel={editTelefoneResponsavel}
+              setEditTelefoneResponsavel={setEditTelefoneResponsavel}
+              editEmailResponsavel={editEmailResponsavel}
+              setEditEmailResponsavel={setEditEmailResponsavel}
+              excluirUnidade={excluirUnidade}
+              desativarUnidade={desativarUnidade}
             />
           )}
 
