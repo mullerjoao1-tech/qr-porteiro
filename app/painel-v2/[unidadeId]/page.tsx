@@ -66,7 +66,8 @@ export default function PainelV2Central() {
   const [gravandoAudioMorador, setGravandoAudioMorador] = useState(false);
   const [audioRespostaBlob, setAudioRespostaBlob] = useState<Blob | null>(null);
   const [enviandoAudioMorador, setEnviandoAudioMorador] = useState(false);
-
+const [mostrarPopupAudio, setMostrarPopupAudio] = useState(false);
+const [ultimoAudioRecebido, setUltimoAudioRecebido] = useState<string | null>(null);
   const mediaRecorderMoradorRef = useRef<MediaRecorder | null>(null);
   const audioChunksMoradorRef = useRef<Blob[]>([]);
 
@@ -150,7 +151,25 @@ export default function PainelV2Central() {
   const mensagensUnidadeAberta = useMemo(() => {
     return ordenarMensagens(unidadeAberta?.chamada?.mensagens);
   }, [unidadeAberta?.chamada?.mensagens]);
+useEffect(() => {
+  if (!mensagensUnidadeAberta.length) return;
 
+  const ultimo = [...mensagensUnidadeAberta]
+    .reverse()
+    .find(
+      (m) =>
+        m.autor === "visitante" &&
+        m.tipo === "audio" &&
+        m.audioBase64
+    );
+
+  if (!ultimo) return;
+
+  if (ultimo.id !== ultimoAudioRecebido) {
+    setUltimoAudioRecebido(ultimo.id!);
+    setMostrarPopupAudio(true);
+  }
+}, [mensagensUnidadeAberta]);
   const totalChamando = unidades.filter(
     (u) => u.chamada?.status === "Aguardando atendimento"
   ).length;
@@ -497,7 +516,55 @@ function prioridadeChamada(unidade: Unidade) {
           </section>
         )}
       </div>
+{mostrarPopupAudio && (
+  <div className="fixed inset-0 bg-black/80 z-[999] flex items-center justify-center p-6">
+    <div className="bg-cyan-700 border-2 border-cyan-300 rounded-3xl max-w-lg w-full p-8 text-center">
 
+      <div className="text-5xl mb-3">
+        🎤
+      </div>
+
+      <h2 className="text-4xl font-black mb-5">
+        NOVO ÁUDIO
+      </h2>
+
+      <div className="bg-cyan-600 rounded-2xl p-4 mb-6">
+
+        <p className="font-black text-xl mb-3">
+          Novo áudio enviado pelo visitante
+        </p>
+
+        {(() => {
+          const ultimo = [...mensagensUnidadeAberta]
+            .reverse()
+            .find(
+              (m) =>
+                m.autor === "visitante" &&
+                m.tipo === "audio"
+            );
+
+          if (!ultimo?.audioBase64) return null;
+
+          return (
+            <audio
+              controls
+              className="w-full"
+              src={ultimo.audioBase64}
+            />
+          );
+        })()}
+      </div>
+
+      <button
+        onClick={() => setMostrarPopupAudio(false)}
+        className="w-full bg-white text-black py-4 rounded-2xl text-2xl font-black"
+      >
+        ENTENDI
+      </button>
+
+    </div>
+  </div>
+)}
       {unidadeAberta && (
         <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
           <div className="bg-slate-900 border border-slate-700 rounded-3xl w-full max-w-2xl p-6">
