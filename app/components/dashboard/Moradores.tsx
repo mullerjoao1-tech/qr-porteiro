@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ref, update } from "firebase/database";
+import { ref, remove, update } from "firebase/database";
 import { db } from "../../services/firebase";
 
 type UnidadeCadastrada = {
@@ -65,7 +65,21 @@ export default function Moradores({ unidades, moradores }: Props) {
   const [filtroRapido, setFiltroRapido] = useState("todos");
   const [moradorSelecionado, setMoradorSelecionado] =
     useState<MoradorCadastrado | null>(null);
+
   const [alterandoStatus, setAlterandoStatus] = useState(false);
+  const [excluindoMorador, setExcluindoMorador] = useState(false);
+  const [editandoMorador, setEditandoMorador] =
+    useState<MoradorCadastrado | null>(null);
+  const [salvandoEdicao, setSalvandoEdicao] = useState(false);
+
+  const [editNome, setEditNome] = useState("");
+  const [editTelefone, setEditTelefone] = useState("");
+  const [editEmail, setEditEmail] = useState("");
+  const [editPrioridade, setEditPrioridade] = useState("1");
+  const [editPerfil, setEditPerfil] = useState("morador");
+  const [editStatus, setEditStatus] = useState("ativo");
+  const [editRecebeChamadas, setEditRecebeChamadas] = useState(true);
+  const [editPodeAbrirPortao, setEditPodeAbrirPortao] = useState(false);
 
   function textoPerfil(perfil?: string) {
     if (perfil === "familiar") return "Familiar";
@@ -83,6 +97,16 @@ export default function Moradores({ unidades, moradores }: Props) {
   function textoUnidadeCurta(unidade?: UnidadeCadastrada) {
     if (!unidade) return "Unidade não localizada";
     return unidade.bloco ? `${unidade.bloco} / ${unidade.nome}` : unidade.nome;
+  }
+
+  function formatarNome(texto: string) {
+    return texto
+      .trim()
+      .toLowerCase()
+      .split(" ")
+      .filter(Boolean)
+      .map((palavra) => palavra.charAt(0).toUpperCase() + palavra.slice(1))
+      .join(" ");
   }
 
   const moradoresFiltrados = useMemo(() => {
@@ -160,24 +184,90 @@ export default function Moradores({ unidades, moradores }: Props) {
   const unidadeSelecionada = moradorSelecionado
     ? unidadeDoMorador(moradorSelecionado)
     : null;
-async function excluirMorador(morador: MoradorCadastrado) {
-  const confirmar = confirm(
-    `Excluir definitivamente ${morador.nome}?\n\nEsta ação não poderá ser desfeita.`
-  );
 
-  if (!confirmar) return;
-
-  try {
-    await remove(ref(db, `qrCentral/moradores/${morador.id}`));
-
-    alert("Morador excluído com sucesso.");
-
-    setMoradorSelecionado(null);
-  } catch (error) {
-    console.error(error);
-    alert("Erro ao excluir morador.");
+  function abrirEdicaoMorador(morador: MoradorCadastrado) {
+    setEditandoMorador(morador);
+    setEditNome(morador.nome || "");
+    setEditTelefone(morador.telefone || "");
+    setEditEmail(morador.email || "");
+    setEditPrioridade(String(morador.prioridade || 1));
+    setEditPerfil(morador.perfil || "morador");
+    setEditStatus(morador.status || "ativo");
+    setEditRecebeChamadas(morador.recebeChamadas !== false);
+    setEditPodeAbrirPortao(!!morador.podeAbrirPortao);
   }
-}
+
+  async function salvarEdicaoMorador() {
+    if (!editandoMorador) return;
+
+    if (!editNome.trim()) {
+      alert("Digite o nome do morador.");
+      return;
+    }
+
+    if (!editTelefone.trim()) {
+      alert("Digite o telefone/WhatsApp do morador.");
+      return;
+    }
+
+    setSalvandoEdicao(true);
+
+    try {
+      const dadosAtualizados = {
+        nome: formatarNome(editNome),
+        telefone: editTelefone.trim(),
+        email: editEmail.trim(),
+        prioridade: Number(editPrioridade),
+        perfil: editPerfil,
+        status: editStatus,
+        recebeChamadas: editRecebeChamadas,
+        podeAbrirPortao: editPodeAbrirPortao,
+        atualizadoEm: new Date().toISOString(),
+      };
+
+      await update(
+        ref(db, `qrCentral/moradores/${editandoMorador.id}`),
+        dadosAtualizados
+      );
+
+      const moradorAtualizado: MoradorCadastrado = {
+        ...editandoMorador,
+        ...dadosAtualizados,
+      };
+
+      setEditandoMorador(null);
+      setMoradorSelecionado(moradorAtualizado);
+      alert("Morador atualizado com sucesso.");
+    } catch (erro) {
+      console.error(erro);
+      alert("Erro ao atualizar morador.");
+    } finally {
+      setSalvandoEdicao(false);
+    }
+  }
+
+  async function excluirMorador(morador: MoradorCadastrado) {
+    const confirmar = confirm(
+      `Excluir definitivamente ${morador.nome}?\n\nEsta ação não poderá ser desfeita.`
+    );
+
+    if (!confirmar) return;
+
+    setExcluindoMorador(true);
+
+    try {
+      await remove(ref(db, `qrCentral/moradores/${morador.id}`));
+
+      setMoradorSelecionado(null);
+      alert("Morador excluído com sucesso.");
+    } catch (erro) {
+      console.error(erro);
+      alert("Erro ao excluir morador.");
+    } finally {
+      setExcluindoMorador(false);
+    }
+  }
+
   async function alternarStatusMorador(morador: MoradorCadastrado) {
     const novoStatus = morador.status === "ativo" ? "inativo" : "ativo";
 
@@ -192,9 +282,7 @@ async function excluirMorador(morador: MoradorCadastrado) {
     setAlterandoStatus(true);
 
     try {
-      const moradorRef = ref(db, `qrCentral/moradores/${morador.id}`);
-
-      await update(moradorRef, {
+      await update(ref(db, `qrCentral/moradores/${morador.id}`), {
         status: novoStatus,
         atualizadoEm: new Date().toISOString(),
       });
@@ -209,6 +297,25 @@ async function excluirMorador(morador: MoradorCadastrado) {
     } finally {
       setAlterandoStatus(false);
     }
+  }
+
+  function abrirUnidadeDoMorador(morador: MoradorCadastrado) {
+    const unidade = unidadeDoMorador(morador);
+
+    if (!unidade) {
+      alert("Unidade não localizada para este morador.");
+      return;
+    }
+
+    setBusca(unidade.nome);
+    setFiltroRapido("todos");
+    setMoradorSelecionado(null);
+
+    alert(
+      `Unidade localizada:\n\n${unidade.localNome}\n${textoUnidadeCurta(
+        unidade
+      )}\n\nNa próxima etapa o sistema vai trocar automaticamente para a aba Unidades e abrir esta unidade.`
+    );
   }
 
   return (
@@ -459,22 +566,14 @@ async function excluirMorador(morador: MoradorCadastrado) {
 
             <div className="grid md:grid-cols-2 gap-3 mb-4">
               <button
-                onClick={() =>
-                  alert(
-                    "Próxima etapa: editar morador usando o mesmo formulário de cadastro."
-                  )
-                }
+                onClick={() => abrirEdicaoMorador(moradorSelecionado)}
                 className="w-full bg-blue-600 hover:bg-blue-500 text-white font-black py-3 rounded-xl"
               >
                 ✏️ Editar morador
               </button>
 
               <button
-                onClick={() =>
-                  alert(
-                    "Próxima etapa: abrir automaticamente esta unidade na aba Unidades."
-                  )
-                }
+                onClick={() => abrirUnidadeDoMorador(moradorSelecionado)}
                 className="w-full bg-slate-700 hover:bg-slate-600 text-white font-black py-3 rounded-xl"
               >
                 🏢 Abrir unidade
@@ -497,11 +596,12 @@ async function excluirMorador(morador: MoradorCadastrado) {
               </button>
 
               <button
-  onClick={() => excluirMorador(moradorSelecionado)}
-  className="w-full bg-red-700 hover:bg-red-600 text-white font-black py-3 rounded-xl"
->
-  🗑 Excluir
-</button>
+                onClick={() => excluirMorador(moradorSelecionado)}
+                disabled={excluindoMorador}
+                className="w-full bg-red-700 hover:bg-red-600 disabled:bg-slate-600 text-white font-black py-3 rounded-xl"
+              >
+                {excluindoMorador ? "Excluindo..." : "🗑 Excluir"}
+              </button>
             </div>
 
             <div className="bg-slate-800 border border-slate-700 rounded-2xl p-4">
@@ -537,6 +637,140 @@ async function excluirMorador(morador: MoradorCadastrado) {
           </div>
         </div>
       )}
+      {editandoMorador && (
+        <div className="fixed inset-0 bg-black/80 z-[60] flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-700 rounded-3xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
+            <div className="flex items-start justify-between mb-6">
+              <div>
+                <h2 className="text-2xl font-black text-white">
+                  ✏️ Editar morador
+                </h2>
+
+                <p className="text-slate-400 mt-2">
+                  Atualize os dados de {editandoMorador.nome}.
+                </p>
+              </div>
+
+              <button
+                onClick={() => setEditandoMorador(null)}
+                className="bg-slate-800 hover:bg-slate-700 rounded-xl px-3 py-2 text-white font-black"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <input
+                value={editNome}
+                onChange={(e) => setEditNome(e.target.value)}
+                placeholder="Nome completo"
+                className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3"
+              />
+
+              <input
+                value={editTelefone}
+                onChange={(e) => setEditTelefone(e.target.value)}
+                placeholder="Telefone / WhatsApp"
+                className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3"
+              />
+
+              <input
+                value={editEmail}
+                onChange={(e) => setEditEmail(e.target.value)}
+                placeholder="E-mail (opcional)"
+                className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3"
+              />
+
+              <div className="grid md:grid-cols-3 gap-3">
+                <select
+                  value={editPrioridade}
+                  onChange={(e) => setEditPrioridade(e.target.value)}
+                  className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3"
+                >
+                  <option value="1">Prioridade 1</option>
+                  <option value="2">Prioridade 2</option>
+                  <option value="3">Prioridade 3</option>
+                  <option value="4">Prioridade 4</option>
+                  <option value="5">Prioridade 5</option>
+                </select>
+
+                <select
+                  value={editPerfil}
+                  onChange={(e) => setEditPerfil(e.target.value)}
+                  className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3"
+                >
+                  <option value="morador">Morador</option>
+                  <option value="familiar">Familiar</option>
+                  <option value="inquilino">Inquilino</option>
+                  <option value="proprietario">Proprietário</option>
+                  <option value="funcionario">Funcionário</option>
+                  <option value="outro">Outro</option>
+                </select>
+
+                <select
+                  value={editStatus}
+                  onChange={(e) => setEditStatus(e.target.value)}
+                  className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3"
+                >
+                  <option value="ativo">🟢 Ativo</option>
+                  <option value="inativo">🔴 Inativo</option>
+                </select>
+              </div>
+
+              <label className="flex items-start gap-3 bg-slate-800 border border-slate-700 rounded-xl p-4 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={editRecebeChamadas}
+                  onChange={(e) => setEditRecebeChamadas(e.target.checked)}
+                  className="mt-1"
+                />
+
+                <div>
+                  <p className="font-bold text-white">Recebe chamadas</p>
+                  <p className="text-xs text-slate-400 mt-1">
+                    Este morador será chamado quando o visitante selecionar esta unidade.
+                  </p>
+                </div>
+              </label>
+
+              <label className="flex items-start gap-3 bg-slate-800 border border-slate-700 rounded-xl p-4 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={editPodeAbrirPortao}
+                  onChange={(e) => setEditPodeAbrirPortao(e.target.checked)}
+                  className="mt-1"
+                />
+
+                <div>
+                  <p className="font-bold text-white">Pode abrir portão</p>
+                  <p className="text-xs text-slate-400 mt-1">
+                    Permite que este morador use o botão de abertura quando a automação estiver ativa.
+                  </p>
+                </div>
+              </label>
+
+              <div className="grid md:grid-cols-2 gap-3 pt-2">
+                <button
+                  onClick={() => setEditandoMorador(null)}
+                  disabled={salvandoEdicao}
+                  className="w-full bg-slate-700 hover:bg-slate-600 disabled:bg-slate-800 text-white font-black py-3 rounded-xl"
+                >
+                  Cancelar
+                </button>
+
+                <button
+                  onClick={salvarEdicaoMorador}
+                  disabled={salvandoEdicao}
+                  className="w-full bg-blue-600 hover:bg-blue-500 disabled:bg-slate-600 text-white font-black py-3 rounded-xl"
+                >
+                  {salvandoEdicao ? "Salvando..." : "Salvar alterações"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
