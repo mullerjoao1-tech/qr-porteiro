@@ -4,6 +4,15 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { ref, onValue, set, update, remove } from "firebase/database";
 import { db } from "../../services/firebase";
 
+type MensagemConversa = {
+  id?: string;
+  autor: "visitante" | "morador";
+  tipo: "texto" | "audio";
+  texto?: string;
+  audioBase64?: string;
+  criadoEm: number;
+};
+
 type Unidade = {
   id: string;
   nome: string;
@@ -15,6 +24,7 @@ type Unidade = {
     criadoEm?: string;
     audioBase64?: string;
     mensagemResponsavel?: string;
+    mensagens?: Record<string, MensagemConversa>;
   };
 };
 
@@ -22,11 +32,43 @@ const unidadesIniciais: Unidade[] = [
   { id: "apto-101", nome: "Apto 101", tipo: "Apartamento" },
 ];
 
+function blobParaBase64(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.onloadend = () => {
+      resolve(reader.result as string);
+    };
+
+    reader.onerror = reject;
+
+    reader.readAsDataURL(blob);
+  });
+}
+
+function ordenarMensagens(mensagens?: Record<string, MensagemConversa>) {
+  if (!mensagens) return [];
+
+  return Object.entries(mensagens)
+    .map(([id, mensagem]) => ({
+      id,
+      ...mensagem,
+    }))
+    .sort((a, b) => (a.criadoEm || 0) - (b.criadoEm || 0));
+}
+
 export default function PainelV2Central() {
   const [unidades, setUnidades] = useState<Unidade[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [filtro, setFiltro] = useState("todos");
   const [unidadeAberta, setUnidadeAberta] = useState<Unidade | null>(null);
+
+  const [gravandoAudioMorador, setGravandoAudioMorador] = useState(false);
+  const [audioRespostaBlob, setAudioRespostaBlob] = useState<Blob | null>(null);
+  const [enviandoAudioMorador, setEnviandoAudioMorador] = useState(false);
+
+  const mediaRecorderMoradorRef = useRef<MediaRecorder | null>(null);
+  const audioChunksMoradorRef = useRef<Blob[]>([]);
 
   const cardRefs = useRef<Record<string, HTMLButtonElement | null>>({});
 
@@ -105,6 +147,10 @@ export default function PainelV2Central() {
     return unidades;
   }, [unidades, filtro]);
 
+  const mensagensUnidadeAberta = useMemo(() => {
+    return ordenarMensagens(unidadeAberta?.chamada?.mensagens);
+  }, [unidadeAberta?.chamada?.mensagens]);
+
   const totalChamando = unidades.filter(
     (u) => u.chamada?.status === "Aguardando atendimento"
   ).length;
@@ -152,11 +198,35 @@ function prioridadeChamada(unidade: Unidade) {
   }, 300);
 }
 
+  async function registrarMensagemConversa(
+    unidadeId: string,
+    dados: Omit<MensagemConversa, "criadoEm">
+  ) {
+    const idMensagem = String(Date.now());
+
+    await set(ref(db, `unidades-v2/${unidadeId}/chamada/mensagens/${idMensagem}`), {
+      ...dados,
+      criadoEm: Date.now(),
+    });
+
+    await update(ref(db, `unidades-v2/${unidadeId}/chamada`), {
+      ultimaAtividade: Date.now(),
+      enviadoEm: Date.now(),
+    });
+  }
+
   async function enviarMensagem(unidade: Unidade, mensagem: string) {
   await update(ref(db, `unidades-v2/${unidade.id}/chamada`), {
     status: "Em atendimento",
     mensagemResponsavel: mensagem,
     atendidoEm: new Date().toISOString(),
+    ultimaAtividade: Date.now(),
+  });
+
+  await registrarMensagemConversa(unidade.id, {
+    autor: "morador",
+    tipo: "texto",
+    texto: mensagem,
   });
 
   setUnidadeAberta(null);
@@ -168,6 +238,99 @@ function prioridadeChamada(unidade: Unidade) {
     });
   }, 300);
 }
+
+  async function iniciarGravacaoMorador() {
+    if (!unidadeAberta?.chamada) {
+      alert("Nenhuma chamada ativa para responder.");
+      return;
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: true,
+      });
+
+      const recorder = new MediaRecorder(stream);
+
+      audioChunksMoradorRef.current = [];
+
+      recorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksMoradorRef.current.push(event.data);
+        }
+      };
+
+      recorder.onstop = () => {
+        const blob = new Blob(audioChunksMoradorRef.current, {
+          type: "audio/webm",
+        });
+
+        setAudioRespostaBlob(blob);
+        setGravandoAudioMorador(false);
+
+        stream.getTracks().forEach((track) => track.stop());
+      };
+
+      mediaRecorderMoradorRef.current = recorder;
+      recorder.start();
+
+      setAudioRespostaBlob(null);
+      setGravandoAudioMorador(true);
+
+      setTimeout(() => {
+        if (recorder.state === "recording") {
+          pararGravacaoMorador();
+        }
+      }, 15000);
+    } catch (erro) {
+      console.error(erro);
+      alert("Não foi possível acessar o microfone.");
+      setGravandoAudioMorador(false);
+    }
+  }
+
+  function pararGravacaoMorador() {
+    if (
+      mediaRecorderMoradorRef.current &&
+      mediaRecorderMoradorRef.current.state === "recording"
+    ) {
+      mediaRecorderMoradorRef.current.stop();
+    } else {
+      setGravandoAudioMorador(false);
+    }
+  }
+
+  async function enviarAudioMorador(unidade: Unidade) {
+    if (!audioRespostaBlob) {
+      alert("Grave um áudio antes de enviar.");
+      return;
+    }
+
+    try {
+      setEnviandoAudioMorador(true);
+
+      const audioBase64 = await blobParaBase64(audioRespostaBlob);
+
+      await update(ref(db, `unidades-v2/${unidade.id}/chamada`), {
+        status: "Em atendimento",
+        atendidoEm: new Date().toISOString(),
+        ultimaAtividade: Date.now(),
+      });
+
+      await registrarMensagemConversa(unidade.id, {
+        autor: "morador",
+        tipo: "audio",
+        audioBase64,
+      });
+
+      setAudioRespostaBlob(null);
+    } catch (erro) {
+      console.error(erro);
+      alert("Erro ao enviar áudio.");
+    } finally {
+      setEnviandoAudioMorador(false);
+    }
+  }
 
   async function finalizarChamada(unidade: Unidade) {
     const chamada = unidade.chamada;
@@ -378,6 +541,43 @@ function prioridadeChamada(unidade: Unidade) {
                 <p className="text-yellow-400 mt-1">
                   Status: {unidadeAberta.chamada.status || "Sem status"}
                 </p>
+
+                <div className="mt-4 bg-slate-800 rounded-2xl p-4">
+                  <p className="text-sm text-blue-300 font-black mb-3">
+                    💬 Conversa do atendimento
+                  </p>
+
+                  {mensagensUnidadeAberta.length === 0 ? (
+                    <p className="text-sm text-slate-400">
+                      Ainda não há mensagens na conversa.
+                    </p>
+                  ) : (
+                    <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
+                      {mensagensUnidadeAberta.map((item) => (
+                        <div
+                          key={item.id}
+                          className={
+                            item.autor === "morador"
+                              ? "bg-green-600/30 border border-green-500 rounded-2xl p-3"
+                              : "bg-blue-600/30 border border-blue-500 rounded-2xl p-3"
+                          }
+                        >
+                          <p className="text-xs font-black mb-2">
+                            {item.autor === "morador" ? "Morador" : "Visitante"}
+                          </p>
+
+                          {item.tipo === "texto" && (
+                            <p className="text-white font-bold">{item.texto}</p>
+                          )}
+
+                          {item.tipo === "audio" && item.audioBase64 && (
+                            <audio controls className="w-full" src={item.audioBase64} />
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 
@@ -401,6 +601,46 @@ function prioridadeChamada(unidade: Unidade) {
                 >
                   💬 Aguarde um momento
                 </button>
+
+                <div className="bg-slate-950 border border-blue-500/40 rounded-2xl p-4 space-y-3">
+                  <button
+                    onClick={
+                      gravandoAudioMorador
+                        ? pararGravacaoMorador
+                        : iniciarGravacaoMorador
+                    }
+                    disabled={enviandoAudioMorador}
+                    className={
+                      gravandoAudioMorador
+                        ? "w-full bg-red-600 py-4 rounded-xl font-black animate-pulse"
+                        : "w-full bg-blue-600 py-4 rounded-xl font-black disabled:bg-slate-700"
+                    }
+                  >
+                    {gravandoAudioMorador
+                      ? "⏹️ Parar gravação"
+                      : "🎙️ Gravar áudio para visitante"}
+                  </button>
+
+                  {audioRespostaBlob && (
+                    <div className="space-y-3">
+                      <audio
+                        controls
+                        className="w-full"
+                        src={URL.createObjectURL(audioRespostaBlob)}
+                      />
+
+                      <button
+                        onClick={() => enviarAudioMorador(unidadeAberta)}
+                        disabled={enviandoAudioMorador}
+                        className="w-full bg-cyan-600 hover:bg-cyan-500 disabled:bg-slate-700 py-4 rounded-xl font-black"
+                      >
+                        {enviandoAudioMorador
+                          ? "Enviando..."
+                          : "📤 Enviar áudio ao visitante"}
+                      </button>
+                    </div>
+                  )}
+                </div>
 
                 <button
                   onClick={() => finalizarChamada(unidadeAberta)}

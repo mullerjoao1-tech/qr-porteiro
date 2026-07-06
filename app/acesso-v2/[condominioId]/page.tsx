@@ -2,8 +2,17 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "next/navigation";
-import { ref, onValue, update, remove } from "firebase/database";
+import { ref, onValue, update, remove, set } from "firebase/database";
 import { db } from "../../services/firebase";
+
+type MensagemConversa = {
+  id?: string;
+  autor: "visitante" | "morador";
+  tipo: "texto" | "audio";
+  texto?: string;
+  audioBase64?: string;
+  criadoEm: number;
+};
 
 type Chamada = {
   nome?: string;
@@ -19,6 +28,7 @@ type Chamada = {
   enviadoEm?: number;
   ultimaAtividade?: number;
   audioBase64?: string;
+  mensagens?: Record<string, MensagemConversa>;
 };
 
 type Unidade = {
@@ -86,6 +96,17 @@ function blobParaBase64(blob: Blob): Promise<string> {
 
     reader.readAsDataURL(blob);
   });
+}
+
+function ordenarMensagens(mensagens?: Record<string, MensagemConversa>) {
+  if (!mensagens) return [];
+
+  return Object.entries(mensagens)
+    .map(([id, mensagem]) => ({
+      id,
+      ...mensagem,
+    }))
+    .sort((a, b) => (a.criadoEm || 0) - (b.criadoEm || 0));
 }
 
 export default function AcessoV2Condominio() {
@@ -297,19 +318,16 @@ export default function AcessoV2Condominio() {
     unidadeAtualSelecionada?.chamada
   );
 
+  const mensagensConversa = useMemo(() => {
+    return ordenarMensagens(unidadeAtualSelecionada?.chamada?.mensagens);
+  }, [unidadeAtualSelecionada?.chamada?.mensagens]);
+
   const precisaNome = motivo === "Visitante";
   const precisaDescricao = motivo === "Outros";
 
   async function iniciarGravacao() {
     if (!unidadeAtualSelecionada && !unidadeSelecionada) {
       alert("Selecione uma unidade antes de gravar.");
-      return;
-    }
-
-    if (chamadaSelecionadaAtiva) {
-      setMensagem(
-        "⚠️ Já existe uma chamada ativa para essa unidade. Aguarde o atendimento ou cancele a chamada anterior."
-      );
       return;
     }
 
@@ -379,6 +397,57 @@ export default function AcessoV2Condominio() {
     }
   }
 
+  async function registrarMensagemConversa(
+    unidadeId: string,
+    dados: Omit<MensagemConversa, "criadoEm">
+  ) {
+    const idMensagem = String(Date.now());
+
+    await set(ref(db, `unidades-v2/${unidadeId}/chamada/mensagens/${idMensagem}`), {
+      ...dados,
+      criadoEm: Date.now(),
+    });
+
+    await update(ref(db, `unidades-v2/${unidadeId}/chamada`), {
+      ultimaAtividade: Date.now(),
+      enviadoEm: Date.now(),
+    });
+  }
+
+  async function enviarAudioNaConversa(blob: Blob) {
+    const unidadeAtual = unidadeAtualSelecionada || unidadeSelecionada;
+
+    if (!unidadeAtual) {
+      alert("Selecione uma unidade.");
+      return;
+    }
+
+    if (!chamadaEstaAtiva(unidadeAtual.chamada)) {
+      await chamarUnidade(blob);
+      return;
+    }
+
+    try {
+      setEnviando(true);
+
+      const audioBase64 = await blobParaBase64(blob);
+
+      await registrarMensagemConversa(unidadeAtual.id, {
+        autor: "visitante",
+        tipo: "audio",
+        audioBase64,
+      });
+
+      setAudioBlob(null);
+      setMensagem("✅ Áudio enviado na conversa.");
+    } catch (erro) {
+      console.error("Erro ao enviar áudio na conversa:", erro);
+      alert("Erro ao enviar áudio. Tente novamente.");
+    } finally {
+      setEnviando(false);
+    }
+  }
+
   async function chamarUnidade(audioParaEnviar?: Blob) {
     const unidadeAtual = unidadeAtualSelecionada || unidadeSelecionada;
     const blobFinal = audioParaEnviar || audioBlob;
@@ -389,8 +458,13 @@ export default function AcessoV2Condominio() {
     }
 
     if (chamadaEstaAtiva(unidadeAtual.chamada)) {
+      if (blobFinal) {
+        await enviarAudioNaConversa(blobFinal);
+        return;
+      }
+
       setMensagem(
-        "⚠️ Já existe uma chamada ativa para essa unidade. Aguarde o atendimento ou cancele a chamada anterior."
+        "⚠️ Já existe uma chamada ativa para essa unidade. Você ainda pode gravar e enviar áudio na conversa."
       );
       return;
     }
@@ -441,6 +515,16 @@ export default function AcessoV2Condominio() {
         nome: nomeFinal,
         motivo: motivoFinal,
         audioBase64,
+        mensagens: audioBase64
+          ? {
+              [Date.now()]: {
+                autor: "visitante",
+                tipo: "audio",
+                audioBase64,
+                criadoEm: Date.now(),
+              },
+            }
+          : null,
         status: "Aguardando atendimento",
         criadoEm: new Date().toISOString(),
         ultimaAtividade: Date.now(),
@@ -488,6 +572,11 @@ export default function AcessoV2Condominio() {
   async function enviarAudioEChamar() {
     if (!audioBlob) {
       alert("Grave um áudio antes de enviar.");
+      return;
+    }
+
+    if (chamadaSelecionadaAtiva) {
+      await enviarAudioNaConversa(audioBlob);
       return;
     }
 
@@ -745,6 +834,45 @@ export default function AcessoV2Condominio() {
               )}
             </div>
 
+            {chamadaSelecionadaAtiva && (
+              <div className="bg-slate-800 border border-blue-500/40 rounded-2xl p-4 mb-5">
+                <p className="text-blue-300 font-black mb-3">
+                  💬 Conversa do atendimento
+                </p>
+
+                {mensagensConversa.length === 0 ? (
+                  <p className="text-sm text-slate-400">
+                    A conversa ainda não possui mensagens.
+                  </p>
+                ) : (
+                  <div className="space-y-3">
+                    {mensagensConversa.map((item) => (
+                      <div
+                        key={item.id}
+                        className={
+                          item.autor === "visitante"
+                            ? "bg-blue-600/30 border border-blue-500 rounded-2xl p-3"
+                            : "bg-green-600/30 border border-green-500 rounded-2xl p-3"
+                        }
+                      >
+                        <p className="text-xs font-black mb-2">
+                          {item.autor === "visitante" ? "Você" : "Morador"}
+                        </p>
+
+                        {item.tipo === "texto" && (
+                          <p className="text-white font-bold">{item.texto}</p>
+                        )}
+
+                        {item.tipo === "audio" && item.audioBase64 && (
+                          <audio controls className="w-full" src={item.audioBase64} />
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
             <p className="text-sm text-slate-300 font-bold mb-3">
               O que você precisa?
             </p>
@@ -826,7 +954,7 @@ export default function AcessoV2Condominio() {
             <div className="mt-4 space-y-3">
               <button
                 onClick={gravandoAudio ? pararGravacao : iniciarGravacao}
-                disabled={enviando || chamadaSelecionadaAtiva}
+                disabled={enviando}
                 className={
                   gravandoAudio
                     ? "w-full bg-red-600 text-white text-xl font-black py-4 rounded-2xl animate-pulse"
@@ -841,7 +969,9 @@ export default function AcessoV2Condominio() {
               {audioBlob && (
                 <div className="bg-slate-800 border border-blue-500/40 rounded-2xl p-4 space-y-3">
                   <p className="text-blue-300 text-sm font-bold text-center">
-                    Áudio gravado. Agora envie para chamar o morador.
+                    {chamadaSelecionadaAtiva
+                      ? "Áudio gravado. Agora envie na conversa."
+                      : "Áudio gravado. Agora envie para chamar o morador."}
                   </p>
 
                   <audio
@@ -852,10 +982,14 @@ export default function AcessoV2Condominio() {
 
                   <button
                     onClick={enviarAudioEChamar}
-                    disabled={enviando || chamadaSelecionadaAtiva}
+                    disabled={enviando}
                     className="w-full bg-blue-500 hover:bg-blue-400 disabled:bg-gray-500 text-white text-xl font-black py-4 rounded-2xl"
                   >
-                    {enviando ? "Enviando..." : "📤 ENVIAR ÁUDIO E CHAMAR"}
+                    {enviando
+                      ? "Enviando..."
+                      : chamadaSelecionadaAtiva
+                      ? "📤 ENVIAR ÁUDIO NA CONVERSA"
+                      : "📤 ENVIAR ÁUDIO E CHAMAR"}
                   </button>
                 </div>
               )}
