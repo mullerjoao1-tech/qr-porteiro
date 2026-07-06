@@ -701,6 +701,11 @@ async function instalarApp() {
       controls
       className="w-full"
       src={audioVisitante}
+      onPlay={async () => {
+        if (status === "Aguardando atendimento") {
+          await atenderSolicitacao();
+        }
+      }}
     />
   </div>
 )}
@@ -853,6 +858,11 @@ async function instalarApp() {
       controls
       className="w-full"
       src={audioVisitante}
+      onPlay={async () => {
+        if (status === "Aguardando atendimento") {
+          await atenderSolicitacao();
+        }
+      }}
     />
   </div>
 )}

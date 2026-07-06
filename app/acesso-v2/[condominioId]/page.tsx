@@ -372,7 +372,7 @@ export default function AcessoV2Condominio() {
       mediaRecorderRef.current &&
       mediaRecorderRef.current.state === "recording"
     ) {
-      chamarDepoisDoAudioRef.current = true;
+      chamarDepoisDoAudioRef.current = false;
       mediaRecorderRef.current.stop();
     } else {
       setGravandoAudio(false);
@@ -483,6 +483,15 @@ export default function AcessoV2Condominio() {
     } finally {
       setEnviando(false);
     }
+  }
+
+  async function enviarAudioEChamar() {
+    if (!audioBlob) {
+      alert("Grave um áudio antes de enviar.");
+      return;
+    }
+
+    await chamarUnidade(audioBlob);
   }
 
   async function cancelarChamada() {
@@ -825,16 +834,30 @@ export default function AcessoV2Condominio() {
                 }
               >
                 {gravandoAudio
-                  ? "⏹️ PARAR E CHAMAR"
-                  : "🎙️ GRAVAR ÁUDIO E CHAMAR"}
+                  ? "⏹️ PARAR GRAVAÇÃO"
+                  : "🎙️ GRAVAR ÁUDIO"}
               </button>
 
               {audioBlob && (
-                <audio
-                  controls
-                  className="w-full"
-                  src={URL.createObjectURL(audioBlob)}
-                />
+                <div className="bg-slate-800 border border-blue-500/40 rounded-2xl p-4 space-y-3">
+                  <p className="text-blue-300 text-sm font-bold text-center">
+                    Áudio gravado. Agora envie para chamar o morador.
+                  </p>
+
+                  <audio
+                    controls
+                    className="w-full"
+                    src={URL.createObjectURL(audioBlob)}
+                  />
+
+                  <button
+                    onClick={enviarAudioEChamar}
+                    disabled={enviando || chamadaSelecionadaAtiva}
+                    className="w-full bg-blue-500 hover:bg-blue-400 disabled:bg-gray-500 text-white text-xl font-black py-4 rounded-2xl"
+                  >
+                    {enviando ? "Enviando..." : "📤 ENVIAR ÁUDIO E CHAMAR"}
+                  </button>
+                </div>
               )}
             </div>
 
