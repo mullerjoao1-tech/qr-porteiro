@@ -19,14 +19,14 @@ type UnidadeCadastrada = {
   localId: string;
   localNome: string;
   tipoLocal: string;
+  tipo: string;
   bloco: string;
   nome: string;
-  tipo: string;
   modoChamado?: string;
   status: string;
   possuiResponsavel?: boolean;
   responsavelAdministrativo?: ResponsavelAdministrativo | null;
-  criadoEm?: string;
+  criadoEm: string;
   atualizadoEm?: string;
 };
 
@@ -41,6 +41,7 @@ type MoradorCadastrado = {
   podeAbrirPortao: boolean;
   status: string;
   criadoEm: string;
+atualizadoEm?: string;
 };
 
 type Props = {
@@ -81,6 +82,9 @@ type Props = {
   loteAberto: boolean;
   setLoteAberto: (valor: boolean) => void;
 
+  loteLocalSelecionadoId: string;
+  setLoteLocalSelecionadoId: (valor: string) => void;
+
   textoLoteUnidades: string;
   setTextoLoteUnidades: (valor: string) => void;
 
@@ -102,7 +106,7 @@ type Props = {
   editandoUnidade: UnidadeCadastrada | null;
   abrirEdicaoUnidade: (unidade: UnidadeCadastrada) => void;
   fecharEdicaoUnidade: () => void;
-  salvarEdicaoUnidade: () => void | Promise<void>;
+  salvarEdicaoUnidade: () => void;
   salvandoEdicaoUnidade: boolean;
 
   editBlocoUnidade: string;
@@ -132,8 +136,8 @@ type Props = {
   editEmailResponsavel: string;
   setEditEmailResponsavel: (valor: string) => void;
 
-  excluirUnidade: (unidade: UnidadeCadastrada) => void | Promise<void>;
-desativarUnidade: (unidade: UnidadeCadastrada) => void | Promise<void>;
+  excluirUnidade: (unidade: UnidadeCadastrada) => void;
+  desativarUnidade: (unidade: UnidadeCadastrada) => void;
 
   modoCondominio: boolean;
   cadastrarUnidade: () => void;
@@ -166,6 +170,8 @@ export default function Unidades({
   setEmailResponsavel,
   loteAberto,
   setLoteAberto,
+  loteLocalSelecionadoId,
+  setLoteLocalSelecionadoId,
   textoLoteUnidades,
   setTextoLoteUnidades,
   blocoLote,
@@ -244,6 +250,12 @@ export default function Unidades({
     const local = localDaUnidade(editandoUnidade);
     return local?.tipo === "condominio";
   }
+
+  const localSelecionadoParaLote = locais.find(
+    (local) => local.id === loteLocalSelecionadoId
+  );
+
+  const modoCondominioLote = localSelecionadoParaLote?.tipo === "condominio";
 
   function textoTipo(tipo: string) {
     const tipos: any = {
@@ -586,13 +598,21 @@ export default function Unidades({
             </div>
 
             <div className="space-y-4">
-              {!localSelecionadoId && (
-                <div className="bg-yellow-950/40 border border-yellow-700 rounded-xl p-4 text-yellow-200 text-sm font-bold">
-                  Selecione primeiro o local no cadastro normal de unidade.
-                </div>
-              )}
+              <select
+                value={loteLocalSelecionadoId}
+                onChange={(e) => setLoteLocalSelecionadoId(e.target.value)}
+                className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3"
+              >
+                <option value="">Selecione o local</option>
 
-              {modoCondominio && (
+                {locais.map((local) => (
+                  <option key={local.id} value={local.id}>
+                    {local.nome}
+                  </option>
+                ))}
+              </select>
+
+              {modoCondominioLote && (
                 <input
                   value={blocoLote}
                   onChange={(e) => setBlocoLote(e.target.value)}
@@ -607,7 +627,7 @@ export default function Unidades({
                   onChange={(e) => setTipoLote(e.target.value)}
                   className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3"
                 >
-                  {modoCondominio ? (
+                  {modoCondominioLote ? (
                     <>
                       <option value="apartamento">Apartamento</option>
                       <option value="sala">Sala</option>

@@ -27,6 +27,7 @@ type LocalCadastrado = {
   plano: string;
   qrPrincipal: string;
   criadoEm: string;
+
 };
 
 type ResponsavelAdministrativo = {
@@ -49,7 +50,7 @@ type UnidadeCadastrada = {
   status: string;
   possuiResponsavel?: boolean;
   responsavelAdministrativo?: ResponsavelAdministrativo | null;
-  criadoEm?: string;
+  criadoEm: string;
   atualizadoEm?: string;
 };
 
@@ -93,6 +94,7 @@ export default function Dashboard() {
   const [emailResponsavel, setEmailResponsavel] = useState("");
 
   const [loteAberto, setLoteAberto] = useState(false);
+  const [loteLocalSelecionadoId, setLoteLocalSelecionadoId] = useState("");
   const [textoLoteUnidades, setTextoLoteUnidades] = useState("");
   const [blocoLote, setBlocoLote] = useState("");
   const [tipoLote, setTipoLote] = useState("apartamento");
@@ -420,12 +422,12 @@ export default function Dashboard() {
   }
 
   async function cadastrarUnidadesEmLote() {
-    if (!localSelecionadoId) {
+    if (!loteLocalSelecionadoId) {
       alert("Selecione um local antes de cadastrar em lote.");
       return;
     }
 
-    const local = locais.find((item) => item.id === localSelecionadoId);
+    const local = locais.find((item) => item.id === loteLocalSelecionadoId);
 
     if (!local) {
       alert("Local não encontrado.");
@@ -531,6 +533,7 @@ export default function Dashboard() {
         })
       );
 
+      setLoteLocalSelecionadoId("");
       setTextoLoteUnidades("");
       setBlocoLote("");
       setTipoLote(local.tipo === "condominio" ? "apartamento" : "livre");
@@ -1041,6 +1044,19 @@ export default function Dashboard() {
               setEmailResponsavel={setEmailResponsavel}
               loteAberto={loteAberto}
               setLoteAberto={setLoteAberto}
+              loteLocalSelecionadoId={loteLocalSelecionadoId}
+              setLoteLocalSelecionadoId={(valor) => {
+                setLoteLocalSelecionadoId(valor);
+
+                const local = locais.find((item) => item.id === valor);
+
+                if (local?.tipo === "condominio") {
+                  setTipoLote("apartamento");
+                } else {
+                  setTipoLote("livre");
+                  setBlocoLote("");
+                }
+              }}
               textoLoteUnidades={textoLoteUnidades}
               setTextoLoteUnidades={setTextoLoteUnidades}
               blocoLote={blocoLote}
