@@ -349,6 +349,7 @@ function prioridadeChamada(unidade: Unidade) {
     }
 
     await remove(ref(db, `unidades-v2/${unidade.id}/chamada`));
+    setAudioRespostaBlob(null);
     setUnidadeAberta(null);
   }
 
@@ -509,7 +510,10 @@ function prioridadeChamada(unidade: Unidade) {
               </div>
 
               <button
-                onClick={() => setUnidadeAberta(null)}
+                onClick={() => {
+                  setAudioRespostaBlob(null);
+                  setUnidadeAberta(null);
+                }}
                 className="bg-red-600 px-4 py-2 rounded-xl font-bold"
               >
                 Fechar
@@ -525,19 +529,7 @@ function prioridadeChamada(unidade: Unidade) {
                 <p className="text-slate-300 mt-1">
                   Motivo: {unidadeAberta.chamada.motivo || "Não informado"}
                 </p>
-{unidadeAberta?.chamada?.audioBase64 && (
-  <div className="mt-4 bg-slate-800 rounded-2xl p-4">
-    <p className="text-sm text-slate-300 font-bold mb-3">
-      🎙️ Áudio do visitante
-    </p>
 
-    <audio
-      controls
-      className="w-full"
-      src={unidadeAberta.chamada.audioBase64}
-    />
-  </div>
-)}
                 <p className="text-yellow-400 mt-1">
                   Status: {unidadeAberta.chamada.status || "Sem status"}
                 </p>
