@@ -1,5 +1,8 @@
 "use client";
 
+import { useState } from "react";
+import MoradoresModal from "@/app/components/dashboard/MoradoresModal";
+
 type LocalCadastrado = {
   id: string;
   nome: string;
@@ -212,6 +215,9 @@ export default function Unidades({
   cadastrarUnidade,
   salvandoUnidade,
 }: Props) {
+  const [unidadeMoradoresAberta, setUnidadeMoradoresAberta] =
+    useState<UnidadeCadastrada | null>(null);
+
   function textoModoChamado(modo?: string) {
     if (modo === "prioridade") return "Modo Prioridade";
     return "Modo Família";
@@ -567,11 +573,7 @@ export default function Unidades({
 
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-4">
                     <button
-                      onClick={() =>
-                        alert(
-                          "Na próxima etapa vamos abrir o cadastro de moradores já filtrado nesta unidade."
-                        )
-                      }
+                      onClick={() => setUnidadeMoradoresAberta(unidade)}
                       className="bg-blue-600 hover:bg-blue-500 text-white text-xs font-black py-2 rounded-xl"
                     >
                       👥 Moradores
@@ -917,6 +919,14 @@ export default function Unidades({
             </div>
           </div>
         </div>
+      )}
+
+      {unidadeMoradoresAberta && (
+        <MoradoresModal
+          unidade={unidadeMoradoresAberta}
+          moradores={moradores}
+          onClose={() => setUnidadeMoradoresAberta(null)}
+        />
       )}
     </div>
   );

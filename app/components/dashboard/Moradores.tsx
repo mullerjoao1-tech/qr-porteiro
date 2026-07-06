@@ -1,15 +1,23 @@
 "use client";
 
-type Unidade = {
+type UnidadeCadastrada = {
   id: string;
   codigo: string;
+  localId: string;
   localNome: string;
+  tipoLocal: string;
   bloco: string;
   nome: string;
+  tipo: string;
   modoChamado?: string;
+  status: string;
+  possuiResponsavel?: boolean;
+  responsavelAdministrativo?: any;
+  criadoEm: string;
+  atualizadoEm?: string;
 };
 
-type Morador = {
+type MoradorCadastrado = {
   id: string;
   codigo: string;
   nome: string;
@@ -19,21 +27,28 @@ type Morador = {
   prioridade: number;
   podeAbrirPortao: boolean;
   status: string;
+  criadoEm: string;
 };
 
 type Props = {
-  unidades: Unidade[];
-  moradores: Morador[];
+  unidades: UnidadeCadastrada[];
+  moradores: MoradorCadastrado[];
+
   unidadeMoradorId: string;
   setUnidadeMoradorId: (valor: string) => void;
+
   nomeMorador: string;
   setNomeMorador: (valor: string) => void;
+
   telefoneMorador: string;
   setTelefoneMorador: (valor: string) => void;
+
   prioridadeMorador: string;
   setPrioridadeMorador: (valor: string) => void;
+
   podeAbrirPortao: boolean;
   setPodeAbrirPortao: (valor: boolean) => void;
+
   cadastrarMorador: () => void;
   salvandoMorador: boolean;
 };
@@ -54,10 +69,8 @@ export default function Moradores({
   cadastrarMorador,
   salvandoMorador,
 }: Props) {
-  function nomeUnidade(unidade: Unidade) {
-    return unidade.bloco
-      ? `${unidade.localNome} • ${unidade.bloco}/${unidade.nome}`
-      : `${unidade.localNome} • ${unidade.nome}`;
+  function nomeCompletoUnidade(unidade: UnidadeCadastrada) {
+    return unidade.bloco ? `${unidade.bloco} / ${unidade.nome}` : unidade.nome;
   }
 
   return (
@@ -65,12 +78,12 @@ export default function Moradores({
       <h2 className="text-3xl font-black text-blue-300 mb-2">Moradores</h2>
 
       <p className="text-slate-400 mb-8">
-        Cadastre moradores, prioridades e permissões por unidade.
+        Cadastre moradores e vincule cada pessoa a uma unidade.
       </p>
 
       <div className="grid lg:grid-cols-2 gap-6">
         <div className="bg-slate-900 rounded-2xl p-6 border border-slate-800">
-          <h3 className="text-2xl font-bold mb-5">Cadastro de morador</h3>
+          <h3 className="text-2xl font-bold mb-5">Cadastrar morador</h3>
 
           <div className="space-y-4">
             <select
@@ -82,7 +95,7 @@ export default function Moradores({
 
               {unidades.map((unidade) => (
                 <option key={unidade.id} value={unidade.id}>
-                  {nomeUnidade(unidade)}
+                  {unidade.localNome} • {nomeCompletoUnidade(unidade)}
                 </option>
               ))}
             </select>
@@ -113,24 +126,20 @@ export default function Moradores({
               <option value="5">Prioridade 5</option>
             </select>
 
-            <label className="flex gap-3 items-center bg-slate-800 rounded-xl p-3">
+            <label className="flex items-center gap-3 bg-slate-800 border border-slate-700 rounded-xl p-4 cursor-pointer">
               <input
                 type="checkbox"
                 checked={podeAbrirPortao}
                 onChange={(e) => setPodeAbrirPortao(e.target.checked)}
               />
-              <span>Pode abrir portão remotamente</span>
-            </label>
 
-            <div className="bg-slate-800 rounded-xl p-3 text-sm text-slate-400">
-              O modo de chamada agora é configurado na unidade: Família ou
-              Prioridade.
-            </div>
+              <span className="font-bold">Pode abrir portão</span>
+            </label>
 
             <button
               onClick={cadastrarMorador}
               disabled={salvandoMorador}
-              className="w-full bg-blue-600 hover:bg-blue-500 disabled:bg-slate-600 py-3 rounded-xl font-black"
+              className="w-full bg-blue-600 hover:bg-blue-500 disabled:bg-slate-600 text-white font-black py-3 rounded-xl"
             >
               {salvandoMorador ? "Salvando..." : "Cadastrar morador"}
             </button>
@@ -140,7 +149,7 @@ export default function Moradores({
         <div className="bg-slate-900 rounded-2xl p-6 border border-slate-800">
           <h3 className="text-2xl font-bold mb-5">Moradores cadastrados</h3>
 
-          <div className="space-y-3">
+          <div className="space-y-3 max-h-[640px] overflow-y-auto pr-1">
             {moradores.map((morador) => (
               <div
                 key={morador.id}
@@ -152,15 +161,29 @@ export default function Moradores({
 
                 <h4 className="text-lg font-black">{morador.nome}</h4>
 
-                <p className="text-sm text-slate-400">
-                  {morador.unidadeNome} • Prioridade {morador.prioridade}
+                <p className="text-sm text-slate-400 mt-1">
+                  📱 {morador.telefone}
                 </p>
 
-                <p className="text-xs mt-2 font-bold text-green-300">
-                  {morador.podeAbrirPortao
-                    ? "Pode abrir portão"
-                    : "Sem permissão de portão"}
+                <p className="text-sm text-slate-400">
+                  {morador.unidadeNome}
                 </p>
+
+                <div className="flex flex-wrap gap-2 mt-3">
+                  <span className="text-xs bg-slate-900 border border-slate-700 px-3 py-1 rounded-full text-blue-300 font-bold">
+                    Prioridade {morador.prioridade}
+                  </span>
+
+                  <span className="text-xs bg-slate-900 border border-slate-700 px-3 py-1 rounded-full text-green-300 font-bold">
+                    {morador.status === "ativo" ? "🟢 Ativo" : "🔴 Inativo"}
+                  </span>
+
+                  {morador.podeAbrirPortao && (
+                    <span className="text-xs bg-slate-900 border border-slate-700 px-3 py-1 rounded-full text-yellow-300 font-bold">
+                      🚪 Abre portão
+                    </span>
+                  )}
+                </div>
               </div>
             ))}
 
