@@ -6,30 +6,62 @@ type LocalCadastrado = {
   tipo: string;
 };
 
+type ResponsavelAdministrativo = {
+  nome: string;
+  telefone: string;
+  email: string;
+  podeSolicitarAlteracaoStatus: boolean;
+};
+
 type UnidadeCadastrada = {
   id: string;
   codigo: string;
   localId: string;
   localNome: string;
+  tipoLocal?: string;
   tipo: string;
   bloco: string;
   nome: string;
   modoChamado?: string;
+  status?: string;
+  possuiResponsavel?: boolean;
+  responsavelAdministrativo?: ResponsavelAdministrativo | null;
 };
 
 type Props = {
   locais: LocalCadastrado[];
   unidades: UnidadeCadastrada[];
+
   localSelecionadoId: string;
   setLocalSelecionadoId: (valor: string) => void;
+
   blocoUnidade: string;
   setBlocoUnidade: (valor: string) => void;
+
   nomeUnidade: string;
   setNomeUnidade: (valor: string) => void;
+
   tipoUnidade: string;
   setTipoUnidade: (valor: string) => void;
+
   modoChamadoUnidade: string;
   setModoChamadoUnidade: (valor: string) => void;
+
+  statusUnidade: string;
+  setStatusUnidade: (valor: string) => void;
+
+  possuiResponsavel: boolean;
+  setPossuiResponsavel: (valor: boolean) => void;
+
+  nomeResponsavel: string;
+  setNomeResponsavel: (valor: string) => void;
+
+  telefoneResponsavel: string;
+  setTelefoneResponsavel: (valor: string) => void;
+
+  emailResponsavel: string;
+  setEmailResponsavel: (valor: string) => void;
+
   modoCondominio: boolean;
   cadastrarUnidade: () => void;
   salvandoUnidade: boolean;
@@ -48,6 +80,16 @@ export default function Unidades({
   setTipoUnidade,
   modoChamadoUnidade,
   setModoChamadoUnidade,
+  statusUnidade,
+  setStatusUnidade,
+  possuiResponsavel,
+  setPossuiResponsavel,
+  nomeResponsavel,
+  setNomeResponsavel,
+  telefoneResponsavel,
+  setTelefoneResponsavel,
+  emailResponsavel,
+  setEmailResponsavel,
   modoCondominio,
   cadastrarUnidade,
   salvandoUnidade,
@@ -55,6 +97,18 @@ export default function Unidades({
   function textoModoChamado(modo?: string) {
     if (modo === "prioridade") return "Modo Prioridade";
     return "Modo Família";
+  }
+
+  function textoStatus(status?: string) {
+    if (status === "ativa") return "🟢 Ativa";
+    if (status === "desativada") return "🔴 Desativada";
+    return "🟡 Pendente";
+  }
+
+  function corStatus(status?: string) {
+    if (status === "ativa") return "text-green-300";
+    if (status === "desativada") return "text-red-300";
+    return "text-yellow-300";
   }
 
   return (
@@ -134,6 +188,70 @@ export default function Unidades({
               <option value="prioridade">Modo Prioridade — em fila</option>
             </select>
 
+            <select
+              value={statusUnidade}
+              onChange={(e) => setStatusUnidade(e.target.value)}
+              className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3"
+            >
+              <option value="pendente">🟡 Pendente — sem morador cadastrado</option>
+              <option value="ativa">🟢 Ativa — pronta para receber chamadas</option>
+              <option value="desativada">🔴 Desativada — vazia, bloqueada ou em reforma</option>
+            </select>
+
+            <label className="flex items-start gap-3 bg-slate-800 border border-slate-700 rounded-xl p-4 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={possuiResponsavel}
+                onChange={(e) => setPossuiResponsavel(e.target.checked)}
+                className="mt-1"
+              />
+
+              <div>
+                <p className="font-bold text-white">
+                  Possui responsável administrativo
+                </p>
+                <p className="text-xs text-slate-400 mt-1">
+                  Use apenas para unidade de aluguel, Airbnb, imobiliária ou
+                  quando alguém diferente do morador administra a unidade.
+                </p>
+              </div>
+            </label>
+
+            {possuiResponsavel && (
+              <div className="bg-slate-800 border border-slate-700 rounded-2xl p-4 space-y-3">
+                <h4 className="font-black text-blue-300">
+                  Responsável administrativo da unidade
+                </h4>
+
+                <input
+                  value={nomeResponsavel}
+                  onChange={(e) => setNomeResponsavel(e.target.value)}
+                  placeholder="Nome do responsável. Ex: Carlos Silva"
+                  className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3"
+                />
+
+                <input
+                  value={telefoneResponsavel}
+                  onChange={(e) => setTelefoneResponsavel(e.target.value)}
+                  placeholder="Telefone / WhatsApp"
+                  className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3"
+                />
+
+                <input
+                  value={emailResponsavel}
+                  onChange={(e) => setEmailResponsavel(e.target.value)}
+                  placeholder="E-mail"
+                  className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3"
+                />
+
+                <p className="text-xs text-slate-400">
+                  Este contato não precisa receber chamadas do portão. Ele serve
+                  para administrar troca de inquilino, ativar/desativar unidade
+                  e manter o cadastro atualizado.
+                </p>
+              </div>
+            )}
+
             <button
               onClick={cadastrarUnidade}
               disabled={salvandoUnidade}
@@ -153,23 +271,61 @@ export default function Unidades({
                 key={unidade.id}
                 className="bg-slate-800 rounded-xl p-4 border border-slate-700"
               >
-                <p className="text-xs text-blue-300 font-bold">
-                  {unidade.codigo}
-                </p>
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-xs text-blue-300 font-bold">
+                      {unidade.codigo}
+                    </p>
 
-                <h4 className="text-lg font-black">
-                  {unidade.bloco
-                    ? `${unidade.bloco} / ${unidade.nome}`
-                    : unidade.nome}
-                </h4>
+                    <h4 className="text-lg font-black">
+                      {unidade.bloco
+                        ? `${unidade.bloco} / ${unidade.nome}`
+                        : unidade.nome}
+                    </h4>
+                  </div>
 
-                <p className="text-sm text-slate-400">
+                  <span
+                    className={`text-xs font-black ${corStatus(
+                      unidade.status
+                    )}`}
+                  >
+                    {textoStatus(unidade.status)}
+                  </span>
+                </div>
+
+                <p className="text-sm text-slate-400 mt-1">
                   {unidade.localNome} • {unidade.tipo}
                 </p>
 
                 <p className="text-xs text-green-300 mt-2 font-bold">
                   {textoModoChamado(unidade.modoChamado)}
                 </p>
+
+                {unidade.possuiResponsavel &&
+                  unidade.responsavelAdministrativo && (
+                    <div className="mt-3 bg-slate-900 rounded-xl p-3 border border-slate-700">
+                      <p className="text-xs text-blue-300 font-bold mb-1">
+                        Responsável administrativo
+                      </p>
+
+                      <p className="text-sm font-bold">
+                        {unidade.responsavelAdministrativo.nome}
+                      </p>
+
+                      {unidade.responsavelAdministrativo.telefone && (
+                        <p className="text-xs text-slate-400 mt-1">
+                          WhatsApp:{" "}
+                          {unidade.responsavelAdministrativo.telefone}
+                        </p>
+                      )}
+
+                      {unidade.responsavelAdministrativo.email && (
+                        <p className="text-xs text-slate-400">
+                          E-mail: {unidade.responsavelAdministrativo.email}
+                        </p>
+                      )}
+                    </div>
+                  )}
               </div>
             ))}
 

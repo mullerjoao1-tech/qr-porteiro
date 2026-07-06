@@ -29,6 +29,13 @@ type LocalCadastrado = {
   criadoEm: string;
 };
 
+type ResponsavelAdministrativo = {
+  nome: string;
+  telefone: string;
+  email: string;
+  podeSolicitarAlteracaoStatus: boolean;
+};
+
 type UnidadeCadastrada = {
   id: string;
   codigo: string;
@@ -40,6 +47,8 @@ type UnidadeCadastrada = {
   tipo: string;
   modoChamado?: string;
   status: string;
+  possuiResponsavel?: boolean;
+  responsavelAdministrativo?: ResponsavelAdministrativo | null;
   criadoEm: string;
 };
 
@@ -74,6 +83,11 @@ export default function Dashboard() {
   const [nomeUnidade, setNomeUnidade] = useState("");
   const [tipoUnidade, setTipoUnidade] = useState("apartamento");
   const [modoChamadoUnidade, setModoChamadoUnidade] = useState("familia");
+  const [statusUnidade, setStatusUnidade] = useState("pendente");
+  const [possuiResponsavel, setPossuiResponsavel] = useState(false);
+  const [nomeResponsavel, setNomeResponsavel] = useState("");
+  const [telefoneResponsavel, setTelefoneResponsavel] = useState("");
+  const [emailResponsavel, setEmailResponsavel] = useState("");
 
   const [unidadeMoradorId, setUnidadeMoradorId] = useState("");
   const [nomeMorador, setNomeMorador] = useState("");
@@ -89,7 +103,6 @@ export default function Dashboard() {
     const locaisRef = ref(db, "qrCentral/locais");
 
     const desligar = onValue(locaisRef, (snapshot) => {
-      
       const dados = snapshot.val();
 
       if (!dados) {
@@ -109,7 +122,7 @@ export default function Dashboard() {
   }, []);
 
   useEffect(() => {
-    const unidadesRef = ref(db, "unidades-v2");
+    const unidadesRef = ref(db, "qrCentral/unidades");
 
     const desligar = onValue(unidadesRef, (snapshot) => {
       const dados = snapshot.val();
@@ -131,7 +144,7 @@ export default function Dashboard() {
   }, []);
 
   useEffect(() => {
-    const moradoresRef = ref(db, "moradores-v2");
+    const moradoresRef = ref(db, "qrCentral/moradores");
 
     const desligar = onValue(moradoresRef, (snapshot) => {
       const dados = snapshot.val();
@@ -270,6 +283,11 @@ export default function Dashboard() {
       return;
     }
 
+    if (possuiResponsavel && !nomeResponsavel.trim()) {
+      alert("Digite o nome do responsável administrativo.");
+      return;
+    }
+
     setSalvandoUnidade(true);
 
     try {
@@ -287,7 +305,16 @@ export default function Dashboard() {
         nome: formatarNome(nomeUnidade),
         tipo: tipoUnidade,
         modoChamado: modoChamadoUnidade,
-        status: "ativa",
+        status: statusUnidade,
+        possuiResponsavel,
+        responsavelAdministrativo: possuiResponsavel
+          ? {
+              nome: formatarNome(nomeResponsavel),
+              telefone: telefoneResponsavel.trim(),
+              email: emailResponsavel.trim(),
+              podeSolicitarAlteracaoStatus: true,
+            }
+          : null,
         criadoEm: new Date().toISOString(),
       });
 
@@ -295,6 +322,11 @@ export default function Dashboard() {
       setNomeUnidade("");
       setTipoUnidade(local.tipo === "condominio" ? "apartamento" : "livre");
       setModoChamadoUnidade("familia");
+      setStatusUnidade("pendente");
+      setPossuiResponsavel(false);
+      setNomeResponsavel("");
+      setTelefoneResponsavel("");
+      setEmailResponsavel("");
 
       alert("Unidade cadastrada com sucesso.");
     } catch (erro) {
@@ -365,6 +397,18 @@ export default function Dashboard() {
 
   const localSelecionado = locais.find((item) => item.id === localSelecionadoId);
   const modoCondominio = localSelecionado?.tipo === "condominio";
+
+  const unidadesPendentes = unidades.filter(
+    (unidade) => unidade.status === "pendente"
+  );
+
+  const unidadesAtivas = unidades.filter(
+    (unidade) => unidade.status === "ativa"
+  );
+
+  const unidadesDesativadas = unidades.filter(
+    (unidade) => unidade.status === "desativada"
+  );
 
   const menu = [
     { id: "dashboard", nome: "Dashboard", icone: "🏠" },
@@ -451,7 +495,38 @@ export default function Dashboard() {
 
                 <div className="bg-slate-900 rounded-2xl p-5 border border-slate-800">
                   <p className="text-slate-400 text-sm">Pendentes</p>
-                  <p className="text-3xl font-black mt-2">0</p>
+                  <p className="text-3xl font-black mt-2">
+                    {unidadesPendentes.length}
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid md:grid-cols-3 gap-4 mb-8">
+                <div className="bg-green-950/40 rounded-2xl p-5 border border-green-800">
+                  <p className="text-green-300 text-sm font-bold">
+                    🟢 Ativas
+                  </p>
+                  <p className="text-3xl font-black mt-2">
+                    {unidadesAtivas.length}
+                  </p>
+                </div>
+
+                <div className="bg-yellow-950/40 rounded-2xl p-5 border border-yellow-800">
+                  <p className="text-yellow-300 text-sm font-bold">
+                    🟡 Pendentes
+                  </p>
+                  <p className="text-3xl font-black mt-2">
+                    {unidadesPendentes.length}
+                  </p>
+                </div>
+
+                <div className="bg-red-950/40 rounded-2xl p-5 border border-red-800">
+                  <p className="text-red-300 text-sm font-bold">
+                    🔴 Desativadas
+                  </p>
+                  <p className="text-3xl font-black mt-2">
+                    {unidadesDesativadas.length}
+                  </p>
                 </div>
               </div>
 
@@ -460,8 +535,8 @@ export default function Dashboard() {
                   Estrutura V2 iniciada
                 </h3>
                 <p className="font-semibold">
-                  1 QR principal por local/portaria, várias unidades e vários
-                  moradores por unidade.
+                  1 QR principal por local/portaria, várias unidades, vários
+                  moradores por unidade e responsável administrativo opcional.
                 </p>
               </div>
             </div>
@@ -487,7 +562,7 @@ export default function Dashboard() {
                     <input
                       value={nomeLocal}
                       onChange={(e) => setNomeLocal(e.target.value)}
-                      placeholder="Ex: Residencial Mar Azul"
+                      placeholder="Ex: Residencial Tulipas"
                       className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3"
                     />
 
@@ -609,6 +684,16 @@ export default function Dashboard() {
               modoCondominio={modoCondominio}
               cadastrarUnidade={cadastrarUnidade}
               salvandoUnidade={salvandoUnidade}
+              statusUnidade={statusUnidade}
+              setStatusUnidade={setStatusUnidade}
+              possuiResponsavel={possuiResponsavel}
+              setPossuiResponsavel={setPossuiResponsavel}
+              nomeResponsavel={nomeResponsavel}
+              setNomeResponsavel={setNomeResponsavel}
+              telefoneResponsavel={telefoneResponsavel}
+              setTelefoneResponsavel={setTelefoneResponsavel}
+              emailResponsavel={emailResponsavel}
+              setEmailResponsavel={setEmailResponsavel}
             />
           )}
 
