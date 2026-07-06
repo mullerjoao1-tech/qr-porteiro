@@ -1,6 +1,8 @@
 "use client";
+
 import { useState } from "react";
 import NovoMoradorModal from "./NovoMoradorModal";
+
 type ResponsavelAdministrativo = {
   nome: string;
   telefone: string;
@@ -30,10 +32,13 @@ type MoradorCadastrado = {
   codigo: string;
   nome: string;
   telefone: string;
+  email?: string;
   unidadeId: string;
   unidadeNome: string;
   prioridade: number;
   podeAbrirPortao: boolean;
+  recebeChamadas?: boolean;
+  perfil?: string;
   status: string;
   criadoEm: string;
 };
@@ -49,7 +54,8 @@ export default function MoradoresModal({
   moradores,
   onClose,
 }: Props) {
-    const [abrirNovoMorador, setAbrirNovoMorador] = useState(false);
+  const [abrirNovoMorador, setAbrirNovoMorador] = useState(false);
+
   const moradoresDaUnidade = moradores
     .filter((morador) => morador.unidadeId === unidade.id)
     .sort((a, b) => a.prioridade - b.prioridade);
@@ -62,6 +68,15 @@ export default function MoradoresModal({
 
   function nomeCompletoUnidade() {
     return unidade.bloco ? `${unidade.bloco} / ${unidade.nome}` : unidade.nome;
+  }
+
+  function textoPerfil(perfil?: string) {
+    if (perfil === "familiar") return "Familiar";
+    if (perfil === "inquilino") return "Inquilino";
+    if (perfil === "proprietario") return "Proprietário";
+    if (perfil === "funcionario") return "Funcionário";
+    if (perfil === "outro") return "Outro";
+    return "Morador";
   }
 
   return (
@@ -111,30 +126,29 @@ export default function MoradoresModal({
           </div>
         </div>
 
-        {unidade.possuiResponsavel &&
-          unidade.responsavelAdministrativo && (
-            <div className="bg-slate-800 border border-slate-700 rounded-2xl p-4 mb-5">
-              <p className="text-xs text-blue-300 font-black mb-2">
-                Responsável administrativo
+        {unidade.possuiResponsavel && unidade.responsavelAdministrativo && (
+          <div className="bg-slate-800 border border-slate-700 rounded-2xl p-4 mb-5">
+            <p className="text-xs text-blue-300 font-black mb-2">
+              Responsável administrativo
+            </p>
+
+            <p className="text-lg font-black">
+              {unidade.responsavelAdministrativo.nome}
+            </p>
+
+            {unidade.responsavelAdministrativo.telefone && (
+              <p className="text-sm text-slate-400 mt-1">
+                WhatsApp: {unidade.responsavelAdministrativo.telefone}
               </p>
+            )}
 
-              <p className="text-lg font-black">
-                {unidade.responsavelAdministrativo.nome}
+            {unidade.responsavelAdministrativo.email && (
+              <p className="text-sm text-slate-400">
+                E-mail: {unidade.responsavelAdministrativo.email}
               </p>
-
-              {unidade.responsavelAdministrativo.telefone && (
-                <p className="text-sm text-slate-400 mt-1">
-                  WhatsApp: {unidade.responsavelAdministrativo.telefone}
-                </p>
-              )}
-
-              {unidade.responsavelAdministrativo.email && (
-                <p className="text-sm text-slate-400">
-                  E-mail: {unidade.responsavelAdministrativo.email}
-                </p>
-              )}
-            </div>
-          )}
+            )}
+          </div>
+        )}
 
         <div className="bg-slate-800 border border-slate-700 rounded-2xl p-4">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
@@ -143,14 +157,12 @@ export default function MoradoresModal({
                 Moradores da unidade
               </h4>
               <p className="text-sm text-slate-400">
-                Cadastro será ativado na próxima etapa.
+                Cadastre, consulte e organize os moradores desta unidade.
               </p>
             </div>
 
             <button
-              
               onClick={() => setAbrirNovoMorador(true)}
-              
               className="bg-blue-600 hover:bg-blue-500 text-white font-black px-5 py-3 rounded-xl"
             >
               ➕ Adicionar morador
@@ -179,12 +191,42 @@ export default function MoradoresModal({
                   <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
                     <div>
                       <p className="text-lg font-black">{morador.nome}</p>
+
                       <p className="text-sm text-slate-400">
                         📱 {morador.telefone}
                       </p>
-                      <p className="text-xs text-blue-300 font-bold mt-2">
-                        Prioridade {morador.prioridade}
-                      </p>
+
+                      {morador.email && (
+                        <p className="text-sm text-slate-400">
+                          ✉️ {morador.email}
+                        </p>
+                      )}
+
+                      <div className="flex flex-wrap gap-2 mt-3">
+                        <span className="text-xs bg-slate-800 border border-slate-700 px-3 py-1 rounded-full text-blue-300 font-bold">
+                          Prioridade {morador.prioridade}
+                        </span>
+
+                        <span className="text-xs bg-slate-800 border border-slate-700 px-3 py-1 rounded-full text-slate-300 font-bold">
+                          {textoPerfil(morador.perfil)}
+                        </span>
+
+                        <span className="text-xs bg-slate-800 border border-slate-700 px-3 py-1 rounded-full text-green-300 font-bold">
+                          {morador.status === "ativo" ? "🟢 Ativo" : "🔴 Inativo"}
+                        </span>
+
+                        {morador.recebeChamadas !== false && (
+                          <span className="text-xs bg-slate-800 border border-slate-700 px-3 py-1 rounded-full text-cyan-300 font-bold">
+                            🔔 Recebe chamadas
+                          </span>
+                        )}
+
+                        {morador.podeAbrirPortao && (
+                          <span className="text-xs bg-slate-800 border border-slate-700 px-3 py-1 rounded-full text-yellow-300 font-bold">
+                            🚪 Abre portão
+                          </span>
+                        )}
+                      </div>
                     </div>
 
                     <div className="flex flex-wrap gap-2">
@@ -214,11 +256,12 @@ export default function MoradoresModal({
           Fechar
         </button>
       </div>
-     {abrirNovoMorador && (
-  <NovoMoradorModal
-  unidade={unidade}
-  onClose={() => setAbrirNovoMorador(false)}
-/>
+
+      {abrirNovoMorador && (
+        <NovoMoradorModal
+          unidade={unidade}
+          onClose={() => setAbrirNovoMorador(false)}
+        />
       )}
     </div>
   );
