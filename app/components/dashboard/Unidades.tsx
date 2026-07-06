@@ -41,7 +41,6 @@ type MoradorCadastrado = {
   podeAbrirPortao: boolean;
   status: string;
   criadoEm: string;
-atualizadoEm?: string;
 };
 
 type Props = {
@@ -237,6 +236,22 @@ export default function Unidades({
       .filter(Boolean).length;
   }
 
+  const unidadesFiltradas = localSelecionadoId
+    ? unidades.filter((unidade) => unidade.localId === localSelecionadoId)
+    : unidades;
+
+  const totalAtivas = unidadesFiltradas.filter(
+    (unidade) => unidade.status === "ativa"
+  ).length;
+
+  const totalPendentes = unidadesFiltradas.filter(
+    (unidade) => unidade.status === "pendente" || !unidade.status
+  ).length;
+
+  const totalDesativadas = unidadesFiltradas.filter(
+    (unidade) => unidade.status === "desativada"
+  ).length;
+
   function moradoresDaUnidade(unidadeId: string) {
     return moradores.filter((morador) => morador.unidadeId === unidadeId);
   }
@@ -273,7 +288,7 @@ export default function Unidades({
 
   return (
     <div>
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-2">
+      <div className="flex flex-col xl:flex-row xl:items-start xl:justify-between gap-4 mb-5">
         <div>
           <h2 className="text-3xl font-black text-blue-300">Unidades</h2>
           <p className="text-slate-400 mt-2">
@@ -283,13 +298,35 @@ export default function Unidades({
 
         <button
           onClick={() => setLoteAberto(true)}
-          className="bg-cyan-600 hover:bg-cyan-500 text-white font-black px-5 py-3 rounded-xl"
+          className="bg-cyan-600 hover:bg-cyan-500 text-white font-black px-5 py-3 rounded-xl shadow-lg"
         >
           🚀 Cadastro em lote
         </button>
       </div>
 
-      <div className="grid lg:grid-cols-2 gap-6 mt-8">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4">
+          <p className="text-xs text-slate-400 font-bold">Total</p>
+          <p className="text-2xl font-black mt-1">{unidadesFiltradas.length}</p>
+        </div>
+
+        <div className="bg-green-950/40 border border-green-800 rounded-2xl p-4">
+          <p className="text-xs text-green-300 font-bold">🟢 Ativas</p>
+          <p className="text-2xl font-black mt-1">{totalAtivas}</p>
+        </div>
+
+        <div className="bg-yellow-950/40 border border-yellow-800 rounded-2xl p-4">
+          <p className="text-xs text-yellow-300 font-bold">🟡 Pendentes</p>
+          <p className="text-2xl font-black mt-1">{totalPendentes}</p>
+        </div>
+
+        <div className="bg-red-950/40 border border-red-800 rounded-2xl p-4">
+          <p className="text-xs text-red-300 font-bold">🔴 Desativadas</p>
+          <p className="text-2xl font-black mt-1">{totalDesativadas}</p>
+        </div>
+      </div>
+
+      <div className="grid lg:grid-cols-2 gap-6 mt-6">
         <div className="bg-slate-900 rounded-2xl p-6 border border-slate-800">
           <h3 className="text-2xl font-bold mb-5">Cadastrar unidade</h3>
 
@@ -430,7 +467,7 @@ export default function Unidades({
           <h3 className="text-2xl font-bold mb-5">Unidades cadastradas</h3>
 
           <div className="space-y-3 max-h-[640px] overflow-y-auto pr-1">
-            {unidades.map((unidade) => {
+            {unidadesFiltradas.map((unidade) => {
               const moradoresVinculados = moradoresDaUnidade(unidade.id);
 
               return (
@@ -452,7 +489,7 @@ export default function Unidades({
                     </div>
 
                     <span
-                      className={`text-xs font-black ${corStatus(
+                      className={`text-xs md:text-sm font-black px-3 py-1 rounded-full bg-slate-900 border border-slate-700 ${corStatus(
                         unidade.status
                       )}`}
                     >
@@ -530,21 +567,21 @@ export default function Unidades({
 
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-4">
                     <button
-                      onClick={() => abrirEdicaoUnidade(unidade)}
-                      className="bg-blue-600 hover:bg-blue-500 text-white text-xs font-black py-2 rounded-xl"
-                    >
-                      ✏️ Editar
-                    </button>
-
-                    <button
                       onClick={() =>
                         alert(
                           "Na próxima etapa vamos abrir o cadastro de moradores já filtrado nesta unidade."
                         )
                       }
-                      className="bg-slate-700 hover:bg-slate-600 text-white text-xs font-black py-2 rounded-xl"
+                      className="bg-blue-600 hover:bg-blue-500 text-white text-xs font-black py-2 rounded-xl"
                     >
                       👥 Moradores
+                    </button>
+
+                    <button
+                      onClick={() => abrirEdicaoUnidade(unidade)}
+                      className="bg-slate-700 hover:bg-slate-600 text-white text-xs font-black py-2 rounded-xl"
+                    >
+                      ✏️ Editar
                     </button>
 
                     <button
@@ -566,9 +603,9 @@ export default function Unidades({
               );
             })}
 
-            {unidades.length === 0 && (
+            {unidadesFiltradas.length === 0 && (
               <div className="bg-slate-800 rounded-xl p-4 text-slate-400">
-                Nenhuma unidade cadastrada ainda.
+                Nenhuma unidade cadastrada para este local.
               </div>
             )}
           </div>
