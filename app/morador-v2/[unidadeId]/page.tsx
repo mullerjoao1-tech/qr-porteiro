@@ -1,925 +1,639 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useParams } from "next/navigation";
+import { ref, onValue, set, update, remove } from "firebase/database";
+import { db } from "../../services/firebase";
 
-type LocalCadastrado = {
+type MensagemConversa = {
+  id?: string;
+  autor: "visitante" | "morador";
+  tipo: "texto" | "audio";
+  texto?: string;
+  audioBase64?: string;
+  criadoEm: number;
+};
+
+type Chamada = {
+  nome?: string;
+  motivo?: string;
+  status?: string;
+  criadoEm?: string;
+  atendidoEm?: string;
+  audioBase64?: string;
+  mensagemResponsavel?: string;
+  ultimaAtividade?: number;
+  enviadoEm?: number;
+  mensagens?: Record<string, MensagemConversa>;
+};
+
+type Unidade = {
   id: string;
   nome: string;
-  tipo: string;
+  tipo?: string;
+  bloco?: string;
+  chamada?: Chamada;
 };
 
-type ResponsavelAdministrativo = {
-  nome: string;
-  telefone: string;
-  email: string;
-  podeSolicitarAlteracaoStatus: boolean;
-};
+function blobParaBase64(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
 
-type UnidadeCadastrada = {
-  id: string;
-  codigo: string;
-  localId: string;
-  localNome: string;
-  tipoLocal: string;
-  tipo: string;
-  bloco: string;
-  nome: string;
-  modoChamado?: string;
-  status: string;
-  possuiResponsavel?: boolean;
-  responsavelAdministrativo?: ResponsavelAdministrativo | null;
-  criadoEm: string;
-  atualizadoEm?: string;
-};
-
-type MoradorCadastrado = {
-  id: string;
-  codigo: string;
-  nome: string;
-  telefone: string;
-  unidadeId: string;
-  unidadeNome: string;
-  prioridade: number;
-  podeAbrirPortao: boolean;
-  status: string;
-  criadoEm: string;
-};
-
-type Props = {
-  locais: LocalCadastrado[];
-  unidades: UnidadeCadastrada[];
-  moradores: MoradorCadastrado[];
-
-  localSelecionadoId: string;
-  setLocalSelecionadoId: (valor: string) => void;
-
-  blocoUnidade: string;
-  setBlocoUnidade: (valor: string) => void;
-
-  nomeUnidade: string;
-  setNomeUnidade: (valor: string) => void;
-
-  tipoUnidade: string;
-  setTipoUnidade: (valor: string) => void;
-
-  modoChamadoUnidade: string;
-  setModoChamadoUnidade: (valor: string) => void;
-
-  statusUnidade: string;
-  setStatusUnidade: (valor: string) => void;
-
-  possuiResponsavel: boolean;
-  setPossuiResponsavel: (valor: boolean) => void;
-
-  nomeResponsavel: string;
-  setNomeResponsavel: (valor: string) => void;
-
-  telefoneResponsavel: string;
-  setTelefoneResponsavel: (valor: string) => void;
-
-  emailResponsavel: string;
-  setEmailResponsavel: (valor: string) => void;
-
-  loteAberto: boolean;
-  setLoteAberto: (valor: boolean) => void;
-
-  loteLocalSelecionadoId: string;
-  setLoteLocalSelecionadoId: (valor: string) => void;
-
-  textoLoteUnidades: string;
-  setTextoLoteUnidades: (valor: string) => void;
-
-  blocoLote: string;
-  setBlocoLote: (valor: string) => void;
-
-  tipoLote: string;
-  setTipoLote: (valor: string) => void;
-
-  modoChamadoLote: string;
-  setModoChamadoLote: (valor: string) => void;
-
-  statusLote: string;
-  setStatusLote: (valor: string) => void;
-
-  cadastrarUnidadesEmLote: () => void;
-  salvandoLote: boolean;
-
-  editandoUnidade: UnidadeCadastrada | null;
-  abrirEdicaoUnidade: (unidade: UnidadeCadastrada) => void;
-  fecharEdicaoUnidade: () => void;
-  salvarEdicaoUnidade: () => void;
-  salvandoEdicaoUnidade: boolean;
-
-  editBlocoUnidade: string;
-  setEditBlocoUnidade: (valor: string) => void;
-
-  editNomeUnidade: string;
-  setEditNomeUnidade: (valor: string) => void;
-
-  editTipoUnidade: string;
-  setEditTipoUnidade: (valor: string) => void;
-
-  editModoChamadoUnidade: string;
-  setEditModoChamadoUnidade: (valor: string) => void;
-
-  editStatusUnidade: string;
-  setEditStatusUnidade: (valor: string) => void;
-
-  editPossuiResponsavel: boolean;
-  setEditPossuiResponsavel: (valor: boolean) => void;
-
-  editNomeResponsavel: string;
-  setEditNomeResponsavel: (valor: string) => void;
-
-  editTelefoneResponsavel: string;
-  setEditTelefoneResponsavel: (valor: string) => void;
-
-  editEmailResponsavel: string;
-  setEditEmailResponsavel: (valor: string) => void;
-
-  excluirUnidade: (unidade: UnidadeCadastrada) => void;
-  desativarUnidade: (unidade: UnidadeCadastrada) => void;
-
-  modoCondominio: boolean;
-  cadastrarUnidade: () => void;
-  salvandoUnidade: boolean;
-};
-
-export default function Unidades({
-  locais,
-  unidades,
-  moradores,
-  localSelecionadoId,
-  setLocalSelecionadoId,
-  blocoUnidade,
-  setBlocoUnidade,
-  nomeUnidade,
-  setNomeUnidade,
-  tipoUnidade,
-  setTipoUnidade,
-  modoChamadoUnidade,
-  setModoChamadoUnidade,
-  statusUnidade,
-  setStatusUnidade,
-  possuiResponsavel,
-  setPossuiResponsavel,
-  nomeResponsavel,
-  setNomeResponsavel,
-  telefoneResponsavel,
-  setTelefoneResponsavel,
-  emailResponsavel,
-  setEmailResponsavel,
-  loteAberto,
-  setLoteAberto,
-  loteLocalSelecionadoId,
-  setLoteLocalSelecionadoId,
-  textoLoteUnidades,
-  setTextoLoteUnidades,
-  blocoLote,
-  setBlocoLote,
-  tipoLote,
-  setTipoLote,
-  modoChamadoLote,
-  setModoChamadoLote,
-  statusLote,
-  setStatusLote,
-  cadastrarUnidadesEmLote,
-  salvandoLote,
-  editandoUnidade,
-  abrirEdicaoUnidade,
-  fecharEdicaoUnidade,
-  salvarEdicaoUnidade,
-  salvandoEdicaoUnidade,
-  editBlocoUnidade,
-  setEditBlocoUnidade,
-  editNomeUnidade,
-  setEditNomeUnidade,
-  editTipoUnidade,
-  setEditTipoUnidade,
-  editModoChamadoUnidade,
-  setEditModoChamadoUnidade,
-  editStatusUnidade,
-  setEditStatusUnidade,
-  editPossuiResponsavel,
-  setEditPossuiResponsavel,
-  editNomeResponsavel,
-  setEditNomeResponsavel,
-  editTelefoneResponsavel,
-  setEditTelefoneResponsavel,
-  editEmailResponsavel,
-  setEditEmailResponsavel,
-  excluirUnidade,
-  desativarUnidade,
-  modoCondominio,
-  cadastrarUnidade,
-  salvandoUnidade,
-}: Props) {
-  const [unidadeMoradoresAberta, setUnidadeMoradoresAberta] =
-    useState<UnidadeCadastrada | null>(null);
-
-  function textoModoChamado(modo?: string) {
-    if (modo === "prioridade") return "Modo Prioridade";
-    return "Modo Família";
-  }
-
-  function textoStatus(status?: string) {
-    if (status === "ativa") return "🟢 Ativa";
-    if (status === "desativada") return "🔴 Desativada";
-    return "🟡 Pendente";
-  }
-
-  function corStatus(status?: string) {
-    if (status === "ativa") return "text-green-300";
-    if (status === "desativada") return "text-red-300";
-    return "text-yellow-300";
-  }
-
-  function quantidadePreviewLote() {
-    return textoLoteUnidades
-      .split(/[\n,; ]+/)
-      .map((item) => item.trim())
-      .filter(Boolean).length;
-  }
-
-  const unidadesFiltradas = localSelecionadoId
-    ? unidades.filter((unidade) => unidade.localId === localSelecionadoId)
-    : unidades;
-
-  const totalAtivas = unidadesFiltradas.filter(
-    (unidade) => unidade.status === "ativa"
-  ).length;
-
-  const totalPendentes = unidadesFiltradas.filter(
-    (unidade) => unidade.status === "pendente" || !unidade.status
-  ).length;
-
-  const totalDesativadas = unidadesFiltradas.filter(
-    (unidade) => unidade.status === "desativada"
-  ).length;
-
-  function moradoresDaUnidade(unidadeId: string) {
-    return moradores.filter((morador) => morador.unidadeId === unidadeId);
-  }
-
-  function localDaUnidade(unidade: UnidadeCadastrada) {
-    return locais.find((local) => local.id === unidade.localId);
-  }
-
-  function unidadeEditadaEhCondominio() {
-    if (!editandoUnidade) return modoCondominio;
-    const local = localDaUnidade(editandoUnidade);
-    return local?.tipo === "condominio";
-  }
-
-  const localSelecionadoParaLote = locais.find(
-    (local) => local.id === loteLocalSelecionadoId
-  );
-
-  const modoCondominioLote = localSelecionadoParaLote?.tipo === "condominio";
-
-  function textoTipo(tipo: string) {
-    const tipos: any = {
-      apartamento: "Apartamento",
-      sala: "Sala",
-      loja: "Loja",
-      livre: "Livre",
-      casa: "Casa",
-      quarto: "Quarto",
-      chale: "Chalé",
+    reader.onloadend = () => {
+      resolve(reader.result as string);
     };
 
-    return tipos[tipo] || tipo;
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
+
+function ordenarMensagens(mensagens?: Record<string, MensagemConversa>) {
+  if (!mensagens) return [];
+
+  return Object.entries(mensagens)
+    .map(([id, mensagem]) => ({
+      id,
+      ...mensagem,
+    }))
+    .sort((a, b) => (a.criadoEm || 0) - (b.criadoEm || 0));
+}
+
+function chamadaEstaAtiva(chamada?: Chamada) {
+  if (!chamada) return false;
+
+  return (
+    chamada.status === "Aguardando atendimento" ||
+    chamada.status === "Em atendimento"
+  );
+}
+
+export default function MoradorV2Page() {
+  const params = useParams();
+  const unidadeId = String(params.unidadeId || "");
+
+  const [unidade, setUnidade] = useState<Unidade | null>(null);
+  const [carregando, setCarregando] = useState(true);
+
+  const [disponivel, setDisponivel] = useState(true);
+  const [mostrarPopupChamada, setMostrarPopupChamada] = useState(false);
+
+  const [gravandoAudioMorador, setGravandoAudioMorador] = useState(false);
+  const [audioRespostaBlob, setAudioRespostaBlob] = useState<Blob | null>(null);
+  const [enviandoAudioMorador, setEnviandoAudioMorador] = useState(false);
+
+  const [mostrarPopupAudio, setMostrarPopupAudio] = useState(false);
+  const [ultimoAudioRecebido, setUltimoAudioRecebido] = useState<string | null>(
+    null
+  );
+
+  const mediaRecorderMoradorRef = useRef<MediaRecorder | null>(null);
+  const audioChunksMoradorRef = useRef<Blob[]>([]);
+
+  useEffect(() => {
+    if (!unidadeId) return;
+
+    const unidadeRef = ref(db, `unidades-v2/${unidadeId}`);
+
+    const pararDeOuvir = onValue(unidadeRef, (snapshot) => {
+      const dados = snapshot.val();
+
+      if (!dados) {
+        setUnidade(null);
+        setCarregando(false);
+        return;
+      }
+
+      setUnidade({
+        id: unidadeId,
+        ...dados,
+      });
+
+      setCarregando(false);
+
+      if (dados.chamada?.status === "Aguardando atendimento") {
+        setMostrarPopupChamada(true);
+      }
+    });
+
+    return () => pararDeOuvir();
+  }, [unidadeId]);
+
+  const mensagensConversa = useMemo(() => {
+    return ordenarMensagens(unidade?.chamada?.mensagens);
+  }, [unidade?.chamada?.mensagens]);
+
+  useEffect(() => {
+    if (!mensagensConversa.length) return;
+
+    const ultimo = [...mensagensConversa]
+      .reverse()
+      .find(
+        (m) =>
+          m.autor === "visitante" && m.tipo === "audio" && Boolean(m.audioBase64)
+      );
+
+    if (!ultimo?.id) return;
+
+    if (ultimo.id !== ultimoAudioRecebido) {
+      setUltimoAudioRecebido(ultimo.id);
+      setMostrarPopupAudio(true);
+    }
+  }, [mensagensConversa, ultimoAudioRecebido]);
+
+  async function registrarMensagemConversa(
+    dados: Omit<MensagemConversa, "criadoEm">
+  ) {
+    if (!unidade) return;
+
+    const idMensagem = String(Date.now());
+
+    await set(ref(db, `unidades-v2/${unidade.id}/chamada/mensagens/${idMensagem}`), {
+      ...dados,
+      criadoEm: Date.now(),
+    });
+
+    await update(ref(db, `unidades-v2/${unidade.id}/chamada`), {
+      ultimaAtividade: Date.now(),
+      enviadoEm: Date.now(),
+    });
+  }
+
+  async function atenderChamada() {
+    if (!unidade?.chamada) return;
+
+    await update(ref(db, `unidades-v2/${unidade.id}/chamada`), {
+      status: "Em atendimento",
+      atendidoEm: new Date().toISOString(),
+      ultimaAtividade: Date.now(),
+    });
+
+    setMostrarPopupChamada(false);
+  }
+
+  async function enviarMensagemRapida(texto: string) {
+    if (!unidade?.chamada) return;
+
+    await update(ref(db, `unidades-v2/${unidade.id}/chamada`), {
+      status: "Em atendimento",
+      mensagemResponsavel: texto,
+      atendidoEm: new Date().toISOString(),
+      ultimaAtividade: Date.now(),
+      enviadoEm: Date.now(),
+      visualizadoPeloVisitante: false,
+    });
+
+    await registrarMensagemConversa({
+      autor: "morador",
+      tipo: "texto",
+      texto,
+    });
+  }
+
+  async function iniciarGravacaoMorador() {
+    if (!unidade?.chamada) {
+      alert("Nenhuma chamada ativa para responder.");
+      return;
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: true,
+      });
+
+      const recorder = new MediaRecorder(stream);
+
+      audioChunksMoradorRef.current = [];
+
+      recorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksMoradorRef.current.push(event.data);
+        }
+      };
+
+      recorder.onstop = () => {
+        const blob = new Blob(audioChunksMoradorRef.current, {
+          type: "audio/webm",
+        });
+
+        setAudioRespostaBlob(blob);
+        setGravandoAudioMorador(false);
+
+        stream.getTracks().forEach((track) => track.stop());
+      };
+
+      mediaRecorderMoradorRef.current = recorder;
+      recorder.start();
+
+      setAudioRespostaBlob(null);
+      setGravandoAudioMorador(true);
+
+      setTimeout(() => {
+        if (recorder.state === "recording") {
+          pararGravacaoMorador();
+        }
+      }, 15000);
+    } catch (erro) {
+      console.error(erro);
+      alert("Não foi possível acessar o microfone.");
+      setGravandoAudioMorador(false);
+    }
+  }
+
+  function pararGravacaoMorador() {
+    if (
+      mediaRecorderMoradorRef.current &&
+      mediaRecorderMoradorRef.current.state === "recording"
+    ) {
+      mediaRecorderMoradorRef.current.stop();
+    } else {
+      setGravandoAudioMorador(false);
+    }
+  }
+
+  async function enviarAudioMorador() {
+    if (!unidade?.chamada) return;
+
+    if (!audioRespostaBlob) {
+      alert("Grave um áudio antes de enviar.");
+      return;
+    }
+
+    try {
+      setEnviandoAudioMorador(true);
+
+      const audioBase64 = await blobParaBase64(audioRespostaBlob);
+
+      await update(ref(db, `unidades-v2/${unidade.id}/chamada`), {
+        status: "Em atendimento",
+        atendidoEm: new Date().toISOString(),
+        ultimaAtividade: Date.now(),
+        enviadoEm: Date.now(),
+        visualizadoPeloVisitante: false,
+      });
+
+      await registrarMensagemConversa({
+        autor: "morador",
+        tipo: "audio",
+        audioBase64,
+      });
+
+      setAudioRespostaBlob(null);
+    } catch (erro) {
+      console.error(erro);
+      alert("Erro ao enviar áudio.");
+    } finally {
+      setEnviandoAudioMorador(false);
+    }
+  }
+
+  async function finalizarChamada() {
+    if (!unidade?.chamada) return;
+
+    const chamada = unidade.chamada;
+
+    await set(ref(db, `historico-v2/${unidade.id}/${Date.now()}`), {
+      unidadeId: unidade.id,
+      unidadeNome: unidade.nome,
+      nome: chamada.nome || "Visitante",
+      motivo: chamada.motivo || "Não informado",
+      statusFinal: chamada.status || "Sem status",
+      finalizadoEm: new Date().toISOString(),
+      finalizadoEmFormatado: new Date().toLocaleString("pt-BR"),
+      tipoFinalizacao: "Manual pelo morador",
+      mensagens: chamada.mensagens || null,
+    });
+
+    await remove(ref(db, `unidades-v2/${unidade.id}/chamada`));
+
+    setAudioRespostaBlob(null);
+    setMostrarPopupChamada(false);
+    setMostrarPopupAudio(false);
+  }
+
+  const chamadaAtiva = chamadaEstaAtiva(unidade?.chamada);
+
+  const ultimoAudioVisitante = [...mensagensConversa]
+    .reverse()
+    .find((m) => m.autor === "visitante" && m.tipo === "audio");
+
+  if (carregando) {
+    return (
+      <main className="min-h-screen bg-slate-950 text-white flex items-center justify-center p-4">
+        <div className="bg-slate-900 border border-slate-700 rounded-3xl p-8 text-center">
+          <p className="text-slate-400">Carregando painel do morador...</p>
+        </div>
+      </main>
+    );
+  }
+
+  if (!unidade) {
+    return (
+      <main className="min-h-screen bg-slate-950 text-white flex items-center justify-center p-4">
+        <div className="bg-slate-900 border border-red-700 rounded-3xl p-8 text-center max-w-xl">
+          <h1 className="text-3xl font-black text-red-400 mb-3">
+            Unidade não encontrada
+          </h1>
+          <p className="text-slate-400">
+            Verifique se o link do morador está correto.
+          </p>
+        </div>
+      </main>
+    );
   }
 
   return (
-    <div>
-      <div className="flex flex-col xl:flex-row xl:items-start xl:justify-between gap-4 mb-5">
-        <div>
-          <h2 className="text-3xl font-black text-blue-300">Unidades</h2>
-          <p className="text-slate-400 mt-2">
-            Cadastre apartamentos, casas, salas, lojas, quartos ou chalés.
-          </p>
-        </div>
+    <main className="min-h-screen bg-slate-950 text-white p-4">
+      {mostrarPopupAudio && ultimoAudioVisitante?.audioBase64 && (
+        <div className="fixed inset-0 bg-black/80 z-[999] flex items-center justify-center p-6">
+          <div className="bg-cyan-700 border-4 border-cyan-300 rounded-3xl max-w-lg w-full p-8 text-center shadow-2xl">
+            <div className="text-5xl mb-3">🎤</div>
 
-        <button
-          onClick={() => setLoteAberto(true)}
-          className="bg-cyan-600 hover:bg-cyan-500 text-white font-black px-5 py-3 rounded-xl shadow-lg"
-        >
-          🚀 Cadastro em lote
-        </button>
-      </div>
+            <h2 className="text-4xl font-black mb-5">NOVO ÁUDIO</h2>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4">
-          <p className="text-xs text-slate-400 font-bold">Total</p>
-          <p className="text-2xl font-black mt-1">{unidadesFiltradas.length}</p>
-        </div>
+            <div className="bg-cyan-600 rounded-2xl p-4 mb-6">
+              <p className="font-black text-xl mb-3">
+                Novo áudio enviado pelo visitante
+              </p>
 
-        <div className="bg-green-950/40 border border-green-800 rounded-2xl p-4">
-          <p className="text-xs text-green-300 font-bold">🟢 Ativas</p>
-          <p className="text-2xl font-black mt-1">{totalAtivas}</p>
-        </div>
-
-        <div className="bg-yellow-950/40 border border-yellow-800 rounded-2xl p-4">
-          <p className="text-xs text-yellow-300 font-bold">🟡 Pendentes</p>
-          <p className="text-2xl font-black mt-1">{totalPendentes}</p>
-        </div>
-
-        <div className="bg-red-950/40 border border-red-800 rounded-2xl p-4">
-          <p className="text-xs text-red-300 font-bold">🔴 Desativadas</p>
-          <p className="text-2xl font-black mt-1">{totalDesativadas}</p>
-        </div>
-      </div>
-
-      <div className="grid lg:grid-cols-2 gap-6 mt-6">
-        <div className="bg-slate-900 rounded-2xl p-6 border border-slate-800">
-          <h3 className="text-2xl font-bold mb-5">Cadastrar unidade</h3>
-
-          <div className="space-y-4">
-            <select
-              value={localSelecionadoId}
-              onChange={(e) => setLocalSelecionadoId(e.target.value)}
-              className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3"
-            >
-              <option value="">Selecione o local</option>
-
-              {locais.map((local) => (
-                <option key={local.id} value={local.id}>
-                  {local.nome}
-                </option>
-              ))}
-            </select>
-
-            {modoCondominio && (
-              <input
-                value={blocoUnidade}
-                onChange={(e) => setBlocoUnidade(e.target.value)}
-                placeholder="Bloco ou torre. Ex: Bloco A"
-                className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3"
+              <audio
+                controls
+                className="w-full"
+                src={ultimoAudioVisitante.audioBase64}
               />
-            )}
-
-            <input
-              value={nomeUnidade}
-              onChange={(e) => setNomeUnidade(e.target.value)}
-              placeholder={
-                modoCondominio
-                  ? "Número da unidade. Ex: 101"
-                  : "Nome livre"
-              }
-              className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3"
-            />
-
-            <select
-              value={tipoUnidade}
-              onChange={(e) => setTipoUnidade(e.target.value)}
-              className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3"
-            >
-              {modoCondominio ? (
-                <>
-                  <option value="apartamento">Apartamento</option>
-                  <option value="sala">Sala</option>
-                  <option value="loja">Loja</option>
-                </>
-              ) : (
-                <>
-                  <option value="livre">Livre</option>
-                  <option value="casa">Casa</option>
-                  <option value="quarto">Quarto</option>
-                  <option value="chale">Chalé</option>
-                </>
-              )}
-            </select>
-
-            <select
-              value={modoChamadoUnidade}
-              onChange={(e) => setModoChamadoUnidade(e.target.value)}
-              className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3"
-            >
-              <option value="familia">Modo Família — todos juntos</option>
-              <option value="prioridade">Modo Prioridade — em fila</option>
-            </select>
-
-            <select
-              value={statusUnidade}
-              onChange={(e) => setStatusUnidade(e.target.value)}
-              className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3"
-            >
-              <option value="pendente">🟡 Pendente — sem morador cadastrado</option>
-              <option value="ativa">🟢 Ativa — pronta para receber chamadas</option>
-              <option value="desativada">🔴 Desativada — vazia, bloqueada ou em reforma</option>
-            </select>
-
-            <label className="flex items-start gap-3 bg-slate-800 border border-slate-700 rounded-xl p-4 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={possuiResponsavel}
-                onChange={(e) => setPossuiResponsavel(e.target.checked)}
-                className="mt-1"
-              />
-
-              <div>
-                <p className="font-bold text-white">
-                  Possui responsável administrativo
-                </p>
-                <p className="text-xs text-slate-400 mt-1">
-                  Use apenas para unidade de aluguel, Airbnb, imobiliária ou
-                  quando alguém diferente do morador administra a unidade.
-                </p>
-              </div>
-            </label>
-
-            {possuiResponsavel && (
-              <div className="bg-slate-800 border border-slate-700 rounded-2xl p-4 space-y-3">
-                <h4 className="font-black text-blue-300">
-                  Responsável administrativo da unidade
-                </h4>
-
-                <input
-                  value={nomeResponsavel}
-                  onChange={(e) => setNomeResponsavel(e.target.value)}
-                  placeholder="Nome do responsável. Ex: Carlos Silva"
-                  className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3"
-                />
-
-                <input
-                  value={telefoneResponsavel}
-                  onChange={(e) => setTelefoneResponsavel(e.target.value)}
-                  placeholder="Telefone / WhatsApp"
-                  className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3"
-                />
-
-                <input
-                  value={emailResponsavel}
-                  onChange={(e) => setEmailResponsavel(e.target.value)}
-                  placeholder="E-mail"
-                  className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3"
-                />
-              </div>
-            )}
+            </div>
 
             <button
-              onClick={cadastrarUnidade}
-              disabled={salvandoUnidade}
-              className="w-full bg-blue-600 hover:bg-blue-500 disabled:bg-slate-600 text-white font-black py-3 rounded-xl"
+              onClick={() => setMostrarPopupAudio(false)}
+              className="w-full bg-white text-black py-4 rounded-2xl text-2xl font-black"
             >
-              {salvandoUnidade ? "Salvando..." : "Cadastrar unidade"}
+              ENTENDI
             </button>
           </div>
         </div>
+      )}
 
-        <div className="bg-slate-900 rounded-2xl p-6 border border-slate-800">
-          <h3 className="text-2xl font-bold mb-5">Unidades cadastradas</h3>
+      {mostrarPopupChamada && unidade.chamada && (
+        <div className="fixed inset-0 bg-black/80 z-[900] flex items-center justify-center p-4">
+          <div className="bg-slate-900 border-4 border-green-400 rounded-3xl w-full max-w-xl p-6 shadow-2xl text-center">
+            <p className="text-6xl mb-3">🔔</p>
 
-          <div className="space-y-3 max-h-[640px] overflow-y-auto pr-1">
-            {unidadesFiltradas.map((unidade) => {
-              const moradoresVinculados = moradoresDaUnidade(unidade.id);
+            <h2 className="text-3xl font-black text-green-300">
+              NOVA CHAMADA
+            </h2>
 
-              return (
-                <div
-                  key={unidade.id}
-                  className="bg-slate-800 rounded-xl p-4 border border-slate-700"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="text-xs text-blue-300 font-bold">
-                        {unidade.codigo}
-                      </p>
+            <p className="text-xl font-black mt-4">
+              {unidade.chamada.nome || "Visitante"}
+            </p>
 
-                      <h4 className="text-lg font-black">
-                        {unidade.bloco
-                          ? `${unidade.bloco} / ${unidade.nome}`
-                          : unidade.nome}
-                      </h4>
-                    </div>
+            <p className="text-slate-300 mt-2">
+              Motivo: {unidade.chamada.motivo || "Não informado"}
+            </p>
 
-                    <span
-                      className={`text-xs md:text-sm font-black px-3 py-1 rounded-full bg-slate-900 border border-slate-700 ${corStatus(
-                        unidade.status
-                      )}`}
-                    >
-                      {textoStatus(unidade.status)}
-                    </span>
-                  </div>
+            {ultimoAudioVisitante?.audioBase64 && (
+              <div className="bg-slate-800 border border-blue-500/40 rounded-2xl p-4 mt-5">
+                <p className="text-sm font-black text-blue-300 mb-3">
+                  🎙️ Áudio do visitante
+                </p>
 
-                  <p className="text-sm text-slate-400 mt-1">
-                    {unidade.localNome} • {textoTipo(unidade.tipo)}
-                  </p>
-
-                  <div className="flex flex-wrap gap-2 mt-3">
-                    <span className="text-xs bg-slate-900 border border-slate-700 px-3 py-1 rounded-full text-green-300 font-bold">
-                      {textoModoChamado(unidade.modoChamado)}
-                    </span>
-
-                    <span className="text-xs bg-slate-900 border border-slate-700 px-3 py-1 rounded-full text-blue-300 font-bold">
-                      👥 {moradoresVinculados.length} morador(es)
-                    </span>
-                  </div>
-
-                  {moradoresVinculados.length > 0 && (
-                    <div className="mt-3 bg-slate-900 rounded-xl p-3 border border-slate-700">
-                      <p className="text-xs text-blue-300 font-bold mb-2">
-                        Moradores vinculados
-                      </p>
-
-                      <div className="space-y-1">
-                        {moradoresVinculados.slice(0, 3).map((morador) => (
-                          <p
-                            key={morador.id}
-                            className="text-xs text-slate-300"
-                          >
-                            📱 {morador.nome}{" "}
-                            <span className="text-slate-500">
-                              • Prioridade {morador.prioridade}
-                            </span>
-                          </p>
-                        ))}
-
-                        {moradoresVinculados.length > 3 && (
-                          <p className="text-xs text-slate-500">
-                            + {moradoresVinculados.length - 3} outro(s)
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {unidade.possuiResponsavel &&
-                    unidade.responsavelAdministrativo && (
-                      <div className="mt-3 bg-slate-900 rounded-xl p-3 border border-slate-700">
-                        <p className="text-xs text-blue-300 font-bold mb-1">
-                          Responsável administrativo
-                        </p>
-
-                        <p className="text-sm font-bold">
-                          {unidade.responsavelAdministrativo.nome}
-                        </p>
-
-                        {unidade.responsavelAdministrativo.telefone && (
-                          <p className="text-xs text-slate-400 mt-1">
-                            WhatsApp:{" "}
-                            {unidade.responsavelAdministrativo.telefone}
-                          </p>
-                        )}
-
-                        {unidade.responsavelAdministrativo.email && (
-                          <p className="text-xs text-slate-400">
-                            E-mail: {unidade.responsavelAdministrativo.email}
-                          </p>
-                        )}
-                      </div>
-                    )}
-
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-4">
-                    <button
-                      onClick={() => setUnidadeMoradoresAberta(unidade)}
-                      className="bg-blue-600 hover:bg-blue-500 text-white text-xs font-black py-2 rounded-xl"
-                    >
-                      👥 Moradores
-                    </button>
-
-                    <button
-                      onClick={() => abrirEdicaoUnidade(unidade)}
-                      className="bg-slate-700 hover:bg-slate-600 text-white text-xs font-black py-2 rounded-xl"
-                    >
-                      ✏️ Editar
-                    </button>
-
-                    <button
-                      onClick={() => desativarUnidade(unidade)}
-                      disabled={unidade.status === "desativada"}
-                      className="bg-orange-600 hover:bg-orange-500 disabled:bg-slate-700 disabled:text-slate-400 text-white text-xs font-black py-2 rounded-xl"
-                    >
-                      🔴 Desativar
-                    </button>
-
-                    <button
-                      onClick={() => excluirUnidade(unidade)}
-                      className="bg-red-700 hover:bg-red-600 text-white text-xs font-black py-2 rounded-xl"
-                    >
-                      🗑 Excluir
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-
-            {unidadesFiltradas.length === 0 && (
-              <div className="bg-slate-800 rounded-xl p-4 text-slate-400">
-                Nenhuma unidade cadastrada para este local.
+                <audio
+                  controls
+                  className="w-full"
+                  src={ultimoAudioVisitante.audioBase64}
+                />
               </div>
             )}
+
+            <div className="grid gap-3 mt-6">
+              <button
+                onClick={atenderChamada}
+                className="w-full bg-green-500 hover:bg-green-400 text-black text-xl font-black py-4 rounded-2xl"
+              >
+                ✅ ATENDER
+              </button>
+
+              <button
+                onClick={() => {
+                  setMostrarPopupChamada(false);
+                }}
+                className="w-full bg-slate-700 hover:bg-slate-600 text-white text-xl font-black py-4 rounded-2xl"
+              >
+                VER PAINEL
+              </button>
+            </div>
           </div>
         </div>
+      )}
+
+      <div className="w-full max-w-3xl mx-auto">
+        <section className="bg-gradient-to-r from-slate-900 to-slate-800 border border-slate-700 rounded-3xl p-6 mb-5">
+          <p className="text-green-400 font-black text-sm mb-2">
+            QR ACESSO • MORADOR V2
+          </p>
+
+          <h1 className="text-3xl md:text-5xl font-black">
+            🏠 {unidade.nome}
+          </h1>
+
+          <p className="text-slate-400 mt-2">
+            Painel do morador para atendimento, mensagens e áudio.
+          </p>
+
+          <div className="grid grid-cols-2 gap-3 mt-5">
+            <button
+              onClick={() => setDisponivel(!disponivel)}
+              className={
+                disponivel
+                  ? "bg-green-600 hover:bg-green-500 py-3 rounded-xl font-black"
+                  : "bg-red-600 hover:bg-red-500 py-3 rounded-xl font-black"
+              }
+            >
+              {disponivel ? "🟢 Disponível" : "🔴 Ausente"}
+            </button>
+
+            <button
+              onClick={() => alert("Som de teste será restaurado na próxima etapa.")}
+              className="bg-slate-700 hover:bg-slate-600 py-3 rounded-xl font-black"
+            >
+              🔊 Testar som
+            </button>
+          </div>
+        </section>
+
+        <section
+          className={
+            chamadaAtiva
+              ? "bg-slate-900 border border-yellow-500 rounded-3xl p-5"
+              : "bg-slate-900 border border-slate-700 rounded-3xl p-8 text-center"
+          }
+        >
+          {!chamadaAtiva && (
+            <>
+              <p className="text-5xl mb-4">✅</p>
+              <h2 className="text-2xl font-black text-green-300">
+                Nenhuma chamada ativa
+              </h2>
+              <p className="text-slate-400 mt-2">
+                Quando alguém chamar esta unidade, o atendimento aparecerá aqui.
+              </p>
+            </>
+          )}
+
+          {chamadaAtiva && unidade.chamada && (
+            <>
+              <div className="bg-slate-800 rounded-2xl p-4 mb-4">
+                <p className="text-green-400 font-black text-2xl">
+                  {unidade.chamada.nome || "Visitante"}
+                </p>
+
+                <p className="text-slate-300 mt-1">
+                  Motivo: {unidade.chamada.motivo || "Não informado"}
+                </p>
+
+                <p className="text-yellow-400 mt-1">
+                  Status: {unidade.chamada.status || "Sem status"}
+                </p>
+              </div>
+
+              <div className="bg-slate-800 border border-blue-500/40 rounded-2xl p-4 mb-4">
+                <p className="text-blue-300 font-black mb-3">
+                  💬 Conversa do atendimento
+                </p>
+
+                {mensagensConversa.length === 0 ? (
+                  <p className="text-sm text-slate-400">
+                    A conversa ainda não possui mensagens.
+                  </p>
+                ) : (
+                  <div className="space-y-3 max-h-80 overflow-y-auto pr-1">
+                    {mensagensConversa.map((item) => (
+                      <div
+                        key={item.id}
+                        className={
+                          item.autor === "morador"
+                            ? "bg-green-600/30 border border-green-500 rounded-2xl p-3"
+                            : "bg-blue-600/30 border border-blue-500 rounded-2xl p-3"
+                        }
+                      >
+                        <p className="text-xs font-black mb-2">
+                          {item.autor === "morador" ? "Você" : "Visitante"}
+                        </p>
+
+                        {item.tipo === "texto" && (
+                          <p className="text-white font-bold">{item.texto}</p>
+                        )}
+
+                        {item.tipo === "audio" && item.audioBase64 && (
+                          <audio
+                            controls
+                            className="w-full"
+                            src={item.audioBase64}
+                          />
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="grid gap-3">
+                {unidade.chamada.status === "Aguardando atendimento" && (
+                  <button
+                    onClick={atenderChamada}
+                    className="w-full bg-green-500 hover:bg-green-400 text-black text-xl font-black py-4 rounded-2xl"
+                  >
+                    ✅ ATENDER
+                  </button>
+                )}
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {[
+                    "Aguarde um momento, por favor.",
+                    "Já estou indo.",
+                    "Pode deixar na portaria.",
+                    "Não estou em casa no momento.",
+                  ].map((texto) => (
+                    <button
+                      key={texto}
+                      onClick={() => enviarMensagemRapida(texto)}
+                      className="bg-blue-600 hover:bg-blue-500 text-white font-black py-3 rounded-2xl"
+                    >
+                      💬 {texto}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="bg-slate-950 border border-blue-500/40 rounded-2xl p-4 space-y-3">
+                  <button
+                    onClick={
+                      gravandoAudioMorador
+                        ? pararGravacaoMorador
+                        : iniciarGravacaoMorador
+                    }
+                    disabled={enviandoAudioMorador}
+                    className={
+                      gravandoAudioMorador
+                        ? "w-full bg-red-600 py-4 rounded-xl font-black animate-pulse"
+                        : "w-full bg-blue-600 py-4 rounded-xl font-black disabled:bg-slate-700"
+                    }
+                  >
+                    {gravandoAudioMorador
+                      ? "⏹️ Parar gravação"
+                      : "🎙️ Gravar áudio para visitante"}
+                  </button>
+
+                  {audioRespostaBlob && (
+                    <div className="space-y-3">
+                      <audio
+                        controls
+                        className="w-full"
+                        src={URL.createObjectURL(audioRespostaBlob)}
+                      />
+
+                      <button
+                        onClick={enviarAudioMorador}
+                        disabled={enviandoAudioMorador}
+                        className="w-full bg-cyan-600 hover:bg-cyan-500 disabled:bg-slate-700 py-4 rounded-xl font-black"
+                      >
+                        {enviandoAudioMorador
+                          ? "Enviando..."
+                          : "📤 Enviar áudio ao visitante"}
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                <button
+                  onClick={finalizarChamada}
+                  className="w-full bg-red-600 hover:bg-red-500 text-white text-xl font-black py-4 rounded-2xl"
+                >
+                  ❌ FINALIZAR ATENDIMENTO
+                </button>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    onClick={() =>
+                      alert("Abrir portão será restaurado na próxima etapa.")
+                    }
+                    className="bg-yellow-600 hover:bg-yellow-500 text-black font-black py-4 rounded-2xl"
+                  >
+                    🚪 Abrir portão
+                  </button>
+
+                  <button
+                    onClick={() =>
+                      alert("Câmera será restaurada na próxima etapa.")
+                    }
+                    className="bg-slate-700 hover:bg-slate-600 text-white font-black py-4 rounded-2xl"
+                  >
+                    📷 Câmera
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
+        </section>
       </div>
-
-      {loteAberto && (
-        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-700 rounded-3xl p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto shadow-2xl">
-            <div className="flex items-start justify-between gap-4 mb-5">
-              <div>
-                <h3 className="text-3xl font-black text-cyan-300">
-                  Cadastro em lote
-                </h3>
-                <p className="text-slate-400 mt-1">
-                  Crie várias unidades de uma vez. Uma por linha, separadas por
-                  vírgula ou espaço.
-                </p>
-              </div>
-
-              <button
-                onClick={() => setLoteAberto(false)}
-                className="bg-slate-800 hover:bg-slate-700 px-4 py-2 rounded-xl font-black"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="space-y-4">
-              <select
-                value={loteLocalSelecionadoId}
-                onChange={(e) => setLoteLocalSelecionadoId(e.target.value)}
-                className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3"
-              >
-                <option value="">Selecione o local</option>
-
-                {locais.map((local) => (
-                  <option key={local.id} value={local.id}>
-                    {local.nome}
-                  </option>
-                ))}
-              </select>
-
-              {modoCondominioLote && (
-                <input
-                  value={blocoLote}
-                  onChange={(e) => setBlocoLote(e.target.value)}
-                  placeholder="Bloco ou torre. Ex: Bloco A"
-                  className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3"
-                />
-              )}
-
-              <div className="grid md:grid-cols-3 gap-3">
-                <select
-                  value={tipoLote}
-                  onChange={(e) => setTipoLote(e.target.value)}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3"
-                >
-                  {modoCondominioLote ? (
-                    <>
-                      <option value="apartamento">Apartamento</option>
-                      <option value="sala">Sala</option>
-                      <option value="loja">Loja</option>
-                    </>
-                  ) : (
-                    <>
-                      <option value="livre">Livre</option>
-                      <option value="casa">Casa</option>
-                      <option value="quarto">Quarto</option>
-                      <option value="chale">Chalé</option>
-                    </>
-                  )}
-                </select>
-
-                <select
-                  value={modoChamadoLote}
-                  onChange={(e) => setModoChamadoLote(e.target.value)}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3"
-                >
-                  <option value="familia">Modo Família</option>
-                  <option value="prioridade">Modo Prioridade</option>
-                </select>
-
-                <select
-                  value={statusLote}
-                  onChange={(e) => setStatusLote(e.target.value)}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3"
-                >
-                  <option value="pendente">🟡 Pendente</option>
-                  <option value="ativa">🟢 Ativa</option>
-                  <option value="desativada">🔴 Desativada</option>
-                </select>
-              </div>
-
-              <textarea
-                value={textoLoteUnidades}
-                onChange={(e) => setTextoLoteUnidades(e.target.value)}
-                placeholder={`Cole aqui as unidades. Ex:\n101\n102\n103\n104\n105`}
-                rows={10}
-                className="w-full bg-slate-800 border border-slate-700 rounded-xl p-4 font-mono"
-              />
-
-              <div className="bg-slate-800 rounded-xl p-4 border border-slate-700">
-                <p className="text-sm text-slate-300">
-                  Prévia:{" "}
-                  <strong className="text-cyan-300">
-                    {quantidadePreviewLote()} unidade(s)
-                  </strong>{" "}
-                  detectada(s).
-                </p>
-              </div>
-
-              <div className="grid md:grid-cols-2 gap-3">
-                <button
-                  onClick={() => setLoteAberto(false)}
-                  className="w-full bg-slate-700 hover:bg-slate-600 text-white font-black py-3 rounded-xl"
-                >
-                  Cancelar
-                </button>
-
-                <button
-                  onClick={cadastrarUnidadesEmLote}
-                  disabled={salvandoLote}
-                  className="w-full bg-cyan-600 hover:bg-cyan-500 disabled:bg-slate-600 text-white font-black py-3 rounded-xl"
-                >
-                  {salvandoLote
-                    ? "Criando unidades..."
-                    : `Criar ${quantidadePreviewLote()} unidade(s)`}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {editandoUnidade && (
-        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-700 rounded-3xl p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto shadow-2xl">
-            <div className="flex items-start justify-between gap-4 mb-5">
-              <div>
-                <h3 className="text-3xl font-black text-blue-300">
-                  Editar unidade
-                </h3>
-                <p className="text-slate-400 mt-1">
-                  {editandoUnidade.localNome} •{" "}
-                  {editandoUnidade.bloco
-                    ? `${editandoUnidade.bloco} / ${editandoUnidade.nome}`
-                    : editandoUnidade.nome}
-                </p>
-              </div>
-
-              <button
-                onClick={fecharEdicaoUnidade}
-                className="bg-slate-800 hover:bg-slate-700 px-4 py-2 rounded-xl font-black"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="space-y-4">
-              {unidadeEditadaEhCondominio() && (
-                <input
-                  value={editBlocoUnidade}
-                  onChange={(e) => setEditBlocoUnidade(e.target.value)}
-                  placeholder="Bloco ou torre. Ex: Bloco A"
-                  className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3"
-                />
-              )}
-
-              <input
-                value={editNomeUnidade}
-                onChange={(e) => setEditNomeUnidade(e.target.value)}
-                placeholder={
-                  unidadeEditadaEhCondominio()
-                    ? "Número da unidade. Ex: 101"
-                    : "Nome livre"
-                }
-                className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3"
-              />
-
-              <div className="grid md:grid-cols-3 gap-3">
-                <select
-                  value={editTipoUnidade}
-                  onChange={(e) => setEditTipoUnidade(e.target.value)}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3"
-                >
-                  {unidadeEditadaEhCondominio() ? (
-                    <>
-                      <option value="apartamento">Apartamento</option>
-                      <option value="sala">Sala</option>
-                      <option value="loja">Loja</option>
-                    </>
-                  ) : (
-                    <>
-                      <option value="livre">Livre</option>
-                      <option value="casa">Casa</option>
-                      <option value="quarto">Quarto</option>
-                      <option value="chale">Chalé</option>
-                    </>
-                  )}
-                </select>
-
-                <select
-                  value={editModoChamadoUnidade}
-                  onChange={(e) => setEditModoChamadoUnidade(e.target.value)}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3"
-                >
-                  <option value="familia">Modo Família</option>
-                  <option value="prioridade">Modo Prioridade</option>
-                </select>
-
-                <select
-                  value={editStatusUnidade}
-                  onChange={(e) => setEditStatusUnidade(e.target.value)}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3"
-                >
-                  <option value="pendente">🟡 Pendente</option>
-                  <option value="ativa">🟢 Ativa</option>
-                  <option value="desativada">🔴 Desativada</option>
-                </select>
-              </div>
-
-              <label className="flex items-start gap-3 bg-slate-800 border border-slate-700 rounded-xl p-4 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={editPossuiResponsavel}
-                  onChange={(e) =>
-                    setEditPossuiResponsavel(e.target.checked)
-                  }
-                  className="mt-1"
-                />
-
-                <div>
-                  <p className="font-bold text-white">
-                    Possui responsável administrativo
-                  </p>
-                  <p className="text-xs text-slate-400 mt-1">
-                    Use para aluguel, Airbnb, imobiliária ou quando alguém
-                    diferente do morador administra a unidade.
-                  </p>
-                </div>
-              </label>
-
-              {editPossuiResponsavel && (
-                <div className="bg-slate-800 border border-slate-700 rounded-2xl p-4 space-y-3">
-                  <h4 className="font-black text-blue-300">
-                    Responsável administrativo da unidade
-                  </h4>
-
-                  <input
-                    value={editNomeResponsavel}
-                    onChange={(e) =>
-                      setEditNomeResponsavel(e.target.value)
-                    }
-                    placeholder="Nome do responsável"
-                    className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3"
-                  />
-
-                  <input
-                    value={editTelefoneResponsavel}
-                    onChange={(e) =>
-                      setEditTelefoneResponsavel(e.target.value)
-                    }
-                    placeholder="Telefone / WhatsApp"
-                    className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3"
-                  />
-
-                  <input
-                    value={editEmailResponsavel}
-                    onChange={(e) =>
-                      setEditEmailResponsavel(e.target.value)
-                    }
-                    placeholder="E-mail"
-                    className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3"
-                  />
-                </div>
-              )}
-
-              <div className="bg-slate-800 rounded-xl p-4 border border-slate-700">
-                <p className="text-sm text-slate-300">
-                  Moradores vinculados:{" "}
-                  <strong className="text-blue-300">
-                    {moradoresDaUnidade(editandoUnidade.id).length}
-                  </strong>
-                </p>
-                <p className="text-xs text-slate-500 mt-1">
-                  Para excluir a unidade, ela não pode ter moradores vinculados.
-                </p>
-              </div>
-
-              <div className="grid md:grid-cols-2 gap-3">
-                <button
-                  onClick={fecharEdicaoUnidade}
-                  className="w-full bg-slate-700 hover:bg-slate-600 text-white font-black py-3 rounded-xl"
-                >
-                  Cancelar
-                </button>
-
-                <button
-                  onClick={salvarEdicaoUnidade}
-                  disabled={salvandoEdicaoUnidade}
-                  className="w-full bg-blue-600 hover:bg-blue-500 disabled:bg-slate-600 text-white font-black py-3 rounded-xl"
-                >
-                  {salvandoEdicaoUnidade
-                    ? "Salvando alterações..."
-                    : "Salvar alterações"}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-          </div>
+    </main>
   );
 }
