@@ -1,5 +1,6 @@
 "use client";
-
+import { useState } from "react";
+import NovoMoradorModal from "./NovoMoradorModal";
 type ResponsavelAdministrativo = {
   nome: string;
   telefone: string;
@@ -48,6 +49,7 @@ export default function MoradoresModal({
   moradores,
   onClose,
 }: Props) {
+    const [abrirNovoMorador, setAbrirNovoMorador] = useState(false);
   const moradoresDaUnidade = moradores
     .filter((morador) => morador.unidadeId === unidade.id)
     .sort((a, b) => a.prioridade - b.prioridade);
@@ -146,11 +148,9 @@ export default function MoradoresModal({
             </div>
 
             <button
-              onClick={() =>
-                alert(
-                  "Próxima etapa: cadastrar novo morador direto nesta unidade."
-                )
-              }
+              
+              onClick={() => setAbrirNovoMorador(true)}
+              
               className="bg-blue-600 hover:bg-blue-500 text-white font-black px-5 py-3 rounded-xl"
             >
               ➕ Adicionar morador
@@ -214,6 +214,13 @@ export default function MoradoresModal({
           Fechar
         </button>
       </div>
-    </div>
+  
+   {abrirNovoMorador && (
+  <NovoMoradorModal
+    unidade={unidade}
+    onClose={() => setAbrirNovoMorador(false)}
+  />
+)}
+  </div>
   );
 }
