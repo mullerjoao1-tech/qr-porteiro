@@ -133,7 +133,8 @@ export default function AcessoV2Condominio() {
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
 
   const [popupTexto, setPopupTexto] = useState("");
-  const [popupTipo, setPopupTipo] = useState<"mensagem" | "encerrado">(
+  const [popupAudio, setPopupAudio] = useState("");
+  const [popupTipo, setPopupTipo] = useState<"mensagem" | "audio" | "encerrado">(
     "mensagem"
   );
 
@@ -144,6 +145,7 @@ export default function AcessoV2Condominio() {
   const chamadaAtivaRef = useRef(false);
   const chamadaFoiEnviadaRef = useRef(false);
   const ultimoPopupRef = useRef("");
+  const ultimaMensagemMoradorRef = useRef("");
   const timerAutomaticoRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -204,7 +206,9 @@ export default function AcessoV2Condominio() {
         chamadaAtivaRef.current = false;
         chamadaFoiEnviadaRef.current = false;
         ultimoPopupRef.current = "";
+        ultimaMensagemMoradorRef.current = "";
         setMensagem("");
+        setPopupAudio("");
         return;
       }
 
@@ -252,6 +256,34 @@ export default function AcessoV2Condominio() {
         }, tempoRestante);
       }
 
+      const mensagensOrdenadas = ordenarMensagens(chamada.mensagens);
+
+      const ultimaMensagemDoMorador = [...mensagensOrdenadas]
+        .reverse()
+        .find((item) => item.autor === "morador");
+
+      if (
+        ultimaMensagemDoMorador &&
+        ultimaMensagemDoMorador.id &&
+        ultimaMensagemDoMorador.id !== ultimaMensagemMoradorRef.current
+      ) {
+        ultimaMensagemMoradorRef.current = ultimaMensagemDoMorador.id;
+
+        if (ultimaMensagemDoMorador.tipo === "audio") {
+          setPopupTipo("audio");
+          setPopupAudio(ultimaMensagemDoMorador.audioBase64 || "");
+          setPopupTexto("Novo áudio enviado pelo morador.");
+          return;
+        }
+
+        if (ultimaMensagemDoMorador.tipo === "texto") {
+          setPopupTipo("mensagem");
+          setPopupAudio("");
+          setPopupTexto(ultimaMensagemDoMorador.texto || "Nova mensagem do morador.");
+          return;
+        }
+      }
+
       const textoResposta =
         chamada.mensagemRapida ||
         chamada.respostaRapida ||
@@ -265,6 +297,7 @@ export default function AcessoV2Condominio() {
       if (textoResposta && idMensagem !== ultimoPopupRef.current) {
         ultimoPopupRef.current = idMensagem;
         setPopupTipo("mensagem");
+        setPopupAudio("");
         setPopupTexto(textoResposta);
       }
     });
@@ -507,6 +540,7 @@ export default function AcessoV2Condominio() {
       setEnviando(true);
       setMensagem("");
       setPopupTexto("");
+      setPopupAudio("");
       ultimoPopupRef.current = "";
       chamadaFoiEnviadaRef.current = true;
       chamadaAtivaRef.current = true;
@@ -647,22 +681,33 @@ export default function AcessoV2Condominio() {
             className={
               popupTipo === "encerrado"
                 ? "w-full max-w-xl bg-green-600 border-4 border-green-300 rounded-3xl p-8 text-center shadow-2xl"
+                : popupTipo === "audio"
+                ? "w-full max-w-xl bg-cyan-600 border-4 border-cyan-300 rounded-3xl p-8 text-center shadow-2xl"
                 : "w-full max-w-xl bg-blue-600 border-4 border-blue-300 rounded-3xl p-8 text-center shadow-2xl"
             }
           >
             <p className="text-5xl mb-4">
-              {popupTipo === "encerrado" ? "✅" : "💬"}
+              {popupTipo === "encerrado" ? "✅" : popupTipo === "audio" ? "🎤" : "💬"}
             </p>
 
             <h2 className="text-2xl font-black mb-3">
               {popupTipo === "encerrado"
                 ? "ATENDIMENTO ENCERRADO"
+                : popupTipo === "audio"
+                ? "NOVO ÁUDIO"
                 : "NOVA MENSAGEM"}
             </h2>
 
-            <p className="text-3xl font-black leading-relaxed py-6">
-              {popupTexto}
-            </p>
+            {popupTipo === "audio" && popupAudio ? (
+              <div className="bg-white/20 rounded-2xl p-4 my-6">
+                <p className="text-xl font-black mb-4">{popupTexto}</p>
+                <audio controls className="w-full" src={popupAudio} />
+              </div>
+            ) : (
+              <p className="text-3xl font-black leading-relaxed py-6">
+                {popupTexto}
+              </p>
+            )}
 
             <button
               onClick={async () => {
@@ -677,6 +722,7 @@ export default function AcessoV2Condominio() {
                 }
 
                 setPopupTexto("");
+                setPopupAudio("");
               }}
               className="mt-7 w-full bg-white text-black text-2xl font-black py-5 rounded-2xl"
             >
