@@ -1,6 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { ref, update } from "firebase/database";
+import { db } from "../../services/firebase";
 
 type UnidadeCadastrada = {
   id: string;
@@ -63,6 +65,7 @@ export default function Moradores({ unidades, moradores }: Props) {
   const [filtroRapido, setFiltroRapido] = useState("todos");
   const [moradorSelecionado, setMoradorSelecionado] =
     useState<MoradorCadastrado | null>(null);
+  const [alterandoStatus, setAlterandoStatus] = useState(false);
 
   function textoPerfil(perfil?: string) {
     if (perfil === "familiar") return "Familiar";
@@ -75,6 +78,11 @@ export default function Moradores({ unidades, moradores }: Props) {
 
   function unidadeDoMorador(morador: MoradorCadastrado) {
     return unidades.find((unidade) => unidade.id === morador.unidadeId);
+  }
+
+  function textoUnidadeCurta(unidade?: UnidadeCadastrada) {
+    if (!unidade) return "Unidade não localizada";
+    return unidade.bloco ? `${unidade.bloco} / ${unidade.nome}` : unidade.nome;
   }
 
   const moradoresFiltrados = useMemo(() => {
@@ -149,6 +157,43 @@ export default function Moradores({ unidades, moradores }: Props) {
     { id: "semTelefone", nome: "⚠️ Sem telefone" },
   ];
 
+  const unidadeSelecionada = moradorSelecionado
+    ? unidadeDoMorador(moradorSelecionado)
+    : null;
+
+  async function alternarStatusMorador(morador: MoradorCadastrado) {
+    const novoStatus = morador.status === "ativo" ? "inativo" : "ativo";
+
+    const confirmar = confirm(
+      novoStatus === "inativo"
+        ? `Desativar ${morador.nome}?\n\nEle continuará cadastrado, mas não ficará ativo para atendimento.`
+        : `Reativar ${morador.nome}?`
+    );
+
+    if (!confirmar) return;
+
+    setAlterandoStatus(true);
+
+    try {
+      const moradorRef = ref(db, `qrCentral/moradores/${morador.id}`);
+
+      await update(moradorRef, {
+        status: novoStatus,
+        atualizadoEm: new Date().toISOString(),
+      });
+
+      setMoradorSelecionado({
+        ...morador,
+        status: novoStatus,
+      });
+    } catch (erro) {
+      console.error(erro);
+      alert("Erro ao alterar status do morador.");
+    } finally {
+      setAlterandoStatus(false);
+    }
+  }
+
   return (
     <div>
       <h2 className="text-3xl font-black text-blue-300 mb-2">Moradores</h2>
@@ -218,7 +263,7 @@ export default function Moradores({ unidades, moradores }: Props) {
           <div>
             <h3 className="text-2xl font-bold">Moradores cadastrados</h3>
             <p className="text-sm text-slate-400 mt-1">
-              Clique em um card para abrir as ações do morador.
+              Clique em um card para abrir a ficha completa do morador.
             </p>
           </div>
         </div>
@@ -252,12 +297,12 @@ export default function Moradores({ unidades, moradores }: Props) {
                     )}
 
                     <p className="text-sm text-slate-300 mt-2">
-                      🏢 {morador.unidadeNome}
+                      🏢 {unidade?.localNome || morador.unidadeNome}
                     </p>
 
                     {unidade && (
-                      <p className="text-xs text-slate-500">
-                        Código da unidade: {unidade.codigo}
+                      <p className="text-sm text-slate-300">
+                        🏠 {textoUnidadeCurta(unidade)}
                       </p>
                     )}
 
@@ -289,7 +334,7 @@ export default function Moradores({ unidades, moradores }: Props) {
                   </div>
 
                   <div className="text-xs text-slate-500 font-bold">
-                    Clique para ações
+                    Clique para ficha
                   </div>
                 </div>
               </button>
@@ -306,7 +351,7 @@ export default function Moradores({ unidades, moradores }: Props) {
 
       {moradorSelecionado && (
         <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-700 rounded-3xl p-6 w-full max-w-xl shadow-2xl">
+          <div className="bg-slate-900 border border-slate-700 rounded-3xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
             <div className="flex items-start justify-between gap-4 mb-5">
               <div>
                 <h3 className="text-3xl font-black text-blue-300">
@@ -314,7 +359,10 @@ export default function Moradores({ unidades, moradores }: Props) {
                 </h3>
 
                 <p className="text-slate-400 mt-1">
-                  {moradorSelecionado.unidadeNome}
+                  {textoPerfil(moradorSelecionado.perfil)} •{" "}
+                  {moradorSelecionado.status === "ativo"
+                    ? "🟢 Ativo"
+                    : "🔴 Inativo"}
                 </p>
               </div>
 
@@ -326,11 +374,77 @@ export default function Moradores({ unidades, moradores }: Props) {
               </button>
             </div>
 
-            <div className="space-y-3">
+            <div className="bg-slate-800 border border-slate-700 rounded-2xl p-4 mb-4">
+              <h4 className="text-lg font-black text-white mb-3">
+                Dados principais
+              </h4>
+
+              <div className="grid md:grid-cols-2 gap-3 text-sm">
+                <div className="bg-slate-900 border border-slate-700 rounded-xl p-3">
+                  <p className="text-xs text-slate-500 font-bold">Telefone</p>
+                  <p className="font-bold mt-1">
+                    📱 {moradorSelecionado.telefone || "Sem telefone"}
+                  </p>
+                </div>
+
+                <div className="bg-slate-900 border border-slate-700 rounded-xl p-3">
+                  <p className="text-xs text-slate-500 font-bold">E-mail</p>
+                  <p className="font-bold mt-1">
+                    ✉️ {moradorSelecionado.email || "Sem e-mail"}
+                  </p>
+                </div>
+
+                <div className="bg-slate-900 border border-slate-700 rounded-xl p-3">
+                  <p className="text-xs text-slate-500 font-bold">Condomínio</p>
+                  <p className="font-bold mt-1">
+                    🏢 {unidadeSelecionada?.localNome || "Não localizado"}
+                  </p>
+                </div>
+
+                <div className="bg-slate-900 border border-slate-700 rounded-xl p-3">
+                  <p className="text-xs text-slate-500 font-bold">Unidade</p>
+                  <p className="font-bold mt-1">
+                    🏠 {textoUnidadeCurta(unidadeSelecionada || undefined)}
+                  </p>
+                </div>
+
+                <div className="bg-slate-900 border border-slate-700 rounded-xl p-3">
+                  <p className="text-xs text-slate-500 font-bold">Prioridade</p>
+                  <p className="font-bold mt-1">
+                    🔢 Prioridade {moradorSelecionado.prioridade}
+                  </p>
+                </div>
+
+                <div className="bg-slate-900 border border-slate-700 rounded-xl p-3">
+                  <p className="text-xs text-slate-500 font-bold">Código</p>
+                  <p className="font-bold mt-1">{moradorSelecionado.codigo}</p>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap gap-2 mt-4">
+                {moradorSelecionado.recebeChamadas !== false && (
+                  <span className="text-xs bg-slate-900 border border-slate-700 px-3 py-1 rounded-full text-cyan-300 font-bold">
+                    🔔 Recebe chamadas
+                  </span>
+                )}
+
+                {moradorSelecionado.podeAbrirPortao && (
+                  <span className="text-xs bg-slate-900 border border-slate-700 px-3 py-1 rounded-full text-yellow-300 font-bold">
+                    🚪 Pode abrir portão
+                  </span>
+                )}
+
+                <span className="text-xs bg-slate-900 border border-slate-700 px-3 py-1 rounded-full text-slate-300 font-bold">
+                  {textoPerfil(moradorSelecionado.perfil)}
+                </span>
+              </div>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-3 mb-4">
               <button
                 onClick={() =>
                   alert(
-                    "Próxima etapa: editar morador usando o mesmo formulário da unidade."
+                    "Próxima etapa: editar morador usando o mesmo formulário de cadastro."
                   )
                 }
                 className="w-full bg-blue-600 hover:bg-blue-500 text-white font-black py-3 rounded-xl"
@@ -341,7 +455,7 @@ export default function Moradores({ unidades, moradores }: Props) {
               <button
                 onClick={() =>
                   alert(
-                    "Próxima etapa: abrir automaticamente a unidade deste morador na aba Unidades."
+                    "Próxima etapa: abrir automaticamente esta unidade na aba Unidades."
                   )
                 }
                 className="w-full bg-slate-700 hover:bg-slate-600 text-white font-black py-3 rounded-xl"
@@ -350,12 +464,19 @@ export default function Moradores({ unidades, moradores }: Props) {
               </button>
 
               <button
-                onClick={() =>
-                  alert("Próxima etapa: desativar este morador no Firebase.")
-                }
-                className="w-full bg-orange-600 hover:bg-orange-500 text-white font-black py-3 rounded-xl"
+                onClick={() => alternarStatusMorador(moradorSelecionado)}
+                disabled={alterandoStatus}
+                className={`w-full disabled:bg-slate-600 text-white font-black py-3 rounded-xl ${
+                  moradorSelecionado.status === "ativo"
+                    ? "bg-orange-600 hover:bg-orange-500"
+                    : "bg-green-600 hover:bg-green-500"
+                }`}
               >
-                🚫 Desativar
+                {alterandoStatus
+                  ? "Atualizando..."
+                  : moradorSelecionado.status === "ativo"
+                  ? "🚫 Desativar"
+                  : "🟢 Reativar"}
               </button>
 
               <button
@@ -366,6 +487,30 @@ export default function Moradores({ unidades, moradores }: Props) {
               >
                 🗑 Excluir
               </button>
+            </div>
+
+            <div className="bg-slate-800 border border-slate-700 rounded-2xl p-4">
+              <p className="text-xs text-slate-500 font-black mb-3">
+                Próximos módulos vinculados ao morador
+              </p>
+
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                <button className="bg-slate-900 border border-slate-700 text-slate-400 font-black py-3 rounded-xl cursor-not-allowed">
+                  🚗 Veículos
+                </button>
+
+                <button className="bg-slate-900 border border-slate-700 text-slate-400 font-black py-3 rounded-xl cursor-not-allowed">
+                  🐶 Pets
+                </button>
+
+                <button className="bg-slate-900 border border-slate-700 text-slate-400 font-black py-3 rounded-xl cursor-not-allowed">
+                  👨‍👩‍👧 Família
+                </button>
+
+                <button className="bg-slate-900 border border-slate-700 text-slate-400 font-black py-3 rounded-xl cursor-not-allowed">
+                  📜 Histórico
+                </button>
+              </div>
             </div>
 
             <button
