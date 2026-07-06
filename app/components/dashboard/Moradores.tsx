@@ -160,7 +160,24 @@ export default function Moradores({ unidades, moradores }: Props) {
   const unidadeSelecionada = moradorSelecionado
     ? unidadeDoMorador(moradorSelecionado)
     : null;
+async function excluirMorador(morador: MoradorCadastrado) {
+  const confirmar = confirm(
+    `Excluir definitivamente ${morador.nome}?\n\nEsta ação não poderá ser desfeita.`
+  );
 
+  if (!confirmar) return;
+
+  try {
+    await remove(ref(db, `qrCentral/moradores/${morador.id}`));
+
+    alert("Morador excluído com sucesso.");
+
+    setMoradorSelecionado(null);
+  } catch (error) {
+    console.error(error);
+    alert("Erro ao excluir morador.");
+  }
+}
   async function alternarStatusMorador(morador: MoradorCadastrado) {
     const novoStatus = morador.status === "ativo" ? "inativo" : "ativo";
 
@@ -480,13 +497,11 @@ export default function Moradores({ unidades, moradores }: Props) {
               </button>
 
               <button
-                onClick={() =>
-                  alert("Próxima etapa: excluir este morador do Firebase.")
-                }
-                className="w-full bg-red-700 hover:bg-red-600 text-white font-black py-3 rounded-xl"
-              >
-                🗑 Excluir
-              </button>
+  onClick={() => excluirMorador(moradorSelecionado)}
+  className="w-full bg-red-700 hover:bg-red-600 text-white font-black py-3 rounded-xl"
+>
+  🗑 Excluir
+</button>
             </div>
 
             <div className="bg-slate-800 border border-slate-700 rounded-2xl p-4">
