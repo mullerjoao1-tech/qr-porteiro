@@ -34,6 +34,7 @@ const slug = String(
 const [installPrompt, setInstallPrompt] = useState<any>(null);
   const [visitanteVisualizou, setVisitanteVisualizou] = useState(false);
 const [audioVisitante, setAudioVisitante] = useState("");
+const [popupAudioVisitante, setPopupAudioVisitante] = useState(false);
   const intervaloSomRef = useRef<NodeJS.Timeout | null>(null);
   const finalizacaoAutoRef = useRef<NodeJS.Timeout | null>(null);
   const ultimaCapturaCameraRef = useRef("");
@@ -193,6 +194,7 @@ async function instalarApp() {
         setMensagemResponsavel("");
         setVisitanteVisualizou(false);
         setAudioVisitante("");
+        setPopupAudioVisitante(false);
         setAvisoAuto("");
         pararToqueContinuo();
         return;
@@ -219,6 +221,7 @@ async function instalarApp() {
         ultimaChamadaDadosRef.current = null;
 
         pararToqueContinuo();
+        setPopupAudioVisitante(false);
         setAvisoAuto("Atendimento encerrado. Limpando em instantes.");
         return;
       }
@@ -417,6 +420,10 @@ async function instalarApp() {
     });
 
     pararToqueContinuo();
+
+    if (audioVisitante) {
+      setPopupAudioVisitante(true);
+    }
   }
 
   async function enviarMensagemRapida(mensagem: string) {
@@ -679,6 +686,38 @@ async function instalarApp() {
 
   return (
     <main className="min-h-screen bg-slate-950 text-white p-4 relative">
+      {popupAudioVisitante && audioVisitante && (
+        <div className="fixed inset-0 z-[60] bg-black/90 flex items-center justify-center p-4">
+          <div className="w-full max-w-md bg-slate-900 border-4 border-blue-400 rounded-3xl p-6 text-center shadow-2xl">
+            <p className="text-6xl mb-3">🎙️</p>
+
+            <h2 className="text-3xl font-black text-blue-300 mb-3">
+              ÁUDIO DO VISITANTE
+            </h2>
+
+            <p className="text-slate-300 mb-5">
+              O visitante enviou uma mensagem de voz.
+            </p>
+
+            <div className="bg-slate-800 rounded-2xl p-4 mb-5">
+              <audio
+                controls
+                autoPlay
+                className="w-full"
+                src={audioVisitante}
+              />
+            </div>
+
+            <button
+              onClick={() => setPopupAudioVisitante(false)}
+              className="w-full bg-red-600 hover:bg-red-500 text-white text-xl font-black py-4 rounded-2xl"
+            >
+              FECHAR
+            </button>
+          </div>
+        </div>
+      )}
+
       {chamadaAtiva && (
         <div className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center p-4 overflow-y-auto">
           <div className="w-full max-w-md bg-slate-900 border-4 border-green-400 rounded-3xl p-5 text-center shadow-2xl my-4">
@@ -692,26 +731,10 @@ async function instalarApp() {
               <p className="text-2xl font-black text-white">{nome}</p>
               <p className="text-slate-300 mt-2">Motivo: {motivo}</p>
               {audioVisitante && (
-  <div className="mt-4 bg-slate-900 rounded-2xl p-4">
-    <p className="text-sm text-blue-300 font-bold mb-3">
-      🎙️ Áudio do visitante
+  <div className="mt-4 bg-blue-500/10 border border-blue-500/40 rounded-2xl p-3">
+    <p className="text-sm text-blue-300 font-bold">
+      🎙️ O visitante enviou um áudio. Toque em ATENDER para ouvir.
     </p>
-
-    <audio
-      controls
-      className="w-full"
-      src={audioVisitante}
-     onClick={async () => {
-  if (status === "Aguardando atendimento") {
-    await atenderSolicitacao();
-  }
-}}
-onPlay={async () => {
-  if (status === "Aguardando atendimento") {
-    await atenderSolicitacao();
-  }
-}}
-    />
   </div>
 )}
               <p className="text-yellow-400 mt-2 font-bold">Status: {status}</p>
@@ -854,26 +877,17 @@ onPlay={async () => {
 
           <p className="text-sm text-slate-300 mt-3">Motivo: {motivo}</p>
 {audioVisitante && (
-  <div className="mt-4 bg-slate-900 rounded-2xl p-4">
+  <div className="mt-4 bg-blue-500/10 border border-blue-500/40 rounded-2xl p-3">
     <p className="text-sm text-blue-300 font-bold mb-3">
-      🎙️ Áudio do visitante
+      🎙️ O visitante enviou um áudio.
     </p>
 
-    <audio
-      controls
-      className="w-full"
-      src={audioVisitante}
-      onClick={async () => {
-  if (status === "Aguardando atendimento") {
-    await atenderSolicitacao();
-  }
-}}
-onPlay={async () => {
-  if (status === "Aguardando atendimento") {
-    await atenderSolicitacao();
-  }
-}}
-    />
+    <button
+      onClick={() => setPopupAudioVisitante(true)}
+      className="w-full bg-blue-600 hover:bg-blue-500 text-white font-black py-3 rounded-2xl"
+    >
+      ▶️ OUVIR ÁUDIO DO VISITANTE
+    </button>
   </div>
 )}
           <p className="text-sm text-cyan-400 mt-2">
