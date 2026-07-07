@@ -2,112 +2,29 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "next/navigation";
-import { ref, onValue, update, remove, set } from "firebase/database";
+import { ref, onValue, update, remove } from "firebase/database";
 import { db } from "../../services/firebase";
+import { useGravadorAudio } from "../../components/acesso-v2/hooks/useGravadorAudio";
+import PopupMensagem from "../../components/acesso-v2/components/PopupMensagem";
+import Conversa from "../../components/acesso-v2/components/Conversa";
+import GravadorAudio from "../../components/acesso-v2/components/GravadorAudio";
+import {
+  registrarMensagemConversa,
+  cancelarChamadaNoFirebase,
+  criarChamadaNoFirebase,
+  enviarPushChamada,
+} from "../../components/acesso-v2/services/chamadaService";
+import type { MensagemConversa, Unidade } from "../../components/acesso-v2/types";
 
-type MensagemConversa = {
-  id?: string;
-  autor: "visitante" | "morador";
-  tipo: "texto" | "audio";
-  texto?: string;
-  audioBase64?: string;
-  criadoEm: number;
-};
-
-type Chamada = {
-  nome?: string;
-  motivo?: string;
-  status?: string;
-  criadoEm?: string;
-  atendidoEm?: string;
-  mensagemRapida?: string;
-  respostaRapida?: string;
-  resposta?: string;
-  mensagemMorador?: string;
-  mensagemResponsavel?: string;
-  enviadoEm?: number;
-  ultimaAtividade?: number;
-  audioBase64?: string;
-  mensagens?: Record<string, MensagemConversa>;
-};
-
-type Unidade = {
-  id: string;
-  nome: string;
-  tipo?: string;
-  bloco?: string;
-  chamada?: Chamada;
-};
-
-const TEMPO_AGUARDANDO_MS = 5 * 60 * 1000;
-const TEMPO_EM_ATENDIMENTO_MS = 3 * 60 * 1000;
-
-function chamadaEstaAtiva(chamada?: Chamada) {
-  if (!chamada) return false;
-
-  const status = chamada.status || "";
-
-  return status === "Aguardando atendimento" || status === "Em atendimento";
-}
-
-function textoStatusChamada(chamada?: Chamada) {
-  if (!chamada) return "Disponível";
-
-  if (chamada.status === "Aguardando atendimento") {
-    return "Chamando";
-  }
-
-  if (chamada.status === "Em atendimento") {
-    return "Em atendimento";
-  }
-
-  return "Disponível";
-}
-
-function pegarTempoBase(chamada?: Chamada) {
-  if (!chamada) return Date.now();
-
-  if (chamada.ultimaAtividade) return chamada.ultimaAtividade;
-
-  if (chamada.enviadoEm) return chamada.enviadoEm;
-
-  if (chamada.atendidoEm) {
-    const tempo = new Date(chamada.atendidoEm).getTime();
-    if (!Number.isNaN(tempo)) return tempo;
-  }
-
-  if (chamada.criadoEm) {
-    const tempo = new Date(chamada.criadoEm).getTime();
-    if (!Number.isNaN(tempo)) return tempo;
-  }
-
-  return Date.now();
-}
-
-function blobParaBase64(blob: Blob): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-
-    reader.onloadend = () => {
-      resolve(reader.result as string);
-    };
-
-    reader.onerror = reject;
-
-    reader.readAsDataURL(blob);
-  });
-}
-
-function ordenarMensagens(mensagens?: Record<string, MensagemConversa>) {
-  if (!mensagens) return [];
-
-  return Object.entries(mensagens)
-    .map(([id, mensagem]) => ({
-      id,
-      ...mensagem,
-    }))
-    .sort((a, b) => (a.criadoEm || 0) - (b.criadoEm || 0));
-}
+import {
+  TEMPO_AGUARDANDO_MS,
+  TEMPO_EM_ATENDIMENTO_MS,
+  chamadaEstaAtiva,
+  textoStatusChamada,
+  pegarTempoBase,
+  ordenarMensagens,
+} from "../../components/acesso-v2/utils/chamadaUtils";
+import { blobParaBase64 } from "../../components/acesso-v2/utils/audioUtils";
 
 export default function AcessoV2Condominio() {
   const params = useParams();
@@ -129,17 +46,10 @@ export default function AcessoV2Condominio() {
   const [enviando, setEnviando] = useState(false);
   const [mensagem, setMensagem] = useState("");
 
-  const [gravandoAudio, setGravandoAudio] = useState(false);
-  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
-
   const [popupTexto, setPopupTexto] = useState("");
   const [popupTipo, setPopupTipo] = useState<"mensagem" | "encerrado">(
     "mensagem"
   );
-
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const audioChunksRef = useRef<Blob[]>([]);
-  const chamarDepoisDoAudioRef = useRef(false);
 
   const chamadaAtivaRef = useRef(false);
   const chamadaFoiEnviadaRef = useRef(false);
@@ -208,9 +118,7 @@ export default function AcessoV2Condominio() {
         return;
       }
 
-      if (!chamadaFoiEnviadaRef.current) {
-        return;
-      }
+      if (!chamadaFoiEnviadaRef.current) return;
 
       chamadaAtivaRef.current = true;
 
@@ -314,6 +222,19 @@ export default function AcessoV2Condominio() {
     );
   }, [unidades, unidadeSelecionada]);
 
+  const {
+    gravandoAudio,
+    audioBlob,
+    setAudioBlob,
+    iniciarGravacao,
+    pararGravacao,
+  } = useGravadorAudio({
+    podeGravar: !!(unidadeAtualSelecionada || unidadeSelecionada),
+    aoIniciarGravacao: () => {
+      setMensagem("");
+    },
+  });
+
   const chamadaSelecionadaAtiva = chamadaEstaAtiva(
     unidadeAtualSelecionada?.chamada
   );
@@ -324,95 +245,6 @@ export default function AcessoV2Condominio() {
 
   const precisaNome = motivo === "Visitante";
   const precisaDescricao = motivo === "Outros";
-
-  async function iniciarGravacao() {
-    if (!unidadeAtualSelecionada && !unidadeSelecionada) {
-      alert("Selecione uma unidade antes de gravar.");
-      return;
-    }
-
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: true,
-      });
-
-      const recorder = new MediaRecorder(stream);
-
-      audioChunksRef.current = [];
-      chamarDepoisDoAudioRef.current = false;
-
-      recorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          audioChunksRef.current.push(event.data);
-        }
-      };
-
-      recorder.onstop = async () => {
-        const blob = new Blob(audioChunksRef.current, {
-          type: "audio/webm",
-        });
-
-        setAudioBlob(blob);
-        setGravandoAudio(false);
-
-        stream.getTracks().forEach((track) => track.stop());
-
-        if (chamarDepoisDoAudioRef.current) {
-          chamarDepoisDoAudioRef.current = false;
-
-          setTimeout(() => {
-            chamarUnidade(blob);
-          }, 300);
-        }
-      };
-
-      mediaRecorderRef.current = recorder;
-      recorder.start();
-
-      setAudioBlob(null);
-      setMensagem("");
-      setGravandoAudio(true);
-
-      setTimeout(() => {
-        if (recorder.state === "recording") {
-          pararGravacao();
-        }
-      }, 15000);
-    } catch (erro) {
-      alert("Não foi possível acessar o microfone.");
-      console.error(erro);
-      setGravandoAudio(false);
-    }
-  }
-
-  function pararGravacao() {
-    if (
-      mediaRecorderRef.current &&
-      mediaRecorderRef.current.state === "recording"
-    ) {
-      chamarDepoisDoAudioRef.current = false;
-      mediaRecorderRef.current.stop();
-    } else {
-      setGravandoAudio(false);
-    }
-  }
-
-  async function registrarMensagemConversa(
-    unidadeId: string,
-    dados: Omit<MensagemConversa, "criadoEm">
-  ) {
-    const idMensagem = String(Date.now());
-
-    await set(ref(db, `unidades-v2/${unidadeId}/chamada/mensagens/${idMensagem}`), {
-      ...dados,
-      criadoEm: Date.now(),
-    });
-
-    await update(ref(db, `unidades-v2/${unidadeId}/chamada`), {
-      ultimaAtividade: Date.now(),
-      enviadoEm: Date.now(),
-    });
-  }
 
   async function enviarAudioNaConversa(blob: Blob) {
     const unidadeAtual = unidadeAtualSelecionada || unidadeSelecionada;
@@ -492,9 +324,7 @@ export default function AcessoV2Condominio() {
 
     let audioBase64 = null;
 
-    if (blobFinal) {
-      audioBase64 = await blobParaBase64(blobFinal);
-    }
+    if (blobFinal) audioBase64 = await blobParaBase64(blobFinal);
 
     let nomeFinal = nome.trim();
 
@@ -511,7 +341,7 @@ export default function AcessoV2Condominio() {
       chamadaFoiEnviadaRef.current = true;
       chamadaAtivaRef.current = true;
 
-      await update(ref(db, `unidades-v2/${unidadeAtual.id}/chamada`), {
+      await criarChamadaNoFirebase(unidadeAtual.id, {
         nome: nomeFinal,
         motivo: motivoFinal,
         audioBase64,
@@ -541,17 +371,8 @@ export default function AcessoV2Condominio() {
         visualizadoPeloVisitante: false,
       });
 
-      const respostaPush = await fetch("/api/enviar-notificacao-v2", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          unidadeId: unidadeAtual.id,
-        }),
-      });
+      const dadosPush = await enviarPushChamada(unidadeAtual.id);
 
-      const dadosPush = await respostaPush.json();
       console.log("RESPOSTA PUSH V2:", dadosPush);
 
       setAudioBlob(null);
@@ -591,14 +412,7 @@ export default function AcessoV2Condominio() {
     if (!unidadeAtual) return;
 
     try {
-      await update(ref(db, `unidades-v2/${unidadeAtual.id}/chamada`), {
-        status: "Cancelado pelo visitante",
-        notificar: false,
-        canceladoEm: Date.now(),
-      });
-
-      await remove(ref(db, `unidades-v2/${unidadeAtual.id}/chamada`));
-
+      await cancelarChamadaNoFirebase(unidadeAtual.id);
       setMensagem("");
       setPopupTexto("");
       setUnidadeSelecionada(null);
@@ -643,50 +457,23 @@ export default function AcessoV2Condominio() {
 
   return (
     <main className="min-h-screen bg-slate-950 text-white p-4 flex justify-center">
-      {popupTexto && (
-        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-5">
-          <div
-            className={
-              popupTipo === "encerrado"
-                ? "w-full max-w-xl bg-green-600 border-4 border-green-300 rounded-3xl p-8 text-center shadow-2xl"
-                : "w-full max-w-xl bg-blue-600 border-4 border-blue-300 rounded-3xl p-8 text-center shadow-2xl"
-            }
-          >
-            <p className="text-5xl mb-4">
-              {popupTipo === "encerrado" ? "✅" : "💬"}
-            </p>
+      <PopupMensagem
+        popupTexto={popupTexto}
+        popupTipo={popupTipo}
+        onFechar={async () => {
+          if (unidadeAtualSelecionada) {
+            await update(
+              ref(db, `unidades-v2/${unidadeAtualSelecionada.id}/chamada`),
+              {
+                visualizadoPeloVisitante: true,
+                ultimaAtividade: Date.now(),
+              }
+            );
+          }
 
-            <h2 className="text-2xl font-black mb-3">
-              {popupTipo === "encerrado"
-                ? "ATENDIMENTO ENCERRADO"
-                : "NOVA MENSAGEM"}
-            </h2>
-
-            <p className="text-3xl font-black leading-relaxed py-6">
-              {popupTexto}
-            </p>
-
-            <button
-              onClick={async () => {
-                if (unidadeAtualSelecionada) {
-                  await update(
-                    ref(db, `unidades-v2/${unidadeAtualSelecionada.id}/chamada`),
-                    {
-                      visualizadoPeloVisitante: true,
-                      ultimaAtividade: Date.now(),
-                    }
-                  );
-                }
-
-                setPopupTexto("");
-              }}
-              className="mt-7 w-full bg-white text-black text-2xl font-black py-5 rounded-2xl"
-            >
-              ENTENDI
-            </button>
-          </div>
-        </div>
-      )}
+          setPopupTexto("");
+        }}
+      />
 
       <div className="w-full max-w-xl">
         <section className="bg-slate-900 border border-slate-700 rounded-3xl p-6 mb-5 text-center">
@@ -837,42 +624,7 @@ export default function AcessoV2Condominio() {
             </div>
 
             {chamadaSelecionadaAtiva && (
-              <div className="bg-slate-800 border border-blue-500/40 rounded-2xl p-4 mb-5">
-                <p className="text-blue-300 font-black mb-3">
-                  💬 Conversa do atendimento
-                </p>
-
-                {mensagensConversa.length === 0 ? (
-                  <p className="text-sm text-slate-400">
-                    A conversa ainda não possui mensagens.
-                  </p>
-                ) : (
-                  <div className="space-y-3">
-                    {mensagensConversa.map((item) => (
-                      <div
-                        key={item.id}
-                        className={
-                          item.autor === "visitante"
-                            ? "bg-blue-600/30 border border-blue-500 rounded-2xl p-3"
-                            : "bg-green-600/30 border border-green-500 rounded-2xl p-3"
-                        }
-                      >
-                        <p className="text-xs font-black mb-2">
-                          {item.autor === "visitante" ? "Você" : "Morador"}
-                        </p>
-
-                        {item.tipo === "texto" && (
-                          <p className="text-white font-bold">{item.texto}</p>
-                        )}
-
-                        {item.tipo === "audio" && item.audioBase64 && (
-                          <audio controls className="w-full" src={item.audioBase64} />
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+              <Conversa mensagens={mensagensConversa} />
             )}
 
             <p className="text-sm text-slate-300 font-bold mb-3">
@@ -943,7 +695,9 @@ export default function AcessoV2Condominio() {
 
             <button
               onClick={() => chamarUnidade()}
-              disabled={enviando || !motivo || chamadaSelecionadaAtiva || gravandoAudio}
+              disabled={
+                enviando || !motivo || chamadaSelecionadaAtiva || gravandoAudio
+              }
               className="w-full bg-green-500 hover:bg-green-400 disabled:bg-gray-500 text-black text-xl font-black py-4 rounded-2xl"
             >
               {chamadaSelecionadaAtiva
@@ -953,49 +707,14 @@ export default function AcessoV2Condominio() {
                 : "🔔 CHAMAR"}
             </button>
 
-            <div className="mt-4 space-y-3">
-              <button
-                onClick={gravandoAudio ? pararGravacao : iniciarGravacao}
-                disabled={enviando}
-                className={
-                  gravandoAudio
-                    ? "w-full bg-red-600 text-white text-xl font-black py-4 rounded-2xl animate-pulse"
-                    : "w-full bg-blue-600 text-white text-xl font-black py-4 rounded-2xl disabled:bg-gray-500"
-                }
-              >
-                {gravandoAudio
-                  ? "⏹️ PARAR GRAVAÇÃO"
-                  : "🎙️ GRAVAR ÁUDIO"}
-              </button>
-
-              {audioBlob && (
-                <div className="bg-slate-800 border border-blue-500/40 rounded-2xl p-4 space-y-3">
-                  <p className="text-blue-300 text-sm font-bold text-center">
-                    {chamadaSelecionadaAtiva
-                      ? "Áudio gravado. Agora envie na conversa."
-                      : "Áudio gravado. Agora envie para chamar o morador."}
-                  </p>
-
-                  <audio
-                    controls
-                    className="w-full"
-                    src={URL.createObjectURL(audioBlob)}
-                  />
-
-                  <button
-                    onClick={enviarAudioEChamar}
-                    disabled={enviando}
-                    className="w-full bg-blue-500 hover:bg-blue-400 disabled:bg-gray-500 text-white text-xl font-black py-4 rounded-2xl"
-                  >
-                    {enviando
-                      ? "Enviando..."
-                      : chamadaSelecionadaAtiva
-                      ? "📤 ENVIAR ÁUDIO NA CONVERSA"
-                      : "📤 ENVIAR ÁUDIO E CHAMAR"}
-                  </button>
-                </div>
-              )}
-            </div>
+            <GravadorAudio
+  gravando={gravandoAudio}
+  enviando={enviando}
+  audioBlob={audioBlob}
+  onGravar={iniciarGravacao}
+  onParar={pararGravacao}
+  onEnviar={enviarAudioEChamar}
+/>
 
             {mensagem && (
               <div className="mt-5 space-y-4">

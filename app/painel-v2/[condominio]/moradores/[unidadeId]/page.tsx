@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ref, onValue, set, update, remove } from "firebase/database";
-import { db } from "../../services/firebase";
+import { db } from "../../../../services/firebase";
 
 type MensagemConversa = {
   id?: string;
