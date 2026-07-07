@@ -4,17 +4,22 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import { ref, onValue, update, remove } from "firebase/database";
 import { db } from "../../services/firebase";
+
+import { useUnidades } from "../../components/acesso-v2/hooks/useUnidades";
 import { useGravadorAudio } from "../../components/acesso-v2/hooks/useGravadorAudio";
+
 import PopupMensagem from "../../components/acesso-v2/components/PopupMensagem";
 import Conversa from "../../components/acesso-v2/components/Conversa";
 import GravadorAudio from "../../components/acesso-v2/components/GravadorAudio";
+
 import {
   registrarMensagemConversa,
   cancelarChamadaNoFirebase,
   criarChamadaNoFirebase,
   enviarPushChamada,
 } from "../../components/acesso-v2/services/chamadaService";
-import type { MensagemConversa, Unidade } from "../../components/acesso-v2/types";
+
+import type { MensagemConversa } from "../../components/acesso-v2/types";
 
 import {
   TEMPO_AGUARDANDO_MS,
@@ -24,20 +29,27 @@ import {
   pegarTempoBase,
   ordenarMensagens,
 } from "../../components/acesso-v2/utils/chamadaUtils";
+
 import { blobParaBase64 } from "../../components/acesso-v2/utils/audioUtils";
 
 export default function AcessoV2Condominio() {
   const params = useParams();
   const condominioId = String(params.condominioId || "condominio-teste");
 
-  const [unidades, setUnidades] = useState<Unidade[]>([]);
-  const [carregando, setCarregando] = useState(true);
-
-  const [busca, setBusca] = useState("");
-  const [blocoSelecionado, setBlocoSelecionado] = useState("");
-  const [unidadeSelecionada, setUnidadeSelecionada] = useState<Unidade | null>(
-    null
-  );
+  const {
+    carregando,
+    busca,
+    setBusca,
+    blocoSelecionado,
+    setBlocoSelecionado,
+    unidadeSelecionada,
+    setUnidadeSelecionada,
+    blocos,
+    temBlocos,
+    unidadesFiltradas,
+    unidadeAtualSelecionada,
+    voltarBlocoBase,
+  } = useUnidades();
 
   const [nome, setNome] = useState("");
   const [motivo, setMotivo] = useState("");
@@ -46,47 +58,29 @@ export default function AcessoV2Condominio() {
   const [enviando, setEnviando] = useState(false);
   const [mensagem, setMensagem] = useState("");
 
-  const [popupTexto, setPopupTexto] = useState("");
-  const [popupTipo, setPopupTipo] = useState<"mensagem" | "encerrado">(
-    "mensagem"
-  );
+ const [popupTexto, setPopupTexto] = useState("");
+const [popupTipo, setPopupTipo] = useState<"mensagem" | "encerrado" | "audio">(
+  "mensagem"
+);
+const [popupAudioBase64, setPopupAudioBase64] = useState("");
 
   const chamadaAtivaRef = useRef(false);
   const chamadaFoiEnviadaRef = useRef(false);
   const ultimoPopupRef = useRef("");
   const timerAutomaticoRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    const referencia = ref(db, "unidades-v2");
-
-    const pararDeOuvir = onValue(referencia, (snapshot) => {
-      const dados = snapshot.val();
-
-      if (!dados) {
-        setUnidades([]);
-        setCarregando(false);
-        return;
-      }
-
-      const lista = Object.entries(dados).map(([id, valor]: any) => ({
-        id,
-        ...valor,
-      })) as Unidade[];
-
-      lista.sort((a, b) => a.nome.localeCompare(b.nome));
-      setUnidades(lista);
-      setCarregando(false);
-
-      setUnidadeSelecionada((unidadeAtual) => {
-        if (!unidadeAtual) return null;
-
-        const unidadeAtualizada = lista.find((u) => u.id === unidadeAtual.id);
-        return unidadeAtualizada || unidadeAtual;
-      });
-    });
-
-    return () => pararDeOuvir();
-  }, []);
+const ultimoAudioPopupRef = useRef("");
+  const {
+    gravandoAudio,
+    audioBlob,
+    setAudioBlob,
+    iniciarGravacao,
+    pararGravacao,
+  } = useGravadorAudio({
+    podeGravar: !!(unidadeAtualSelecionada || unidadeSelecionada),
+    aoIniciarGravacao: () => {
+      setMensagem("");
+    },
+  });
 
   useEffect(() => {
     if (!unidadeSelecionada) return;
@@ -183,58 +177,6 @@ export default function AcessoV2Condominio() {
     };
   }, [unidadeSelecionada]);
 
-  const blocos = useMemo(() => {
-    const lista = unidades
-      .map((unidade) => unidade.bloco || "Único")
-      .filter((valor, index, array) => array.indexOf(valor) === index);
-
-    return lista.sort();
-  }, [unidades]);
-
-  const temBlocos = blocos.length > 1 || blocos[0] !== "Único";
-
-  const unidadesDoBloco = useMemo(() => {
-    if (!temBlocos) return unidades;
-
-    return unidades.filter(
-      (unidade) => (unidade.bloco || "Único") === blocoSelecionado
-    );
-  }, [unidades, blocoSelecionado, temBlocos]);
-
-  const unidadesFiltradas = useMemo(() => {
-    const texto = busca.toLowerCase().trim();
-
-    if (!texto) return unidadesDoBloco;
-
-    return unidadesDoBloco.filter((unidade) =>
-      `${unidade.nome} ${unidade.tipo || ""} ${unidade.id}`
-        .toLowerCase()
-        .includes(texto)
-    );
-  }, [busca, unidadesDoBloco]);
-
-  const unidadeAtualSelecionada = useMemo(() => {
-    if (!unidadeSelecionada) return null;
-
-    return (
-      unidades.find((unidade) => unidade.id === unidadeSelecionada.id) ||
-      unidadeSelecionada
-    );
-  }, [unidades, unidadeSelecionada]);
-
-  const {
-    gravandoAudio,
-    audioBlob,
-    setAudioBlob,
-    iniciarGravacao,
-    pararGravacao,
-  } = useGravadorAudio({
-    podeGravar: !!(unidadeAtualSelecionada || unidadeSelecionada),
-    aoIniciarGravacao: () => {
-      setMensagem("");
-    },
-  });
-
   const chamadaSelecionadaAtiva = chamadaEstaAtiva(
     unidadeAtualSelecionada?.chamada
   );
@@ -242,7 +184,30 @@ export default function AcessoV2Condominio() {
   const mensagensConversa = useMemo(() => {
     return ordenarMensagens(unidadeAtualSelecionada?.chamada?.mensagens);
   }, [unidadeAtualSelecionada?.chamada?.mensagens]);
+useEffect(() => {
+  if (!mensagensConversa || mensagensConversa.length === 0) return;
 
+  const ultimoAudioMorador = [...mensagensConversa]
+    .reverse()
+    .find(
+      (mensagem) =>
+        mensagem.autor === "morador" &&
+        mensagem.tipo === "audio" &&
+        mensagem.audioBase64
+    );
+
+  if (!ultimoAudioMorador) return;
+
+  const idAudio = `${ultimoAudioMorador.id || ""}-${ultimoAudioMorador.criadoEm || ""}`;
+
+  if (idAudio === ultimoAudioPopupRef.current) return;
+
+  ultimoAudioPopupRef.current = idAudio;
+
+  setPopupTipo("audio");
+  setPopupTexto("O responsável enviou uma mensagem de voz.");
+  setPopupAudioBase64(ultimoAudioMorador.audioBase64 || "");
+}, [mensagensConversa]);
   const precisaNome = motivo === "Visitante";
   const precisaDescricao = motivo === "Outros";
 
@@ -441,9 +406,7 @@ export default function AcessoV2Condominio() {
   }
 
   function voltarBloco() {
-    setBlocoSelecionado("");
-    setBusca("");
-    setUnidadeSelecionada(null);
+    voltarBlocoBase();
     setNome("");
     setMotivo("");
     setOutroMotivo("");
@@ -460,7 +423,9 @@ export default function AcessoV2Condominio() {
       <PopupMensagem
         popupTexto={popupTexto}
         popupTipo={popupTipo}
+        audioBase64={popupAudioBase64}
         onFechar={async () => {
+          
           if (unidadeAtualSelecionada) {
             await update(
               ref(db, `unidades-v2/${unidadeAtualSelecionada.id}/chamada`),
@@ -548,10 +513,9 @@ export default function AcessoV2Condominio() {
                       <button
                         key={unidade.id}
                         onClick={() => {
-                          if (ocupada) return;
                           setUnidadeSelecionada(unidade);
                         }}
-                        disabled={ocupada}
+                        disabled={false}
                         className={
                           ocupada
                             ? "w-full bg-slate-900 border border-yellow-500/40 rounded-2xl p-4 text-left opacity-70"
@@ -708,13 +672,13 @@ export default function AcessoV2Condominio() {
             </button>
 
             <GravadorAudio
-  gravando={gravandoAudio}
-  enviando={enviando}
-  audioBlob={audioBlob}
-  onGravar={iniciarGravacao}
-  onParar={pararGravacao}
-  onEnviar={enviarAudioEChamar}
-/>
+              gravando={gravandoAudio}
+              enviando={enviando}
+              audioBlob={audioBlob}
+              onGravar={iniciarGravacao}
+              onParar={pararGravacao}
+              onEnviar={enviarAudioEChamar}
+            />
 
             {mensagem && (
               <div className="mt-5 space-y-4">
