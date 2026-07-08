@@ -8,7 +8,7 @@ import { db } from "../../services/firebase";
 import { useUnidades } from "../../components/acesso-v2/hooks/useUnidades";
 import { useGravadorAudio } from "../../components/acesso-v2/hooks/useGravadorAudio";
 
-import PopupMensagem from "../../components/acesso-v2/components/PopupMensagem";
+import NotificacaoPopup from "../../components/acesso-v2/components/NotificacaoPopup";
 import Conversa from "../../components/acesso-v2/components/Conversa";
 import GravadorAudio from "../../components/acesso-v2/components/GravadorAudio";
 
@@ -424,7 +424,7 @@ export default function AcessoV2Condominio() {
 
   return (
     <main className="min-h-screen bg-slate-950 text-white p-4 flex justify-center">
-      <PopupMensagem
+      <NotificacaoPopup
         popupTexto={popupTexto}
         popupTipo={popupTipo}
         audioBase64={popupAudioBase64}
