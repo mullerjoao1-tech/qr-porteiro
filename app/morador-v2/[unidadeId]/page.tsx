@@ -258,6 +258,13 @@ export default function MoradorV2() {
 
       if (audioVisitanteAtual && ultimoAudioPopupRef.current !== audioVisitanteAtual) {
         ultimoAudioPopupRef.current = audioVisitanteAtual;
+
+        setAudioPopup({
+          titulo: "🎙️ Novo áudio do visitante",
+          audio: audioVisitanteAtual,
+        });
+
+        tocarBip();
       }
 
       if (dados.status === "Encerrado") {
@@ -1001,7 +1008,7 @@ export default function MoradorV2() {
       )}
 
       {audioPopup && (
-        <div className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[999] bg-black/95 flex items-center justify-center p-4">
           <div className="w-full max-w-md bg-slate-900 border-4 border-blue-400 rounded-3xl p-5 text-center shadow-2xl">
             <p className="text-6xl mb-3">🎙️</p>
             <h2 className="text-2xl font-black text-blue-300 mb-4">
