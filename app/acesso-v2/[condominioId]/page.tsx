@@ -19,8 +19,6 @@ import {
   enviarPushChamada,
 } from "../../components/acesso-v2/services/chamadaService";
 
-import type { MensagemConversa } from "../../components/acesso-v2/types";
-
 import {
   TEMPO_AGUARDANDO_MS,
   TEMPO_EM_ATENDIMENTO_MS,
@@ -58,17 +56,18 @@ export default function AcessoV2Condominio() {
   const [enviando, setEnviando] = useState(false);
   const [mensagem, setMensagem] = useState("");
 
- const [popupTexto, setPopupTexto] = useState("");
-const [popupTipo, setPopupTipo] = useState<"mensagem" | "encerrado" | "audio">(
-  "mensagem"
-);
-const [popupAudioBase64, setPopupAudioBase64] = useState("");
+  const [popupTexto, setPopupTexto] = useState("");
+  const [popupTipo, setPopupTipo] = useState<"mensagem" | "encerrado" | "audio">(
+    "mensagem"
+  );
+  const [popupAudioBase64, setPopupAudioBase64] = useState("");
 
   const chamadaAtivaRef = useRef(false);
   const chamadaFoiEnviadaRef = useRef(false);
   const ultimoPopupRef = useRef("");
   const timerAutomaticoRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-const ultimoAudioPopupRef = useRef("");
+  const ultimoAudioPopupRef = useRef("");
+
   const {
     gravandoAudio,
     audioBlob,
@@ -184,7 +183,8 @@ const ultimoAudioPopupRef = useRef("");
   const mensagensConversa = useMemo(() => {
     return ordenarMensagens(unidadeAtualSelecionada?.chamada?.mensagens);
   }, [unidadeAtualSelecionada?.chamada?.mensagens]);
-useEffect(() => {
+
+  useEffect(() => {
   if (!mensagensConversa || mensagensConversa.length === 0) return;
 
   const ultimoAudioMorador = [...mensagensConversa]
@@ -207,7 +207,8 @@ useEffect(() => {
   setPopupTipo("audio");
   setPopupTexto("O responsável enviou uma mensagem de voz.");
   setPopupAudioBase64(ultimoAudioMorador.audioBase64 || "");
-}, [mensagensConversa]);
+  }, [mensagensConversa]);
+
   const precisaNome = motivo === "Visitante";
   const precisaDescricao = motivo === "Outros";
 
@@ -380,6 +381,7 @@ useEffect(() => {
       await cancelarChamadaNoFirebase(unidadeAtual.id);
       setMensagem("");
       setPopupTexto("");
+      setPopupAudioBase64("");
       setUnidadeSelecionada(null);
       setNome("");
       setMotivo("");
@@ -401,6 +403,7 @@ useEffect(() => {
     setOutroMotivo("");
     setMensagem("");
     setPopupTexto("");
+    setPopupAudioBase64("");
     setAudioBlob(null);
     ultimoPopupRef.current = "";
   }
@@ -412,6 +415,7 @@ useEffect(() => {
     setOutroMotivo("");
     setMensagem("");
     setPopupTexto("");
+    setPopupAudioBase64("");
     setAudioBlob(null);
     chamadaAtivaRef.current = false;
     chamadaFoiEnviadaRef.current = false;
@@ -437,6 +441,7 @@ useEffect(() => {
           }
 
           setPopupTexto("");
+          setPopupAudioBase64("");
         }}
       />
 
