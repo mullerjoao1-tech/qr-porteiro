@@ -28,6 +28,14 @@ type Unidade = {
   };
 };
 
+type PopupAudioVisitante = {
+  id: string;
+  unidadeId: string;
+  unidadeNome: string;
+  visitanteNome: string;
+  audioBase64: string;
+};
+
 const unidadesIniciais: Unidade[] = [
   { id: "apto-101", nome: "Apto 101", tipo: "Apartamento" },
 ];
@@ -66,8 +74,12 @@ export default function PainelV2Central() {
   const [gravandoAudioMorador, setGravandoAudioMorador] = useState(false);
   const [audioRespostaBlob, setAudioRespostaBlob] = useState<Blob | null>(null);
   const [enviandoAudioMorador, setEnviandoAudioMorador] = useState(false);
-const [mostrarPopupAudio, setMostrarPopupAudio] = useState(false);
-const [ultimoAudioRecebido, setUltimoAudioRecebido] = useState<string | null>(null);
+  const [mostrarPopupAudio, setMostrarPopupAudio] = useState(false);
+  const [ultimoAudioRecebido, setUltimoAudioRecebido] = useState<string | null>(
+    null
+  );
+  const [popupAudioVisitante, setPopupAudioVisitante] =
+    useState<PopupAudioVisitante | null>(null);
   const mediaRecorderMoradorRef = useRef<MediaRecorder | null>(null);
   const audioChunksMoradorRef = useRef<Blob[]>([]);
 
@@ -151,25 +163,62 @@ const [ultimoAudioRecebido, setUltimoAudioRecebido] = useState<string | null>(nu
   const mensagensUnidadeAberta = useMemo(() => {
     return ordenarMensagens(unidadeAberta?.chamada?.mensagens);
   }, [unidadeAberta?.chamada?.mensagens]);
-useEffect(() => {
-  if (!mensagensUnidadeAberta.length) return;
+  useEffect(() => {
+    let audioMaisNovo: PopupAudioVisitante | null = null;
+    let criadoEmMaisNovo = 0;
 
-  const ultimo = [...mensagensUnidadeAberta]
-    .reverse()
-    .find(
-      (m) =>
-        m.autor === "visitante" &&
-        m.tipo === "audio" &&
-        m.audioBase64
-    );
+    unidades.forEach((unidade) => {
+      const chamada = unidade.chamada;
 
-  if (!ultimo) return;
+      if (!chamada) return;
 
-  if (ultimo.id !== ultimoAudioRecebido) {
-    setUltimoAudioRecebido(ultimo.id!);
-    setMostrarPopupAudio(true);
-  }
-}, [mensagensUnidadeAberta]);
+      const criadoEmChamada = new Date(chamada.criadoEm || 0).getTime();
+
+      if (chamada.audioBase64 && criadoEmChamada >= criadoEmMaisNovo) {
+        criadoEmMaisNovo = criadoEmChamada || Date.now();
+
+        audioMaisNovo = {
+          id: `${unidade.id}-audio-direto-${chamada.audioBase64.length}-${chamada.audioBase64.slice(-20)}`,
+          unidadeId: unidade.id,
+          unidadeNome: unidade.nome,
+          visitanteNome: chamada.nome || "Visitante",
+          audioBase64: chamada.audioBase64,
+        };
+      }
+
+      const mensagens = ordenarMensagens(chamada.mensagens);
+
+      mensagens.forEach((mensagem) => {
+        if (
+          mensagem.autor === "visitante" &&
+          mensagem.tipo === "audio" &&
+          mensagem.audioBase64 &&
+          mensagem.id &&
+          mensagem.criadoEm >= criadoEmMaisNovo
+        ) {
+          criadoEmMaisNovo = mensagem.criadoEm;
+
+          audioMaisNovo = {
+            id: `${unidade.id}-${mensagem.id}`,
+            unidadeId: unidade.id,
+            unidadeNome: unidade.nome,
+            visitanteNome: chamada.nome || "Visitante",
+            audioBase64: mensagem.audioBase64,
+          };
+        }
+      });
+    });
+
+    const audioEncontrado = audioMaisNovo as PopupAudioVisitante | null;
+
+    if (!audioEncontrado) return;
+
+    if (audioEncontrado.id !== ultimoAudioRecebido) {
+      setUltimoAudioRecebido(audioEncontrado.id);
+      setPopupAudioVisitante(audioEncontrado);
+      setMostrarPopupAudio(true);
+    }
+  }, [unidades, ultimoAudioRecebido]);
   const totalChamando = unidades.filter(
     (u) => u.chamada?.status === "Aguardando atendimento"
   ).length;
@@ -516,55 +565,40 @@ function prioridadeChamada(unidade: Unidade) {
           </section>
         )}
       </div>
-{mostrarPopupAudio && (
-  <div className="fixed inset-0 bg-black/80 z-[999] flex items-center justify-center p-6">
-    <div className="bg-cyan-700 border-2 border-cyan-300 rounded-3xl max-w-lg w-full p-8 text-center">
+      {mostrarPopupAudio && popupAudioVisitante && (
+        <div className="fixed inset-0 bg-black/80 z-[999] flex items-center justify-center p-6">
+          <div className="bg-cyan-700 border-2 border-cyan-300 rounded-3xl max-w-lg w-full p-8 text-center">
+            <div className="text-5xl mb-3">🎤</div>
 
-      <div className="text-5xl mb-3">
-        🎤
-      </div>
+            <h2 className="text-4xl font-black mb-5">NOVO ÁUDIO</h2>
 
-      <h2 className="text-4xl font-black mb-5">
-        NOVO ÁUDIO
-      </h2>
+            <div className="bg-cyan-600 rounded-2xl p-4 mb-6">
+              <p className="font-black text-xl mb-2">
+                Novo áudio enviado pelo visitante
+              </p>
 
-      <div className="bg-cyan-600 rounded-2xl p-4 mb-6">
+              <p className="text-sm font-bold mb-4 text-cyan-100">
+                {popupAudioVisitante.visitanteNome} •{" "}
+                {popupAudioVisitante.unidadeNome}
+              </p>
 
-        <p className="font-black text-xl mb-3">
-          Novo áudio enviado pelo visitante
-        </p>
+              <audio
+                controls
+                autoPlay
+                className="w-full"
+                src={popupAudioVisitante.audioBase64}
+              />
+            </div>
 
-        {(() => {
-          const ultimo = [...mensagensUnidadeAberta]
-            .reverse()
-            .find(
-              (m) =>
-                m.autor === "visitante" &&
-                m.tipo === "audio"
-            );
-
-          if (!ultimo?.audioBase64) return null;
-
-          return (
-            <audio
-              controls
-              className="w-full"
-              src={ultimo.audioBase64}
-            />
-          );
-        })()}
-      </div>
-
-      <button
-        onClick={() => setMostrarPopupAudio(false)}
-        className="w-full bg-white text-black py-4 rounded-2xl text-2xl font-black"
-      >
-        ENTENDI
-      </button>
-
-    </div>
-  </div>
-)}
+            <button
+              onClick={() => setMostrarPopupAudio(false)}
+              className="w-full bg-white text-black py-4 rounded-2xl text-2xl font-black"
+            >
+              ENTENDI
+            </button>
+          </div>
+        </div>
+      )}
       {unidadeAberta && (
         <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
           <div className="bg-slate-900 border border-slate-700 rounded-3xl w-full max-w-2xl p-6">
