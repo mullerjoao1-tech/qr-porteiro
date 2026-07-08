@@ -1,0 +1,11 @@
+export default function CadastrosPage() {
+  return (
+    <main className="min-h-screen bg-slate-950 text-white p-6">
+      <h1 className="text-3xl font-black mb-3">Cadastros</h1>
+
+      <p className="text-slate-400">
+        Módulo de cadastros em construção.
+      </p>
+    </main>
+  );
+}
