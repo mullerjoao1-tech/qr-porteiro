@@ -1,18 +1,18 @@
 "use client";
 
-type PopupMensagemProps = {
+type NotificacaoPopupProps = {
   popupTexto: string;
   popupTipo?: "mensagem" | "encerrado" | "audio";
   audioBase64?: string;
   onFechar: () => void | Promise<void>;
 };
 
-export default function PopupMensagem({
+export default function NotificacaoPopup({
   popupTexto,
   popupTipo = "mensagem",
   audioBase64 = "",
   onFechar,
-}: PopupMensagemProps) {
+}: NotificacaoPopupProps) {
   if (!popupTexto && !audioBase64) return null;
 
   const ehAudio = popupTipo === "audio" && audioBase64;

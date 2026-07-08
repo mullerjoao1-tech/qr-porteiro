@@ -259,6 +259,8 @@ export default function MoradorV2() {
       if (audioVisitanteAtual && ultimoAudioPopupRef.current !== audioVisitanteAtual) {
         ultimoAudioPopupRef.current = audioVisitanteAtual;
 
+        pararToqueContinuo();
+
         setAudioPopup({
           titulo: "🎙️ Novo áudio do visitante",
           audio: audioVisitanteAtual,
@@ -1018,14 +1020,21 @@ export default function MoradorV2() {
             <div className="bg-slate-800 rounded-2xl p-4 border border-blue-500/40">
               <audio
                 controls
+                autoPlay
                 className="w-full"
                 src={audioPopup.audio}
+                onLoadedMetadata={pararToqueContinuo}
+                onCanPlay={pararToqueContinuo}
                 onPlay={pararToqueContinuo}
+                onPlaying={pararToqueContinuo}
               />
             </div>
 
             <button
-              onClick={() => setAudioPopup(null)}
+              onClick={() => {
+                pararToqueContinuo();
+                setAudioPopup(null);
+              }}
               className="w-full mt-5 bg-blue-600 hover:bg-blue-500 text-white font-black py-4 rounded-2xl"
             >
               ENTENDI
