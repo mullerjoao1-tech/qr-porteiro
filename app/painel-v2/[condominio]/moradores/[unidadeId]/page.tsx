@@ -84,6 +84,83 @@ export default function PainelV2Central() {
   const audioChunksMoradorRef = useRef<Blob[]>([]);
 
   const cardRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+  const painelAudioInicializadoRef = useRef(false);
+  const audiosJaVistosRef = useRef<Set<string>>(new Set());
+
+  function encontrarAudioMaisNovo(listaUnidades: Unidade[]): PopupAudioVisitante | null {
+    let audioMaisNovo: PopupAudioVisitante | null = null;
+    let criadoEmMaisNovo = 0;
+
+    listaUnidades.forEach((unidade) => {
+      const chamada = unidade.chamada;
+
+      if (!chamada) return;
+
+      const mensagens = ordenarMensagens(chamada.mensagens);
+
+      mensagens.forEach((mensagem) => {
+        if (
+          mensagem.autor === "visitante" &&
+          mensagem.tipo === "audio" &&
+          mensagem.audioBase64 &&
+          mensagem.id
+        ) {
+          const criadoEmAudio = mensagem.criadoEm || 0;
+
+          if (criadoEmAudio >= criadoEmMaisNovo) {
+            criadoEmMaisNovo = criadoEmAudio;
+
+            audioMaisNovo = {
+              id: `${unidade.id}-${mensagem.id}`,
+              unidadeId: unidade.id,
+              unidadeNome: unidade.nome,
+              visitanteNome: chamada.nome || "Visitante",
+              audioBase64: mensagem.audioBase64,
+            };
+          }
+        }
+      });
+
+      if (chamada.audioBase64) {
+        const criadoEmChamada = new Date(chamada.criadoEm || 0).getTime();
+        const idAudioDireto = `${unidade.id}-audio-direto-${chamada.audioBase64.length}-${chamada.audioBase64.slice(-30)}`;
+
+        if (criadoEmChamada >= criadoEmMaisNovo) {
+          criadoEmMaisNovo = criadoEmChamada || Date.now();
+
+          audioMaisNovo = {
+            id: idAudioDireto,
+            unidadeId: unidade.id,
+            unidadeNome: unidade.nome,
+            visitanteNome: chamada.nome || "Visitante",
+            audioBase64: chamada.audioBase64,
+          };
+        }
+      }
+    });
+
+    return audioMaisNovo;
+  }
+
+  function verificarPopupAudio(listaUnidades: Unidade[]) {
+    const audioEncontrado = encontrarAudioMaisNovo(listaUnidades);
+
+    if (!audioEncontrado) return;
+
+    if (!painelAudioInicializadoRef.current) {
+      audiosJaVistosRef.current.add(audioEncontrado.id);
+      setUltimoAudioRecebido(audioEncontrado.id);
+      painelAudioInicializadoRef.current = true;
+      return;
+    }
+
+    if (audiosJaVistosRef.current.has(audioEncontrado.id)) return;
+
+    audiosJaVistosRef.current.add(audioEncontrado.id);
+    setUltimoAudioRecebido(audioEncontrado.id);
+    setPopupAudioVisitante(audioEncontrado);
+    setMostrarPopupAudio(true);
+  }
 
   useEffect(() => {
     const referencia = ref(db, "unidades-v2");
@@ -113,6 +190,7 @@ export default function PainelV2Central() {
 
       setUnidades(lista);
       setCarregando(false);
+      verificarPopupAudio(lista);
 
       const unidadeChamando = lista.find(
         (u) => u.chamada?.status === "Aguardando atendimento"
@@ -164,61 +242,8 @@ export default function PainelV2Central() {
     return ordenarMensagens(unidadeAberta?.chamada?.mensagens);
   }, [unidadeAberta?.chamada?.mensagens]);
   useEffect(() => {
-    let audioMaisNovo: PopupAudioVisitante | null = null;
-    let criadoEmMaisNovo = 0;
-
-    unidades.forEach((unidade) => {
-      const chamada = unidade.chamada;
-
-      if (!chamada) return;
-
-      const criadoEmChamada = new Date(chamada.criadoEm || 0).getTime();
-
-      if (chamada.audioBase64 && criadoEmChamada >= criadoEmMaisNovo) {
-        criadoEmMaisNovo = criadoEmChamada || Date.now();
-
-        audioMaisNovo = {
-          id: `${unidade.id}-audio-direto-${chamada.audioBase64.length}-${chamada.audioBase64.slice(-20)}`,
-          unidadeId: unidade.id,
-          unidadeNome: unidade.nome,
-          visitanteNome: chamada.nome || "Visitante",
-          audioBase64: chamada.audioBase64,
-        };
-      }
-
-      const mensagens = ordenarMensagens(chamada.mensagens);
-
-      mensagens.forEach((mensagem) => {
-        if (
-          mensagem.autor === "visitante" &&
-          mensagem.tipo === "audio" &&
-          mensagem.audioBase64 &&
-          mensagem.id &&
-          mensagem.criadoEm >= criadoEmMaisNovo
-        ) {
-          criadoEmMaisNovo = mensagem.criadoEm;
-
-          audioMaisNovo = {
-            id: `${unidade.id}-${mensagem.id}`,
-            unidadeId: unidade.id,
-            unidadeNome: unidade.nome,
-            visitanteNome: chamada.nome || "Visitante",
-            audioBase64: mensagem.audioBase64,
-          };
-        }
-      });
-    });
-
-    const audioEncontrado = audioMaisNovo as PopupAudioVisitante | null;
-
-    if (!audioEncontrado) return;
-
-    if (audioEncontrado.id !== ultimoAudioRecebido) {
-      setUltimoAudioRecebido(audioEncontrado.id);
-      setPopupAudioVisitante(audioEncontrado);
-      setMostrarPopupAudio(true);
-    }
-  }, [unidades, ultimoAudioRecebido]);
+    verificarPopupAudio(unidades);
+  }, [unidades]);
   const totalChamando = unidades.filter(
     (u) => u.chamada?.status === "Aguardando atendimento"
   ).length;
@@ -566,7 +591,7 @@ function prioridadeChamada(unidade: Unidade) {
         )}
       </div>
       {mostrarPopupAudio && popupAudioVisitante && (
-        <div className="fixed inset-0 bg-black/80 z-[999] flex items-center justify-center p-6">
+        <div className="fixed inset-0 bg-black/80 z-[9999] flex items-center justify-center p-6">
           <div className="bg-cyan-700 border-2 border-cyan-300 rounded-3xl max-w-lg w-full p-8 text-center">
             <div className="text-5xl mb-3">🎤</div>
 
@@ -584,10 +609,13 @@ function prioridadeChamada(unidade: Unidade) {
 
               <audio
                 controls
-                autoPlay
                 className="w-full"
                 src={popupAudioVisitante.audioBase64}
               />
+
+              <p className="text-xs font-bold mt-3 text-cyan-100">
+                No celular, toque no play para ouvir.
+              </p>
             </div>
 
             <button
