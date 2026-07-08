@@ -1020,7 +1020,6 @@ export default function MoradorV2() {
             <div className="bg-slate-800 rounded-2xl p-4 border border-blue-500/40">
               <audio
                 controls
-                autoPlay
                 className="w-full"
                 src={audioPopup.audio}
                 onLoadedMetadata={pararToqueContinuo}
