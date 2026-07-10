@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { onValue, ref } from "firebase/database";
+import { ref, onValue } from "firebase/database";
 import { db } from "../../../services/firebase";
 import type { Unidade } from "../types";
 
-export function useUnidades(condominioId?: string) {
+export function useUnidades() {
   const [unidades, setUnidades] = useState<Unidade[]>([]);
   const [carregando, setCarregando] = useState(true);
 
@@ -30,39 +30,21 @@ export function useUnidades(condominioId?: string) {
           return;
         }
 
-        const listaCompleta = Object.entries(dados).map(
+        const lista = Object.entries(dados).map(
           ([id, valor]: [string, any]) => ({
             id,
             ...valor,
           })
         ) as Unidade[];
 
-        /*
-         * Quando as unidades já possuem condominioId/condominio,
-         * mostra apenas as unidades do condomínio aberto.
-         *
-         * O fallback para a lista completa mantém compatibilidade
-         * com cadastros antigos que ainda não possuem esse campo.
-         */
-        const existemUnidadesComCondominio = listaCompleta.some(
-          (unidade: any) =>
-            Boolean(unidade.condominioId) || Boolean(unidade.condominio)
-        );
-
-        const lista =
-          condominioId && existemUnidadesComCondominio
-            ? listaCompleta.filter((unidade: any) => {
-                const idDoCondominio =
-                  unidade.condominioId || unidade.condominio || "";
-
-                return String(idDoCondominio) === String(condominioId);
-              })
-            : listaCompleta;
-
         lista.sort((a, b) =>
-          String(a.nome || a.id).localeCompare(String(b.nome || b.id), "pt-BR", {
-            numeric: true,
-          })
+          String(a.nome || a.id).localeCompare(
+            String(b.nome || b.id),
+            "pt-BR",
+            {
+              numeric: true,
+            }
+          )
         );
 
         setUnidades(lista);
@@ -79,10 +61,6 @@ export function useUnidades(condominioId?: string) {
         });
       },
       (erro) => {
-        /*
-         * Antes, qualquer erro do Firebase deixava a tela presa para sempre
-         * em "Carregando unidades...".
-         */
         console.error("Erro ao carregar unidades-v2:", erro);
         setUnidades([]);
         setCarregando(false);
@@ -90,7 +68,7 @@ export function useUnidades(condominioId?: string) {
     );
 
     return () => pararDeOuvir();
-  }, [condominioId]);
+  }, []);
 
   const blocos = useMemo(() => {
     const lista = unidades
@@ -98,11 +76,15 @@ export function useUnidades(condominioId?: string) {
       .filter((valor, index, array) => array.indexOf(valor) === index);
 
     return lista.sort((a, b) =>
-      String(a).localeCompare(String(b), "pt-BR", { numeric: true })
+      String(a).localeCompare(String(b), "pt-BR", {
+        numeric: true,
+      })
     );
   }, [unidades]);
 
-  const temBlocos = blocos.length > 1 || blocos[0] !== "Único";
+  const temBlocos =
+    blocos.length > 0 &&
+    (blocos.length > 1 || blocos[0] !== "Único");
 
   const unidadesDoBloco = useMemo(() => {
     if (!temBlocos) return unidades;

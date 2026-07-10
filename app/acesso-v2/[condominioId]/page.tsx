@@ -49,7 +49,7 @@ export default function AcessoV2Condominio() {
     unidadesFiltradas,
     unidadeAtualSelecionada,
     voltarBlocoBase,
-  } = useUnidades(condominioId);
+  } = useUnidades();
 
   const [nome, setNome] = useState("");
   const [motivo, setMotivo] = useState("");
