@@ -32,7 +32,9 @@ import { blobParaBase64 } from "../../components/acesso-v2/utils/audioUtils";
 
 export default function AcessoV2Condominio() {
   const params = useParams();
-  const condominioId = String(params.condominioId || "condominio-teste");
+  const condominioId = String(
+    params.condominioId || params.condominio || "condominio-teste"
+  );
 
   const {
     carregando,
@@ -47,7 +49,7 @@ export default function AcessoV2Condominio() {
     unidadesFiltradas,
     unidadeAtualSelecionada,
     voltarBlocoBase,
-  } = useUnidades();
+  } = useUnidades(condominioId);
 
   const [nome, setNome] = useState("");
   const [motivo, setMotivo] = useState("");

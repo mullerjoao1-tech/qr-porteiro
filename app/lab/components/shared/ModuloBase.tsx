@@ -73,21 +73,21 @@ export default function ModuloBase({
       type="button"
       onClick={onClick}
       disabled={desativado}
-      className={`group relative flex min-h-[160px] w-full flex-col rounded-3xl border p-4 text-left shadow-sm transition duration-200 ${
+      className={`group relative flex min-h-[150px] w-full flex-col rounded-3xl border p-4 text-left shadow-sm transition duration-200 ${
         destaque
           ? "border-slate-950 bg-slate-950 text-white"
-          : "border-slate-300 bg-white text-slate-950"
+          : "border-slate-300 bg-white text-slate-950 hover:border-blue-300"
       } ${
         desativado
           ? "cursor-not-allowed opacity-50"
-          : "hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-md active:scale-[0.98]"
+          : "hover:-translate-y-0.5 hover:shadow-md active:scale-[0.98]"
       }`}
     >
       <div className="flex items-start justify-between gap-3">
-        <div className="flex min-w-0 items-center gap-3">
+        <div className="flex min-w-0 items-center gap-2">
           {icone && (
             <span
-              className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-xl ${
+              className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl text-lg ${
                 destaque ? "bg-white/10" : "bg-slate-100"
               }`}
             >
@@ -117,7 +117,7 @@ export default function ModuloBase({
         )}
       </div>
 
-      <div className="mt-4 flex items-end gap-1.5">
+      <div className="mt-3 flex items-end gap-1.5">
         <strong className="text-3xl font-black leading-none tracking-tight">
           {valor}
         </strong>
@@ -154,7 +154,7 @@ export default function ModuloBase({
       )}
 
       <p
-        className={`mt-auto pt-3 text-sm font-black transition group-hover:translate-x-0.5 ${
+        className={`mt-auto pt-3 text-sm font-black ${
           destaque ? "text-white" : "text-blue-700"
         }`}
       >
