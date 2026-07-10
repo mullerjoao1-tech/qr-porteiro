@@ -240,12 +240,25 @@ export default function AcessoV2Condominio() {
 
       setAudioBlob(null);
       setMensagem("✅ Áudio enviado na conversa.");
-    } catch (erro) {
-      console.error("Erro ao enviar áudio na conversa:", erro);
-      alert("Erro ao enviar áudio. Tente novamente.");
-    } finally {
-      setEnviando(false);
-    }
+    } catch (erro: any) {
+  console.error("Erro completo ao chamar unidade:", erro);
+
+  const codigoErro =
+    erro?.code ||
+    erro?.name ||
+    "erro-desconhecido";
+
+  const mensagemErro =
+    erro?.message ||
+    String(erro);
+
+  alert(
+    `Erro ao enviar chamada.\n\nCódigo: ${codigoErro}\nMensagem: ${mensagemErro}`
+  );
+
+  chamadaAtivaRef.current = false;
+  chamadaFoiEnviadaRef.current = false;
+}
   }
 
   async function chamarUnidade(audioParaEnviar?: Blob) {
