@@ -4,7 +4,7 @@ import { getMessaging, isSupported } from "firebase/messaging";
 import { getStorage } from "firebase/storage";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBAdV3dc8bN938ivb8YAwbQZ3vw6a24Bh0",
+  apiKey: "AIzaSyBAdV3dc8bN938ivb8YAwhQZ3vw6a24Bh0",
   authDomain: "qr-porteiro-app.firebaseapp.com",
   databaseURL: "https://qr-porteiro-app-default-rtdb.firebaseio.com",
   projectId: "qr-porteiro-app",

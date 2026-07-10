@@ -1,97 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { onValue, ref } from "firebase/database";
+import { ref, onValue } from "firebase/database";
 import { db } from "../../../services/firebase";
 import type { Unidade } from "../types";
-
-const apartamentosTulipas = [
-  "11",
-  "12",
-  "13",
-  "14",
-  "21",
-  "22",
-  "23",
-  "24",
-  "31",
-  "32",
-  "33",
-  "34",
-  "41",
-  "42",
-  "43",
-  "44",
-];
-
-function criarUnidadesTulipas(): Unidade[] {
-  const bloco1 = apartamentosTulipas.map((apartamento) => ({
-    id: `bloco-1-ap-${apartamento}`,
-    nome: `Apto ${apartamento}`,
-    tipo: "Apartamento",
-    bloco: "Bloco 1",
-    condominioId: "cnd-tulipas",
-  }));
-
-  const bloco2 = apartamentosTulipas.map((apartamento) => ({
-    id: `bloco-2-ap-${apartamento}`,
-    nome: `Apto ${apartamento}`,
-    tipo: "Apartamento",
-    bloco: "Bloco 2",
-    condominioId: "cnd-tulipas",
-  }));
-
-  return [...bloco1, ...bloco2] as Unidade[];
-}
-
-function descobrirApartamento(id: string, valor: any): string {
-  const texto = `${id} ${valor?.nome || ""}`.toLowerCase();
-
-  const peloId = texto.match(/bloco-[12]-ap-(\d{2})/)?.[1];
-
-  if (peloId) return peloId;
-
-  const peloNome = texto.match(/(?:ap(?:to)?\s*)?([1-4][1-4])\b/)?.[1];
-
-  return peloNome || "";
-}
-
-function descobrirBloco(id: string, valor: any): "Bloco 1" | "Bloco 2" | "Único" {
-  const texto = `${id} ${valor?.bloco || ""} ${valor?.nome || ""}`
-    .toLowerCase()
-    .trim();
-
-  if (
-    texto.includes("bloco-1") ||
-    texto.includes("bloco 1") ||
-    texto.includes("bloco a")
-  ) {
-    return "Bloco 1";
-  }
-
-  if (
-    texto.includes("bloco-2") ||
-    texto.includes("bloco 2") ||
-    texto.includes("bloco b")
-  ) {
-    return "Bloco 2";
-  }
-
-  return "Único";
-}
-
-function normalizarUnidade(id: string, valor: any): Unidade {
-  const apartamento = descobrirApartamento(id, valor);
-  const bloco = descobrirBloco(id, valor);
-
-  return {
-    id,
-    ...valor,
-    nome: apartamento ? `Apto ${apartamento}` : valor?.nome || id,
-    tipo: valor?.tipo || "Apartamento",
-    bloco,
-  } as Unidade;
-}
 
 export function useUnidades() {
   const [unidades, setUnidades] = useState<Unidade[]>([]);
@@ -103,86 +15,58 @@ export function useUnidades() {
     useState<Unidade | null>(null);
 
   useEffect(() => {
-    setCarregando(true);
-
     const referencia = ref(db, "unidades-v2");
 
-    const pararDeOuvir = onValue(
-      referencia,
-      (snapshot) => {
-        const dados = snapshot.val();
+    const pararDeOuvir = onValue(referencia, (snapshot) => {
+      const dados = snapshot.val();
 
-        const unidadesReais = dados
-          ? (Object.entries(dados).map(([id, valor]) =>
-              normalizarUnidade(id, valor)
-            ) as Unidade[])
-          : [];
+      if (!dados) {
+        setUnidades([]);
+        setCarregando(false);
+        return;
+      }
 
-        const unidadesPadrao = criarUnidadesTulipas();
+      const lista = Object.entries(dados).map(([id, valor]: any) => ({
+        id,
+        ...valor,
+      })) as Unidade[];
 
-        const mapa = new Map<string, Unidade>();
+      lista.sort((a, b) => a.nome.localeCompare(b.nome));
 
-        unidadesPadrao.forEach((unidade) => {
-          mapa.set(unidade.id, unidade);
-        });
+      setUnidades(lista);
+      setCarregando(false);
 
-        unidadesReais.forEach((unidade) => {
-          mapa.set(unidade.id, {
-            ...(mapa.get(unidade.id) || {}),
-            ...unidade,
-          });
-        });
+      setUnidadeSelecionada((unidadeAtual) => {
+        if (!unidadeAtual) return null;
 
-        const lista = Array.from(mapa.values()).filter(
-          (unidade) =>
-            unidade.bloco === "Bloco 1" || unidade.bloco === "Bloco 2"
+        const unidadeAtualizada = lista.find(
+          (unidade) => unidade.id === unidadeAtual.id
         );
 
-        lista.sort((a, b) => {
-          const ordemA = a.bloco === "Bloco 1" ? 1 : 2;
-          const ordemB = b.bloco === "Bloco 1" ? 1 : 2;
-
-          if (ordemA !== ordemB) return ordemA - ordemB;
-
-          return String(a.nome || a.id).localeCompare(
-            String(b.nome || b.id),
-            "pt-BR",
-            { numeric: true }
-          );
-        });
-
-        setUnidades(lista);
-        setCarregando(false);
-
-        setUnidadeSelecionada((unidadeAtual) => {
-          if (!unidadeAtual) return null;
-
-          return (
-            lista.find((unidade) => unidade.id === unidadeAtual.id) || null
-          );
-        });
-      },
-      (erro) => {
-        console.error("Erro ao carregar unidades-v2:", erro);
-        setUnidades(criarUnidadesTulipas());
-        setCarregando(false);
-      }
-    );
+        return unidadeAtualizada || unidadeAtual;
+      });
+    });
 
     return () => pararDeOuvir();
   }, []);
 
-  const blocos = useMemo(() => ["Bloco 1", "Bloco 2"], []);
+  const blocos = useMemo(() => {
+    const lista = unidades
+      .map((unidade) => unidade.bloco || "Único")
+      .filter((valor, index, array) => array.indexOf(valor) === index);
 
-  const temBlocos = true;
+    return lista.sort();
+  }, [unidades]);
+
+  const temBlocos = blocos.length > 1 || blocos[0] !== "Único";
 
   const unidadesDoBloco = useMemo(() => {
-    if (!blocoSelecionado) return [];
+    if (!temBlocos) return unidades;
 
     return unidades.filter(
-      (unidade) => unidade.bloco === blocoSelecionado
+      (unidade) => (unidade.bloco || "Único") === blocoSelecionado
     );
-  }, [unidades, blocoSelecionado]);
+  }, [unidades, blocoSelecionado, temBlocos]);
 
   const unidadesFiltradas = useMemo(() => {
     const texto = busca.toLowerCase().trim();
@@ -190,7 +74,7 @@ export function useUnidades() {
     if (!texto) return unidadesDoBloco;
 
     return unidadesDoBloco.filter((unidade) =>
-      `${unidade.nome || ""} ${unidade.tipo || ""} ${unidade.id}`
+      `${unidade.nome} ${unidade.tipo || ""} ${unidade.id}`
         .toLowerCase()
         .includes(texto)
     );

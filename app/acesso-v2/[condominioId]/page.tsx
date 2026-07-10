@@ -2,54 +2,167 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "next/navigation";
-import { ref, onValue, update, remove } from "firebase/database";
+import {
+  ref,
+  onValue,
+  update,
+  remove,
+  set,
+} from "firebase/database";
 import { db } from "../../services/firebase";
 
-import { useUnidades } from "../../components/acesso-v2/hooks/useUnidades";
 import { useGravadorAudio } from "../../components/acesso-v2/hooks/useGravadorAudio";
 
-import NotificacaoPopup from "../../components/acesso-v2/components/NotificacaoPopup";
 import Conversa from "../../components/acesso-v2/components/Conversa";
 import GravadorAudio from "../../components/acesso-v2/components/GravadorAudio";
 
-import {
-  registrarMensagemConversa,
-  cancelarChamadaNoFirebase,
-  criarChamadaNoFirebase,
-  enviarPushChamada,
-} from "../../components/acesso-v2/services/chamadaService";
 
-import {
-  TEMPO_AGUARDANDO_MS,
-  TEMPO_EM_ATENDIMENTO_MS,
-  chamadaEstaAtiva,
-  textoStatusChamada,
-  pegarTempoBase,
-  ordenarMensagens,
-} from "../../components/acesso-v2/utils/chamadaUtils";
+type MensagemConversa = {
+  id?: string;
+  autor: "visitante" | "morador";
+  tipo: "texto" | "audio";
+  texto?: string;
+  audioBase64?: string;
+  criadoEm: number;
+};
 
-import { blobParaBase64 } from "../../components/acesso-v2/utils/audioUtils";
+type Chamada = {
+  nome?: string;
+  motivo?: string;
+  status?: string;
+  criadoEm?: string | number;
+  atendidoEm?: string | number;
+  ultimaAtividade?: number;
+  notificar?: boolean;
+  mensagemResponsavel?: string;
+  mensagemRapida?: string;
+  respostaRapida?: string;
+  resposta?: string;
+  mensagemMorador?: string;
+  enviadoEm?: number;
+  visualizadoPeloVisitante?: boolean;
+  mensagens?: Record<string, MensagemConversa>;
+  audioBase64?: string;
+};
+
+type UnidadeTulipas = {
+  id: string;
+  nome: string;
+  tipo: string;
+  bloco: "Bloco 1" | "Bloco 2";
+  chamada?: Chamada | null;
+};
+
+const APARTAMENTOS_TULIPAS = [
+  "11", "12", "13", "14",
+  "21", "22", "23", "24",
+  "31", "32", "33", "34",
+  "41", "42", "43", "44",
+];
+
+const UNIDADES_TULIPAS: UnidadeTulipas[] = [
+  ...APARTAMENTOS_TULIPAS.map((apartamento) => ({
+    id: `bloco-1-ap-${apartamento}`,
+    nome: `Apto ${apartamento}`,
+    tipo: "Apartamento",
+    bloco: "Bloco 1" as const,
+  })),
+  ...APARTAMENTOS_TULIPAS.map((apartamento) => ({
+    id: `bloco-2-ap-${apartamento}`,
+    nome: `Apto ${apartamento}`,
+    tipo: "Apartamento",
+    bloco: "Bloco 2" as const,
+  })),
+];
+
+const TEMPO_AGUARDANDO_MS = 5 * 60 * 1000;
+const TEMPO_EM_ATENDIMENTO_MS = 3 * 60 * 1000;
+
+function chamadaEstaAtiva(chamada?: Chamada | null) {
+  return (
+    chamada?.status === "Aguardando atendimento" ||
+    chamada?.status === "Em atendimento"
+  );
+}
+
+function textoStatusChamada(chamada?: Chamada | null) {
+  if (!chamadaEstaAtiva(chamada)) return "Disponível";
+  return chamada?.status === "Em atendimento"
+    ? "Em atendimento"
+    : "Chamando";
+}
+
+function pegarTempoBase(chamada: Chamada) {
+  const valor =
+    chamada.status === "Em atendimento"
+      ? chamada.atendidoEm || chamada.criadoEm
+      : chamada.criadoEm;
+
+  if (!valor) return Date.now();
+  if (typeof valor === "number") return valor;
+
+  const convertido = new Date(valor).getTime();
+  return Number.isNaN(convertido) ? Date.now() : convertido;
+}
+
+function ordenarMensagens(
+  mensagens?: Record<string, MensagemConversa>
+): MensagemConversa[] {
+  if (!mensagens) return [];
+
+  return Object.entries(mensagens)
+    .map(([id, mensagem]) => ({ id, ...mensagem }))
+    .sort((a, b) => (a.criadoEm || 0) - (b.criadoEm || 0));
+}
+
+function blobParaBase64(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const leitor = new FileReader();
+    leitor.onloadend = () => resolve(leitor.result as string);
+    leitor.onerror = reject;
+    leitor.readAsDataURL(blob);
+  });
+}
 
 export default function AcessoV2Condominio() {
   const params = useParams();
   const condominioId = String(
-    params.condominioId || params.condominio || "condominio-teste"
+    params?.condominioId || params?.condominio || "cnd-tulipas"
   );
 
-  const {
-    carregando,
-    busca,
-    setBusca,
-    blocoSelecionado,
-    setBlocoSelecionado,
-    unidadeSelecionada,
-    setUnidadeSelecionada,
-    blocos,
-    temBlocos,
-    unidadesFiltradas,
-    unidadeAtualSelecionada,
-    voltarBlocoBase,
-  } = useUnidades();
+  const [blocoSelecionado, setBlocoSelecionado] = useState("");
+  const [unidadeSelecionada, setUnidadeSelecionada] =
+    useState<UnidadeTulipas | null>(null);
+  const [chamadaAtual, setChamadaAtual] = useState<Chamada | null>(null);
+  const [busca, setBusca] = useState("");
+
+  const carregando = false;
+  const blocos = ["Bloco 1", "Bloco 2"];
+  const temBlocos = true;
+
+  const unidadesFiltradas = useMemo(() => {
+    const texto = busca.trim().toLowerCase();
+
+    return UNIDADES_TULIPAS.filter(
+      (unidade) =>
+        unidade.bloco === blocoSelecionado &&
+        (!texto ||
+          `${unidade.nome} ${unidade.tipo} ${unidade.id}`
+            .toLowerCase()
+            .includes(texto))
+    );
+  }, [blocoSelecionado, busca]);
+
+  const unidadeAtualSelecionada = unidadeSelecionada
+    ? { ...unidadeSelecionada, chamada: chamadaAtual }
+    : null;
+
+  function voltarBlocoBase() {
+    setBlocoSelecionado("");
+    setBusca("");
+    setUnidadeSelecionada(null);
+    setChamadaAtual(null);
+  }
 
   const [nome, setNome] = useState("");
   const [motivo, setMotivo] = useState("");
@@ -58,18 +171,16 @@ export default function AcessoV2Condominio() {
   const [enviando, setEnviando] = useState(false);
   const [mensagem, setMensagem] = useState("");
 
-  const [popupTexto, setPopupTexto] = useState("");
-  const [popupTipo, setPopupTipo] = useState<"mensagem" | "encerrado" | "audio">(
-    "mensagem"
-  );
-  const [popupAudioBase64, setPopupAudioBase64] = useState("");
+ const [popupTexto, setPopupTexto] = useState("");
+const [popupTipo, setPopupTipo] = useState<"mensagem" | "encerrado" | "audio">(
+  "mensagem"
+);
+const [popupAudioBase64, setPopupAudioBase64] = useState("");
 
   const chamadaAtivaRef = useRef(false);
   const chamadaFoiEnviadaRef = useRef(false);
-  const ultimoPopupRef = useRef("");
+  const ultimaMensagemPopupRef = useRef("");
   const timerAutomaticoRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const ultimoAudioPopupRef = useRef("");
-
   const {
     gravandoAudio,
     audioBlob,
@@ -95,9 +206,12 @@ export default function AcessoV2Condominio() {
       }
     };
 
-    const pararDeOuvir = onValue(referencia, (snapshot) => {
-      const chamada = snapshot.val();
+    const pararDeOuvir = onValue(
+      referencia,
+      (snapshot) => {
+      const chamada = snapshot.val() as Chamada | null;
 
+      setChamadaAtual(chamada);
       limparTimerAutomatico();
 
       if (!chamada) {
@@ -108,7 +222,7 @@ export default function AcessoV2Condominio() {
 
         chamadaAtivaRef.current = false;
         chamadaFoiEnviadaRef.current = false;
-        ultimoPopupRef.current = "";
+        ultimaMensagemPopupRef.current = "";
         setMensagem("");
         return;
       }
@@ -155,22 +269,11 @@ export default function AcessoV2Condominio() {
         }, tempoRestante);
       }
 
-      const textoResposta =
-        chamada.mensagemRapida ||
-        chamada.respostaRapida ||
-        chamada.mensagemResponsavel ||
-        chamada.resposta ||
-        chamada.mensagemMorador ||
-        "";
-
-      const idMensagem = `${textoResposta}-${chamada.enviadoEm || ""}`;
-
-      if (textoResposta && idMensagem !== ultimoPopupRef.current) {
-        ultimoPopupRef.current = idMensagem;
-        setPopupTipo("mensagem");
-        setPopupTexto(textoResposta);
+      },
+      (erro) => {
+        console.error("Erro ao acompanhar chamada:", erro);
       }
-    });
+    );
 
     return () => {
       limparTimerAutomatico();
@@ -178,39 +281,46 @@ export default function AcessoV2Condominio() {
     };
   }, [unidadeSelecionada]);
 
-  const chamadaSelecionadaAtiva = chamadaEstaAtiva(
-    unidadeAtualSelecionada?.chamada
-  );
+  const chamadaSelecionadaAtiva = chamadaEstaAtiva(chamadaAtual);
 
   const mensagensConversa = useMemo(() => {
-    return ordenarMensagens(unidadeAtualSelecionada?.chamada?.mensagens);
-  }, [unidadeAtualSelecionada?.chamada?.mensagens]);
-
-  useEffect(() => {
+    return ordenarMensagens(chamadaAtual?.mensagens);
+  }, [chamadaAtual?.mensagens]);
+useEffect(() => {
+  if (!chamadaFoiEnviadaRef.current) return;
   if (!mensagensConversa || mensagensConversa.length === 0) return;
 
-  const ultimoAudioMorador = [...mensagensConversa]
+  const ultimaMensagemMorador = [...mensagensConversa]
     .reverse()
-    .find(
-      (mensagem) =>
-        mensagem.autor === "morador" &&
-        mensagem.tipo === "audio" &&
-        mensagem.audioBase64
-    );
+    .find((mensagem) => mensagem.autor === "morador");
 
-  if (!ultimoAudioMorador) return;
+  if (!ultimaMensagemMorador) return;
 
-  const idAudio = `${ultimoAudioMorador.id || ""}-${ultimoAudioMorador.criadoEm || ""}`;
+  const idMensagem = `${ultimaMensagemMorador.id || ""}-${ultimaMensagemMorador.criadoEm || ""}`;
 
-  if (idAudio === ultimoAudioPopupRef.current) return;
+  if (idMensagem === ultimaMensagemPopupRef.current) return;
 
-  ultimoAudioPopupRef.current = idAudio;
+  ultimaMensagemPopupRef.current = idMensagem;
 
-  setPopupTipo("audio");
-  setPopupTexto("O responsável enviou uma mensagem de voz.");
-  setPopupAudioBase64(ultimoAudioMorador.audioBase64 || "");
-  }, [mensagensConversa]);
+  if (
+    ultimaMensagemMorador.tipo === "audio" &&
+    ultimaMensagemMorador.audioBase64
+  ) {
+    setPopupTipo("audio");
+    setPopupTexto("O responsável enviou uma mensagem de voz.");
+    setPopupAudioBase64(ultimaMensagemMorador.audioBase64);
+    return;
+  }
 
+  if (
+    ultimaMensagemMorador.tipo === "texto" &&
+    ultimaMensagemMorador.texto
+  ) {
+    setPopupTipo("mensagem");
+    setPopupTexto(ultimaMensagemMorador.texto);
+    setPopupAudioBase64("");
+  }
+}, [mensagensConversa]);
   const precisaNome = motivo === "Visitante";
   const precisaDescricao = motivo === "Outros";
 
@@ -232,33 +342,34 @@ export default function AcessoV2Condominio() {
 
       const audioBase64 = await blobParaBase64(blob);
 
-      await registrarMensagemConversa(unidadeAtual.id, {
-        autor: "visitante",
-        tipo: "audio",
-        audioBase64,
+      const idMensagem = String(Date.now());
+
+      await set(
+        ref(
+          db,
+          `unidades-v2/${unidadeAtual.id}/chamada/mensagens/${idMensagem}`
+        ),
+        {
+          autor: "visitante",
+          tipo: "audio",
+          audioBase64,
+          criadoEm: Date.now(),
+        }
+      );
+
+      await update(ref(db, `unidades-v2/${unidadeAtual.id}/chamada`), {
+        ultimaAtividade: Date.now(),
+        enviadoEm: Date.now(),
       });
 
       setAudioBlob(null);
       setMensagem("✅ Áudio enviado na conversa.");
-    } catch (erro: any) {
-  console.error("Erro completo ao chamar unidade:", erro);
-
-  const codigoErro =
-    erro?.code ||
-    erro?.name ||
-    "erro-desconhecido";
-
-  const mensagemErro =
-    erro?.message ||
-    String(erro);
-
-  alert(
-    `Erro ao enviar chamada.\n\nCódigo: ${codigoErro}\nMensagem: ${mensagemErro}`
-  );
-
-  chamadaAtivaRef.current = false;
-  chamadaFoiEnviadaRef.current = false;
-}
+    } catch (erro) {
+      console.error("Erro ao enviar áudio na conversa:", erro);
+      alert("Erro ao enviar áudio. Tente novamente.");
+    } finally {
+      setEnviando(false);
+    }
   }
 
   async function chamarUnidade(audioParaEnviar?: Blob) {
@@ -318,11 +429,12 @@ export default function AcessoV2Condominio() {
       setEnviando(true);
       setMensagem("");
       setPopupTexto("");
-      ultimoPopupRef.current = "";
+      setPopupAudioBase64("");
+      ultimaMensagemPopupRef.current = "";
       chamadaFoiEnviadaRef.current = true;
       chamadaAtivaRef.current = true;
 
-      await criarChamadaNoFirebase(unidadeAtual.id, {
+      await set(ref(db, `unidades-v2/${unidadeAtual.id}/chamada`), {
         nome: nomeFinal,
         motivo: motivoFinal,
         audioBase64,
@@ -352,9 +464,29 @@ export default function AcessoV2Condominio() {
         visualizadoPeloVisitante: false,
       });
 
-      const dadosPush = await enviarPushChamada(unidadeAtual.id);
+      try {
+        const respostaPush = await fetch("/api/enviar-notificacao-v2", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            unidadeId: unidadeAtual.id,
+          }),
+        });
 
-      console.log("RESPOSTA PUSH V2:", dadosPush);
+        const dadosPush = await respostaPush.json().catch(() => null);
+
+        console.log("RESPOSTA PUSH V2:", {
+          status: respostaPush.status,
+          dados: dadosPush,
+        });
+      } catch (erroPush) {
+        console.error(
+          "A chamada foi criada, mas o push falhou:",
+          erroPush
+        );
+      }
 
       setAudioBlob(null);
 
@@ -363,9 +495,16 @@ export default function AcessoV2Condominio() {
           ? `✅ Áudio enviado e chamada feita para ${unidadeAtual.nome}. Aguarde o atendimento.`
           : `✅ Chamada enviada para ${unidadeAtual.nome}. Aguarde o atendimento.`
       );
-    } catch (erro) {
-      console.error("Erro ao chamar unidade:", erro);
-      alert("Erro ao enviar chamada. Tente novamente.");
+    } catch (erro: any) {
+      console.error("Erro completo ao chamar unidade:", erro);
+
+      const codigo = erro?.code || erro?.name || "erro-desconhecido";
+      const texto = erro?.message || String(erro);
+
+      alert(
+        `Erro ao enviar chamada.\n\nCódigo: ${codigo}\nMensagem: ${texto}`
+      );
+
       chamadaAtivaRef.current = false;
       chamadaFoiEnviadaRef.current = false;
     } finally {
@@ -393,11 +532,17 @@ export default function AcessoV2Condominio() {
     if (!unidadeAtual) return;
 
     try {
-      await cancelarChamadaNoFirebase(unidadeAtual.id);
+      await update(ref(db, `unidades-v2/${unidadeAtual.id}/chamada`), {
+        status: "Cancelado pelo visitante",
+        notificar: false,
+        canceladoEm: Date.now(),
+      });
+
+      await remove(ref(db, `unidades-v2/${unidadeAtual.id}/chamada`));
+      voltarBlocoBase();
       setMensagem("");
       setPopupTexto("");
       setPopupAudioBase64("");
-      setUnidadeSelecionada(null);
       setNome("");
       setMotivo("");
       setOutroMotivo("");
@@ -405,7 +550,7 @@ export default function AcessoV2Condominio() {
 
       chamadaAtivaRef.current = false;
       chamadaFoiEnviadaRef.current = false;
-      ultimoPopupRef.current = "";
+      ultimaMensagemPopupRef.current = "";
     } catch (erro) {
       console.error("Erro ao cancelar:", erro);
     }
@@ -420,7 +565,7 @@ export default function AcessoV2Condominio() {
     setPopupTexto("");
     setPopupAudioBase64("");
     setAudioBlob(null);
-    ultimoPopupRef.current = "";
+    ultimaMensagemPopupRef.current = "";
   }
 
   function voltarBloco() {
@@ -434,31 +579,93 @@ export default function AcessoV2Condominio() {
     setAudioBlob(null);
     chamadaAtivaRef.current = false;
     chamadaFoiEnviadaRef.current = false;
-    ultimoPopupRef.current = "";
+    ultimaMensagemPopupRef.current = "";
   }
 
   return (
     <main className="min-h-screen bg-slate-950 text-white p-4 flex justify-center">
-      <NotificacaoPopup
-        popupTexto={popupTexto}
-        popupTipo={popupTipo}
-        audioBase64={popupAudioBase64}
-        onFechar={async () => {
-          
-          if (unidadeAtualSelecionada) {
-            await update(
-              ref(db, `unidades-v2/${unidadeAtualSelecionada.id}/chamada`),
-              {
-                visualizadoPeloVisitante: true,
-                ultimaAtividade: Date.now(),
-              }
-            );
-          }
+      {popupTexto && (
+        <div className="fixed inset-0 z-[999] flex items-center justify-center bg-black/90 p-4">
+          <div
+            className={`w-full max-w-md rounded-3xl border-4 bg-slate-900 p-5 text-center shadow-2xl ${
+              popupTipo === "encerrado"
+                ? "border-red-500"
+                : popupTipo === "audio"
+                ? "border-blue-400"
+                : "border-green-400"
+            }`}
+          >
+            <p className="mb-3 text-6xl">
+              {popupTipo === "encerrado"
+                ? "✅"
+                : popupTipo === "audio"
+                ? "🎙️"
+                : "💬"}
+            </p>
 
-          setPopupTexto("");
-          setPopupAudioBase64("");
-        }}
-      />
+            <h2
+              className={`text-2xl font-black ${
+                popupTipo === "encerrado"
+                  ? "text-red-300"
+                  : popupTipo === "audio"
+                  ? "text-blue-300"
+                  : "text-green-300"
+              }`}
+            >
+              {popupTipo === "encerrado"
+                ? "ATENDIMENTO ENCERRADO"
+                : popupTipo === "audio"
+                ? "NOVA MENSAGEM DE VOZ"
+                : "MENSAGEM DO RESPONSÁVEL"}
+            </h2>
+
+            <p className="mt-4 text-lg font-bold text-white">
+              {popupTexto}
+            </p>
+
+            {popupTipo === "audio" && popupAudioBase64 && (
+              <div className="mt-5 rounded-2xl border border-blue-500/40 bg-slate-800 p-4">
+                <audio
+                  controls
+                  className="w-full"
+                  src={popupAudioBase64}
+                />
+              </div>
+            )}
+
+            <button
+              type="button"
+              onClick={async () => {
+                const atendimentoFoiEncerrado = popupTipo === "encerrado";
+
+                if (unidadeSelecionada && chamadaAtual) {
+                  await update(
+                    ref(
+                      db,
+                      `unidades-v2/${unidadeSelecionada.id}/chamada`
+                    ),
+                    {
+                      visualizadoPeloVisitante: true,
+                      visitanteVisualizou: true,
+                      mensagemVisualizada: true,
+                    }
+                  );
+                }
+
+                setPopupTexto("");
+                setPopupAudioBase64("");
+
+                if (atendimentoFoiEncerrado) {
+                  voltarBloco();
+                }
+              }}
+              className="mt-5 w-full rounded-2xl bg-blue-600 py-4 font-black text-white hover:bg-blue-500"
+            >
+              ENTENDI
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="w-full max-w-xl">
         <section className="bg-slate-900 border border-slate-700 rounded-3xl p-6 mb-5 text-center">
@@ -559,7 +766,7 @@ export default function AcessoV2Condominio() {
                                 : "text-green-400 text-sm font-bold"
                             }
                           >
-                            {statusTexto}
+                            {ocupada ? statusTexto : "Disponível"}
                           </span>
                         </div>
                       </button>
@@ -598,6 +805,10 @@ export default function AcessoV2Condominio() {
                 {unidadeAtualSelecionada?.tipo ||
                   unidadeSelecionada.tipo ||
                   "Unidade"}
+              </p>
+
+              <p className="mt-2 text-xs font-bold text-slate-500">
+                ID: {unidadeSelecionada.id}
               </p>
 
               {chamadaSelecionadaAtiva && (

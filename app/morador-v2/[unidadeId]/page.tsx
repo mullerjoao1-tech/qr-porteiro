@@ -259,14 +259,10 @@ export default function MoradorV2() {
       if (audioVisitanteAtual && ultimoAudioPopupRef.current !== audioVisitanteAtual) {
         ultimoAudioPopupRef.current = audioVisitanteAtual;
 
-        pararToqueContinuo();
-
         setAudioPopup({
           titulo: "🎙️ Novo áudio do visitante",
           audio: audioVisitanteAtual,
         });
-
-        tocarBip();
       }
 
       if (dados.status === "Encerrado") {
@@ -620,6 +616,7 @@ export default function MoradorV2() {
       await update(ref(db, caminhoFirebase), {
         status: "Em atendimento",
         notificar: false,
+        mensagemResponsavel: "",
         visualizadoPeloVisitante: false,
         visitanteVisualizou: false,
         mensagemVisualizada: false,
@@ -792,42 +789,76 @@ export default function MoradorV2() {
   }
 
   async function ativarNotificacoes() {
-    const messaging = await messagingPromise;
-
-    if (!messaging) {
-      await registrarLog(
-        "push_nao_suportado",
-        "Este navegador não suporta notificações"
-      );
-
-      alert("Este navegador não suporta notificações.");
-      return;
-    }
-
-    const permissao = await Notification.requestPermission();
-
-    if (permissao !== "granted") {
-      await registrarLog(
-        "push_permissao_negada",
-        "Permissão para notificações negada: " + permissao
-      );
-
-      alert("Permissão para notificações negada. Resultado: " + permissao);
-      return;
-    }
-
-    alert("Permissão aceita. Agora vou gerar o token.");
-
     try {
+      if (typeof window === "undefined") {
+        alert("As notificações só podem ser ativadas no navegador.");
+        return;
+      }
+
+      if (!("Notification" in window)) {
+        await registrarLog(
+          "push_nao_suportado",
+          "Este navegador não possui suporte à API de notificações"
+        );
+
+        alert("Este navegador não suporta notificações.");
+        return;
+      }
+
+      if (!("serviceWorker" in navigator)) {
+        await registrarLog(
+          "push_sem_service_worker",
+          "Este navegador não possui suporte a Service Worker"
+        );
+
+        alert("Este navegador não suporta notificações em segundo plano.");
+        return;
+      }
+
+      const messaging = await messagingPromise;
+
+      if (!messaging) {
+        await registrarLog(
+          "push_nao_suportado",
+          "Firebase Messaging não foi inicializado neste navegador"
+        );
+
+        alert("Não foi possível iniciar as notificações neste navegador.");
+        return;
+      }
+
+      const permissao = await Notification.requestPermission();
+
+      if (permissao !== "granted") {
+        await registrarLog(
+          "push_permissao_negada",
+          "Permissão para notificações negada: " + permissao
+        );
+
+        alert("Permissão para notificações não foi concedida.");
+        return;
+      }
+
       const registroServiceWorker = await navigator.serviceWorker.register(
-        "/firebase-messaging-sw.js"
+        "/firebase-messaging-sw.js",
+        {
+          scope: "/",
+        }
       );
+
+      await navigator.serviceWorker.ready;
 
       const token = await getToken(messaging, {
         vapidKey:
           "BIEIQutWLbP05G1xFN1Zvg_hMnc4OGOkHRf6yI1bT8Igfmm1G8vRjYQhZyDGc5M3X6yhHkoWdJj4a_atPGqX7sk",
         serviceWorkerRegistration: registroServiceWorker,
       });
+
+      if (!token) {
+        throw new Error(
+          "O Firebase não retornou um token de notificação."
+        );
+      }
 
       await update(ref(db, "configuracoes-v2"), {
         [`tokensMorador/${slug}`]: token,
@@ -839,15 +870,29 @@ export default function MoradorV2() {
       );
 
       alert("Notificações ativadas com sucesso!");
-    } catch (erro) {
-      console.error("Erro ao gerar token:", erro);
+    } catch (erro: any) {
+      console.error("Erro completo ao ativar notificações:", erro);
+
+      const codigo =
+        erro?.code ||
+        erro?.name ||
+        "erro-desconhecido";
+
+      const mensagemErro =
+        erro?.message ||
+        String(erro);
 
       await registrarLog(
         "push_erro_token",
-        "Erro ao gerar token: " + String(erro)
+        `Código: ${codigo} | Mensagem: ${mensagemErro}`
       );
 
-      alert("Erro ao gerar token. Veja o console.");
+      alert(
+        `Não foi possível ativar as notificações.
+
+Código: ${codigo}
+Mensagem: ${mensagemErro}`
+      );
     }
   }
 
@@ -1022,8 +1067,6 @@ export default function MoradorV2() {
                 controls
                 className="w-full"
                 src={audioPopup.audio}
-                onLoadedMetadata={pararToqueContinuo}
-                onCanPlay={pararToqueContinuo}
                 onPlay={pararToqueContinuo}
                 onPlaying={pararToqueContinuo}
               />
@@ -1416,12 +1459,16 @@ export default function MoradorV2() {
             </div>
           )}
 
-          <button
-            onClick={finalizarSolicitacao}
-            className="w-full mt-4 bg-red-600 hover:bg-red-500 text-white font-bold py-3 rounded-2xl"
-          >
-            ❌ FINALIZAR ATENDIMENTO
-          </button>
+          {!gravandoAudioMorador &&
+            !audioRespostaBlob &&
+            !enviandoAudioMorador && (
+              <button
+                onClick={finalizarSolicitacao}
+                className="w-full mt-6 bg-red-600 hover:bg-red-500 text-white font-bold py-3 rounded-2xl"
+              >
+                ❌ FINALIZAR ATENDIMENTO
+              </button>
+            )}
         </div>
 
       </div>
