@@ -4,7 +4,6 @@ import HeaderSindico from "./components/dashboard/HeaderSindico";
 import KPIs from "./components/dashboard/KPIs";
 import ResumoDia from "./components/dashboard/ResumoDia";
 import Timeline from "./components/dashboard/Timeline";
-import AcessoRapido from "./components/dashboard/AcessoRapido";
 
 import MenuPrincipal from "./components/shared/MenuPrincipal";
 
@@ -14,7 +13,6 @@ import SaudeCondominio from "./components/SaudeCondominio";
 export default function LabPage() {
   return (
     <DashboardLayout>
-
       <HeaderSindico />
 
       <KPIs />
@@ -25,12 +23,9 @@ export default function LabPage() {
 
       <Timeline />
 
-      <AcessoRapido />
-
       <ResumoInteligente />
 
       <SaudeCondominio />
-
     </DashboardLayout>
   );
 }
