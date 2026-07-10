@@ -24,9 +24,9 @@ const apartamentosTulipas = [
   "44",
 ];
 
-function criarFallbackTulipas(): Unidade[] {
+function criarUnidadesTulipas(): Unidade[] {
   const blocoA = apartamentosTulipas.map((apartamento) => ({
-    id: `1-${apartamento}`,
+    id: `bloco-1-ap-${apartamento}`,
     nome: `Apto ${apartamento}`,
     tipo: "Apartamento",
     bloco: "Bloco A",
@@ -34,7 +34,7 @@ function criarFallbackTulipas(): Unidade[] {
   }));
 
   const blocoB = apartamentosTulipas.map((apartamento) => ({
-    id: `2-${apartamento}`,
+    id: `bloco-2-ap-${apartamento}`,
     nome: `Apto ${apartamento}`,
     tipo: "Apartamento",
     bloco: "Bloco B",
@@ -44,65 +44,35 @@ function criarFallbackTulipas(): Unidade[] {
   return [...blocoA, ...blocoB] as Unidade[];
 }
 
-function descobrirNumeroApartamento(unidade: any): string {
-  const texto = `${unidade.nome || ""} ${unidade.id || ""}`.toLowerCase();
+function descobrirApartamento(id: string, valor: any): string {
+  const texto = `${id} ${valor?.nome || ""}`.toLowerCase();
 
-  const correspondencia =
-    texto.match(/(?:ap(?:to)?\s*)?([1-4][1-4])\b/i) ||
-    texto.match(/[-_\s]([1-4][1-4])(?:\b|$)/i);
+  const peloId = texto.match(/bloco-[12]-ap-(\d{2})/)?.[1];
 
-  return correspondencia?.[1] || "";
+  if (peloId) return peloId;
+
+  const peloNome = texto.match(/(?:ap(?:to)?\s*)?([1-4][1-4])\b/)?.[1];
+
+  return peloNome || "";
 }
 
-function descobrirBloco(unidade: any): "Bloco A" | "Bloco B" | "Único" {
-  const blocoInformado = String(
-    unidade.bloco ||
-      unidade.blocoNome ||
-      unidade.torre ||
-      unidade.grupo ||
-      ""
-  )
-    .trim()
-    .toLowerCase();
+function descobrirBloco(id: string, valor: any): "Bloco A" | "Bloco B" | "Único" {
+  const texto = `${id} ${valor?.bloco || ""} ${valor?.nome || ""}`
+    .toLowerCase()
+    .trim();
 
   if (
-    blocoInformado === "a" ||
-    blocoInformado === "bloco a" ||
-    blocoInformado === "1" ||
-    blocoInformado === "bloco 1"
+    texto.includes("bloco-1") ||
+    texto.includes("bloco 1") ||
+    texto.includes("bloco a")
   ) {
     return "Bloco A";
   }
 
   if (
-    blocoInformado === "b" ||
-    blocoInformado === "bloco b" ||
-    blocoInformado === "2" ||
-    blocoInformado === "bloco 2"
-  ) {
-    return "Bloco B";
-  }
-
-  const texto = `${unidade.nome || ""} ${unidade.id || ""}`
-    .trim()
-    .toLowerCase();
-
-  if (
-    texto.startsWith("1 ") ||
-    texto.startsWith("1-") ||
-    texto.startsWith("1_") ||
-    /\bbloco\s*1\b/.test(texto) ||
-    /\bbloco\s*a\b/.test(texto)
-  ) {
-    return "Bloco A";
-  }
-
-  if (
-    texto.startsWith("2 ") ||
-    texto.startsWith("2-") ||
-    texto.startsWith("2_") ||
-    /\bbloco\s*2\b/.test(texto) ||
-    /\bbloco\s*b\b/.test(texto)
+    texto.includes("bloco-2") ||
+    texto.includes("bloco 2") ||
+    texto.includes("bloco b")
   ) {
     return "Bloco B";
   }
@@ -111,29 +81,14 @@ function descobrirBloco(unidade: any): "Bloco A" | "Bloco B" | "Único" {
 }
 
 function normalizarUnidade(id: string, valor: any): Unidade {
-  const unidadeOriginal = {
-    id,
-    ...valor,
-  };
-
-  const apartamento = descobrirNumeroApartamento(unidadeOriginal);
-  const bloco = descobrirBloco(unidadeOriginal);
+  const apartamento = descobrirApartamento(id, valor);
+  const bloco = descobrirBloco(id, valor);
 
   return {
-    ...unidadeOriginal,
-
-    /*
-     * IMPORTANTE:
-     * O ID verdadeiro do Firebase é preservado.
-     * É esse ID que o sistema usa para gravar a chamada.
-     */
     id,
-
-    nome: apartamento
-      ? `Apto ${apartamento}`
-      : String(unidadeOriginal.nome || id),
-
-    tipo: unidadeOriginal.tipo || "Apartamento",
+    ...valor,
+    nome: apartamento ? `Apto ${apartamento}` : valor?.nome || id,
+    tipo: valor?.tipo || "Apartamento",
     bloco,
   } as Unidade;
 }
@@ -157,35 +112,35 @@ export function useUnidades() {
       (snapshot) => {
         const dados = snapshot.val();
 
-        /*
-         * Quando há dados no Firebase, usamos SOMENTE as unidades reais.
-         * Assim a chamada é gravada no mesmo ID que já existe no sistema.
-         */
-        const listaReal = dados
+        const unidadesReais = dados
           ? (Object.entries(dados).map(([id, valor]) =>
               normalizarUnidade(id, valor)
             ) as Unidade[])
           : [];
 
-        const unidadesComBloco = listaReal.filter(
+        const fallbackTulipas = criarUnidadesTulipas();
+
+        const mapa = new Map<string, Unidade>();
+
+        fallbackTulipas.forEach((unidade) => {
+          mapa.set(unidade.id, unidade);
+        });
+
+        unidadesReais.forEach((unidade) => {
+          mapa.set(unidade.id, {
+            ...(mapa.get(unidade.id) || {}),
+            ...unidade,
+          });
+        });
+
+        const lista = Array.from(mapa.values()).filter(
           (unidade) =>
             unidade.bloco === "Bloco A" || unidade.bloco === "Bloco B"
         );
 
-        /*
-         * A lista fixa é apenas contingência.
-         * Ela só entra quando o Firebase realmente não devolve nenhuma unidade.
-         */
-        const lista =
-          unidadesComBloco.length > 0
-            ? unidadesComBloco
-            : listaReal.length > 0
-            ? listaReal
-            : criarFallbackTulipas();
-
         lista.sort((a, b) => {
-          const ordemA = a.bloco === "Bloco A" ? 1 : a.bloco === "Bloco B" ? 2 : 3;
-          const ordemB = b.bloco === "Bloco A" ? 1 : b.bloco === "Bloco B" ? 2 : 3;
+          const ordemA = a.bloco === "Bloco A" ? 1 : 2;
+          const ordemB = b.bloco === "Bloco A" ? 1 : 2;
 
           if (ordemA !== ordemB) return ordemA - ordemB;
 
@@ -209,8 +164,7 @@ export function useUnidades() {
       },
       (erro) => {
         console.error("Erro ao carregar unidades-v2:", erro);
-
-        setUnidades(criarFallbackTulipas());
+        setUnidades(criarUnidadesTulipas());
         setCarregando(false);
       }
     );
@@ -218,38 +172,17 @@ export function useUnidades() {
     return () => pararDeOuvir();
   }, []);
 
-  const blocos = useMemo(() => {
-    const encontrados = unidades
-      .map((unidade) => unidade.bloco || "Único")
-      .filter((valor, indice, lista) => lista.indexOf(valor) === indice);
+  const blocos = useMemo(() => ["Bloco A", "Bloco B"], []);
 
-    const ordem: Record<string, number> = {
-      "Bloco A": 1,
-      "Bloco B": 2,
-      Único: 99,
-    };
-
-    return encontrados.sort((a, b) => {
-      const ordemA = ordem[a] ?? 50;
-      const ordemB = ordem[b] ?? 50;
-
-      if (ordemA !== ordemB) return ordemA - ordemB;
-
-      return String(a).localeCompare(String(b), "pt-BR");
-    });
-  }, [unidades]);
-
-  const temBlocos =
-    blocos.length > 1 || (blocos.length === 1 && blocos[0] !== "Único");
+  const temBlocos = true;
 
   const unidadesDoBloco = useMemo(() => {
-    if (!temBlocos) return unidades;
     if (!blocoSelecionado) return [];
 
     return unidades.filter(
-      (unidade) => (unidade.bloco || "Único") === blocoSelecionado
+      (unidade) => unidade.bloco === blocoSelecionado
     );
-  }, [unidades, blocoSelecionado, temBlocos]);
+  }, [unidades, blocoSelecionado]);
 
   const unidadesFiltradas = useMemo(() => {
     const texto = busca.toLowerCase().trim();
