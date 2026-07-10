@@ -25,23 +25,23 @@ const apartamentosTulipas = [
 ];
 
 function criarUnidadesTulipas(): Unidade[] {
-  const blocoA = apartamentosTulipas.map((apartamento) => ({
+  const bloco1 = apartamentosTulipas.map((apartamento) => ({
     id: `bloco-1-ap-${apartamento}`,
     nome: `Apto ${apartamento}`,
     tipo: "Apartamento",
-    bloco: "Bloco A",
+    bloco: "Bloco 1",
     condominioId: "cnd-tulipas",
   }));
 
-  const blocoB = apartamentosTulipas.map((apartamento) => ({
+  const bloco2 = apartamentosTulipas.map((apartamento) => ({
     id: `bloco-2-ap-${apartamento}`,
     nome: `Apto ${apartamento}`,
     tipo: "Apartamento",
-    bloco: "Bloco B",
+    bloco: "Bloco 2",
     condominioId: "cnd-tulipas",
   }));
 
-  return [...blocoA, ...blocoB] as Unidade[];
+  return [...bloco1, ...bloco2] as Unidade[];
 }
 
 function descobrirApartamento(id: string, valor: any): string {
@@ -56,7 +56,7 @@ function descobrirApartamento(id: string, valor: any): string {
   return peloNome || "";
 }
 
-function descobrirBloco(id: string, valor: any): "Bloco A" | "Bloco B" | "Único" {
+function descobrirBloco(id: string, valor: any): "Bloco 1" | "Bloco 2" | "Único" {
   const texto = `${id} ${valor?.bloco || ""} ${valor?.nome || ""}`
     .toLowerCase()
     .trim();
@@ -66,7 +66,7 @@ function descobrirBloco(id: string, valor: any): "Bloco A" | "Bloco B" | "Único
     texto.includes("bloco 1") ||
     texto.includes("bloco a")
   ) {
-    return "Bloco A";
+    return "Bloco 1";
   }
 
   if (
@@ -74,7 +74,7 @@ function descobrirBloco(id: string, valor: any): "Bloco A" | "Bloco B" | "Único
     texto.includes("bloco 2") ||
     texto.includes("bloco b")
   ) {
-    return "Bloco B";
+    return "Bloco 2";
   }
 
   return "Único";
@@ -118,11 +118,11 @@ export function useUnidades() {
             ) as Unidade[])
           : [];
 
-        const fallbackTulipas = criarUnidadesTulipas();
+        const unidadesPadrao = criarUnidadesTulipas();
 
         const mapa = new Map<string, Unidade>();
 
-        fallbackTulipas.forEach((unidade) => {
+        unidadesPadrao.forEach((unidade) => {
           mapa.set(unidade.id, unidade);
         });
 
@@ -135,12 +135,12 @@ export function useUnidades() {
 
         const lista = Array.from(mapa.values()).filter(
           (unidade) =>
-            unidade.bloco === "Bloco A" || unidade.bloco === "Bloco B"
+            unidade.bloco === "Bloco 1" || unidade.bloco === "Bloco 2"
         );
 
         lista.sort((a, b) => {
-          const ordemA = a.bloco === "Bloco A" ? 1 : 2;
-          const ordemB = b.bloco === "Bloco A" ? 1 : 2;
+          const ordemA = a.bloco === "Bloco 1" ? 1 : 2;
+          const ordemB = b.bloco === "Bloco 1" ? 1 : 2;
 
           if (ordemA !== ordemB) return ordemA - ordemB;
 
@@ -172,7 +172,7 @@ export function useUnidades() {
     return () => pararDeOuvir();
   }, []);
 
-  const blocos = useMemo(() => ["Bloco A", "Bloco B"], []);
+  const blocos = useMemo(() => ["Bloco 1", "Bloco 2"], []);
 
   const temBlocos = true;
 
