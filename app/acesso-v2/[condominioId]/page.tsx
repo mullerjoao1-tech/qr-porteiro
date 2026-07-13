@@ -2,8 +2,17 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "next/navigation";
-import { ref, onValue, update, remove } from "firebase/database";
+import { ref, onValue, update, remove, set, get } from "firebase/database";
 import { db } from "../../services/firebase";
+
+
+type MensagemConversa = {
+  autor: "visitante" | "morador";
+  tipo: "texto" | "audio";
+  texto?: string;
+  audioBase64?: string;
+  criadoEm: number;
+};
 
 type Unidade = {
   id: string;
@@ -21,8 +30,25 @@ type Unidade = {
     mensagemMorador?: string;
     mensagemResponsavel?: string;
     enviadoEm?: number;
+    ultimaAtividade?: number;
+    audioBase64?: string;
+    mensagens?: Record<string, MensagemConversa>;
   };
 };
+
+
+function blobParaBase64(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.onloadend = () => {
+      resolve(reader.result as string);
+    };
+
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
 
 export default function AcessoV2Condominio() {
   const params = useParams();
@@ -42,12 +68,19 @@ export default function AcessoV2Condominio() {
   const [enviando, setEnviando] = useState(false);
   const [mensagem, setMensagem] = useState("");
 
+  const [gravandoAudio, setGravandoAudio] = useState(false);
+  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
+  const [enviandoAudio, setEnviandoAudio] = useState(false);
+
   const [popupTexto, setPopupTexto] = useState("");
   const [popupTipo, setPopupTipo] = useState<"mensagem" | "encerrado">("mensagem");
 
   const chamadaAtivaRef = useRef(false);
   const chamadaFoiEnviadaRef = useRef(false);
   const ultimoPopupRef = useRef("");
+
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
 
   useEffect(() => {
     const referencia = ref(db, "unidades-v2");
@@ -86,6 +119,17 @@ export default function AcessoV2Condominio() {
         if (chamadaAtivaRef.current && chamadaFoiEnviadaRef.current) {
           setPopupTipo("encerrado");
           setPopupTexto("Atendimento encerrado pelo responsável.");
+
+          setUnidadeSelecionada(null);
+          setNome("");
+          setMotivo("");
+          setOutroMotivo("");
+          setMensagem("");
+          setAudioBlob(null);
+          setGravandoAudio(false);
+          setEnviandoAudio(false);
+          setBusca("");
+          setBlocoSelecionado("");
         }
 
         chamadaAtivaRef.current = false;
@@ -231,6 +275,213 @@ console.log("RESPOSTA PUSH V2:", dadosPush);
       setEnviando(false);
     }
   }
+
+  async function iniciarGravacao() {
+    if (!unidadeSelecionada) {
+      alert("Selecione uma unidade antes de gravar.");
+      return;
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: true,
+      });
+
+      const recorder = new MediaRecorder(stream);
+      audioChunksRef.current = [];
+
+      recorder.ondataavailable = (evento) => {
+        if (evento.data.size > 0) {
+          audioChunksRef.current.push(evento.data);
+        }
+      };
+
+      recorder.onstop = () => {
+        const blob = new Blob(audioChunksRef.current, {
+          type: "audio/webm",
+        });
+
+        setAudioBlob(blob);
+        setGravandoAudio(false);
+        stream.getTracks().forEach((track) => track.stop());
+      };
+
+      mediaRecorderRef.current = recorder;
+      recorder.start();
+
+      setAudioBlob(null);
+      setGravandoAudio(true);
+
+      setTimeout(() => {
+        if (recorder.state === "recording") {
+          recorder.stop();
+        }
+      }, 15000);
+    } catch (erro) {
+      console.error("Erro ao acessar o microfone:", erro);
+      alert("Não foi possível acessar o microfone.");
+      setGravandoAudio(false);
+    }
+  }
+
+  function pararGravacao() {
+    if (
+      mediaRecorderRef.current &&
+      mediaRecorderRef.current.state === "recording"
+    ) {
+      mediaRecorderRef.current.stop();
+      return;
+    }
+
+    setGravandoAudio(false);
+  }
+
+  async function enviarAudioVisitante() {
+    if (!unidadeSelecionada || !audioBlob) {
+      alert("Grave um áudio antes de enviar.");
+      return;
+    }
+
+    const referenciaChamada = ref(
+      db,
+      `unidades-v2/${unidadeSelecionada.id}/chamada`
+    );
+
+    try {
+      setEnviandoAudio(true);
+
+      const snapshotChamada = await get(referenciaChamada);
+      const chamadaAtual = snapshotChamada.val() || {};
+      const statusAtual = chamadaAtual.status || "";
+
+      const chamadaJaAtiva =
+        statusAtual &&
+        statusAtual !== "Encerrado" &&
+        statusAtual !== "Finalizado" &&
+        statusAtual !== "Cancelado pelo visitante" &&
+        statusAtual !== "Cancelada pelo visitante" &&
+        statusAtual !== "Atendimento encerrado";
+
+      if (!chamadaJaAtiva) {
+        if (!motivo) {
+          alert("Escolha o motivo da chamada antes de enviar o áudio.");
+          return;
+        }
+
+        if (precisaNome && !nome.trim()) {
+          alert("Digite seu nome antes de enviar o áudio.");
+          return;
+        }
+
+        if (precisaDescricao && !outroMotivo.trim()) {
+          alert("Descreva o motivo antes de enviar o áudio.");
+          return;
+        }
+      }
+
+      const audioBase64 = await blobParaBase64(audioBlob);
+      const criadoEmMensagem = Date.now();
+      const idMensagem = String(criadoEmMensagem);
+
+      if (!chamadaJaAtiva) {
+        const motivoFinal =
+          motivo === "Outros" ? outroMotivo.trim() : motivo;
+
+        let nomeFinal = nome.trim();
+
+        if (motivo === "Entrega") nomeFinal = "Entrega";
+        if (motivo === "Entrega de comida") {
+          nomeFinal = "Entrega de comida";
+        }
+        if (motivo === "Outros" && !nomeFinal) {
+          nomeFinal = "Outro chamado";
+        }
+
+        chamadaFoiEnviadaRef.current = true;
+        chamadaAtivaRef.current = true;
+        ultimoPopupRef.current = "";
+
+        await update(referenciaChamada, {
+          nome: nomeFinal,
+          motivo: motivoFinal,
+          status: "Aguardando atendimento",
+          criadoEm: new Date().toISOString(),
+          notificar: true,
+          condominioId,
+          origem: "acesso-v2",
+          mensagemRapida: null,
+          respostaRapida: null,
+          mensagemResponsavel: null,
+          resposta: null,
+          mensagemMorador: null,
+          visualizadoPeloVisitante: false,
+        });
+      }
+
+      await set(
+        ref(
+          db,
+          `unidades-v2/${unidadeSelecionada.id}/chamada/mensagens/${idMensagem}`
+        ),
+        {
+          autor: "visitante",
+          tipo: "audio",
+          audioBase64,
+          criadoEm: criadoEmMensagem,
+        }
+      );
+
+      await update(referenciaChamada, {
+        audioBase64,
+        ultimaAtividade: criadoEmMensagem,
+        enviadoEm: criadoEmMensagem,
+        ...(chamadaJaAtiva
+          ? {}
+          : {
+              status: "Aguardando atendimento",
+              notificar: true,
+            }),
+      });
+
+      if (!chamadaJaAtiva) {
+        try {
+          const respostaPush = await fetch(
+            "/api/enviar-notificacao-v2",
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                unidadeId: unidadeSelecionada.id,
+              }),
+            }
+          );
+
+          const dadosPush = await respostaPush.json();
+          console.log("RESPOSTA PUSH V2 - ÁUDIO:", dadosPush);
+        } catch (erroPush) {
+          console.error(
+            "Erro ao enviar push da chamada por áudio:",
+            erroPush
+          );
+        }
+      }
+
+      setAudioBlob(null);
+      setMensagem(
+        chamadaJaAtiva
+          ? "✅ Áudio enviado para o responsável."
+          : `✅ Chamada com áudio enviada para ${unidadeSelecionada.nome}. Aguarde o atendimento.`
+      );
+    } catch (erro) {
+      console.error("Erro ao enviar áudio:", erro);
+      alert("Erro ao enviar áudio. Tente novamente.");
+    } finally {
+      setEnviandoAudio(false);
+    }
+  }
+
   async function cancelarChamada() {
   if (!unidadeSelecionada) return;
 
@@ -252,6 +503,8 @@ console.log("RESPOSTA PUSH V2:", dadosPush);
     setNome("");
     setMotivo("");
     setOutroMotivo("");
+    setAudioBlob(null);
+    setGravandoAudio(false);
 
     chamadaAtivaRef.current = false;
     chamadaFoiEnviadaRef.current = false;
@@ -267,6 +520,8 @@ console.log("RESPOSTA PUSH V2:", dadosPush);
     setOutroMotivo("");
     setMensagem("");
     setPopupTexto("");
+    setAudioBlob(null);
+    setGravandoAudio(false);
     chamadaAtivaRef.current = false;
     chamadaFoiEnviadaRef.current = false;
     ultimoPopupRef.current = "";
@@ -281,6 +536,8 @@ console.log("RESPOSTA PUSH V2:", dadosPush);
     setOutroMotivo("");
     setMensagem("");
     setPopupTexto("");
+    setAudioBlob(null);
+    setGravandoAudio(false);
     chamadaAtivaRef.current = false;
     chamadaFoiEnviadaRef.current = false;
     ultimoPopupRef.current = "";
@@ -561,6 +818,46 @@ const ocupada =
                 </button>
               </div>
             )}
+
+            <div className="mt-4 space-y-3">
+              <button
+                onClick={gravandoAudio ? pararGravacao : iniciarGravacao}
+                disabled={enviandoAudio}
+                className={
+                  gravandoAudio
+                    ? "w-full bg-red-600 text-white text-xl font-black py-4 rounded-2xl animate-pulse"
+                    : "w-full bg-blue-600 hover:bg-blue-500 disabled:bg-gray-500 text-white text-xl font-black py-4 rounded-2xl"
+                }
+              >
+                {gravandoAudio
+                  ? "⏹️ PARAR GRAVAÇÃO"
+                  : "🎙️ GRAVAR ÁUDIO"}
+              </button>
+
+              {audioBlob && (
+                <div className="bg-slate-800 border border-blue-500/40 rounded-2xl p-4 space-y-3">
+                  <p className="text-blue-300 text-sm font-bold text-center">
+                    Áudio gravado. Confira e envie.
+                  </p>
+
+                  <audio
+                    controls
+                    className="w-full"
+                    src={URL.createObjectURL(audioBlob)}
+                  />
+
+                  <button
+                    onClick={enviarAudioVisitante}
+                    disabled={enviandoAudio}
+                    className="w-full bg-blue-500 hover:bg-blue-400 disabled:bg-gray-500 text-white text-xl font-black py-4 rounded-2xl"
+                  >
+                    {enviandoAudio
+                      ? "Enviando..."
+                      : "📤 ENVIAR ÁUDIO"}
+                  </button>
+                </div>
+              )}
+            </div>
           </section>
         )}
       </div>

@@ -1,40 +1,43 @@
 import { NextResponse } from "next/server";
-import { exec } from "child_process";
+
+import { capturarSnapshotCamera } from "../../modules/camera/services/cameraService";
+import type { ConfiguracaoCamera } from "../../modules/camera/types/camera";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 export async function GET(): Promise<Response> {
-  const agora = Date.now();
-  const nomeArquivo = `camera-qr1-${agora}.jpg`;
-  const caminhoArquivo = `public/${nomeArquivo}`;
-  const caminhoPublico = `/${nomeArquivo}`;
+  const cameraPortao: ConfiguracaoCamera = {
+    id: "portao-principal",
+    nome: "Câmera do portão principal",
+    protocolo: "rtsp",
+    ativa: true,
+    rtspUrl:
+      process.env.CAMERA_PORTAO_RTSP_URL ||
+      "rtsp://admin:teste123@192.168.15.16:554/onvif1",
+    timeoutMs: 15000,
+  };
 
-  const comando = `ffmpeg -y -rtsp_transport udp -i "rtsp://admin:teste123@192.168.15.16:554/onvif1" -frames:v 1 -q:v 2 "${caminhoArquivo}"`;
+  const resultado = await capturarSnapshotCamera(cameraPortao);
 
-  return new Promise<Response>((resolve) => {
-    exec(comando, { timeout: 15000 }, (erro) => {
-      if (erro) {
-        console.error("Erro ao capturar imagem:", erro);
+  if (!resultado.sucesso) {
+    return NextResponse.json(
+      {
+        sucesso: false,
+        erro:
+          resultado.erro ||
+          "A imagem não foi criada.",
+      },
+      { status: 500 }
+    );
+  }
 
-        resolve(
-          NextResponse.json(
-            {
-              sucesso: false,
-              erro: "A imagem não foi criada.",
-            },
-            { status: 500 }
-          )
-        );
-
-        return;
-      }
-
-      resolve(
-        NextResponse.json({
-          sucesso: true,
-          mensagem: "Foto capturada com sucesso.",
-          imagem: caminhoPublico,
-          atualizadoEm: new Date().toISOString(),
-        })
-      );
-    });
+  return NextResponse.json({
+    sucesso: true,
+    mensagem: "Foto capturada com sucesso.",
+    imagem: resultado.imagem,
+    atualizadoEm:
+      resultado.atualizadoEm ||
+      new Date().toISOString(),
   });
 }

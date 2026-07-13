@@ -6,15 +6,42 @@ import { getToken } from "firebase/messaging";
 import { ref, onValue, update, remove, push, set, get } from "firebase/database";
 import { db, messagingPromise } from "../../services/firebase";
 
+
+type MensagemConversa = {
+  id?: string;
+  autor: "visitante" | "morador";
+  tipo: "texto" | "audio";
+  texto?: string;
+  audioBase64?: string;
+  criadoEm: number;
+};
+
+function blobParaBase64(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
+
+function ordenarMensagens(mensagens?: Record<string, MensagemConversa>) {
+  if (!mensagens) return [];
+
+  return Object.entries(mensagens)
+    .map(([id, mensagem]) => ({ id, ...mensagem }))
+    .sort((a, b) => (a.criadoEm || 0) - (b.criadoEm || 0));
+}
+
 export default function MoradorV2() {
   const params = useParams();
-const slug = String(
-  params?.unidadeId ||
-  params?.slug ||
-  params?.id ||
-  params?.unidade ||
-  "qr1"
-);
+  const slug = String(
+    params?.unidadeId ||
+      params?.slug ||
+      params?.id ||
+      params?.unidade ||
+      "qr1"
+  );
 
   const [nome, setNome] = useState("Nenhuma solicitação");
   const [motivo, setMotivo] = useState("Aguardando visitante");
@@ -30,16 +57,30 @@ const slug = String(
   const [capturandoCamera, setCapturandoCamera] = useState(false);
   const [abrindoPortao, setAbrindoPortao] = useState(false);
   const [statusPortao, setStatusPortao] = useState("");
-  const [instalavel, setInstalavel] = useState(false);
-const [installPrompt, setInstallPrompt] = useState<any>(null);
   const [visitanteVisualizou, setVisitanteVisualizou] = useState(false);
+  const [audioVisitante, setAudioVisitante] = useState("");
+  const [mensagensConversa, setMensagensConversa] = useState<MensagemConversa[]>([]);
+  const [gravandoAudioMorador, setGravandoAudioMorador] = useState(false);
+  const [audioRespostaBlob, setAudioRespostaBlob] = useState<Blob | null>(null);
+  const [enviandoAudioMorador, setEnviandoAudioMorador] = useState(false);
+  const [popupAtendimentoAberto, setPopupAtendimentoAberto] = useState(false);
+  const [mostrarHistorico, setMostrarHistorico] = useState(false);
+  const [mostrarCameraGrande, setMostrarCameraGrande] = useState(false);
+  const [audioPopup, setAudioPopup] = useState<{ titulo: string; audio: string } | null>(null);
+  const [installPrompt, setInstallPrompt] = useState<any>(null);
+  const [appInstalavel, setAppInstalavel] = useState(false);
 
   const intervaloSomRef = useRef<NodeJS.Timeout | null>(null);
   const finalizacaoAutoRef = useRef<NodeJS.Timeout | null>(null);
   const ultimaCapturaCameraRef = useRef("");
+  const ultimoAudioPopupRef = useRef("");
+  const toqueSilenciadoPorAudioRef = useRef(false);
+  const idChamadaAtualRef = useRef("");
   const audioContextRef = useRef<AudioContext | null>(null);
   const ultimaChamadaAtivaRef = useRef(false);
   const ultimaChamadaDadosRef = useRef<any>(null);
+  const mediaRecorderMoradorRef = useRef<MediaRecorder | null>(null);
+  const audioChunksMoradorRef = useRef<Blob[]>([]);
 
   const caminhoFirebase = `unidades-v2/${slug}/chamada`;
   const caminhoHistorico = `historico-v2/${slug}`;
@@ -51,7 +92,13 @@ const [installPrompt, setInstallPrompt] = useState<any>(null);
   const TEMPO_EM_ATENDIMENTO = 3 * 60 * 1000;
 
   const chamadaAtiva =
-    nome !== "Nenhuma solicitação" && status === "Aguardando atendimento";
+    nome !== "Nenhuma solicitação" &&
+    status !== "Sem chamado ativo" &&
+    status !== "Encerrado";
+
+  const aguardandoAtendimento = status === "Aguardando atendimento";
+  const atendimentoEmAndamento = status === "Em atendimento";
+  const mostrarPopupChamada = chamadaAtiva && popupAtendimentoAberto && aguardandoAtendimento;
 
   async function registrarLog(tipo: string, detalhes: string) {
     try {
@@ -96,31 +143,7 @@ const [installPrompt, setInstallPrompt] = useState<any>(null);
       console.error("Erro analytics:", erro);
     }
   }
-useEffect(() => {
-  const handler = (e: any) => {
-    e.preventDefault();
-    setInstallPrompt(e);
-    setInstalavel(true);
-  };
 
-  window.addEventListener("beforeinstallprompt", handler);
-
-  return () => {
-    window.removeEventListener("beforeinstallprompt", handler);
-  };
-}, []);
-async function instalarApp() {
-  if (!installPrompt) return;
-
-  installPrompt.prompt();
-
-  const escolha = await installPrompt.userChoice;
-
-  if (escolha?.outcome === "accepted") {
-    setInstalavel(false);
-    setInstallPrompt(null);
-  }
-}
   useEffect(() => {
     const referenciaStatus = ref(db, caminhoStatus);
 
@@ -192,7 +215,15 @@ async function instalarApp() {
         setModo("");
         setMensagemResponsavel("");
         setVisitanteVisualizou(false);
+        setAudioVisitante("");
+        ultimoAudioPopupRef.current = "";
+        setAudioPopup(null);
+        setMensagensConversa([]);
+        setAudioRespostaBlob(null);
         setAvisoAuto("");
+        setPopupAtendimentoAberto(false);
+        toqueSilenciadoPorAudioRef.current = false;
+        idChamadaAtualRef.current = "";
         pararToqueContinuo();
         return;
       }
@@ -208,24 +239,66 @@ async function instalarApp() {
       );
       setModo(dados.modo || "");
       setMensagemResponsavel(dados.mensagemResponsavel || "");
+
+      const idChamadaAtual =
+        String(dados.criadoEm || "") ||
+        `${dados.nome || ""}-${dados.motivo || ""}`;
+
+      if (
+        idChamadaAtual &&
+        idChamadaAtualRef.current !== idChamadaAtual
+      ) {
+        idChamadaAtualRef.current = idChamadaAtual;
+        toqueSilenciadoPorAudioRef.current = false;
+      }
       setVisitanteVisualizou(
-  dados.visualizadoPeloVisitante === true
-);
+        dados.visitanteVisualizou === true ||
+          dados.mensagemVisualizada === true ||
+          dados.visualizadoPeloVisitante === true
+      );
+
+      const mensagensOrdenadas = ordenarMensagens(dados.mensagens);
+      setMensagensConversa(mensagensOrdenadas);
+
+      const ultimoAudioVisitante = [...mensagensOrdenadas]
+        .reverse()
+        .find(
+          (item) =>
+            item.autor === "visitante" &&
+            item.tipo === "audio" &&
+            Boolean(item.audioBase64)
+        );
+
+      const audioVisitanteAtual = ultimoAudioVisitante?.audioBase64 || dados.audioBase64 || "";
+      setAudioVisitante(audioVisitanteAtual);
+
+      if (audioVisitanteAtual && ultimoAudioPopupRef.current !== audioVisitanteAtual) {
+        ultimoAudioPopupRef.current = audioVisitanteAtual;
+
+        setAudioPopup({
+          titulo: "🎙️ Novo áudio do visitante",
+          audio: audioVisitanteAtual,
+        });
+      }
 
       if (dados.status === "Encerrado") {
         ultimaChamadaAtivaRef.current = false;
         ultimaChamadaDadosRef.current = null;
 
         pararToqueContinuo();
+        setPopupAtendimentoAberto(false);
         setAvisoAuto("Atendimento encerrado. Limpando em instantes.");
         return;
       }
 
       const deveTocar =
-        dados.notificar === true && dados.status === "Aguardando atendimento";
+        dados.notificar === true &&
+        dados.status === "Aguardando atendimento" &&
+        !toqueSilenciadoPorAudioRef.current;
 
       if (deveTocar) {
         iniciarToqueContinuo();
+        setPopupAtendimentoAberto(true);
 
         const idChamada = dados.criadoEm || dados.nome || "";
 
@@ -367,6 +440,7 @@ async function instalarApp() {
     limparFinalizacaoAutomatica();
 
     ultimaChamadaAtivaRef.current = false;
+    setPopupAtendimentoAberto(false);
 
     await registrarAnalytics("timeout");
     await registrarLog("timeout_atendimento", "Chamada finalizada automaticamente");
@@ -381,6 +455,9 @@ async function instalarApp() {
     });
 
     ultimaChamadaDadosRef.current = null;
+    setAudioVisitante("");
+    setMensagensConversa([]);
+    setAudioRespostaBlob(null);
 
     setTimeout(async () => {
       await remove(ref(db, caminhoFirebase));
@@ -414,6 +491,7 @@ async function instalarApp() {
       atendidoEm: new Date().toISOString(),
     });
 
+    setPopupAtendimentoAberto(false);
     pararToqueContinuo();
   }
 
@@ -424,7 +502,8 @@ async function instalarApp() {
     }
 
     if (status !== "Em atendimento") {
-      await registrarAnalytics("atendida");
+      alert("Atenda a chamada antes de responder.");
+      return;
     }
 
     await registrarLog("mensagem_rapida", "Mensagem enviada: " + mensagem);
@@ -433,14 +512,153 @@ async function instalarApp() {
       status: "Em atendimento",
       mensagemResponsavel: mensagem,
       notificar: false,
-     visualizadoPeloVisitante: false,
-       enviadoEm: Date.now(),
+      visitanteVisualizou: false,
+      mensagemVisualizada: false,
+      visualizadoPeloVisitante: false,
+      enviadoEm: Date.now(),
+      ultimaAtividade: Date.now(),
       atendidoEm: new Date().toISOString(),
+    });
+
+    await registrarMensagemConversa({
+      autor: "morador",
+      tipo: "texto",
+      texto: mensagem,
     });
 
     setMensagemResponsavel(mensagem);
     setVisitanteVisualizou(false);
     pararToqueContinuo();
+  }
+
+  async function registrarMensagemConversa(
+    dados: Omit<MensagemConversa, "criadoEm">
+  ) {
+    if (status === "Sem chamado ativo") return;
+
+    const idMensagem = String(Date.now());
+
+    await set(ref(db, `${caminhoFirebase}/mensagens/${idMensagem}`), {
+      ...dados,
+      criadoEm: Date.now(),
+    });
+
+    await update(ref(db, caminhoFirebase), {
+      ultimaAtividade: Date.now(),
+      enviadoEm: Date.now(),
+    });
+  }
+
+  async function iniciarGravacaoMorador() {
+    if (status === "Sem chamado ativo") {
+      alert("Não existe chamada ativa para responder.");
+      return;
+    }
+
+    if (status !== "Em atendimento") {
+      alert("Atenda a chamada antes de gravar resposta.");
+      return;
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+
+      audioChunksMoradorRef.current = [];
+
+      recorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksMoradorRef.current.push(event.data);
+        }
+      };
+
+      recorder.onstop = () => {
+        const blob = new Blob(audioChunksMoradorRef.current, {
+          type: "audio/webm",
+        });
+
+        setAudioRespostaBlob(blob);
+        setGravandoAudioMorador(false);
+        stream.getTracks().forEach((track) => track.stop());
+      };
+
+      mediaRecorderMoradorRef.current = recorder;
+      recorder.start();
+      setAudioRespostaBlob(null);
+      setGravandoAudioMorador(true);
+
+      setTimeout(() => {
+        if (recorder.state === "recording") {
+          pararGravacaoMorador();
+        }
+      }, 15000);
+    } catch (erro) {
+      console.error(erro);
+      alert("Não foi possível acessar o microfone.");
+      setGravandoAudioMorador(false);
+    }
+  }
+
+  function pararGravacaoMorador() {
+    if (
+      mediaRecorderMoradorRef.current &&
+      mediaRecorderMoradorRef.current.state === "recording"
+    ) {
+      mediaRecorderMoradorRef.current.stop();
+    } else {
+      setGravandoAudioMorador(false);
+    }
+  }
+
+  async function enviarAudioMorador() {
+    if (status === "Sem chamado ativo") {
+      alert("Não existe chamada ativa para responder.");
+      return;
+    }
+
+    if (status !== "Em atendimento") {
+      alert("Atenda a chamada antes de enviar áudio.");
+      return;
+    }
+
+    if (!audioRespostaBlob) {
+      alert("Grave um áudio antes de enviar.");
+      return;
+    }
+
+    try {
+      setEnviandoAudioMorador(true);
+
+      const audioBase64 = await blobParaBase64(audioRespostaBlob);
+
+      await update(ref(db, caminhoFirebase), {
+        status: "Em atendimento",
+        notificar: false,
+        mensagemResponsavel: "",
+        visualizadoPeloVisitante: false,
+        visitanteVisualizou: false,
+        mensagemVisualizada: false,
+        enviadoEm: Date.now(),
+        ultimaAtividade: Date.now(),
+        atendidoEm: new Date().toISOString(),
+      });
+
+      await registrarMensagemConversa({
+        autor: "morador",
+        tipo: "audio",
+        audioBase64,
+      });
+
+      await registrarLog("audio_morador", "Morador enviou áudio ao visitante");
+
+      setAudioRespostaBlob(null);
+      pararToqueContinuo();
+    } catch (erro) {
+      console.error(erro);
+      alert("Erro ao enviar áudio.");
+    } finally {
+      setEnviandoAudioMorador(false);
+    }
   }
 
   async function limparHistorico() {
@@ -462,6 +680,7 @@ async function instalarApp() {
     }
 
     ultimaChamadaAtivaRef.current = false;
+    setPopupAtendimentoAberto(false);
 
     await registrarAnalytics("finalizada");
     await registrarLog("chamada_finalizada", "Chamada finalizada manualmente");
@@ -588,42 +807,76 @@ async function instalarApp() {
   }
 
   async function ativarNotificacoes() {
-    const messaging = await messagingPromise;
-
-    if (!messaging) {
-      await registrarLog(
-        "push_nao_suportado",
-        "Este navegador não suporta notificações"
-      );
-
-      alert("Este navegador não suporta notificações.");
-      return;
-    }
-
-    const permissao = await Notification.requestPermission();
-
-    if (permissao !== "granted") {
-      await registrarLog(
-        "push_permissao_negada",
-        "Permissão para notificações negada: " + permissao
-      );
-
-      alert("Permissão para notificações negada. Resultado: " + permissao);
-      return;
-    }
-
-    alert("Permissão aceita. Agora vou gerar o token.");
-
     try {
+      if (typeof window === "undefined") {
+        alert("As notificações só podem ser ativadas no navegador.");
+        return;
+      }
+
+      if (!("Notification" in window)) {
+        await registrarLog(
+          "push_nao_suportado",
+          "Este navegador não possui suporte à API de notificações"
+        );
+
+        alert("Este navegador não suporta notificações.");
+        return;
+      }
+
+      if (!("serviceWorker" in navigator)) {
+        await registrarLog(
+          "push_sem_service_worker",
+          "Este navegador não possui suporte a Service Worker"
+        );
+
+        alert("Este navegador não suporta notificações em segundo plano.");
+        return;
+      }
+
+      const messaging = await messagingPromise;
+
+      if (!messaging) {
+        await registrarLog(
+          "push_nao_suportado",
+          "Firebase Messaging não foi inicializado neste navegador"
+        );
+
+        alert("Não foi possível iniciar as notificações neste navegador.");
+        return;
+      }
+
+      const permissao = await Notification.requestPermission();
+
+      if (permissao !== "granted") {
+        await registrarLog(
+          "push_permissao_negada",
+          "Permissão para notificações negada: " + permissao
+        );
+
+        alert("Permissão para notificações não foi concedida.");
+        return;
+      }
+
       const registroServiceWorker = await navigator.serviceWorker.register(
-        "/firebase-messaging-sw.js"
+        "/firebase-messaging-sw.js",
+        {
+          scope: "/",
+        }
       );
+
+      await navigator.serviceWorker.ready;
 
       const token = await getToken(messaging, {
         vapidKey:
           "BIEIQutWLbP05G1xFN1Zvg_hMnc4OGOkHRf6yI1bT8Igfmm1G8vRjYQhZyDGc5M3X6yhHkoWdJj4a_atPGqX7sk",
         serviceWorkerRegistration: registroServiceWorker,
       });
+
+      if (!token) {
+        throw new Error(
+          "O Firebase não retornou um token de notificação."
+        );
+      }
 
       await update(ref(db, "configuracoes-v2"), {
         [`tokensMorador/${slug}`]: token,
@@ -635,16 +888,93 @@ async function instalarApp() {
       );
 
       alert("Notificações ativadas com sucesso!");
-    } catch (erro) {
-      console.error("Erro ao gerar token:", erro);
+    } catch (erro: any) {
+      console.error("Erro completo ao ativar notificações:", erro);
+
+      const codigo =
+        erro?.code ||
+        erro?.name ||
+        "erro-desconhecido";
+
+      const mensagemErro =
+        erro?.message ||
+        String(erro);
 
       await registrarLog(
         "push_erro_token",
-        "Erro ao gerar token: " + String(erro)
+        `Código: ${codigo} | Mensagem: ${mensagemErro}`
       );
 
-      alert("Erro ao gerar token. Veja o console.");
+      alert(
+        `Não foi possível ativar as notificações.
+
+Código: ${codigo}
+Mensagem: ${mensagemErro}`
+      );
     }
+  }
+
+  useEffect(() => {
+    function prepararInstalacao(evento: any) {
+      evento.preventDefault();
+      setInstallPrompt(evento);
+      setAppInstalavel(true);
+    }
+
+    function appInstalado() {
+      setInstallPrompt(null);
+      setAppInstalavel(false);
+    }
+
+    window.addEventListener("beforeinstallprompt", prepararInstalacao);
+    window.addEventListener("appinstalled", appInstalado);
+
+    return () => {
+      window.removeEventListener("beforeinstallprompt", prepararInstalacao);
+      window.removeEventListener("appinstalled", appInstalado);
+    };
+  }, []);
+
+  async function instalarApp() {
+    if (!installPrompt) {
+      alert(
+        "Se o botão não abrir a instalação automaticamente, use o menu do navegador e procure por 'Instalar app' ou 'Adicionar à tela inicial'."
+      );
+      return;
+    }
+
+    try {
+      await installPrompt.prompt();
+      await installPrompt.userChoice;
+      setInstallPrompt(null);
+      setAppInstalavel(false);
+    } catch (erro) {
+      console.error("Erro ao instalar app:", erro);
+      alert("Não foi possível abrir a instalação agora.");
+    }
+  }
+
+  async function abrirCameraGrande() {
+    setMostrarCameraGrande(true);
+
+    if (!fotoCameraAtual) {
+      await capturarFotoCamera();
+    }
+  }
+
+  function silenciarToqueAoOuvirAudio() {
+    toqueSilenciadoPorAudioRef.current = true;
+    pararToqueContinuo();
+  }
+
+  function abrirAudioVisitanteGrande() {
+    if (!audioVisitante) return;
+
+    silenciarToqueAoOuvirAudio();
+    setAudioPopup({
+      titulo: "🎙️ Áudio do visitante",
+      audio: audioVisitante,
+    });
   }
 
   const respostasRapidas = [
@@ -677,7 +1007,7 @@ async function instalarApp() {
 
   return (
     <main className="min-h-screen bg-slate-950 text-white p-4 relative">
-      {chamadaAtiva && (
+      {mostrarPopupChamada && (
         <div className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center p-4 overflow-y-auto">
           <div className="w-full max-w-md bg-slate-900 border-4 border-green-400 rounded-3xl p-5 text-center shadow-2xl my-4">
             <p className="text-6xl mb-3">🚨</p>
@@ -689,6 +1019,26 @@ async function instalarApp() {
             <div className="bg-slate-800 rounded-2xl p-4 mt-4 border border-green-500/30">
               <p className="text-2xl font-black text-white">{nome}</p>
               <p className="text-slate-300 mt-2">Motivo: {motivo}</p>
+
+              {audioVisitante && (
+                <div className="mt-4 bg-slate-900 rounded-2xl p-4 border border-blue-500/40">
+                  <p className="text-sm text-blue-300 font-bold mb-3">
+                    🎙️ Áudio do visitante
+                  </p>
+
+                  <audio
+                    controls
+                    className="w-full"
+                    src={audioVisitante}
+                    onPointerDown={silenciarToqueAoOuvirAudio}
+                    onTouchStart={silenciarToqueAoOuvirAudio}
+                    onClick={silenciarToqueAoOuvirAudio}
+                    onPlay={silenciarToqueAoOuvirAudio}
+                    onPlaying={silenciarToqueAoOuvirAudio}
+                  />
+                </div>
+              )}
+
               <p className="text-yellow-400 mt-2 font-bold">Status: {status}</p>
             </div>
 
@@ -715,31 +1065,10 @@ async function instalarApp() {
               ✅ ATENDER AGORA
             </button>
 
-            <div className="mt-3">
-  <button
-    onClick={capturarFotoCamera}
-    disabled={capturandoCamera}
-    className="w-full bg-slate-700 hover:bg-slate-600 disabled:bg-gray-500 text-white text-sm font-bold py-3 rounded-2xl"
-  >
-    {capturandoCamera ? "📸 Atualizando" : "📸 Atualizar câmera"}
-  </button>
-</div>
-                         
-
-            {statusPortao && (
-              <p className="mt-2 text-green-400 font-bold">{statusPortao}</p>
-            )}
-
-            <div className="mt-4 grid grid-cols-1 gap-2">
-              {respostasRapidas.map((item) => (
-                <button
-                  key={item.texto}
-                  onClick={() => enviarMensagemRapida(item.mensagem)}
-                  className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-2xl"
-                >
-                  {item.icone} {item.texto}
-                </button>
-              ))}
+            <div className="mt-4 bg-slate-800 border border-yellow-500/40 rounded-2xl p-3">
+              <p className="text-yellow-300 text-sm font-bold">
+                Ouça o áudio e veja a câmera. Para responder, clique em ATENDER AGORA.
+              </p>
             </div>
 
             <button
@@ -748,6 +1077,138 @@ async function instalarApp() {
             >
               ❌ FINALIZAR
             </button>
+          </div>
+        </div>
+      )}
+
+      {audioPopup && (
+        <div className="fixed inset-0 z-[999] bg-black/95 flex items-center justify-center p-4">
+          <div className="w-full max-w-md bg-slate-900 border-4 border-blue-400 rounded-3xl p-5 text-center shadow-2xl">
+            <p className="text-6xl mb-3">🎙️</p>
+            <h2 className="text-2xl font-black text-blue-300 mb-4">
+              {audioPopup.titulo}
+            </h2>
+
+            <div className="bg-slate-800 rounded-2xl p-4 border border-blue-500/40">
+              <audio
+                controls
+                className="w-full"
+                src={audioPopup.audio}
+                onPointerDown={silenciarToqueAoOuvirAudio}
+                onTouchStart={silenciarToqueAoOuvirAudio}
+                onClick={silenciarToqueAoOuvirAudio}
+                onPlay={silenciarToqueAoOuvirAudio}
+                onPlaying={silenciarToqueAoOuvirAudio}
+              />
+            </div>
+
+            <button
+              onClick={() => {
+                silenciarToqueAoOuvirAudio();
+                setAudioPopup(null);
+              }}
+              className="w-full mt-5 bg-blue-600 hover:bg-blue-500 text-white font-black py-4 rounded-2xl"
+            >
+              ENTENDI
+            </button>
+          </div>
+        </div>
+      )}
+
+      {mostrarCameraGrande && (
+        <div className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center p-4 overflow-y-auto">
+          <div className="w-full max-w-md bg-slate-900 border-4 border-green-400 rounded-3xl p-5 text-center shadow-2xl">
+            <h2 className="text-2xl font-black text-green-400 mb-4">
+              📷 Câmera do portão
+            </h2>
+
+            {fotoCameraAtual ? (
+              <img
+                src={`${fotoCameraAtual}?t=${fotoCameraAtualizadaEm}`}
+                alt="Câmera do portão"
+                className="w-full rounded-2xl border border-slate-600"
+              />
+            ) : (
+              <p className="text-slate-400 text-sm bg-slate-800 rounded-2xl p-6">
+                Nenhuma foto capturada ainda.
+              </p>
+            )}
+
+            <div className="grid grid-cols-2 gap-3 mt-4">
+              <button
+                onClick={capturarFotoCamera}
+                disabled={capturandoCamera}
+                className="bg-slate-700 hover:bg-slate-600 disabled:bg-gray-500 text-white text-sm font-bold py-3 rounded-2xl"
+              >
+                {capturandoCamera ? "📸 Atualizando" : "📸 Atualizar"}
+              </button>
+
+              <button
+                onClick={() => setMostrarCameraGrande(false)}
+                className="bg-red-600 hover:bg-red-500 text-white text-sm font-bold py-3 rounded-2xl"
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {mostrarHistorico && (
+        <div className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center p-4 overflow-y-auto">
+          <div className="w-full max-w-md bg-slate-900 border-4 border-slate-600 rounded-3xl p-5 shadow-2xl my-4">
+            <div className="flex items-center justify-between gap-3 mb-4">
+              <h3 className="text-2xl font-black">📋 Histórico</h3>
+
+              <button
+                onClick={() => setMostrarHistorico(false)}
+                className="bg-slate-700 hover:bg-slate-600 text-white text-xs font-bold px-3 py-2 rounded-xl"
+              >
+                FECHAR
+              </button>
+            </div>
+
+            <button
+              onClick={limparHistorico}
+              className="w-full bg-red-600 hover:bg-red-500 text-white text-sm font-bold py-3 rounded-2xl mb-4"
+            >
+              LIMPAR HISTÓRICO
+            </button>
+
+            {historicoLista.length > 0 ? (
+              <div className="space-y-3 max-h-[70vh] overflow-y-auto pr-1">
+                {historicoLista.map((item, index) => (
+                  <div
+                    key={index}
+                    className="bg-slate-800 border border-slate-700 rounded-2xl p-3"
+                  >
+                    <p className="text-green-400 text-sm font-bold">
+                      {item.nome} - {item.motivo}
+                    </p>
+
+                    {item.fotoCamera && (
+                      <img
+                        src={item.fotoCamera}
+                        alt="Snapshot da câmera"
+                        className="w-full mt-3 rounded-xl border border-slate-600"
+                      />
+                    )}
+
+                    <p className="text-slate-400 text-xs mt-3">
+                      Finalizado em: {item.finalizadoEmFormatado}
+                    </p>
+
+                    <p className="text-blue-300 text-xs mt-1">
+                      Tipo: {item.tipoFinalizacao || "Não informado"}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-green-400 text-sm bg-slate-800 rounded-2xl p-4">
+                🔔 Nenhum atendimento finalizado
+              </p>
+            )}
           </div>
         </div>
       )}
@@ -770,19 +1231,29 @@ async function instalarApp() {
           </div>
         </div>
 
-        <button
-  onClick={instalarApp}
-  className="w-full mt-3 bg-green-500 hover:bg-green-400 text-black text-sm font-black py-3 rounded-2xl"
->
-  📲 INSTALAR APP NO CELULAR
-</button>
+        <div className="grid grid-cols-2 gap-3 mt-5">
+          <button
+            onClick={tocarBip}
+            className="bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold py-3 rounded-2xl"
+          >
+            🔊 Testar Som
+          </button>
+
+          <button
+            onClick={ativarNotificacoes}
+            className="bg-yellow-500 hover:bg-yellow-400 text-black text-sm font-bold py-3 rounded-2xl"
+          >
+            🔔 Notificações
+          </button>
+        </div>
+
         <div className="grid grid-cols-2 gap-3 mt-3">
           <button
-            onClick={capturarFotoCamera}
+            onClick={abrirCameraGrande}
             disabled={capturandoCamera}
             className="bg-slate-700 hover:bg-slate-600 disabled:bg-gray-500 text-white text-sm font-bold py-3 rounded-2xl"
           >
-            {capturandoCamera ? "📸 Atualizando" : "📸 Câmera"}
+            {capturandoCamera ? "📸 Atualizando" : "📷 Câmera"}
           </button>
 
           <button
@@ -790,7 +1261,7 @@ async function instalarApp() {
             disabled={abrindoPortao}
             className="bg-purple-600 hover:bg-purple-500 disabled:bg-gray-500 text-white text-sm font-bold py-3 rounded-2xl"
           >
-            {abrindoPortao ? "⏳ Abrindo" : "🚪 Portão"}
+            {abrindoPortao ? "⏳ Abrindo" : "🚪 Abrir portão"}
           </button>
         </div>
 
@@ -799,6 +1270,26 @@ async function instalarApp() {
             {statusPortao}
           </p>
         )}
+
+        <div className="grid grid-cols-2 gap-3 mt-3">
+          <button
+            onClick={instalarApp}
+            className={
+              appInstalavel
+                ? "bg-green-600 hover:bg-green-500 text-white text-sm font-bold py-3 rounded-2xl"
+                : "bg-slate-700 hover:bg-slate-600 text-white text-sm font-bold py-3 rounded-2xl"
+            }
+          >
+            📲 Instalar app
+          </button>
+
+          <button
+            onClick={() => setMostrarHistorico(true)}
+            className="bg-slate-700 hover:bg-slate-600 text-white text-sm font-bold py-3 rounded-2xl"
+          >
+            📋 Histórico
+          </button>
+        </div>
 
         <div className="bg-slate-800 rounded-2xl p-4 mt-5 border border-slate-700">
           <div className="flex items-center justify-between gap-3">
@@ -843,115 +1334,166 @@ async function instalarApp() {
             <p className="text-sm text-orange-300 mt-2">⏱ {avisoAuto}</p>
           )}
 
-          <button
-            onClick={atenderSolicitacao}
-            className="w-full mt-4 bg-green-500 hover:bg-green-400 text-black font-black py-3 rounded-2xl"
-          >
-            ✅ ATENDER
-          </button>
-
-          <div className="mt-4 bg-slate-900 border border-slate-700 rounded-2xl p-4">
-            <h3 className="font-bold text-blue-300 mb-3">💬 Respostas rápidas</h3>
-
-            {respostasRapidas.map((item) => (
-              <button
-                key={item.texto}
-                onClick={() => enviarMensagemRapida(item.mensagem)}
-                className="w-full mb-2 last:mb-0 bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-2xl"
-              >
-                {item.icone} {item.texto}
-              </button>
-            ))}
-
-            {mensagemResponsavel && (
-              <div className="mt-4 bg-slate-800 rounded-xl p-3 border border-slate-700">
-                <p className="text-sm text-green-400 font-bold">
-                  Última mensagem enviada:
-                </p>
-                <p className="text-sm text-white mt-1">{mensagemResponsavel}</p>
-
-                <p
-                  className={
-                    visitanteVisualizou
-                      ? "text-xs text-green-400 mt-2 font-bold"
-                      : "text-xs text-yellow-400 mt-2 font-bold"
-                  }
-                >
-                  {visitanteVisualizou
-                    ? "✅ Visitante visualizou"
-                    : "⏳ Aguardando visitante visualizar"}
-                </p>
-              </div>
-            )}
-          </div>
-
-          <button
-            onClick={finalizarSolicitacao}
-            className="w-full mt-4 bg-red-600 hover:bg-red-500 text-white font-bold py-3 rounded-2xl"
-          >
-            ❌ FINALIZAR ATENDIMENTO
-          </button>
-        </div>
-
-        <div className="bg-slate-800 rounded-2xl p-4 mt-4 border border-slate-700">
-          <h2 className="font-bold text-white mb-3">📷 Câmera do Portão</h2>
-
-          {fotoCameraAtual ? (
-            <img
-              src={`${fotoCameraAtual}?t=${fotoCameraAtualizadaEm}`}
-              alt="Câmera do portão"
-              className="w-full rounded-xl border border-slate-600"
-            />
-          ) : (
-            <p className="text-slate-400 text-sm">Nenhuma foto capturada ainda.</p>
-          )}
-        </div>
-
-        <div className="bg-slate-800 rounded-2xl p-4 mt-4 border border-slate-700">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-2xl font-black">📋 Histórico</h3>
-
+          {aguardandoAtendimento && (
             <button
-              onClick={limparHistorico}
-              className="bg-red-600 hover:bg-red-500 text-white text-xs font-bold px-3 py-2 rounded-xl"
+              onClick={atenderSolicitacao}
+              className="w-full mt-4 bg-green-500 hover:bg-green-400 text-black font-black py-3 rounded-2xl"
             >
-              LIMPAR
+              ✅ ATENDER
             </button>
-          </div>
+          )}
 
-          {historicoLista.length > 0 ? (
-            <div className="space-y-3">
-              {historicoLista.map((item, index) => (
-                <div
-                  key={index}
-                  className="bg-slate-900 border border-slate-700 rounded-2xl p-3"
+          {atendimentoEmAndamento ? (
+            <div className="mt-4 bg-slate-900 border border-slate-700 rounded-2xl p-4">
+              <h3 className="font-bold text-blue-300 mb-3">💬 Respostas rápidas</h3>
+
+              {respostasRapidas.map((item) => (
+                <button
+                  key={item.texto}
+                  onClick={() => enviarMensagemRapida(item.mensagem)}
+                  className="w-full mb-2 last:mb-0 bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-2xl"
                 >
-                  <p className="text-green-400 text-sm font-bold">
-                    {item.nome} - {item.motivo}
+                  {item.icone} {item.texto}
+                </button>
+              ))}
+
+              {mensagemResponsavel && (
+                <div className="mt-4 bg-slate-800 rounded-xl p-3 border border-slate-700">
+                  <p className="text-sm text-green-400 font-bold">
+                    Última mensagem enviada:
                   </p>
+                  <p className="text-sm text-white mt-1">{mensagemResponsavel}</p>
 
-                  {item.fotoCamera && (
-                    <img
-                      src={item.fotoCamera}
-                      alt="Snapshot da câmera"
-                      className="w-full mt-3 rounded-xl border border-slate-600"
-                    />
-                  )}
-
-                  <p className="text-slate-400 text-xs mt-3">
-                    Finalizado em: {item.finalizadoEmFormatado}
-                  </p>
-
-                  <p className="text-blue-300 text-xs mt-1">
-                    Tipo: {item.tipoFinalizacao || "Não informado"}
+                  <p
+                    className={
+                      visitanteVisualizou
+                        ? "text-xs text-green-400 mt-2 font-bold"
+                        : "text-xs text-yellow-400 mt-2 font-bold"
+                    }
+                  >
+                    {visitanteVisualizou
+                      ? "✅ Visitante visualizou"
+                      : "⏳ Aguardando visitante visualizar"}
                   </p>
                 </div>
-              ))}
+              )}
             </div>
           ) : (
-            <p className="text-green-400 text-sm">🔔 Nenhum atendimento finalizado</p>
+            <div className="mt-4 bg-slate-900 border border-yellow-500/40 rounded-2xl p-4">
+              <p className="text-yellow-300 text-sm font-bold">
+                Respostas rápidas ficam liberadas depois de atender.
+              </p>
+            </div>
           )}
+
+          {mensagensConversa.length > 0 && (
+            <div className="mt-4 bg-slate-900 border border-blue-500/40 rounded-2xl p-4">
+              <h3 className="font-bold text-blue-300 mb-3">
+                💬 Conversa do atendimento
+              </h3>
+
+              <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
+                {mensagensConversa.map((item) => (
+                  <div
+                    key={item.id}
+                    className={
+                      item.autor === "morador"
+                        ? "bg-green-600/30 border border-green-500 rounded-2xl p-3"
+                        : "bg-blue-600/30 border border-blue-500 rounded-2xl p-3"
+                    }
+                  >
+                    <p className="text-xs font-black mb-2">
+                      {item.autor === "morador" ? "Você" : "Visitante"}
+                    </p>
+
+                    {item.tipo === "texto" && (
+                      <p className="text-white font-bold">{item.texto}</p>
+                    )}
+
+                    {item.tipo === "audio" && item.audioBase64 && (
+                      <button
+                        onClick={() => {
+                          if (item.autor === "visitante") {
+                            silenciarToqueAoOuvirAudio();
+                          }
+
+                          setAudioPopup({
+                            titulo:
+                              item.autor === "morador"
+                                ? "🎙️ Seu áudio enviado"
+                                : "🎙️ Áudio do visitante",
+                            audio: item.audioBase64 || "",
+                          });
+                        }}
+                        className="w-full bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-xl py-3 font-bold text-white"
+                      >
+                        🎙️ Ouvir áudio
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {atendimentoEmAndamento ? (
+            <div className="mt-4 bg-slate-900 border border-cyan-500/40 rounded-2xl p-4 space-y-3">
+              <button
+                onClick={
+                  gravandoAudioMorador
+                    ? pararGravacaoMorador
+                    : iniciarGravacaoMorador
+                }
+                disabled={enviandoAudioMorador}
+                className={
+                  gravandoAudioMorador
+                    ? "w-full bg-red-600 py-3 rounded-xl font-black animate-pulse"
+                    : "w-full bg-cyan-600 hover:bg-cyan-500 disabled:bg-slate-700 py-3 rounded-xl font-black"
+                }
+              >
+                {gravandoAudioMorador ? "⏹️ PARAR GRAVAÇÃO" : "🎙️ GRAVAR ÁUDIO"}
+              </button>
+
+              {audioRespostaBlob && (
+                <div className="space-y-3">
+                  <audio
+                    controls
+                    className="w-full"
+                    src={URL.createObjectURL(audioRespostaBlob)}
+                  />
+
+                  <button
+                    onClick={enviarAudioMorador}
+                    disabled={enviandoAudioMorador}
+                    className="w-full bg-blue-600 hover:bg-blue-500 disabled:bg-slate-700 py-3 rounded-xl font-black"
+                  >
+                    {enviandoAudioMorador
+                      ? "Enviando..."
+                      : "📤 ENVIAR ÁUDIO AO VISITANTE"}
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="mt-4 bg-slate-900 border border-cyan-500/20 rounded-2xl p-4">
+              <p className="text-slate-400 text-sm">
+                🎙️ Gravação de resposta liberada depois de atender.
+              </p>
+            </div>
+          )}
+
+          {!gravandoAudioMorador &&
+            !audioRespostaBlob &&
+            !enviandoAudioMorador && (
+              <button
+                onClick={finalizarSolicitacao}
+                className="w-full mt-6 bg-red-600 hover:bg-red-500 text-white font-bold py-3 rounded-2xl"
+              >
+                ❌ FINALIZAR ATENDIMENTO
+              </button>
+            )}
         </div>
+
       </div>
     </main>
   );
