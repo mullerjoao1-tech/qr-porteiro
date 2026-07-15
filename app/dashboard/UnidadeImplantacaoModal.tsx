@@ -1,5 +1,10 @@
 "use client";
 
+import { useState } from "react";
+import { get, ref, update } from "firebase/database";
+
+import { db } from "../services/firebase";
+
 type ImplantacaoUnidade = {
   status?: string;
   protocolo?: string;
@@ -162,6 +167,8 @@ export default function UnidadeImplantacaoModal({
   onClose,
   onVisualizarPendencia,
 }: Props) {
+  const [limpando, setLimpando] = useState(false);
+
   const moradoresDaUnidade = moradores
     .filter((morador) => morador.unidadeId === unidade.id)
     .sort(
@@ -181,6 +188,91 @@ export default function UnidadeImplantacaoModal({
   const nomeCompletoUnidade = unidade.bloco
     ? `${unidade.bloco} / ${unidade.nome}`
     : unidade.nome;
+
+  async function limparImplantacaoTeste() {
+    if (limpando) return;
+
+    const confirmar = window.confirm(
+      [
+        "ATENÇÃO: limpar implantação em modo teste?",
+        "",
+        `Unidade: ${nomeCompletoUnidade}`,
+        `Local: ${unidade.localNome}`,
+        "",
+        "Esta ação vai excluir:",
+        "• todos os moradores vinculados a esta unidade;",
+        "• todas as atualizações cadastrais desta unidade;",
+        "• protocolo e linha do tempo da implantação;",
+        "",
+        "A unidade voltará para Sem cadastro.",
+        "",
+        "Esta ação não pode ser desfeita.",
+      ].join("\n")
+    );
+
+    if (!confirmar) return;
+
+    const confirmarNovamente = window.confirm(
+      `Confirma a exclusão definitiva dos dados de teste da unidade ${nomeCompletoUnidade}?`
+    );
+
+    if (!confirmarNovamente) return;
+
+    setLimpando(true);
+
+    try {
+      const atualizacoesSnapshot = await get(
+        ref(db, "qrCentral/atualizacoesCadastrais")
+      );
+
+      const atualizacoesDados = atualizacoesSnapshot.val();
+      const alteracoes: Record<string, unknown> = {};
+
+      moradoresDaUnidade.forEach((morador) => {
+        alteracoes[`qrCentral/moradores/${morador.id}`] = null;
+      });
+
+      if (atualizacoesDados) {
+        Object.entries(atualizacoesDados).forEach(
+          ([id, valor]) => {
+            const atualizacao = valor as {
+              unidadeId?: string;
+            };
+
+            if (atualizacao.unidadeId === unidade.id) {
+              alteracoes[
+                `qrCentral/atualizacoesCadastrais/${id}`
+              ] = null;
+            }
+          }
+        );
+      }
+
+      alteracoes[
+        `qrCentral/unidades/${unidade.id}/implantacao`
+      ] = {
+        status: "sem-cadastro",
+        atualizadoEm: new Date().toISOString(),
+        quantidadeMoradores: 0,
+      };
+
+      await update(ref(db), alteracoes);
+
+      alert(
+        `Implantação da unidade ${nomeCompletoUnidade} limpa com sucesso.`
+      );
+
+      onClose();
+    } catch (erro) {
+      console.error("Erro ao limpar implantação:", erro);
+
+      alert(
+        "Não foi possível limpar a implantação. Verifique o terminal antes de tentar novamente."
+      );
+    } finally {
+      setLimpando(false);
+    }
+  }
 
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/80 p-4">
@@ -203,7 +295,8 @@ export default function UnidadeImplantacaoModal({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-xl bg-slate-800 px-4 py-2 font-black text-white hover:bg-slate-700"
+            disabled={limpando}
+            className="rounded-xl bg-slate-800 px-4 py-2 font-black text-white hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
             ✕
           </button>
@@ -440,10 +533,34 @@ export default function UnidadeImplantacaoModal({
           </button>
         </div>
 
+        <div className="mt-6 rounded-2xl border border-red-900 bg-red-950/20 p-4">
+          <p className="font-black text-red-300">
+            🧪 Ferramenta de teste
+          </p>
+
+          <p className="mt-2 text-sm leading-relaxed text-red-100/80">
+            Use somente para remover cadastros fictícios antes da
+            implantação real. A exclusão remove moradores e solicitações
+            desta unidade.
+          </p>
+
+          <button
+            type="button"
+            onClick={limparImplantacaoTeste}
+            disabled={limpando}
+            className="mt-4 w-full rounded-xl bg-red-700 py-3 font-black text-white hover:bg-red-600 disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-400"
+          >
+            {limpando
+              ? "Limpando implantação..."
+              : "🗑️ Limpar implantação (Modo Teste)"}
+          </button>
+        </div>
+
         <button
           type="button"
           onClick={onClose}
-          className="mt-4 w-full rounded-xl bg-slate-700 py-3 font-black text-white hover:bg-slate-600"
+          disabled={limpando}
+          className="mt-4 w-full rounded-xl bg-slate-700 py-3 font-black text-white hover:bg-slate-600 disabled:cursor-not-allowed disabled:bg-slate-800 disabled:text-slate-500"
         >
           Fechar
         </button>
