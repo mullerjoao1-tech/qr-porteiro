@@ -1,12 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ref, onValue, push, set } from "firebase/database";
+import { get, ref, onValue, push, set, update } from "firebase/database";
 import { db } from "../services/firebase";
 import Unidades from "../components/dashboard/Unidades";
 import Moradores from "../components/dashboard/Moradores";
 import AtualizacaoPendenteModal from "./AtualizacaoPendenteModal";
-import UnidadeImplantacaoModal from "./UnidadeImplantacaoModal";
 
 type Tela =
   | "dashboard"
@@ -98,16 +97,8 @@ export default function Dashboard() {
   const [localAberto, setLocalAberto] = useState<LocalCadastrado | null>(null);
   const [atualizacaoSelecionada, setAtualizacaoSelecionada] =
     useState<AtualizacaoCadastral | null>(null);
-  const [unidadeImplantacaoSelecionada, setUnidadeImplantacaoSelecionada] =
-    useState<
-      | (UnidadeCadastrada & {
-          statusImplantacao?: string;
-          moradoresDaUnidade?: MoradorCadastrado[];
-          pendenciaDaUnidade?: AtualizacaoCadastral | null;
-        })
-      | null
-    >(null);
   const [salvando, setSalvando] = useState(false);
+  const [excluindoLocal, setExcluindoLocal] = useState(false);
   const [salvandoUnidade, setSalvandoUnidade] = useState(false);
   const [salvandoMorador, setSalvandoMorador] = useState(false);
 
@@ -444,6 +435,116 @@ export default function Dashboard() {
       alert("Erro ao cadastrar morador.");
     } finally {
       setSalvandoMorador(false);
+    }
+  }
+
+  function abrirUnidadesDoLocal(local: LocalCadastrado) {
+    setLocalSelecionadoId(local.id);
+    setLocalAberto(null);
+    setTelaAtiva("unidades");
+  }
+
+  async function excluirLocalTesteCompleto(local: LocalCadastrado) {
+    if (excluindoLocal) return;
+
+    const confirmacao = window.confirm(
+      [
+        "ATENÇÃO: excluir este local de teste por completo?",
+        "",
+        `Local: ${local.nome}`,
+        "",
+        "Esta ação excluirá:",
+        "• o local;",
+        "• todas as unidades dele;",
+        "• todos os moradores vinculados;",
+        "• todas as atualizações cadastrais;",
+        "• todo o histórico de implantação dessas unidades;",
+        "",
+        "Esta ação não pode ser desfeita.",
+      ].join("\n")
+    );
+
+    if (!confirmacao) return;
+
+    const nomeDigitado = window.prompt(
+      `Para confirmar, digite exatamente o nome do local:\n\n${local.nome}`
+    );
+
+    if (nomeDigitado !== local.nome) {
+      alert("Nome diferente. A exclusão foi cancelada.");
+      return;
+    }
+
+    setExcluindoLocal(true);
+
+    try {
+      const [unidadesSnapshot, moradoresSnapshot, atualizacoesSnapshot] =
+        await Promise.all([
+          get(ref(db, "qrCentral/unidades")),
+          get(ref(db, "qrCentral/moradores")),
+          get(ref(db, "qrCentral/atualizacoesCadastrais")),
+        ]);
+
+      const unidadesDados = unidadesSnapshot.val() || {};
+      const moradoresDados = moradoresSnapshot.val() || {};
+      const atualizacoesDados = atualizacoesSnapshot.val() || {};
+
+      const idsUnidadesDoLocal = Object.entries(unidadesDados)
+        .filter(([, valor]) => {
+          const unidade = valor as { localId?: string };
+          return unidade.localId === local.id;
+        })
+        .map(([id]) => id);
+
+      const idsUnidadesSet = new Set(idsUnidadesDoLocal);
+      const alteracoes: Record<string, null> = {};
+
+      idsUnidadesDoLocal.forEach((unidadeId) => {
+        alteracoes[`qrCentral/unidades/${unidadeId}`] = null;
+      });
+
+      Object.entries(moradoresDados).forEach(([id, valor]) => {
+        const morador = valor as { unidadeId?: string; localId?: string };
+
+        if (
+          morador.localId === local.id ||
+          (morador.unidadeId && idsUnidadesSet.has(morador.unidadeId))
+        ) {
+          alteracoes[`qrCentral/moradores/${id}`] = null;
+        }
+      });
+
+      Object.entries(atualizacoesDados).forEach(([id, valor]) => {
+        const atualizacao = valor as {
+          condominioId?: string;
+          unidadeId?: string;
+        };
+
+        if (
+          atualizacao.condominioId === local.id ||
+          (atualizacao.unidadeId &&
+            idsUnidadesSet.has(atualizacao.unidadeId))
+        ) {
+          alteracoes[`qrCentral/atualizacoesCadastrais/${id}`] = null;
+        }
+      });
+
+      alteracoes[`qrCentral/locais/${local.id}`] = null;
+
+      await update(ref(db), alteracoes);
+
+      alert(`O local "${local.nome}" e todos os dados de teste foram excluídos.`);
+
+      setLocalSelecionadoId("");
+      setLocalAberto(null);
+      setTelaAtiva("locais");
+    } catch (erro) {
+      console.error("Erro ao excluir local de teste:", erro);
+      alert(
+        "Não foi possível excluir o local. Verifique o terminal antes de tentar novamente."
+      );
+    } finally {
+      setExcluindoLocal(false);
     }
   }
 
@@ -1341,11 +1442,14 @@ export default function Dashboard() {
                                       <button
                                         key={unidade.id}
                                         type="button"
-                                        onClick={() =>
-                                          setUnidadeImplantacaoSelecionada(
-                                            unidade
-                                          )
-                                        }
+                                        onClick={() => {
+                                          if (unidade.pendenciaDaUnidade) {
+                                            setTelaAtiva("pendentes");
+                                            setAtualizacaoSelecionada(
+                                              unidade.pendenciaDaUnidade
+                                            );
+                                          }
+                                        }}
                                         className={`text-left rounded-2xl border p-4 transition-all hover:-translate-y-0.5 hover:shadow-lg ${classesStatusImplantacao(
                                           unidade.statusImplantacao
                                         )}`}
@@ -1420,24 +1524,6 @@ export default function Dashboard() {
                 </div>
               </div>
             )}
-            {unidadeImplantacaoSelecionada && (
-              <UnidadeImplantacaoModal
-                unidade={unidadeImplantacaoSelecionada}
-                moradores={moradores}
-                pendencia={
-                  unidadeImplantacaoSelecionada.pendenciaDaUnidade || null
-                }
-                onClose={() =>
-                  setUnidadeImplantacaoSelecionada(null)
-                }
-                onVisualizarPendencia={(pendencia) => {
-                  setUnidadeImplantacaoSelecionada(null);
-                  setTelaAtiva("pendentes");
-                  setAtualizacaoSelecionada(pendencia);
-                }}
-              />
-            )}
-
             {atualizacaoSelecionada && (
               <AtualizacaoPendenteModal
                 atualizacao={atualizacaoSelecionada}
@@ -1446,74 +1532,123 @@ export default function Dashboard() {
             )}
 
             {localAberto && (
-  <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-    <div className="bg-slate-900 rounded-2xl p-6 w-full max-w-3xl border border-slate-700">
-      <div className="flex justify-between items-start mb-6">
-        <div>
-          <p className="text-blue-400 font-bold">
-            {localAberto.codigo}
-          </p>
+              <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+                <div className="bg-slate-900 rounded-2xl p-6 w-full max-w-3xl max-h-[92vh] overflow-y-auto border border-slate-700">
+                  <div className="flex justify-between items-start gap-4 mb-6">
+                    <div>
+                      <p className="text-blue-400 font-bold">
+                        {localAberto.codigo}
+                      </p>
 
-          <h2 className="text-3xl font-black">
-            {localAberto.nome}
-          </h2>
+                      <h2 className="text-3xl font-black">
+                        {localAberto.nome}
+                      </h2>
 
-          <p className="text-slate-400 mt-2">
-            {localAberto.cidade}/{localAberto.estado}
-          </p>
-        </div>
+                      <p className="text-slate-400 mt-2">
+                        {localAberto.cidade}/{localAberto.estado}
+                      </p>
+                    </div>
 
-        <button
-          onClick={() => setLocalAberto(null)}
-          className="bg-red-600 px-4 py-2 rounded-xl font-bold"
-        >
-          Fechar
-        </button>
-      </div>
+                    <button
+                      type="button"
+                      onClick={() => setLocalAberto(null)}
+                      disabled={excluindoLocal}
+                      className="bg-red-600 hover:bg-red-500 disabled:bg-slate-700 px-4 py-2 rounded-xl font-bold"
+                    >
+                      Fechar
+                    </button>
+                  </div>
 
-      <div className="grid md:grid-cols-3 gap-4 mb-6">
-        <div className="bg-slate-800 rounded-xl p-4">
-          <p className="text-slate-400 text-sm">Unidades</p>
-          <p className="text-3xl font-black">
-           {unidades.length}
-          </p>
-        </div>
+                  <div className="grid md:grid-cols-3 gap-4 mb-6">
+                    <div className="bg-slate-800 rounded-xl p-4">
+                      <p className="text-slate-400 text-sm">
+                        Unidades
+                      </p>
+                      <p className="text-3xl font-black">
+                        {
+                          unidades.filter(
+                            (unidade) =>
+                              unidade.localId === localAberto.id
+                          ).length
+                        }
+                      </p>
+                    </div>
 
-        <div className="bg-slate-800 rounded-xl p-4">
-          <p className="text-slate-400 text-sm">Moradores</p>
-          <p className="text-3xl font-black">
-            {
-              moradores.filter((m) =>
-                unidades.some(
-                  (u) =>
-                    u.id === m.unidadeId &&
-                    u.localId === localAberto.id
-                )
-              ).length
-            }
-          </p>
-        </div>
+                    <div className="bg-slate-800 rounded-xl p-4">
+                      <p className="text-slate-400 text-sm">
+                        Moradores
+                      </p>
+                      <p className="text-3xl font-black">
+                        {
+                          moradores.filter((morador) =>
+                            unidades.some(
+                              (unidade) =>
+                                unidade.id === morador.unidadeId &&
+                                unidade.localId === localAberto.id
+                            )
+                          ).length
+                        }
+                      </p>
+                    </div>
 
-        <div className="bg-slate-800 rounded-xl p-4">
-          <p className="text-slate-400 text-sm">QR Principal</p>
-          <p className="text-sm font-bold mt-2">
-            {localAberto.qrPrincipal}
-          </p>
-        </div>
-      </div>
+                    <div className="bg-slate-800 rounded-xl p-4">
+                      <p className="text-slate-400 text-sm">
+                        QR Principal
+                      </p>
+                      <p className="text-sm font-bold mt-2 break-all">
+                        {localAberto.qrPrincipal}
+                      </p>
+                    </div>
+                  </div>
 
-      <div className="grid md:grid-cols-2 gap-4">
-        <button className="bg-blue-600 rounded-xl py-3 font-bold">
-          Ver unidades
-        </button>
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <button
+                      type="button"
+                      onClick={() => abrirUnidadesDoLocal(localAberto)}
+                      disabled={excluindoLocal}
+                      className="bg-blue-600 hover:bg-blue-500 disabled:bg-slate-700 rounded-xl py-3 font-bold"
+                    >
+                      Ver unidades
+                    </button>
 
-        <button className="bg-green-600 rounded-xl py-3 font-bold">
-          Adicionar unidade
-        </button>
-      </div>
-    </div>
-  </div>
-)}
+                    <button
+                      type="button"
+                      onClick={() => abrirUnidadesDoLocal(localAberto)}
+                      disabled={excluindoLocal}
+                      className="bg-green-600 hover:bg-green-500 disabled:bg-slate-700 rounded-xl py-3 font-bold"
+                    >
+                      Adicionar unidade
+                    </button>
+                  </div>
+
+                  <div className="mt-6 rounded-2xl border border-red-900 bg-red-950/20 p-4">
+                    <p className="font-black text-red-300">
+                      🧪 Limpeza de ambiente de teste
+                    </p>
+
+                    <p className="mt-2 text-sm leading-relaxed text-red-100/80">
+                      Exclui este local e todos os dados ligados a ele:
+                      unidades, moradores, solicitações e implantação.
+                      Use somente para cadastros fictícios.
+                    </p>
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        excluirLocalTesteCompleto(localAberto)
+                      }
+                      disabled={excluindoLocal}
+                      className="mt-4 w-full bg-red-700 hover:bg-red-600 disabled:bg-slate-700 disabled:text-slate-400 rounded-xl py-3 font-black"
+                    >
+                      {excluindoLocal
+                        ? "Excluindo local e dados..."
+                        : "🗑️ Excluir local de teste completo"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
         </section>
       </div>
     </main>
