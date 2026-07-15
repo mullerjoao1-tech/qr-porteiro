@@ -6,6 +6,7 @@ import { db } from "../services/firebase";
 import Unidades from "../components/dashboard/Unidades";
 import Moradores from "../components/dashboard/Moradores";
 import AtualizacaoPendenteModal from "./AtualizacaoPendenteModal";
+import UnidadeImplantacaoModal from "./UnidadeImplantacaoModal";
 
 type Tela =
   | "dashboard"
@@ -97,6 +98,15 @@ export default function Dashboard() {
   const [localAberto, setLocalAberto] = useState<LocalCadastrado | null>(null);
   const [atualizacaoSelecionada, setAtualizacaoSelecionada] =
     useState<AtualizacaoCadastral | null>(null);
+  const [unidadeImplantacaoSelecionada, setUnidadeImplantacaoSelecionada] =
+    useState<
+      | (UnidadeCadastrada & {
+          statusImplantacao?: string;
+          moradoresDaUnidade?: MoradorCadastrado[];
+          pendenciaDaUnidade?: AtualizacaoCadastral | null;
+        })
+      | null
+    >(null);
   const [salvando, setSalvando] = useState(false);
   const [excluindoLocal, setExcluindoLocal] = useState(false);
   const [salvandoUnidade, setSalvandoUnidade] = useState(false);
@@ -1442,14 +1452,11 @@ export default function Dashboard() {
                                       <button
                                         key={unidade.id}
                                         type="button"
-                                        onClick={() => {
-                                          if (unidade.pendenciaDaUnidade) {
-                                            setTelaAtiva("pendentes");
-                                            setAtualizacaoSelecionada(
-                                              unidade.pendenciaDaUnidade
-                                            );
-                                          }
-                                        }}
+                                        onClick={() =>
+                                          setUnidadeImplantacaoSelecionada(
+                                            unidade
+                                          )
+                                        }
                                         className={`text-left rounded-2xl border p-4 transition-all hover:-translate-y-0.5 hover:shadow-lg ${classesStatusImplantacao(
                                           unidade.statusImplantacao
                                         )}`}
@@ -1524,6 +1531,24 @@ export default function Dashboard() {
                 </div>
               </div>
             )}
+            {unidadeImplantacaoSelecionada && (
+              <UnidadeImplantacaoModal
+                unidade={unidadeImplantacaoSelecionada}
+                moradores={moradores}
+                pendencia={
+                  unidadeImplantacaoSelecionada.pendenciaDaUnidade || null
+                }
+                onClose={() =>
+                  setUnidadeImplantacaoSelecionada(null)
+                }
+                onVisualizarPendencia={(pendencia) => {
+                  setUnidadeImplantacaoSelecionada(null);
+                  setTelaAtiva("pendentes");
+                  setAtualizacaoSelecionada(pendencia);
+                }}
+              />
+            )}
+
             {atualizacaoSelecionada && (
               <AtualizacaoPendenteModal
                 atualizacao={atualizacaoSelecionada}
