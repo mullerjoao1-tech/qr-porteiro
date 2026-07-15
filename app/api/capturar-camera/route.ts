@@ -23,7 +23,7 @@ export async function GET(
         ativa: true,
         rtspUrl:
           process.env.CAMERA_JORTAN_RTSP_URL ||
-          "rtsp://admin:qr12345678@192.168.15.27:554/onvif1",
+          "rtsp://admin:qr123456789@192.168.15.20:554/onvif1",
         timeoutMs: 15000,
       };
       break;
@@ -37,7 +37,7 @@ export async function GET(
         ativa: true,
         rtspUrl:
           process.env.CAMERA_PORTAO_RTSP_URL ||
-          "rtsp://admin:qr12345678@192.168.15.17:554/onvif1",
+          "rtsp://admin:qr12345678@192.168.15.9:554/onvif1",
         timeoutMs: 15000,
       };
       break;
