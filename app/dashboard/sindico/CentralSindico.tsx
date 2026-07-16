@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 type FiltroSaude = "todos" | "saudaveis" | "atencao" | "criticos";
 
@@ -10,6 +10,15 @@ type CondominioSaude = {
   percentual: number;
   status: "saudavel" | "atencao" | "critico";
   problemas: string[];
+};
+
+type IndicadorRapido = {
+  id: string;
+  titulo: string;
+  valor: string;
+  descricao: string;
+  icone: string;
+  destaque: string;
 };
 
 const condominios: CondominioSaude[] = [
@@ -36,6 +45,73 @@ const condominios: CondominioSaude[] = [
       "Interfone com defeito",
       "Portão social aberto acima do tempo",
     ],
+  },
+];
+
+const indicadoresDisponiveis: IndicadorRapido[] = [
+  {
+    id: "chamadas",
+    titulo: "Chamadas hoje",
+    valor: "18",
+    descricao: "3 em andamento",
+    icone: "📞",
+    destaque: "text-blue-300",
+  },
+  {
+    id: "entregas",
+    titulo: "Entregas",
+    valor: "12",
+    descricao: "2 aguardando retirada",
+    icone: "📦",
+    destaque: "text-orange-300",
+  },
+  {
+    id: "moradores",
+    titulo: "Moradores",
+    valor: "94",
+    descricao: "6 cadastros pendentes",
+    icone: "👥",
+    destaque: "text-cyan-300",
+  },
+  {
+    id: "unidades",
+    titulo: "Unidades ativas",
+    valor: "87",
+    descricao: "92% da carteira",
+    icone: "🏢",
+    destaque: "text-green-300",
+  },
+  {
+    id: "visitantes",
+    titulo: "Visitantes",
+    valor: "31",
+    descricao: "Registrados hoje",
+    icone: "🚶",
+    destaque: "text-violet-300",
+  },
+  {
+    id: "prestadores",
+    titulo: "Prestadores",
+    valor: "7",
+    descricao: "2 acessos em andamento",
+    icone: "🧰",
+    destaque: "text-yellow-300",
+  },
+  {
+    id: "portoes",
+    titulo: "Portões",
+    valor: "8",
+    descricao: "7 funcionando normalmente",
+    icone: "🚪",
+    destaque: "text-emerald-300",
+  },
+  {
+    id: "cameras",
+    titulo: "Câmeras",
+    valor: "11",
+    descricao: "1 câmera offline",
+    icone: "📷",
+    destaque: "text-red-300",
   },
 ];
 
@@ -69,6 +145,20 @@ export default function CentralSindico() {
   const [condominioSelecionado, setCondominioSelecionado] =
     useState<CondominioSaude | null>(null);
 
+  const [popupIndicadoresAberto, setPopupIndicadoresAberto] = useState(false);
+  const [indicadoresVisiveis, setIndicadoresVisiveis] = useState<string[]>([
+    "chamadas",
+    "entregas",
+    "moradores",
+    "unidades",
+  ]);
+  const [indicadoresRascunho, setIndicadoresRascunho] = useState<string[]>([
+    "chamadas",
+    "entregas",
+    "moradores",
+    "unidades",
+  ]);
+
   const saudaveis = condominios.filter(
     (condominio) => condominio.status === "saudavel"
   ).length;
@@ -92,6 +182,18 @@ export default function CentralSindico() {
     return condominio.status === "critico";
   });
 
+  const indicadoresAtivos = useMemo(
+    () =>
+      indicadoresVisiveis
+        .map((id) =>
+          indicadoresDisponiveis.find((indicador) => indicador.id === id)
+        )
+        .filter((indicador): indicador is IndicadorRapido =>
+          Boolean(indicador)
+        ),
+    [indicadoresVisiveis]
+  );
+
   function abrirSaude(filtro: FiltroSaude = "todos") {
     setFiltroSaude(filtro);
     setCondominioSelecionado(null);
@@ -102,6 +204,33 @@ export default function CentralSindico() {
     setPopupSaudeAberto(false);
     setCondominioSelecionado(null);
     setFiltroSaude("todos");
+  }
+
+  function abrirConfiguracaoIndicadores() {
+    setIndicadoresRascunho(indicadoresVisiveis);
+    setPopupIndicadoresAberto(true);
+  }
+
+  function fecharConfiguracaoIndicadores() {
+    setIndicadoresRascunho(indicadoresVisiveis);
+    setPopupIndicadoresAberto(false);
+  }
+
+  function alternarIndicador(id: string) {
+    setIndicadoresRascunho((atuais) => {
+      if (atuais.includes(id)) {
+        if (atuais.length === 1) return atuais;
+        return atuais.filter((indicadorId) => indicadorId !== id);
+      }
+
+      if (atuais.length >= 6) return atuais;
+      return [...atuais, id];
+    });
+  }
+
+  function salvarIndicadores() {
+    setIndicadoresVisiveis(indicadoresRascunho);
+    setPopupIndicadoresAberto(false);
   }
 
   return (
@@ -187,6 +316,60 @@ export default function CentralSindico() {
         </div>
       </section>
 
+      {/* Indicadores rápidos personalizáveis */}
+
+      <section className="rounded-2xl border border-slate-700 bg-slate-900/70 p-4 md:p-5">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-xs font-bold text-blue-300 md:text-sm">
+              📊 INDICADORES RÁPIDOS
+            </p>
+
+            <h2 className="mt-1 text-xl font-black text-white md:text-2xl">
+              Tudo importante na palma da mão
+            </h2>
+
+            <p className="mt-1 text-xs text-slate-400 md:text-sm">
+              Escolha os indicadores que deseja acompanhar primeiro.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={abrirConfiguracaoIndicadores}
+            className="shrink-0 rounded-xl border border-slate-600 bg-slate-800 px-3 py-3 text-sm font-black text-white transition-all duration-150 hover:bg-slate-700 active:scale-95 active:brightness-125 md:px-4"
+          >
+            ⚙️ <span className="hidden sm:inline">Personalizar</span>
+          </button>
+        </div>
+
+        <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
+          {indicadoresAtivos.map((indicador) => (
+            <button
+              key={indicador.id}
+              type="button"
+              className="min-h-[138px] rounded-2xl border border-slate-700 bg-slate-800/80 p-4 text-left transition-all duration-150 hover:border-blue-600 hover:bg-slate-800 active:scale-95 active:brightness-125"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="text-3xl">{indicador.icone}</div>
+
+                <div className={`text-2xl font-black ${indicador.destaque}`}>
+                  {indicador.valor}
+                </div>
+              </div>
+
+              <div className="mt-4 font-black text-white">
+                {indicador.titulo}
+              </div>
+
+              <div className="mt-1 text-xs leading-relaxed text-slate-400">
+                {indicador.descricao}
+              </div>
+            </button>
+          ))}
+        </div>
+      </section>
+
       {/* Saúde da carteira */}
 
       <section
@@ -269,6 +452,121 @@ export default function CentralSindico() {
           </button>
         </div>
       </section>
+
+      {/* Popup de configuração dos indicadores */}
+
+      {popupIndicadoresAberto && (
+        <div className="fixed inset-0 z-[130] flex items-center justify-center bg-black/75 p-3 md:p-6">
+          <div className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-3xl border border-slate-700 bg-slate-900 p-4 shadow-2xl md:p-6">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-sm font-bold text-blue-300">
+                  ⚙️ PERSONALIZAR INDICADORES
+                </p>
+
+                <h2 className="mt-1 text-2xl font-black text-white">
+                  Sua visão rápida
+                </h2>
+
+                <p className="mt-2 text-sm text-slate-400">
+                  Selecione de 1 a 6 indicadores. A ordem escolhida será mantida
+                  na tela principal.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={fecharConfiguracaoIndicadores}
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-800 text-xl font-black transition-all hover:bg-slate-700 active:scale-95"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="mt-5 rounded-2xl border border-blue-800 bg-blue-950/20 p-4">
+              <div className="flex items-center justify-between gap-3">
+                <p className="font-black text-white">
+                  {indicadoresRascunho.length} selecionados
+                </p>
+
+                <p className="text-xs font-bold text-blue-300">
+                  Máximo: 6
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+              {indicadoresDisponiveis.map((indicador) => {
+                const selecionado = indicadoresRascunho.includes(indicador.id);
+                const limiteAtingido =
+                  indicadoresRascunho.length >= 6 && !selecionado;
+
+                return (
+                  <button
+                    key={indicador.id}
+                    type="button"
+                    onClick={() => alternarIndicador(indicador.id)}
+                    disabled={limiteAtingido}
+                    className={`rounded-2xl border p-4 text-left transition-all duration-150 active:scale-[0.98] ${
+                      selecionado
+                        ? "border-blue-500 bg-blue-950/40"
+                        : "border-slate-700 bg-slate-800"
+                    } ${
+                      limiteAtingido
+                        ? "cursor-not-allowed opacity-40"
+                        : "hover:border-blue-600 hover:bg-slate-700"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <span className="text-3xl">{indicador.icone}</span>
+
+                        <div>
+                          <p className="font-black text-white">
+                            {indicador.titulo}
+                          </p>
+
+                          <p className="mt-1 text-xs text-slate-400">
+                            {indicador.descricao}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div
+                        className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-sm font-black ${
+                          selecionado
+                            ? "border-blue-400 bg-blue-600 text-white"
+                            : "border-slate-500 bg-slate-900 text-slate-500"
+                        }`}
+                      >
+                        {selecionado ? "✓" : ""}
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="mt-5 grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={fecharConfiguracaoIndicadores}
+                className="rounded-xl bg-slate-700 py-3 font-black text-white transition-all hover:bg-slate-600 active:scale-95"
+              >
+                Cancelar
+              </button>
+
+              <button
+                type="button"
+                onClick={salvarIndicadores}
+                className="rounded-xl bg-blue-600 py-3 font-black text-white transition-all hover:bg-blue-500 active:scale-95"
+              >
+                Salvar visão
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Popup Saúde da Carteira */}
 
