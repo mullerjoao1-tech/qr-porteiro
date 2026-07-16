@@ -43,6 +43,7 @@ type FiltroHistorico =
 type EventoMorador = {
   id: string;
   tipo: Exclude<FiltroHistorico, "todos">;
+  grupo: "hoje" | "ontem" | "semana";
   icone: string;
   titulo: string;
   descricao: string;
@@ -76,6 +77,7 @@ const eventosDemonstracao: EventoMorador[] = [
   {
     id: "evt-001",
     tipo: "entregas",
+    grupo: "hoje",
     icone: "📦",
     titulo: "Entrega recebida",
     descricao: "Mercado Livre • pacote médio",
@@ -93,6 +95,7 @@ const eventosDemonstracao: EventoMorador[] = [
   {
     id: "evt-002",
     tipo: "visitantes",
+    grupo: "ontem",
     icone: "🚶",
     titulo: "Visitante autorizado",
     descricao: "Carlos Roberto • visita pessoal",
@@ -110,6 +113,7 @@ const eventosDemonstracao: EventoMorador[] = [
   {
     id: "evt-003",
     tipo: "acessos",
+    grupo: "ontem",
     icone: "🚪",
     titulo: "Abertura de portão",
     descricao: "Portão social • aplicativo",
@@ -127,6 +131,7 @@ const eventosDemonstracao: EventoMorador[] = [
   {
     id: "evt-004",
     tipo: "solicitacoes",
+    grupo: "semana",
     icone: "🛠",
     titulo: "Solicitação de manutenção",
     descricao: "Vazamento na área comum próxima à unidade",
@@ -144,6 +149,7 @@ const eventosDemonstracao: EventoMorador[] = [
   {
     id: "evt-005",
     tipo: "comunicados",
+    grupo: "semana",
     icone: "📢",
     titulo: "Comunicado visualizado",
     descricao: "Manutenção preventiva do portão",
@@ -307,6 +313,30 @@ export default function Moradores({
       : eventosDemonstracao.filter(
           (evento) => evento.tipo === filtroHistorico
         );
+
+  const gruposHistorico = [
+    {
+      id: "hoje",
+      titulo: "Hoje",
+      eventos: historicoFiltrado.filter(
+        (evento) => evento.grupo === "hoje"
+      ),
+    },
+    {
+      id: "ontem",
+      titulo: "Ontem",
+      eventos: historicoFiltrado.filter(
+        (evento) => evento.grupo === "ontem"
+      ),
+    },
+    {
+      id: "semana",
+      titulo: "Esta semana",
+      eventos: historicoFiltrado.filter(
+        (evento) => evento.grupo === "semana"
+      ),
+    },
+  ].filter((grupo) => grupo.eventos.length > 0);
 
   function classesEvento(destaque: EventoMorador["destaque"]) {
     if (destaque === "verde") {
@@ -1008,6 +1038,20 @@ export default function Moradores({
                         Entregas, visitantes, chamadas, acessos, solicitações,
                         documentos e demais eventos ligados ao morador.
                       </p>
+
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        <span className="rounded-full bg-slate-900 px-3 py-1 text-[10px] font-black text-slate-300">
+                          {eventosDemonstracao.length} eventos
+                        </span>
+
+                        <span className="rounded-full bg-orange-950 px-3 py-1 text-[10px] font-black text-orange-300">
+                          1 aguardando retirada
+                        </span>
+
+                        <span className="rounded-full bg-red-950 px-3 py-1 text-[10px] font-black text-red-300">
+                          1 em atendimento
+                        </span>
+                      </div>
                     </div>
 
                     <button
@@ -1047,54 +1091,74 @@ export default function Moradores({
                   ))}
                 </div>
 
-                <div className="mt-4 space-y-3">
-                  {historicoFiltrado.map((evento) => (
-                    <button
-                      key={evento.id}
-                      type="button"
-                      onClick={() => setEventoSelecionado(evento)}
-                      className={`w-full rounded-2xl border p-4 text-left transition-all hover:brightness-110 active:scale-[0.98] ${classesEvento(
-                        evento.destaque
-                      )}`}
-                    >
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex min-w-0 items-start gap-3">
-                          <div className="text-3xl">{evento.icone}</div>
+                <div className="mt-4 space-y-6">
+                  {gruposHistorico.map((grupo) => (
+                    <div key={grupo.id}>
+                      <div className="mb-3 flex items-center gap-3">
+                        <p className="text-sm font-black text-slate-300">
+                          {grupo.titulo}
+                        </p>
 
-                          <div className="min-w-0">
-                            <p className="font-black text-white">
-                              {evento.titulo}
-                            </p>
+                        <div className="h-px flex-1 bg-slate-800" />
 
-                            <p className="mt-1 text-sm text-slate-300">
-                              {evento.descricao}
-                            </p>
-
-                            <p className="mt-2 text-xs text-slate-500">
-                              {evento.protocolo}
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="shrink-0 text-right">
-                          <p className="text-xs font-black text-slate-300">
-                            {evento.data}
-                          </p>
-
-                          <p className="mt-1 text-xs text-slate-500">
-                            {evento.horario}
-                          </p>
-
-                          <span className="mt-2 inline-flex rounded-full bg-slate-950/60 px-3 py-1 text-[10px] font-black text-slate-200">
-                            {evento.status}
-                          </span>
-
-                          <p className="mt-2 text-xs font-black text-blue-300">
-                            Ver detalhes →
-                          </p>
-                        </div>
+                        <span className="rounded-full bg-slate-800 px-3 py-1 text-[10px] font-black text-slate-400">
+                          {grupo.eventos.length}
+                        </span>
                       </div>
-                    </button>
+
+                      <div className="space-y-3">
+                        {grupo.eventos.map((evento) => (
+                          <button
+                            key={evento.id}
+                            type="button"
+                            onClick={() => setEventoSelecionado(evento)}
+                            className={`relative w-full rounded-2xl border p-4 text-left transition-all hover:brightness-110 active:scale-[0.98] ${classesEvento(
+                              evento.destaque
+                            )}`}
+                          >
+                            <div className="absolute bottom-4 left-[29px] top-14 w-px bg-slate-700/80" />
+
+                            <div className="flex items-start justify-between gap-4">
+                              <div className="flex min-w-0 items-start gap-3">
+                                <div className="relative z-10 flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-slate-700 bg-slate-950 text-2xl">
+                                  {evento.icone}
+                                </div>
+
+                                <div className="min-w-0">
+                                  <p className="font-black text-white">
+                                    {evento.titulo}
+                                  </p>
+
+                                  <p className="mt-1 text-sm text-slate-300">
+                                    {evento.descricao}
+                                  </p>
+
+                                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                                    <span className="rounded-full bg-slate-950/60 px-3 py-1 text-[10px] font-black text-slate-300">
+                                      {evento.status}
+                                    </span>
+
+                                    <span className="text-[10px] font-bold text-slate-500">
+                                      {evento.protocolo}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className="shrink-0 text-right">
+                                <p className="text-xs font-black text-slate-300">
+                                  {evento.horario}
+                                </p>
+
+                                <p className="mt-2 text-xs font-black text-blue-300">
+                                  Detalhes →
+                                </p>
+                              </div>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
                   ))}
 
                   {historicoFiltrado.length === 0 && (

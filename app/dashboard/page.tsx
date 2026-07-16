@@ -832,52 +832,392 @@ export default function Dashboard() {
 
         <section className="min-w-0 flex-1 overflow-x-hidden p-3 sm:p-4 md:p-8">
           {telaAtiva === "dashboard" && (
-            <div>
-              <h2 className="text-3xl font-black text-blue-300 mb-2">
-                Dashboard Geral
-              </h2>
+            <div className="space-y-5">
+              {/* Apresentação principal compacta */}
 
-              <p className="text-slate-400 mb-8">
-                Visão geral do QR Central V2 sem alterar o piloto atual.
-              </p>
+              <section className="rounded-3xl border border-blue-500/30 bg-gradient-to-r from-blue-700 to-cyan-600 p-5 shadow-xl md:p-6">
+                <div className="grid gap-5 lg:grid-cols-[1fr_auto] lg:items-center">
+                  <div>
+                    <div className="inline-flex rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-[10px] font-black text-blue-50 backdrop-blur">
+                      QR ACESSO • PLATAFORMA INTELIGENTE
+                    </div>
 
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-                <div className="bg-slate-900 rounded-2xl p-5 border border-slate-800">
-                  <p className="text-slate-400 text-sm">Locais</p>
-                  <p className="text-3xl font-black mt-2">{locais.length}</p>
+                    <h2 className="mt-4 text-3xl font-black leading-tight text-white md:text-4xl">
+                      QR Acesso
+                    </h2>
+
+                    <p className="mt-2 max-w-3xl text-sm font-semibold leading-relaxed text-blue-50 md:text-base">
+                      Conectando pessoas, serviços, tecnologia e operações em
+                      uma única plataforma.
+                    </p>
+
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setTelaAtiva("sindico")}
+                        className="rounded-xl bg-white px-4 py-2.5 text-sm font-black text-blue-700 shadow transition-all hover:bg-blue-50 active:scale-95"
+                      >
+                        Abrir Painel do Síndico
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setTelaAtiva("implantacao")}
+                        className="rounded-xl border border-white/30 bg-white/10 px-4 py-2.5 text-sm font-black text-white backdrop-blur transition-all hover:bg-white/20 active:scale-95"
+                      >
+                        Ver implantação
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="grid min-w-[260px] gap-3 sm:grid-cols-2 lg:grid-cols-1">
+                    <div className="rounded-2xl border border-white/20 bg-slate-950/20 p-4 backdrop-blur">
+                      <p className="text-[10px] font-black text-blue-100">
+                        🧪 QR ACESSO STUDIO
+                      </p>
+
+                      <p className="mt-1 text-lg font-black text-white">
+                        Ambiente de evolução
+                      </p>
+
+                      <p className="mt-1 text-xs leading-relaxed text-blue-100">
+                        Desenvolvimento, testes e homologação antes da produção.
+                      </p>
+                    </div>
+
+                    <div className="rounded-2xl border border-white/20 bg-slate-950/20 p-4 backdrop-blur">
+                      <p className="text-[10px] font-black text-blue-100">
+                        🛡️ AMBIENTE PROTEGIDO
+                      </p>
+
+                      <p className="mt-1 text-lg font-black text-white">
+                        Piloto preservado
+                      </p>
+
+                      <p className="mt-1 text-xs leading-relaxed text-blue-100">
+                        qr1 até qr5 permanecem intactos durante os testes.
+                      </p>
+                    </div>
+                  </div>
                 </div>
+              </section>
 
-                <div className="bg-slate-900 rounded-2xl p-5 border border-slate-800">
-                  <p className="text-slate-400 text-sm">Unidades</p>
-                  <p className="text-3xl font-black mt-2">
-                    {unidades.length}
+              {/* Ecossistema */}
+
+              <section className="rounded-3xl border border-slate-800 bg-slate-900 p-4 md:p-5">
+                <div>
+                  <p className="text-xs font-black text-blue-300">
+                    ECOSSISTEMA QR ACESSO
+                  </p>
+
+                  <h3 className="mt-1 text-2xl font-black text-white">
+                    Uma plataforma. Várias soluções conectadas.
+                  </h3>
+
+                  <p className="mt-2 max-w-3xl text-sm leading-relaxed text-slate-400">
+                    Cada recurso conversa com os demais para entregar uma
+                    experiência única, modular e adaptável à realidade de cada
+                    cliente.
                   </p>
                 </div>
 
-                <div className="bg-slate-900 rounded-2xl p-5 border border-slate-800">
-                  <p className="text-slate-400 text-sm">Moradores</p>
-                  <p className="text-3xl font-black mt-2">
-                    {moradores.length}
+                <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                  {[
+                    {
+                      icone: "🚪",
+                      titulo: "Controle de acesso",
+                      texto:
+                        "Visitantes, portões, QR Code, abertura remota, BLE, NFC e integração com o hardware existente.",
+                      status: "Ativo",
+                      classes:
+                        "border-blue-800 bg-blue-950/25 text-blue-300",
+                    },
+                    {
+                      icone: "📷",
+                      titulo: "Câmeras e segurança",
+                      texto:
+                        "Capturas, monitoramento, histórico visual e integração com diferentes marcas e protocolos.",
+                      status: "Em evolução",
+                      classes:
+                        "border-violet-800 bg-violet-950/25 text-violet-300",
+                    },
+                    {
+                      icone: "👥",
+                      titulo: "Pessoas e unidades",
+                      texto:
+                        "Perfis inteligentes, moradores, dependentes, unidades, visitantes, veículos, pets e histórico unificado.",
+                      status: "Ativo",
+                      classes:
+                        "border-cyan-800 bg-cyan-950/25 text-cyan-300",
+                    },
+                    {
+                      icone: "🛠",
+                      titulo: "Operação e prestadores",
+                      texto:
+                        "Manutenções, solicitações, contratos, serviços, ordens de trabalho e acompanhamento de SLA.",
+                      status: "Disponível",
+                      classes:
+                        "border-orange-800 bg-orange-950/25 text-orange-300",
+                    },
+                    {
+                      icone: "💰",
+                      titulo: "Gestão financeira",
+                      texto:
+                        "Saúde financeira, pagamentos, inadimplência, contratos, previsões e indicadores executivos.",
+                      status: "Disponível",
+                      classes:
+                        "border-emerald-800 bg-emerald-950/25 text-emerald-300",
+                    },
+                    {
+                      icone: "🤖",
+                      titulo: "Inteligência e automação",
+                      texto:
+                        "Alertas críticos, prioridades, SLA, resumos inteligentes e comunicação automática com usuários.",
+                      status: "Novo",
+                      classes:
+                        "border-fuchsia-800 bg-fuchsia-950/25 text-fuchsia-300",
+                    },
+                  ].map((item) => (
+                    <div
+                      key={item.titulo}
+                      className={`rounded-2xl border p-4 ${item.classes}`}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <span className="text-4xl">{item.icone}</span>
+
+                        <span className="rounded-full bg-slate-950/60 px-3 py-1 text-[10px] font-black">
+                          {item.status}
+                        </span>
+                      </div>
+
+                      <h4 className="mt-3 text-lg font-black text-white">
+                        {item.titulo}
+                      </h4>
+
+                      <p className="mt-2 text-sm leading-relaxed text-slate-300">
+                        {item.texto}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </section>
+
+              {/* Evolua seu condomínio */}
+
+              <section className="rounded-3xl border border-amber-700/70 bg-gradient-to-br from-amber-950/25 via-slate-900 to-slate-900 p-4 md:p-5">
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+                  <div>
+                    <p className="text-xs font-black text-amber-300">
+                      🚀 EVOLUA SEU CONDOMÍNIO
+                    </p>
+
+                    <h3 className="mt-1 text-2xl font-black text-white">
+                      Próximas evoluções para sua operação
+                    </h3>
+
+                    <p className="mt-2 max-w-3xl text-sm leading-relaxed text-slate-400">
+                      Recursos que podem melhorar a rotina do condomínio com
+                      benefícios claros e integração ao ecossistema QR Acesso.
+                    </p>
+                  </div>
+
+                  <div className="rounded-2xl border border-amber-800 bg-amber-950/20 px-4 py-3">
+                    <p className="text-xs font-bold text-amber-300">
+                      EVOLUÇÕES DISPONÍVEIS
+                    </p>
+                    <p className="mt-1 text-2xl font-black text-white">4</p>
+                  </div>
+                </div>
+
+                <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                  {[
+                    {
+                      icone: "📱",
+                      titulo: "Acesso por NFC",
+                      descricao:
+                        "Entre no condomínio aproximando o celular ou uma credencial NFC.",
+                      beneficios: [
+                        "Mais praticidade",
+                        "Mais segurança",
+                        "Menos chaves físicas",
+                      ],
+                      status: "Disponível",
+                      classes:
+                        "border-blue-800 bg-blue-950/20 text-blue-300",
+                    },
+                    {
+                      icone: "📷",
+                      titulo: "Câmeras inteligentes",
+                      descricao:
+                        "Integre as câmeras existentes e registre imagens no histórico dos eventos.",
+                      beneficios: [
+                        "Histórico visual",
+                        "Registro automático",
+                        "Mais contexto e segurança",
+                      ],
+                      status: "Em homologação",
+                      classes:
+                        "border-violet-800 bg-violet-950/20 text-violet-300",
+                    },
+                    {
+                      icone: "💰",
+                      titulo: "Financeiro inteligente",
+                      descricao:
+                        "Centralize caixa, inadimplência, contratos, pagamentos e previsões.",
+                      beneficios: [
+                        "Visão consolidada",
+                        "Menos planilhas",
+                        "Decisões mais rápidas",
+                      ],
+                      status: "Disponível",
+                      classes:
+                        "border-emerald-800 bg-emerald-950/20 text-emerald-300",
+                    },
+                    {
+                      icone: "🤖",
+                      titulo: "Inteligência operacional",
+                      descricao:
+                        "Identifique atrasos, falhas, prioridades e oportunidades automaticamente.",
+                      beneficios: [
+                        "Alertas inteligentes",
+                        "SLA acompanhado",
+                        "Nada fica esquecido",
+                      ],
+                      status: "Novo",
+                      classes:
+                        "border-fuchsia-800 bg-fuchsia-950/20 text-fuchsia-300",
+                    },
+                  ].map((item) => (
+                    <article
+                      key={item.titulo}
+                      className={`flex h-full flex-col rounded-2xl border p-4 ${item.classes}`}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <span className="text-4xl">{item.icone}</span>
+
+                        <span className="rounded-full bg-slate-950/60 px-3 py-1 text-[10px] font-black">
+                          {item.status}
+                        </span>
+                      </div>
+
+                      <h4 className="mt-3 text-lg font-black text-white">
+                        {item.titulo}
+                      </h4>
+
+                      <p className="mt-2 text-sm leading-relaxed text-slate-300">
+                        {item.descricao}
+                      </p>
+
+                      <div className="mt-4 space-y-2">
+                        {item.beneficios.map((beneficio) => (
+                          <p
+                            key={beneficio}
+                            className="text-xs font-bold text-slate-300"
+                          >
+                            ✓ {beneficio}
+                          </p>
+                        ))}
+                      </div>
+
+                      <button
+                        type="button"
+                        className="mt-auto pt-5 text-left text-sm font-black transition-all hover:brightness-125 active:scale-[0.98]"
+                      >
+                        Conhecer solução →
+                      </button>
+                    </article>
+                  ))}
+                </div>
+              </section>
+
+              {/* O que está chegando */}
+
+              <section className="rounded-3xl border border-slate-800 bg-slate-900 p-4 md:p-5">
+                <div>
+                  <p className="text-xs font-black text-cyan-300">
+                    O QUE ESTÁ CHEGANDO
+                  </p>
+
+                  <h3 className="mt-1 text-2xl font-black text-white">
+                    O QR Acesso evolui continuamente
+                  </h3>
+
+                  <p className="mt-2 max-w-3xl text-sm leading-relaxed text-slate-400">
+                    Novos recursos passam primeiro pelo Studio e avançam após
+                    testes e homologação.
                   </p>
                 </div>
 
-                <div className="bg-slate-900 rounded-2xl p-5 border border-slate-800">
-                  <p className="text-slate-400 text-sm">Pendentes</p>
-                  <p className="text-3xl font-black mt-2">
-                    {atualizacoesPendentes.length}
-                  </p>
-                </div>
-              </div>
+                <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                  {[
+                    {
+                      icone: "🧠",
+                      nome: "Motor inteligente de SLA",
+                      status: "Em desenvolvimento",
+                      cor: "text-orange-300",
+                    },
+                    {
+                      icone: "📷",
+                      nome: "Gerenciador universal de câmeras",
+                      status: "Em homologação",
+                      cor: "text-violet-300",
+                    },
+                    {
+                      icone: "📶",
+                      nome: "BLE como contingência local",
+                      status: "Planejado",
+                      cor: "text-blue-300",
+                    },
+                    {
+                      icone: "🕘",
+                      nome: "Histórico inteligente por pessoa",
+                      status: "Em desenvolvimento",
+                      cor: "text-cyan-300",
+                    },
+                    {
+                      icone: "🛍️",
+                      nome: "Marketplace de prestadores",
+                      status: "Planejado",
+                      cor: "text-emerald-300",
+                    },
+                    {
+                      icone: "🏢",
+                      nome: "Central Inteligente de Operações",
+                      status: "Em evolução",
+                      cor: "text-fuchsia-300",
+                    },
+                  ].map((item) => (
+                    <div
+                      key={item.nome}
+                      className="flex items-start gap-3 rounded-2xl border border-slate-700 bg-slate-800 p-4"
+                    >
+                      <div className="text-3xl">{item.icone}</div>
 
-              <div className="bg-gradient-to-r from-blue-600 to-cyan-500 rounded-2xl p-6 shadow-lg">
-                <h3 className="text-2xl font-black mb-2">
-                  Estrutura V2 iniciada
-                </h3>
-                <p className="font-semibold">
-                  1 QR principal por local/portaria, várias unidades e vários
-                  moradores por unidade.
+                      <div>
+                        <p className="font-black text-white">{item.nome}</p>
+                        <p className={`mt-1 text-xs font-bold ${item.cor}`}>
+                          {item.status}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+
+              {/* Proposta */}
+
+              <section className="rounded-3xl border border-cyan-800 bg-cyan-950/20 p-4 md:p-5">
+                <p className="text-xs font-black text-cyan-300">
+                  NOSSA PROPOSTA
                 </p>
-              </div>
+
+                <blockquote className="mt-3 max-w-5xl text-lg font-black leading-relaxed text-white md:text-2xl">
+                  O QR Acesso não é apenas um sistema de portaria. É uma
+                  plataforma modular criada para conectar pessoas, serviços,
+                  organizações e dispositivos, evoluindo junto com cada
+                  operação.
+                </blockquote>
+              </section>
             </div>
           )}
 {telaAtiva === "sindico" && (
