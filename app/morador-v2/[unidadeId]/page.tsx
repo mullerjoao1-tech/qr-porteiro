@@ -1,33 +1,43 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { useParams } from "next/navigation";
-import { getToken } from "firebase/messaging";
-import { ref, onValue, update, remove, push, set, get } from "firebase/database";
-import { db, messagingPromise } from "../../services/firebase";
+import { useEffect, useMemo, useState } from "react";
+import { onValue, push, ref, set, update } from "firebase/database";
+import { db } from "../../services/firebase";
 
+type FiltroSaude = "todos" | "saudaveis" | "atencao" | "criticos";
 
-type MensagemConversa = {
-  id?: string;
-  autor: "visitante" | "morador";
-  tipo: "texto" | "audio";
-  texto?: string;
-  audioBase64?: string;
-  criadoEm: number;
-};
+type TipoComunicacao =
+  | "comunicado"
+  | "assembleia"
+  | "manutencao"
+  | "emergencia";
 
-type ComunicadoMorador = {
+type DestinatarioComunicacao =
+  | "todos"
+  | "moradores"
+  | "proprietarios"
+  | "inquilinos"
+  | "conselho"
+  | "zeladoria"
+  | "portaria";
+
+type ComunicadoSalvo = {
   id: string;
   condominioId: string;
   condominioNome: string;
-  tipo: "comunicado" | "assembleia" | "manutencao" | "emergencia";
+  tipo: TipoComunicacao;
+  destinatario: DestinatarioComunicacao;
   titulo: string;
   mensagem: string;
-  exigeCiencia?: boolean;
-  exigirCiencia?: boolean;
+  exigeCiencia: boolean;
+  enviarPush: boolean;
+  registrarHistorico: boolean;
+  agendado: boolean;
+  dataAgendamento: string;
   status: "enviado" | "agendado";
   criadoEm: number;
   criadoEmFormatado: string;
+  enviadoPor: string;
   visualizacoes?: Record<
     string,
     {
@@ -39,1742 +49,3042 @@ type ComunicadoMorador = {
   >;
 };
 
-function blobParaBase64(blob: Blob): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onloadend = () => resolve(reader.result as string);
-    reader.onerror = reject;
-    reader.readAsDataURL(blob);
+
+type ContextoPainel =
+  | "carteira-geral"
+  | "cnd-tulipas"
+  | "cnd-flores"
+  | "cnd-alfa";
+
+type CondominioSaude = {
+  id: string;
+  nome: string;
+  percentual: number;
+  status: "saudavel" | "atencao" | "critico";
+  problemas: string[];
+};
+
+type IndicadorRapido = {
+  id: string;
+  titulo: string;
+  valor: string;
+  descricao: string;
+  icone: string;
+  destaque: string;
+};
+
+type PeriodoAgenda = "hoje" | "sete-dias" | "mes";
+
+type EventoAgenda = {
+  id: string;
+  periodo: PeriodoAgenda;
+  tipo:
+    | "manutencao"
+    | "assembleia"
+    | "contrato"
+    | "prestador"
+    | "entrega"
+    | "lembrete";
+  icone: string;
+  titulo: string;
+  condominio: string;
+  data: string;
+  horario: string;
+  status: string;
+  detalhes: string;
+};
+
+type AbaFinanceira =
+  | "resumo"
+  | "urgentes"
+  | "inadimplencia"
+  | "pagamentos";
+
+type ItemFinanceiro = {
+  id: string;
+  aba: Exclude<AbaFinanceira, "resumo">;
+  icone: string;
+  titulo: string;
+  condominio: string;
+  valor: string;
+  vencimento: string;
+  status: string;
+  detalhes: string;
+};
+
+const opcoesContexto: Array<{
+  id: ContextoPainel;
+  nome: string;
+  icone: string;
+}> = [
+  {
+    id: "carteira-geral",
+    nome: "Carteira Geral",
+    icone: "🌐",
+  },
+  {
+    id: "cnd-tulipas",
+    nome: "Residencial Tulipas",
+    icone: "🏢",
+  },
+  {
+    id: "cnd-flores",
+    nome: "Residencial Flores",
+    icone: "🏢",
+  },
+  {
+    id: "cnd-alfa",
+    nome: "Condomínio Alfa",
+    icone: "🏢",
+  },
+];
+
+const condominios: CondominioSaude[] = [
+  {
+    id: "cnd-tulipas",
+    nome: "Residencial Tulipas",
+    percentual: 98,
+    status: "saudavel",
+    problemas: [],
+  },
+  {
+    id: "cnd-flores",
+    nome: "Residencial Flores",
+    percentual: 95,
+    status: "saudavel",
+    problemas: [],
+  },
+  {
+    id: "cnd-alfa",
+    nome: "Condomínio Alfa",
+    percentual: 81,
+    status: "atencao",
+    problemas: [
+      "Interfone com defeito",
+      "Portão social aberto acima do tempo",
+    ],
+  },
+];
+
+const indicadoresDisponiveis: IndicadorRapido[] = [
+  {
+    id: "chamadas",
+    titulo: "Chamadas hoje",
+    valor: "18",
+    descricao: "3 em andamento",
+    icone: "📞",
+    destaque: "text-blue-300",
+  },
+  {
+    id: "entregas",
+    titulo: "Entregas",
+    valor: "12",
+    descricao: "2 aguardando retirada",
+    icone: "📦",
+    destaque: "text-orange-300",
+  },
+  {
+    id: "moradores",
+    titulo: "Moradores",
+    valor: "94",
+    descricao: "6 cadastros pendentes",
+    icone: "👥",
+    destaque: "text-cyan-300",
+  },
+  {
+    id: "unidades",
+    titulo: "Unidades ativas",
+    valor: "87",
+    descricao: "92% da carteira",
+    icone: "🏢",
+    destaque: "text-green-300",
+  },
+  {
+    id: "visitantes",
+    titulo: "Visitantes",
+    valor: "31",
+    descricao: "Registrados hoje",
+    icone: "🚶",
+    destaque: "text-violet-300",
+  },
+  {
+    id: "prestadores",
+    titulo: "Prestadores",
+    valor: "7",
+    descricao: "2 acessos em andamento",
+    icone: "🧰",
+    destaque: "text-yellow-300",
+  },
+  {
+    id: "portoes",
+    titulo: "Portões",
+    valor: "8",
+    descricao: "7 funcionando normalmente",
+    icone: "🚪",
+    destaque: "text-emerald-300",
+  },
+  {
+    id: "cameras",
+    titulo: "Câmeras",
+    valor: "11",
+    descricao: "1 câmera offline",
+    icone: "📷",
+    destaque: "text-red-300",
+  },
+];
+
+const eventosAgenda: EventoAgenda[] = [
+  {
+    id: "evt-001",
+    periodo: "hoje",
+    tipo: "manutencao",
+    icone: "🛠",
+    titulo: "Revisão do portão social",
+    condominio: "Residencial Tulipas",
+    data: "Hoje",
+    horario: "09:30",
+    status: "Confirmada",
+    detalhes:
+      "Prestador confirmado para revisar o tempo de fechamento e os sensores do portão social.",
+  },
+  {
+    id: "evt-002",
+    periodo: "hoje",
+    tipo: "manutencao",
+    icone: "🛠",
+    titulo: "Inspeção dos extintores",
+    condominio: "Condomínio Alfa",
+    data: "Hoje",
+    horario: "14:00",
+    status: "Agendada",
+    detalhes:
+      "Inspeção preventiva dos extintores das áreas comuns e atualização das etiquetas de validade.",
+  },
+  {
+    id: "evt-003",
+    periodo: "hoje",
+    tipo: "assembleia",
+    icone: "👥",
+    titulo: "Assembleia extraordinária",
+    condominio: "Residencial Flores",
+    data: "Hoje",
+    horario: "19:30",
+    status: "Confirmada",
+    detalhes:
+      "Pauta principal: aprovação da modernização do sistema de controle de acesso.",
+  },
+  {
+    id: "evt-004",
+    periodo: "hoje",
+    tipo: "prestador",
+    icone: "👷",
+    titulo: "Equipe de jardinagem",
+    condominio: "Residencial Tulipas",
+    data: "Hoje",
+    horario: "08:00",
+    status: "Entrada confirmada",
+    detalhes:
+      "Equipe com dois profissionais autorizados para manutenção das áreas verdes.",
+  },
+  {
+    id: "evt-005",
+    periodo: "hoje",
+    tipo: "prestador",
+    icone: "👷",
+    titulo: "Técnico de elevadores",
+    condominio: "Residencial Flores",
+    data: "Hoje",
+    horario: "16:00",
+    status: "Aguardando chegada",
+    detalhes:
+      "Visita técnica preventiva no elevador do Bloco 2. Documentação já validada.",
+  },
+  {
+    id: "evt-006",
+    periodo: "hoje",
+    tipo: "entrega",
+    icone: "📦",
+    titulo: "Entrega de materiais",
+    condominio: "Condomínio Alfa",
+    data: "Hoje",
+    horario: "11:00",
+    status: "Programada",
+    detalhes:
+      "Entrega de materiais para manutenção da área comum. Recebimento pela zeladoria.",
+  },
+  {
+    id: "evt-007",
+    periodo: "sete-dias",
+    tipo: "contrato",
+    icone: "📄",
+    titulo: "Renovação da limpeza",
+    condominio: "Residencial Tulipas",
+    data: "Amanhã",
+    horario: "Prazo final",
+    status: "Vencendo",
+    detalhes:
+      "Contrato da empresa de limpeza vence amanhã e aguarda decisão de renovação.",
+  },
+  {
+    id: "evt-008",
+    periodo: "sete-dias",
+    tipo: "manutencao",
+    icone: "🛠",
+    titulo: "Limpeza da caixa-d'água",
+    condominio: "Residencial Flores",
+    data: "Sexta-feira",
+    horario: "08:30",
+    status: "Confirmada",
+    detalhes:
+      "Serviço programado com aviso prévio aos moradores e bloqueio temporário do abastecimento.",
+  },
+  {
+    id: "evt-009",
+    periodo: "sete-dias",
+    tipo: "lembrete",
+    icone: "🔔",
+    titulo: "Enviar pauta da assembleia",
+    condominio: "Condomínio Alfa",
+    data: "Sábado",
+    horario: "10:00",
+    status: "Pendente",
+    detalhes:
+      "Preparar e enviar a pauta aos moradores dentro do prazo de convocação.",
+  },
+  {
+    id: "evt-010",
+    periodo: "mes",
+    tipo: "contrato",
+    icone: "📄",
+    titulo: "Revisão do contrato de elevadores",
+    condominio: "Residencial Flores",
+    data: "28 de julho",
+    horario: "Prazo final",
+    status: "Em análise",
+    detalhes:
+      "Comparar reajuste, escopo de manutenção e tempo de atendimento antes da renovação.",
+  },
+  {
+    id: "evt-011",
+    periodo: "mes",
+    tipo: "assembleia",
+    icone: "👥",
+    titulo: "Assembleia ordinária",
+    condominio: "Residencial Tulipas",
+    data: "30 de julho",
+    horario: "19:00",
+    status: "Planejada",
+    detalhes:
+      "Prestação de contas, previsão orçamentária e definição das próximas melhorias.",
+  },
+  {
+    id: "evt-012",
+    periodo: "mes",
+    tipo: "manutencao",
+    icone: "🛠",
+    titulo: "Teste do sistema de emergência",
+    condominio: "Condomínio Alfa",
+    data: "31 de julho",
+    horario: "15:00",
+    status: "Planejada",
+    detalhes:
+      "Teste preventivo dos equipamentos e procedimentos de emergência das áreas comuns.",
+  },
+];
+
+const itensFinanceiros: ItemFinanceiro[] = [
+  {
+    id: "fin-001",
+    aba: "urgentes",
+    icone: "🔴",
+    titulo: "Seguro predial",
+    condominio: "Residencial Tulipas",
+    valor: "R$ 8.450",
+    vencimento: "Vence amanhã",
+    status: "Ação imediata",
+    detalhes:
+      "A renovação ainda não foi registrada. É necessário confirmar o pagamento ou a negociação com a seguradora.",
+  },
+  {
+    id: "fin-002",
+    aba: "urgentes",
+    icone: "🟠",
+    titulo: "Manutenção dos elevadores",
+    condominio: "Residencial Flores",
+    valor: "R$ 4.980",
+    vencimento: "Vence em 2 dias",
+    status: "Próximo do prazo",
+    detalhes:
+      "Pagamento mensal da empresa responsável pela manutenção preventiva dos elevadores.",
+  },
+  {
+    id: "fin-003",
+    aba: "urgentes",
+    icone: "🟠",
+    titulo: "Serviço de limpeza",
+    condominio: "Condomínio Alfa",
+    valor: "R$ 6.200",
+    vencimento: "Vence em 3 dias",
+    status: "Próximo do prazo",
+    detalhes:
+      "Pagamento recorrente da equipe de limpeza das áreas comuns.",
+  },
+  {
+    id: "fin-004",
+    aba: "inadimplencia",
+    icone: "🏠",
+    titulo: "Unidades em atraso",
+    condominio: "Residencial Tulipas",
+    valor: "R$ 12.840",
+    vencimento: "7 unidades",
+    status: "Em acompanhamento",
+    detalhes:
+      "Sete unidades possuem débitos vencidos. Três delas estão há mais de 30 dias em atraso.",
+  },
+  {
+    id: "fin-005",
+    aba: "inadimplencia",
+    icone: "🏢",
+    titulo: "Unidades em atraso",
+    condominio: "Residencial Flores",
+    valor: "R$ 7.320",
+    vencimento: "4 unidades",
+    status: "Em acompanhamento",
+    detalhes:
+      "Quatro unidades possuem débitos vencidos. Nenhuma ultrapassou 60 dias.",
+  },
+  {
+    id: "fin-006",
+    aba: "inadimplencia",
+    icone: "📊",
+    titulo: "Índice consolidado",
+    condominio: "Carteira completa",
+    valor: "6,4%",
+    vencimento: "11 unidades",
+    status: "Atenção",
+    detalhes:
+      "A inadimplência consolidada está acima da meta de 5% definida para a carteira.",
+  },
+  {
+    id: "fin-007",
+    aba: "pagamentos",
+    icone: "💳",
+    titulo: "Folha da portaria",
+    condominio: "Residencial Tulipas",
+    valor: "R$ 18.600",
+    vencimento: "Amanhã",
+    status: "Programado",
+    detalhes:
+      "Pagamento da folha da equipe de portaria programado para amanhã.",
+  },
+  {
+    id: "fin-008",
+    aba: "pagamentos",
+    icone: "⚡",
+    titulo: "Energia das áreas comuns",
+    condominio: "Residencial Flores",
+    valor: "R$ 5.740",
+    vencimento: "Em 4 dias",
+    status: "Programado",
+    detalhes:
+      "Conta de energia das áreas comuns e equipamentos compartilhados.",
+  },
+  {
+    id: "fin-009",
+    aba: "pagamentos",
+    icone: "💧",
+    titulo: "Abastecimento de água",
+    condominio: "Condomínio Alfa",
+    valor: "R$ 3.980",
+    vencimento: "Em 5 dias",
+    status: "Programado",
+    detalhes:
+      "Conta mensal de abastecimento de água das áreas comuns.",
+  },
+];
+
+
+
+function textoStatus(status: CondominioSaude["status"]) {
+  if (status === "saudavel") return "Saudável";
+  if (status === "atencao") return "Atenção";
+  return "Crítico";
+}
+
+function iconeStatus(status: CondominioSaude["status"]) {
+  if (status === "saudavel") return "🟢";
+  if (status === "atencao") return "🟠";
+  return "🔴";
+}
+
+function classesStatus(status: CondominioSaude["status"]) {
+  if (status === "saudavel") {
+    return "border-green-800 bg-green-950/30 hover:bg-green-950/50";
+  }
+
+  if (status === "atencao") {
+    return "border-orange-700 bg-orange-950/30 hover:bg-orange-950/50";
+  }
+
+  return "border-red-700 bg-red-950/30 hover:bg-red-950/50";
+}
+
+export default function CentralSindico() {
+  const [contextoAtual, setContextoAtual] =
+    useState<ContextoPainel>("carteira-geral");
+  const [seletorContextoAberto, setSeletorContextoAberto] = useState(false);
+  const [popupResumoAberto, setPopupResumoAberto] = useState(false);
+  const [popupSaudeAberto, setPopupSaudeAberto] = useState(false);
+  const [filtroSaude, setFiltroSaude] = useState<FiltroSaude>("todos");
+  const [condominioSelecionado, setCondominioSelecionado] =
+    useState<CondominioSaude | null>(null);
+
+  const [popupIndicadoresAberto, setPopupIndicadoresAberto] = useState(false);
+  const [popupAgendaAberto, setPopupAgendaAberto] = useState(false);
+  const [popupFinanceiroAberto, setPopupFinanceiroAberto] = useState(false);
+  const [popupComunicacaoAberto, setPopupComunicacaoAberto] = useState(false);
+  const [tipoComunicacao, setTipoComunicacao] =
+    useState<TipoComunicacao>("comunicado");
+  const [destinatarioComunicacao, setDestinatarioComunicacao] =
+    useState<DestinatarioComunicacao>("todos");
+  const [tituloComunicacao, setTituloComunicacao] = useState("");
+  const [mensagemComunicacao, setMensagemComunicacao] = useState("");
+  const [exigirCiencia, setExigirCiencia] = useState(true);
+  const [enviarPush, setEnviarPush] = useState(true);
+  const [registrarHistorico, setRegistrarHistorico] = useState(true);
+  const [agendarComunicacao, setAgendarComunicacao] = useState(false);
+  const [dataAgendamento, setDataAgendamento] = useState("");
+  const [popupComunicadosEnviadosAberto, setPopupComunicadosEnviadosAberto] =
+    useState(false);
+  const [comunicadosEnviados, setComunicadosEnviados] = useState<
+    ComunicadoSalvo[]
+  >([]);
+  const [salvandoComunicacao, setSalvandoComunicacao] = useState(false);
+  const [abaFinanceira, setAbaFinanceira] =
+    useState<AbaFinanceira>("resumo");
+  const [itemFinanceiroSelecionado, setItemFinanceiroSelecionado] =
+    useState<ItemFinanceiro | null>(null);
+  const [periodoAgenda, setPeriodoAgenda] = useState<PeriodoAgenda>("hoje");
+  const [eventoAgendaSelecionado, setEventoAgendaSelecionado] =
+    useState<EventoAgenda | null>(null);
+  const [indicadoresVisiveis, setIndicadoresVisiveis] = useState<string[]>([
+    "chamadas",
+    "entregas",
+    "moradores",
+    "unidades",
+  ]);
+  const [indicadoresRascunho, setIndicadoresRascunho] = useState<string[]>([
+    "chamadas",
+    "entregas",
+    "moradores",
+    "unidades",
+  ]);
+
+  const contextoSelecionado =
+    opcoesContexto.find((opcao) => opcao.id === contextoAtual) ??
+    opcoesContexto[0];
+
+  const isCarteiraGeral = contextoAtual === "carteira-geral";
+
+  useEffect(() => {
+    if (isCarteiraGeral) {
+      setComunicadosEnviados([]);
+      return;
+    }
+
+    const referenciaComunicados = ref(
+      db,
+      `comunicados-v2/${contextoAtual}`
+    );
+
+    const pararDeOuvir = onValue(referenciaComunicados, (snapshot) => {
+      const dados = snapshot.val();
+
+      if (!dados) {
+        setComunicadosEnviados([]);
+        return;
+      }
+
+      const lista = Object.entries(dados)
+        .map(([id, valor]) => ({
+          id,
+          ...(valor as Omit<ComunicadoSalvo, "id">),
+        }))
+        .sort((a, b) => (b.criadoEm || 0) - (a.criadoEm || 0));
+
+      setComunicadosEnviados(lista);
+    });
+
+    return () => pararDeOuvir();
+  }, [contextoAtual, isCarteiraGeral]);
+
+  const condominiosDoContexto = isCarteiraGeral
+    ? condominios
+    : condominios.filter((condominio) => condominio.id === contextoAtual);
+
+  const textoEscopo = isCarteiraGeral
+    ? "Painel consolidado dos 3 condomínios"
+    : "Painel específico deste condomínio";
+
+  const condominioAtual = !isCarteiraGeral
+    ? condominios.find((condominio) => condominio.id === contextoAtual) ?? null
+    : null;
+
+  const resumoContexto = isCarteiraGeral
+    ? {
+        status: "Carteira consolidada",
+        detalhe: "2 saudáveis • 1 em atenção • 0 críticos",
+        borda: "border-white/30",
+        fundo: "bg-white/15",
+        corStatus: "text-blue-100",
+        icone: "🌐",
+      }
+    : condominioAtual?.status === "saudavel"
+    ? {
+        status: "Saudável",
+        detalhe: "Nenhuma prioridade crítica",
+        borda: "border-green-300/70",
+        fundo: "bg-green-400/15",
+        corStatus: "text-green-100",
+        icone: "🟢",
+      }
+    : condominioAtual?.status === "atencao"
+    ? {
+        status: "Atenção",
+        detalhe: `${
+          condominioAtual.problemas.length
+        } pendência${condominioAtual.problemas.length === 1 ? "" : "s"} ativa${
+          condominioAtual.problemas.length === 1 ? "" : "s"
+        }`,
+        borda: "border-orange-300/70",
+        fundo: "bg-orange-400/15",
+        corStatus: "text-orange-100",
+        icone: "🟠",
+      }
+    : {
+        status: "Crítico",
+        detalhe: `${
+          condominioAtual?.problemas.length ?? 0
+        } prioridade${
+          (condominioAtual?.problemas.length ?? 0) === 1 ? "" : "s"
+        } exige${
+          (condominioAtual?.problemas.length ?? 0) === 1 ? "" : "m"
+        } ação`,
+        borda: "border-red-300/70",
+        fundo: "bg-red-400/15",
+        corStatus: "text-red-100",
+        icone: "🔴",
+      };
+
+  const saudaveis = condominios.filter(
+    (condominio) => condominio.status === "saudavel"
+  ).length;
+
+  const atencao = condominios.filter(
+    (condominio) => condominio.status === "atencao"
+  ).length;
+
+  const criticos = condominios.filter(
+    (condominio) => condominio.status === "critico"
+  ).length;
+
+  const condominiosFiltrados = condominiosDoContexto.filter((condominio) => {
+    if (filtroSaude === "todos") return true;
+    if (filtroSaude === "saudaveis") {
+      return condominio.status === "saudavel";
+    }
+    if (filtroSaude === "atencao") {
+      return condominio.status === "atencao";
+    }
+    return condominio.status === "critico";
   });
-}
 
-function ordenarMensagens(mensagens?: Record<string, MensagemConversa>) {
-  if (!mensagens) return [];
-
-  return Object.entries(mensagens)
-    .map(([id, mensagem]) => ({ id, ...mensagem }))
-    .sort((a, b) => (a.criadoEm || 0) - (b.criadoEm || 0));
-}
-
-export default function MoradorV2() {
-  const params = useParams();
-  const slug = String(
-    params?.unidadeId ||
-      params?.slug ||
-      params?.id ||
-      params?.unidade ||
-      "qr1"
+  const eventosAgendaFiltrados = eventosAgenda.filter(
+    (evento) => evento.periodo === periodoAgenda
   );
 
-  const [nome, setNome] = useState("Nenhuma solicitação");
-  const [motivo, setMotivo] = useState("Aguardando visitante");
-  const [status, setStatus] = useState("Sem chamado ativo");
-  const [horaChamada, setHoraChamada] = useState("");
-  const [modo, setModo] = useState("");
-  const [mensagemResponsavel, setMensagemResponsavel] = useState("");
-  const [historicoLista, setHistoricoLista] = useState<any[]>([]);
-  const [avisoAuto, setAvisoAuto] = useState("");
-  const [online, setOnline] = useState(true);
-  const [fotoCameraAtual, setFotoCameraAtual] = useState("");
-  const [fotoCameraAtualizadaEm, setFotoCameraAtualizadaEm] = useState(Date.now());
-  const [capturandoCamera, setCapturandoCamera] = useState(false);
-  const [abrindoPortao, setAbrindoPortao] = useState(false);
-  const [statusPortao, setStatusPortao] = useState("");
-  const [visitanteVisualizou, setVisitanteVisualizou] = useState(false);
-  const [audioVisitante, setAudioVisitante] = useState("");
-  const [mensagensConversa, setMensagensConversa] = useState<MensagemConversa[]>([]);
-  const [gravandoAudioMorador, setGravandoAudioMorador] = useState(false);
-  const [audioRespostaBlob, setAudioRespostaBlob] = useState<Blob | null>(null);
-  const [enviandoAudioMorador, setEnviandoAudioMorador] = useState(false);
-  const [popupAtendimentoAberto, setPopupAtendimentoAberto] = useState(false);
-  const [mostrarHistorico, setMostrarHistorico] = useState(false);
-  const [mostrarCameraGrande, setMostrarCameraGrande] = useState(false);
-  const [audioPopup, setAudioPopup] = useState<{ titulo: string; audio: string } | null>(null);
-  const [installPrompt, setInstallPrompt] = useState<any>(null);
-  const [appInstalavel, setAppInstalavel] = useState(false);
-  const [comunicados, setComunicados] = useState<ComunicadoMorador[]>([]);
-  const [comunicadoAberto, setComunicadoAberto] =
-    useState<ComunicadoMorador | null>(null);
-  const [salvandoCiencia, setSalvandoCiencia] = useState(false);
+  const itensFinanceirosFiltrados =
+    abaFinanceira === "resumo"
+      ? []
+      : itensFinanceiros.filter((item) => item.aba === abaFinanceira);
 
-  const intervaloSomRef = useRef<NodeJS.Timeout | null>(null);
-  const finalizacaoAutoRef = useRef<NodeJS.Timeout | null>(null);
-  const ultimaCapturaCameraRef = useRef("");
-  const ultimoAudioPopupRef = useRef("");
-  const toqueSilenciadoPorAudioRef = useRef(false);
-  const idChamadaAtualRef = useRef("");
-  const audioContextRef = useRef<AudioContext | null>(null);
-  const ultimaChamadaAtivaRef = useRef(false);
-  const ultimaChamadaDadosRef = useRef<any>(null);
-  const mediaRecorderMoradorRef = useRef<MediaRecorder | null>(null);
-  const audioChunksMoradorRef = useRef<Blob[]>([]);
+  const indicadoresAtivos = useMemo(
+    () =>
+      indicadoresVisiveis
+        .map((id) =>
+          indicadoresDisponiveis.find((indicador) => indicador.id === id)
+        )
+        .filter((indicador): indicador is IndicadorRapido =>
+          Boolean(indicador)
+        ),
+    [indicadoresVisiveis]
+  );
 
-  function identificarCondominioPeloSlug(unidadeSlug: string) {
-    const valor = unidadeSlug.toLowerCase();
-
-    if (valor.includes("tulipas")) return "cnd-tulipas";
-    if (valor.includes("flores")) return "cnd-flores";
-    if (valor.includes("alfa")) return "cnd-alfa";
-
-    return "cnd-tulipas";
+  function trocarContexto(novoContexto: ContextoPainel) {
+    setContextoAtual(novoContexto);
+    setSeletorContextoAberto(false);
+    setCondominioSelecionado(null);
+    setEventoAgendaSelecionado(null);
+    setItemFinanceiroSelecionado(null);
   }
 
-  const condominioId = identificarCondominioPeloSlug(slug);
-  const caminhoComunicados = `comunicados-v2/${condominioId}`;
-  const caminhoFirebase = `unidades-v2/${slug}/chamada`;
-  const caminhoHistorico = `historico-v2/${slug}`;
-  const caminhoStatus = `status-v2/${slug}`;
-  const caminhoLogs = `logs-v2/${slug}`;
-  const caminhoAnalytics = `analytics-v2/${slug}`;
+  function abrirResumo() {
+    setPopupResumoAberto(true);
+  }
 
-  const TEMPO_AGUARDANDO = 5 * 60 * 1000;
-  const TEMPO_EM_ATENDIMENTO = 3 * 60 * 1000;
+  function fecharResumo() {
+    setPopupResumoAberto(false);
+  }
 
-  const chamadaAtiva =
-    nome !== "Nenhuma solicitação" &&
-    status !== "Sem chamado ativo" &&
-    status !== "Encerrado";
+  function abrirSaude(filtro: FiltroSaude = "todos") {
+    setFiltroSaude(filtro);
+    setCondominioSelecionado(null);
+    setPopupSaudeAberto(true);
+  }
 
-  const aguardandoAtendimento = status === "Aguardando atendimento";
-  const atendimentoEmAndamento = status === "Em atendimento";
-  const mostrarPopupChamada = chamadaAtiva && popupAtendimentoAberto && aguardandoAtendimento;
+  function fecharSaude() {
+    setPopupSaudeAberto(false);
+    setCondominioSelecionado(null);
+    setFiltroSaude("todos");
+  }
 
-  async function registrarLog(tipo: string, detalhes: string) {
+  function abrirConfiguracaoIndicadores() {
+    setIndicadoresRascunho(indicadoresVisiveis);
+    setPopupIndicadoresAberto(true);
+  }
+
+  function fecharConfiguracaoIndicadores() {
+    setIndicadoresRascunho(indicadoresVisiveis);
+    setPopupIndicadoresAberto(false);
+  }
+
+  function alternarIndicador(id: string) {
+    setIndicadoresRascunho((atuais) => {
+      if (atuais.includes(id)) {
+        if (atuais.length === 1) return atuais;
+        return atuais.filter((indicadorId) => indicadorId !== id);
+      }
+
+      if (atuais.length >= 6) return atuais;
+      return [...atuais, id];
+    });
+  }
+
+  function salvarIndicadores() {
+    setIndicadoresVisiveis(indicadoresRascunho);
+    setPopupIndicadoresAberto(false);
+  }
+
+  function abrirAgenda(periodo: PeriodoAgenda = "hoje") {
+    setPeriodoAgenda(periodo);
+    setEventoAgendaSelecionado(null);
+    setPopupAgendaAberto(true);
+  }
+
+  function fecharAgenda() {
+    setPopupAgendaAberto(false);
+    setEventoAgendaSelecionado(null);
+    setPeriodoAgenda("hoje");
+  }
+
+  function abrirFinanceiro(aba: AbaFinanceira = "resumo") {
+    setAbaFinanceira(aba);
+    setItemFinanceiroSelecionado(null);
+    setPopupFinanceiroAberto(true);
+  }
+
+  function fecharFinanceiro() {
+    setPopupFinanceiroAberto(false);
+    setItemFinanceiroSelecionado(null);
+    setAbaFinanceira("resumo");
+  }
+
+  function abrirComunicacao(tipo: TipoComunicacao = "comunicado") {
+    setTipoComunicacao(tipo);
+    setDestinatarioComunicacao("todos");
+    setTituloComunicacao("");
+    setMensagemComunicacao("");
+    setExigirCiencia(true);
+    setEnviarPush(true);
+    setRegistrarHistorico(true);
+    setAgendarComunicacao(false);
+    setDataAgendamento("");
+    setPopupComunicacaoAberto(true);
+  }
+
+  function fecharComunicacao() {
+    setPopupComunicacaoAberto(false);
+  }
+
+  function sugerirTextoComunicacao() {
+    if (tipoComunicacao === "assembleia") {
+      setTituloComunicacao("Convocação de Assembleia");
+      setMensagemComunicacao(
+        "Informamos que será realizada assembleia do condomínio. Consulte abaixo a data, o horário, o local e a pauta. Ao final, confirme que leu e está ciente."
+      );
+      return;
+    }
+
+    if (tipoComunicacao === "manutencao") {
+      setTituloComunicacao("Manutenção programada");
+      setMensagemComunicacao(
+        "Informamos que será realizada uma manutenção programada no condomínio. Durante o período informado, poderá ocorrer indisponibilidade temporária do equipamento ou da área afetada. A conclusão será comunicada aos envolvidos."
+      );
+      return;
+    }
+
+    if (tipoComunicacao === "emergencia") {
+      setTituloComunicacao("Comunicado importante");
+      setMensagemComunicacao(
+        "Atenção: foi identificada uma situação que exige cuidado imediato. Leia as orientações abaixo e confirme que está ciente."
+      );
+      return;
+    }
+
+    setTituloComunicacao("Comunicado aos moradores");
+    setMensagemComunicacao(
+      "Olá! Temos uma informação importante para compartilhar com os moradores. Leia o comunicado abaixo e confirme que está ciente."
+    );
+  }
+
+  async function enviarComunicacao() {
+    if (isCarteiraGeral) {
+      alert("Selecione um condomínio antes de enviar o comunicado.");
+      return;
+    }
+
+    if (!tituloComunicacao.trim()) {
+      alert("Digite o título do comunicado.");
+      return;
+    }
+
+    if (!mensagemComunicacao.trim()) {
+      alert("Digite a mensagem do comunicado.");
+      return;
+    }
+
+    if (agendarComunicacao && !dataAgendamento) {
+      alert("Escolha a data e o horário do agendamento.");
+      return;
+    }
+
     try {
-      const novoLog = push(ref(db, caminhoLogs));
+      setSalvandoComunicacao(true);
 
-      await set(novoLog, {
-        tipo,
-        detalhes,
-        unidade: slug,
-        timestamp: new Date().toISOString(),
-        nomeAtual: nome,
-        statusAtual: status,
-        navegador:
-          typeof navigator !== "undefined" ? navigator.userAgent : "indisponivel",
+      const agora = Date.now();
+      const referenciaNovoComunicado = push(
+        ref(db, `comunicados-v2/${contextoAtual}`)
+      );
+
+      await set(referenciaNovoComunicado, {
+        condominioId: contextoAtual,
+        condominioNome: contextoSelecionado.nome,
+        tipo: tipoComunicacao,
+        destinatario: destinatarioComunicacao,
+        titulo: tituloComunicacao.trim(),
+        mensagem: mensagemComunicacao.trim(),
+        exigeCiencia: exigirCiencia,
+        enviarPush,
+        registrarHistorico,
+        agendado: agendarComunicacao,
+        dataAgendamento: agendarComunicacao ? dataAgendamento : "",
+        status: agendarComunicacao ? "agendado" : "enviado",
+        criadoEm: agora,
+        criadoEmFormatado: new Date(agora).toLocaleString("pt-BR"),
+        enviadoPor: "João",
       });
-    } catch (erro) {
-      console.error("Erro ao salvar log:", erro);
-    }
-  }
 
-  async function registrarAnalytics(evento: string) {
-    try {
-      const referencia = ref(db, caminhoAnalytics);
-      const snapshot = await get(referencia);
+      const comunicadoId = referenciaNovoComunicado.key;
 
-      const dados = snapshot.val() || {
-        recebidas: 0,
-        atendidas: 0,
-        finalizadas: 0,
-        timeouts: 0,
-        falhas: 0,
-      };
+      if (!comunicadoId) {
+        throw new Error("O Firebase não retornou o ID do comunicado.");
+      }
 
-      if (evento === "recebida") dados.recebidas++;
-      if (evento === "atendida") dados.atendidas++;
-      if (evento === "finalizada") dados.finalizadas++;
-      if (evento === "timeout") dados.timeouts++;
-      if (evento === "falha") dados.falhas++;
+      if (enviarPush && !agendarComunicacao) {
+        const respostaPush = await fetch("/api/enviar-notificacao-v2", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            tipo: "comunicado-v2",
+            condominioId: contextoAtual,
+            comunicadoId,
+            titulo: tituloComunicacao.trim(),
+            mensagem: mensagemComunicacao.trim(),
+          }),
+        });
 
-      await update(referencia, dados);
-    } catch (erro) {
-      console.error("Erro analytics:", erro);
-    }
-  }
+        const dadosPush = await respostaPush.json().catch(() => ({}));
 
-  useEffect(() => {
-    const referenciaComunicados = ref(db, caminhoComunicados);
+        if (!respostaPush.ok || dadosPush?.ok === false) {
+          console.error("Falha no push do comunicado:", dadosPush);
 
-    const pararDeOuvirComunicados = onValue(
-      referenciaComunicados,
-      (snapshot) => {
-        const dados = snapshot.val();
-
-        if (!dados) {
-          setComunicados([]);
-          return;
-        }
-
-        const agora = Date.now();
-
-        const lista = Object.entries(dados)
-          .map(([id, valor]) => ({
-            id,
-            ...(valor as Omit<ComunicadoMorador, "id">),
-          }))
-          .filter((comunicado) => {
-            if (comunicado.status === "enviado") return true;
-
-            if (
-              comunicado.status === "agendado" &&
-              comunicado.criadoEm <= agora
-            ) {
-              return true;
+          await update(
+            ref(db, `comunicados-v2/${contextoAtual}/${comunicadoId}`),
+            {
+              pushProcessado: false,
+              erroPush:
+                dadosPush?.erro ||
+                dadosPush?.detalhes ||
+                "Não foi possível enviar o push.",
             }
-
-            return false;
-          })
-          .sort((a, b) => (b.criadoEm || 0) - (a.criadoEm || 0));
-
-        setComunicados(lista);
+          );
+        }
       }
-    );
 
-    return () => pararDeOuvirComunicados();
-  }, [caminhoComunicados]);
+      if (registrarHistorico) {
+        const referenciaHistorico = push(
+          ref(db, `historico-comunicacoes-v2/${contextoAtual}`)
+        );
 
-  async function abrirComunicado(comunicado: ComunicadoMorador) {
-    setComunicadoAberto(comunicado);
+        await set(referenciaHistorico, {
+          comunicadoId,
+          tipo: tipoComunicacao,
+          titulo: tituloComunicacao.trim(),
+          acao: agendarComunicacao
+            ? "comunicacao_agendada"
+            : "comunicacao_enviada",
+          criadoEm: agora,
+          criadoEmFormatado: new Date(agora).toLocaleString("pt-BR"),
+          responsavel: "João",
+        });
+      }
 
-    const visualizacaoAtual =
-      comunicado.visualizacoes?.[slug]?.visualizadoEm;
+      alert(
+        agendarComunicacao
+          ? "Comunicado agendado e salvo com sucesso."
+          : "Comunicado enviado e salvo com sucesso."
+      );
 
-    if (visualizacaoAtual) return;
+      setPopupComunicacaoAberto(false);
+      setTituloComunicacao("");
+      setMensagemComunicacao("");
+    } catch (erro) {
+      console.error("Erro ao salvar comunicado:", erro);
+      alert("Não foi possível salvar o comunicado no Firebase.");
+    } finally {
+      setSalvandoComunicacao(false);
+    }
+  }
 
+  async function reenviarComunicado(comunicado: ComunicadoSalvo) {
     try {
       await update(
         ref(
           db,
-          `${caminhoComunicados}/${comunicado.id}/visualizacoes/${slug}`
+          `comunicados-v2/${comunicado.condominioId}/${comunicado.id}`
         ),
         {
-          unidadeId: slug,
-          visualizadoEm: Date.now(),
-          ciente: comunicado.visualizacoes?.[slug]?.ciente === true,
-        }
-      );
-    } catch (erro) {
-      console.error("Erro ao registrar visualização:", erro);
-    }
-  }
-
-  async function confirmarCiencia() {
-    if (!comunicadoAberto || salvandoCiencia) return;
-
-    try {
-      setSalvandoCiencia(true);
-
-      await update(
-        ref(
-          db,
-          `${caminhoComunicados}/${comunicadoAberto.id}/visualizacoes/${slug}`
-        ),
-        {
-          unidadeId: slug,
-          visualizadoEm:
-            comunicadoAberto.visualizacoes?.[slug]?.visualizadoEm ||
-            Date.now(),
-          ciente: true,
-          cienteEm: Date.now(),
+          reenviadoEm: Date.now(),
+          reenviadoEmFormatado: new Date().toLocaleString("pt-BR"),
         }
       );
 
-      setComunicadoAberto(null);
-      alert("Sua ciência foi registrada com sucesso.");
-    } catch (erro) {
-      console.error("Erro ao registrar ciência:", erro);
-      alert("Não foi possível registrar sua ciência.");
-    } finally {
-      setSalvandoCiencia(false);
-    }
-  }
-
-  useEffect(() => {
-    const referenciaStatus = ref(db, caminhoStatus);
-
-    const pararDeOuvirStatus = onValue(referenciaStatus, (snapshot) => {
-      const dados = snapshot.val();
-      if (dados && typeof dados.online === "boolean") {
-        setOnline(dados.online);
-      }
-    });
-
-    return () => pararDeOuvirStatus();
-  }, [caminhoStatus]);
-
-  useEffect(() => {
-    const referenciaHistorico = ref(db, caminhoHistorico);
-
-    const pararDeOuvirHistorico = onValue(referenciaHistorico, (snapshot) => {
-      const dados = snapshot.val();
-
-      if (!dados) {
-        setHistoricoLista([]);
-        return;
-      }
-
-      const lista = Object.values(dados) as any[];
-
-      const listaOrdenada = lista
-        .sort((a, b) => {
-          const dataA = new Date(a.finalizadoEm || 0).getTime();
-          const dataB = new Date(b.finalizadoEm || 0).getTime();
-          return dataB - dataA;
-        })
-        .slice(0, 10);
-
-      setHistoricoLista(listaOrdenada);
-    });
-
-    return () => pararDeOuvirHistorico();
-  }, [caminhoHistorico]);
-
-  useEffect(() => {
-    const referencia = ref(db, caminhoFirebase);
-
-    const pararDeOuvir = onValue(referencia, async (snapshot) => {
-      const dados = snapshot.val();
-
-      limparFinalizacaoAutomatica();
-
-      if (!dados) {
-        if (ultimaChamadaAtivaRef.current && ultimaChamadaDadosRef.current) {
-          await registrarAnalytics("falha");
-          await registrarLog(
-            "chamada_cancelada_visitante",
-            "Visitante cancelou antes do atendimento"
-          );
-          await salvarHistoricoComDados(
-            "Cancelada pelo visitante",
-            ultimaChamadaDadosRef.current
-          );
-        }
-
-        ultimaChamadaAtivaRef.current = false;
-        ultimaChamadaDadosRef.current = null;
-
-        setNome("Nenhuma solicitação");
-        setMotivo("Aguardando visitante");
-        setStatus("Sem chamado ativo");
-        setHoraChamada("");
-        setModo("");
-        setMensagemResponsavel("");
-        setVisitanteVisualizou(false);
-        setAudioVisitante("");
-        ultimoAudioPopupRef.current = "";
-        setAudioPopup(null);
-        setMensagensConversa([]);
-        setAudioRespostaBlob(null);
-        setAvisoAuto("");
-        setPopupAtendimentoAberto(false);
-        toqueSilenciadoPorAudioRef.current = false;
-        idChamadaAtualRef.current = "";
-        pararToqueContinuo();
-        return;
-      }
-
-      ultimaChamadaAtivaRef.current = true;
-      ultimaChamadaDadosRef.current = dados;
-
-      setNome(dados.nome || "Nenhuma solicitação");
-      setMotivo(dados.motivo || "Aguardando visitante");
-      setStatus(dados.status || "Sem chamado ativo");
-      setHoraChamada(
-        dados.criadoEm ? new Date(dados.criadoEm).toLocaleString("pt-BR") : ""
-      );
-      setModo(dados.modo || "");
-      setMensagemResponsavel(dados.mensagemResponsavel || "");
-
-      const idChamadaAtual =
-        String(dados.criadoEm || "") ||
-        `${dados.nome || ""}-${dados.motivo || ""}`;
-
-      if (
-        idChamadaAtual &&
-        idChamadaAtualRef.current !== idChamadaAtual
-      ) {
-        idChamadaAtualRef.current = idChamadaAtual;
-        toqueSilenciadoPorAudioRef.current = false;
-      }
-      setVisitanteVisualizou(
-        dados.visitanteVisualizou === true ||
-          dados.mensagemVisualizada === true ||
-          dados.visualizadoPeloVisitante === true
-      );
-
-      const mensagensOrdenadas = ordenarMensagens(dados.mensagens);
-      setMensagensConversa(mensagensOrdenadas);
-
-      const ultimoAudioVisitante = [...mensagensOrdenadas]
-        .reverse()
-        .find(
-          (item) =>
-            item.autor === "visitante" &&
-            item.tipo === "audio" &&
-            Boolean(item.audioBase64)
-        );
-
-      const audioVisitanteAtual = ultimoAudioVisitante?.audioBase64 || dados.audioBase64 || "";
-      setAudioVisitante(audioVisitanteAtual);
-
-      if (audioVisitanteAtual && ultimoAudioPopupRef.current !== audioVisitanteAtual) {
-        ultimoAudioPopupRef.current = audioVisitanteAtual;
-
-        setAudioPopup({
-          titulo: "🎙️ Novo áudio do visitante",
-          audio: audioVisitanteAtual,
-        });
-      }
-
-      if (dados.status === "Encerrado") {
-        ultimaChamadaAtivaRef.current = false;
-        ultimaChamadaDadosRef.current = null;
-
-        pararToqueContinuo();
-        setPopupAtendimentoAberto(false);
-        setAvisoAuto("Atendimento encerrado. Limpando em instantes.");
-        return;
-      }
-
-      const deveTocar =
-        dados.notificar === true &&
-        dados.status === "Aguardando atendimento" &&
-        !toqueSilenciadoPorAudioRef.current;
-
-      if (deveTocar) {
-        iniciarToqueContinuo();
-        setPopupAtendimentoAberto(true);
-
-        const idChamada = dados.criadoEm || dados.nome || "";
-
-        if (idChamada && ultimaCapturaCameraRef.current !== idChamada) {
-          ultimaCapturaCameraRef.current = idChamada;
-
-          registrarAnalytics("recebida");
-          registrarLog("chamada_recebida", "Nova chamada recebida no painel");
-
-          capturarFotoCamera();
-        }
-      } else {
-        pararToqueContinuo();
-      }
-
-      programarFinalizacaoAutomatica(dados);
-    });
-
-    return () => {
-      limparFinalizacaoAutomatica();
-      pararToqueContinuo();
-      pararDeOuvir();
-    };
-  }, [caminhoFirebase]);
-
-  async function capturarFotoCamera() {
-    setCapturandoCamera(true);
-
-    try {
-      await registrarLog("camera_tentativa", "Tentando capturar foto da câmera");
-
-      const resposta = await fetch(`/api/capturar-camera?cache=${Date.now()}`);
-      const dados = await resposta.json();
-
-      if (dados.sucesso && dados.imagem) {
-        setFotoCameraAtual(dados.imagem);
-        setFotoCameraAtualizadaEm(Date.now());
-
-        await registrarLog(
-          "camera_sucesso",
-          "Foto da câmera capturada com sucesso"
-        );
-      } else {
-        await registrarLog("erro_camera", "A câmera não retornou imagem válida");
-        console.log("A câmera não retornou imagem.");
-      }
-    } catch (erro) {
-      console.error("Erro ao capturar foto da câmera:", erro);
-
-      await registrarLog(
-        "erro_camera",
-        "Erro ao atualizar foto da câmera: " + String(erro)
-      );
-
-      alert("Erro ao atualizar foto da câmera.");
-    }
-
-    setCapturandoCamera(false);
-  }
-
-  async function salvarHistoricoComDados(tipoFinalizacao: string, dados: any) {
-    if (!dados || !dados.nome) return;
-
-    const agora = new Date();
-
-    const novoRegistro = {
-      nome: dados.nome || "Visitante",
-      motivo: dados.motivo || "Não informado",
-      modo: dados.modo || "",
-      statusFinal: dados.status || "Sem status",
-      tipoFinalizacao,
-      chamadoEm: dados.criadoEm
-        ? new Date(dados.criadoEm).toLocaleString("pt-BR")
-        : "",
-      finalizadoEm: agora.toISOString(),
-      finalizadoEmFormatado: agora.toLocaleString("pt-BR"),
-      fotoCamera: fotoCameraAtual || "",
-    };
-
-    const novoItem = push(ref(db, caminhoHistorico));
-    await set(novoItem, novoRegistro);
-  }
-
-  async function salvarHistorico(tipoFinalizacao: string) {
-    if (nome === "Nenhuma solicitação") return;
-
-    const agora = new Date();
-
-    const novoRegistro = {
-      nome,
-      motivo,
-      modo,
-      statusFinal: status,
-      tipoFinalizacao,
-      chamadoEm: horaChamada,
-      finalizadoEm: agora.toISOString(),
-      finalizadoEmFormatado: agora.toLocaleString("pt-BR"),
-      fotoCamera: fotoCameraAtual || "",
-    };
-
-    const novoItem = push(ref(db, caminhoHistorico));
-    await set(novoItem, novoRegistro);
-  }
-
-  function programarFinalizacaoAutomatica(dados: any) {
-    if (dados.status === "Encerrado") return;
-
-    const agora = Date.now();
-
-    let tempoLimite = TEMPO_AGUARDANDO;
-    let dataBase = dados.criadoEm;
-
-    if (dados.status === "Em atendimento") {
-      tempoLimite = TEMPO_EM_ATENDIMENTO;
-      dataBase = dados.atendidoEm || dados.criadoEm;
-    }
-
-    if (!dataBase) return;
-
-    const inicio = new Date(dataBase).getTime();
-    const tempoPassado = agora - inicio;
-    const tempoRestante = tempoLimite - tempoPassado;
-
-    if (tempoRestante <= 0) {
-      finalizarAutomaticamente();
-      return;
-    }
-
-    const minutos = Math.ceil(tempoRestante / 60000);
-    setAvisoAuto(`Finalização automática em até ${minutos} min.`);
-
-    finalizacaoAutoRef.current = setTimeout(() => {
-      finalizarAutomaticamente();
-    }, tempoRestante);
-  }
-
-  async function finalizarAutomaticamente() {
-    pararToqueContinuo();
-    limparFinalizacaoAutomatica();
-
-    ultimaChamadaAtivaRef.current = false;
-    setPopupAtendimentoAberto(false);
-
-    await registrarAnalytics("timeout");
-    await registrarLog("timeout_atendimento", "Chamada finalizada automaticamente");
-
-    await salvarHistorico("Automática");
-
-    await update(ref(db, caminhoFirebase), {
-      status: "Encerrado",
-      mensagemResponsavel: "ATENDIMENTO_ENCERRADO",
-      notificar: false,
-      encerradoEm: new Date().toISOString(),
-    });
-
-    ultimaChamadaDadosRef.current = null;
-    setAudioVisitante("");
-    setMensagensConversa([]);
-    setAudioRespostaBlob(null);
-
-    setTimeout(async () => {
-      await remove(ref(db, caminhoFirebase));
-    }, 5000);
-  }
-
-  function limparFinalizacaoAutomatica() {
-    if (finalizacaoAutoRef.current) {
-      clearTimeout(finalizacaoAutoRef.current);
-      finalizacaoAutoRef.current = null;
-    }
-  }
-
-  async function atenderSolicitacao() {
-    if (status === "Sem chamado ativo") {
-      alert("Não existe chamada ativa para atender.");
-      return;
-    }
-
-    if (status === "Em atendimento") {
-      alert("Esta chamada já está em atendimento.");
-      return;
-    }
-
-    await registrarAnalytics("atendida");
-    await registrarLog("chamada_atendida", "Chamada atendida pelo painel");
-
-    await update(ref(db, caminhoFirebase), {
-      status: "Em atendimento",
-      notificar: false,
-      atendidoEm: new Date().toISOString(),
-    });
-
-    setPopupAtendimentoAberto(false);
-    pararToqueContinuo();
-  }
-
-  async function enviarMensagemRapida(mensagem: string) {
-    if (status === "Sem chamado ativo") {
-      alert("Não existe chamada ativa para responder.");
-      return;
-    }
-
-    if (status !== "Em atendimento") {
-      alert("Atenda a chamada antes de responder.");
-      return;
-    }
-
-    await registrarLog("mensagem_rapida", "Mensagem enviada: " + mensagem);
-
-    await update(ref(db, caminhoFirebase), {
-      status: "Em atendimento",
-      mensagemResponsavel: mensagem,
-      notificar: false,
-      visitanteVisualizou: false,
-      mensagemVisualizada: false,
-      visualizadoPeloVisitante: false,
-      enviadoEm: Date.now(),
-      ultimaAtividade: Date.now(),
-      atendidoEm: new Date().toISOString(),
-    });
-
-    await registrarMensagemConversa({
-      autor: "morador",
-      tipo: "texto",
-      texto: mensagem,
-    });
-
-    setMensagemResponsavel(mensagem);
-    setVisitanteVisualizou(false);
-    pararToqueContinuo();
-  }
-
-  async function registrarMensagemConversa(
-    dados: Omit<MensagemConversa, "criadoEm">
-  ) {
-    if (status === "Sem chamado ativo") return;
-
-    const idMensagem = String(Date.now());
-
-    await set(ref(db, `${caminhoFirebase}/mensagens/${idMensagem}`), {
-      ...dados,
-      criadoEm: Date.now(),
-    });
-
-    await update(ref(db, caminhoFirebase), {
-      ultimaAtividade: Date.now(),
-      enviadoEm: Date.now(),
-    });
-  }
-
-  async function iniciarGravacaoMorador() {
-    if (status === "Sem chamado ativo") {
-      alert("Não existe chamada ativa para responder.");
-      return;
-    }
-
-    if (status !== "Em atendimento") {
-      alert("Atenda a chamada antes de gravar resposta.");
-      return;
-    }
-
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const recorder = new MediaRecorder(stream);
-
-      audioChunksMoradorRef.current = [];
-
-      recorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          audioChunksMoradorRef.current.push(event.data);
-        }
-      };
-
-      recorder.onstop = () => {
-        const blob = new Blob(audioChunksMoradorRef.current, {
-          type: "audio/webm",
-        });
-
-        setAudioRespostaBlob(blob);
-        setGravandoAudioMorador(false);
-        stream.getTracks().forEach((track) => track.stop());
-      };
-
-      mediaRecorderMoradorRef.current = recorder;
-      recorder.start();
-      setAudioRespostaBlob(null);
-      setGravandoAudioMorador(true);
-
-      setTimeout(() => {
-        if (recorder.state === "recording") {
-          pararGravacaoMorador();
-        }
-      }, 15000);
-    } catch (erro) {
-      console.error(erro);
-      alert("Não foi possível acessar o microfone.");
-      setGravandoAudioMorador(false);
-    }
-  }
-
-  function pararGravacaoMorador() {
-    if (
-      mediaRecorderMoradorRef.current &&
-      mediaRecorderMoradorRef.current.state === "recording"
-    ) {
-      mediaRecorderMoradorRef.current.stop();
-    } else {
-      setGravandoAudioMorador(false);
-    }
-  }
-
-  async function enviarAudioMorador() {
-    if (status === "Sem chamado ativo") {
-      alert("Não existe chamada ativa para responder.");
-      return;
-    }
-
-    if (status !== "Em atendimento") {
-      alert("Atenda a chamada antes de enviar áudio.");
-      return;
-    }
-
-    if (!audioRespostaBlob) {
-      alert("Grave um áudio antes de enviar.");
-      return;
-    }
-
-    try {
-      setEnviandoAudioMorador(true);
-
-      const audioBase64 = await blobParaBase64(audioRespostaBlob);
-
-      await update(ref(db, caminhoFirebase), {
-        status: "Em atendimento",
-        notificar: false,
-        mensagemResponsavel: "",
-        visualizadoPeloVisitante: false,
-        visitanteVisualizou: false,
-        mensagemVisualizada: false,
-        enviadoEm: Date.now(),
-        ultimaAtividade: Date.now(),
-        atendidoEm: new Date().toISOString(),
+      const respostaPush = await fetch("/api/enviar-notificacao-v2", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          tipo: "comunicado-v2",
+          condominioId: comunicado.condominioId,
+          comunicadoId: comunicado.id,
+          titulo: comunicado.titulo,
+          mensagem: comunicado.mensagem,
+        }),
       });
 
-      await registrarMensagemConversa({
-        autor: "morador",
-        tipo: "audio",
-        audioBase64,
-      });
+      const dadosPush = await respostaPush.json().catch(() => ({}));
 
-      await registrarLog("audio_morador", "Morador enviou áudio ao visitante");
-
-      setAudioRespostaBlob(null);
-      pararToqueContinuo();
-    } catch (erro) {
-      console.error(erro);
-      alert("Erro ao enviar áudio.");
-    } finally {
-      setEnviandoAudioMorador(false);
-    }
-  }
-
-  async function limparHistorico() {
-    const confirmar = window.confirm(
-      "Tem certeza que deseja limpar todo o histórico?"
-    );
-
-    if (!confirmar) return;
-
-    await remove(ref(db, caminhoHistorico));
-    setHistoricoLista([]);
-    alert("Histórico limpo com sucesso.");
-  }
-
-  async function finalizarSolicitacao() {
-    if (status === "Sem chamado ativo") {
-      alert("Não existe chamada ativa para finalizar.");
-      return;
-    }
-
-    ultimaChamadaAtivaRef.current = false;
-    setPopupAtendimentoAberto(false);
-
-    await registrarAnalytics("finalizada");
-    await registrarLog("chamada_finalizada", "Chamada finalizada manualmente");
-
-    await salvarHistorico("Manual");
-
-    limparFinalizacaoAutomatica();
-
-    await update(ref(db, caminhoFirebase), {
-      status: "Encerrado",
-      mensagemResponsavel: "ATENDIMENTO_ENCERRADO",
-      notificar: false,
-      encerradoEm: new Date().toISOString(),
-    });
-
-    ultimaChamadaDadosRef.current = null;
-
-    setTimeout(async () => {
-      await remove(ref(db, caminhoFirebase));
-    }, 5000);
-
-    pararToqueContinuo();
-  }
-
-  function tocarBip() {
-    try {
-      const AudioContextClass =
-        window.AudioContext || (window as any).webkitAudioContext;
-
-      if (!audioContextRef.current) {
-        audioContextRef.current = new AudioContextClass();
-      }
-
-      const audioContext = audioContextRef.current;
-
-      if (audioContext.state === "suspended") {
-        audioContext.resume();
-      }
-
-      const oscillator = audioContext.createOscillator();
-      const gainNode = audioContext.createGain();
-
-      oscillator.connect(gainNode);
-      gainNode.connect(audioContext.destination);
-
-      oscillator.frequency.value = 880;
-      oscillator.type = "sine";
-
-      gainNode.gain.setValueAtTime(0.35, audioContext.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(
-        0.01,
-        audioContext.currentTime + 0.45
-      );
-
-      oscillator.start();
-      oscillator.stop(audioContext.currentTime + 0.45);
-    } catch (erro) {
-      console.error("Erro ao tocar bip:", erro);
-    }
-  }
-
-  function iniciarToqueContinuo() {
-    if (intervaloSomRef.current) return;
-
-    tocarBip();
-
-    intervaloSomRef.current = setInterval(() => {
-      tocarBip();
-    }, 900);
-  }
-
-  function pararToqueContinuo() {
-    if (intervaloSomRef.current) {
-      clearInterval(intervaloSomRef.current);
-      intervaloSomRef.current = null;
-    }
-  }
-
-  async function alterarStatusOnline() {
-    const novoStatus = !online;
-
-    setOnline(novoStatus);
-
-    await set(ref(db, caminhoStatus), {
-      online: novoStatus,
-      atualizadoEm: new Date().toISOString(),
-    });
-  }
-
-  async function acionarPortao() {
-    if (abrindoPortao) return;
-
-    try {
-      setAbrindoPortao(true);
-      setStatusPortao("⏳ Abrindo portão...");
-
-      await registrarLog("portao_tentativa", "Tentativa de abertura do portão");
-
-      const resposta = await fetch("/api/abrir-portao");
-      const dados = await resposta.json();
-
-      if (dados.success) {
-        setStatusPortao("✅ Portão aberto com sucesso");
-        await registrarLog("portao_sucesso", "Portão aberto com sucesso");
-      } else {
-        setStatusPortao("❌ Falha ao abrir portão");
-        await registrarLog(
-          "erro_portao",
-          "API respondeu falha ao abrir portão"
-        );
-      }
-    } catch (erro) {
-      setStatusPortao("❌ Erro ao abrir portão");
-
-      await registrarLog("erro_portao", "Erro inesperado: " + String(erro));
-
-      console.error("Erro ao abrir portão:", erro);
-    } finally {
-      setTimeout(() => {
-        setAbrindoPortao(false);
-        setStatusPortao("");
-      }, 7000);
-    }
-  }
-
-  async function ativarNotificacoes() {
-    try {
-      if (typeof window === "undefined") {
-        alert("As notificações só podem ser ativadas no navegador.");
-        return;
-      }
-
-      if (!("Notification" in window)) {
-        await registrarLog(
-          "push_nao_suportado",
-          "Este navegador não possui suporte à API de notificações"
-        );
-
-        alert("Este navegador não suporta notificações.");
-        return;
-      }
-
-      if (!("serviceWorker" in navigator)) {
-        await registrarLog(
-          "push_sem_service_worker",
-          "Este navegador não possui suporte a Service Worker"
-        );
-
-        alert("Este navegador não suporta notificações em segundo plano.");
-        return;
-      }
-
-      const messaging = await messagingPromise;
-
-      if (!messaging) {
-        await registrarLog(
-          "push_nao_suportado",
-          "Firebase Messaging não foi inicializado neste navegador"
-        );
-
-        alert("Não foi possível iniciar as notificações neste navegador.");
-        return;
-      }
-
-      const permissao = await Notification.requestPermission();
-
-      if (permissao !== "granted") {
-        await registrarLog(
-          "push_permissao_negada",
-          "Permissão para notificações negada: " + permissao
-        );
-
-        alert("Permissão para notificações não foi concedida.");
-        return;
-      }
-
-      const registroServiceWorker = await navigator.serviceWorker.register(
-        "/firebase-messaging-sw.js",
-        {
-          scope: "/",
-        }
-      );
-
-      await navigator.serviceWorker.ready;
-
-      const token = await getToken(messaging, {
-        vapidKey:
-          "BIEIQutWLbP05G1xFN1Zvg_hMnc4OGOkHRf6yI1bT8Igfmm1G8vRjYQhZyDGc5M3X6yhHkoWdJj4a_atPGqX7sk",
-        serviceWorkerRegistration: registroServiceWorker,
-      });
-
-      if (!token) {
+      if (!respostaPush.ok || dadosPush?.ok === false) {
         throw new Error(
-          "O Firebase não retornou um token de notificação."
+          dadosPush?.erro ||
+            dadosPush?.detalhes ||
+            "Não foi possível reenviar o push."
         );
       }
 
-      await update(ref(db, "configuracoes-v2"), {
-        [`tokensMorador/${slug}`]: token,
-      });
-
-      await registrarLog(
-        "push_token_salvo",
-        "Token de notificação salvo com sucesso"
-      );
-
-      alert("Notificações ativadas com sucesso!");
-    } catch (erro: any) {
-      console.error("Erro completo ao ativar notificações:", erro);
-
-      const codigo =
-        erro?.code ||
-        erro?.name ||
-        "erro-desconhecido";
-
-      const mensagemErro =
-        erro?.message ||
-        String(erro);
-
-      await registrarLog(
-        "push_erro_token",
-        `Código: ${codigo} | Mensagem: ${mensagemErro}`
-      );
-
       alert(
-        `Não foi possível ativar as notificações.
-
-Código: ${codigo}
-Mensagem: ${mensagemErro}`
+        `Push reenviado. ${dadosPush.enviados || 0} dispositivo(s) notificado(s).`
       );
-    }
-  }
-
-  useEffect(() => {
-    function prepararInstalacao(evento: any) {
-      evento.preventDefault();
-      setInstallPrompt(evento);
-      setAppInstalavel(true);
-    }
-
-    function appInstalado() {
-      setInstallPrompt(null);
-      setAppInstalavel(false);
-    }
-
-    window.addEventListener("beforeinstallprompt", prepararInstalacao);
-    window.addEventListener("appinstalled", appInstalado);
-
-    return () => {
-      window.removeEventListener("beforeinstallprompt", prepararInstalacao);
-      window.removeEventListener("appinstalled", appInstalado);
-    };
-  }, []);
-
-  async function instalarApp() {
-    if (!installPrompt) {
-      alert(
-        "Se o botão não abrir a instalação automaticamente, use o menu do navegador e procure por 'Instalar app' ou 'Adicionar à tela inicial'."
-      );
-      return;
-    }
-
-    try {
-      await installPrompt.prompt();
-      await installPrompt.userChoice;
-      setInstallPrompt(null);
-      setAppInstalavel(false);
     } catch (erro) {
-      console.error("Erro ao instalar app:", erro);
-      alert("Não foi possível abrir a instalação agora.");
+      console.error("Erro ao registrar reenvio:", erro);
+      alert("Não foi possível registrar o reenvio.");
     }
   }
-
-  async function abrirCameraGrande() {
-    setMostrarCameraGrande(true);
-
-    if (!fotoCameraAtual) {
-      await capturarFotoCamera();
-    }
-  }
-
-  function silenciarToqueAoOuvirAudio() {
-    toqueSilenciadoPorAudioRef.current = true;
-    pararToqueContinuo();
-  }
-
-  function abrirAudioVisitanteGrande() {
-    if (!audioVisitante) return;
-
-    silenciarToqueAoOuvirAudio();
-    setAudioPopup({
-      titulo: "🎙️ Áudio do visitante",
-      audio: audioVisitante,
-    });
-  }
-
-  const respostasRapidas = [
-    {
-      texto: "Aguarde um momento",
-      mensagem: "Aguarde um momento, por favor.",
-      icone: "💬",
-    },
-    {
-      texto: "Já estou descendo",
-      mensagem: "Olá, entendi. Já estou descendo.",
-      icone: "🚶",
-    },
-    {
-      texto: "Pode deixar na portaria",
-      mensagem: "Pode deixar na portaria, obrigado.",
-      icone: "📦",
-    },
-    {
-      texto: "Não estou em casa",
-      mensagem: "Não estou em casa no momento.",
-      icone: "🏠",
-    },
-    {
-      texto: "Estou indo retirar",
-      mensagem: "Estou indo retirar agora.",
-      icone: "🚶",
-    },
-  ];
 
   return (
-    <main className="min-h-screen bg-slate-950 text-white p-4 relative">
-      {comunicadoAberto && (() => {
-        const precisaConfirmarCiencia =
-          comunicadoAberto.exigeCiencia !== false &&
-          comunicadoAberto.exigirCiencia !== false;
+    <div className="space-y-5">
+      {/* Cabeçalho */}
 
-        return (
-        <div className="fixed inset-0 z-[1200] flex items-center justify-center overflow-y-auto bg-black/90 p-4">
-          <div className="my-4 w-full max-w-md rounded-3xl border-2 border-blue-500 bg-slate-900 p-5 shadow-2xl">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-xs font-black text-blue-300">
-                  {comunicadoAberto.tipo === "assembleia"
-                    ? "👥 ASSEMBLEIA"
-                    : comunicadoAberto.tipo === "manutencao"
-                    ? "🛠️ MANUTENÇÃO"
-                    : comunicadoAberto.tipo === "emergencia"
-                    ? "🚨 EMERGÊNCIA"
-                    : "📢 COMUNICADO"}
+      <section className="relative rounded-3xl bg-gradient-to-r from-blue-700 to-cyan-600 p-5 text-white md:p-8">
+        <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h1 className="text-3xl font-black md:text-4xl">
+              👋 Bom dia, João
+            </h1>
+
+            <p className="mt-2 text-sm text-blue-100 md:text-base">
+              {textoEscopo}
+            </p>
+          </div>
+
+          <div className="flex w-full flex-col gap-3 md:w-auto">
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => abrirComunicacao("comunicado")}
+                className="rounded-2xl bg-white px-4 py-3 text-xs font-black text-blue-700 shadow-lg transition-all hover:bg-blue-50 active:scale-95 md:text-sm"
+              >
+                📢 Enviar comunicado
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  if (isCarteiraGeral) {
+                    alert(
+                      "Selecione um condomínio para visualizar os comunicados enviados."
+                    );
+                    return;
+                  }
+
+                  setPopupComunicadosEnviadosAberto(true);
+                }}
+                className="rounded-2xl border border-white/40 bg-white/15 px-4 py-3 text-xs font-black text-white shadow-lg transition-all hover:bg-white/25 active:scale-95 md:text-sm"
+              >
+                📚 Comunicados enviados
+              </button>
+            </div>
+
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setSeletorContextoAberto((aberto) => !aberto)}
+              className={`flex w-full min-w-[250px] items-center justify-between gap-4 rounded-2xl border px-4 py-3 text-left shadow-lg backdrop-blur transition-all hover:brightness-110 active:scale-[0.98] md:w-auto ${resumoContexto.borda} ${resumoContexto.fundo}`}
+            >
+              <div className="min-w-0">
+                <p className="text-[10px] font-bold uppercase tracking-wide text-blue-100">
+                  {isCarteiraGeral ? "🌐 CARTEIRA" : "🏢 CONDOMÍNIO"}
                 </p>
 
-                <h2 className="mt-2 text-2xl font-black text-white">
-                  {comunicadoAberto.titulo}
+                <p className="mt-1 truncate text-lg font-black text-white">
+                  {contextoSelecionado.icone} {contextoSelecionado.nome}
+                </p>
+
+                <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
+                  <span className={`text-xs font-black ${resumoContexto.corStatus}`}>
+                    {resumoContexto.icone} {resumoContexto.status}
+                  </span>
+
+                  <span className="text-[10px] font-bold text-blue-100/90">
+                    {resumoContexto.detalhe}
+                  </span>
+                </div>
+              </div>
+
+              <span
+                className={`shrink-0 text-lg transition-transform ${
+                  seletorContextoAberto ? "rotate-180" : ""
+                }`}
+              >
+                ▼
+              </span>
+            </button>
+
+            {seletorContextoAberto && (
+              <div className="absolute right-0 top-full z-[90] mt-2 w-full min-w-[260px] overflow-hidden rounded-2xl border border-slate-600 bg-slate-900 p-2 shadow-2xl md:w-[300px]">
+                {opcoesContexto.map((opcao) => {
+                  const selecionada = opcao.id === contextoAtual;
+                  const condominioOpcao =
+                    opcao.id === "carteira-geral"
+                      ? null
+                      : condominios.find(
+                          (condominio) => condominio.id === opcao.id
+                        );
+
+                  const statusOpcao =
+                    opcao.id === "carteira-geral"
+                      ? "🌐 2 saudáveis • 1 atenção • 0 críticos"
+                      : condominioOpcao?.status === "saudavel"
+                      ? "🟢 Saudável"
+                      : condominioOpcao?.status === "atencao"
+                      ? `🟠 Atenção • ${
+                          condominioOpcao.problemas.length
+                        } pendência${
+                          condominioOpcao.problemas.length === 1 ? "" : "s"
+                        }`
+                      : `🔴 Crítico • ${
+                          condominioOpcao?.problemas.length ?? 0
+                        } prioridade${
+                          (condominioOpcao?.problemas.length ?? 0) === 1
+                            ? ""
+                            : "s"
+                        }`;
+
+                  return (
+                    <button
+                      key={opcao.id}
+                      type="button"
+                      onClick={() => trocarContexto(opcao.id)}
+                      className={`flex w-full items-center justify-between gap-3 rounded-xl px-4 py-3 text-left transition-all active:scale-[0.98] ${
+                        selecionada
+                          ? "bg-blue-600 text-white"
+                          : "text-slate-200 hover:bg-slate-800"
+                      }`}
+                    >
+                      <div className="min-w-0">
+                        <span className="block truncate font-black">
+                          {opcao.icone} {opcao.nome}
+                        </span>
+
+                        <span
+                          className={`mt-1 block text-[10px] font-bold ${
+                            selecionada ? "text-blue-100" : "text-slate-400"
+                          }`}
+                        >
+                          {statusOpcao}
+                        </span>
+                      </div>
+
+                      {selecionada && <span className="shrink-0">✓</span>}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+            </div>
+          </div>
+        </div>
+
+        {!isCarteiraGeral && (
+          <div className="mt-5 flex items-center justify-between rounded-2xl border border-white/20 bg-black/10 px-4 py-3">
+            <div>
+              <p className="text-xs font-bold text-blue-100">
+                👁 MODO CONDOMÍNIO
+              </p>
+
+              <p className="mt-1 text-sm font-black text-white">
+                <>{contextoSelecionado.nome}<br />Todos os módulos utilizam este contexto.</>
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => trocarContexto("carteira-geral")}
+              className="shrink-0 rounded-xl bg-white/15 px-3 py-2 text-xs font-black transition-all hover:bg-white/25 active:scale-95"
+            >
+              Ver geral
+            </button>
+          </div>
+        )}
+      </section>
+
+      {/* Atenção agora */}
+
+      <section className="rounded-2xl border border-red-700 bg-red-950/20 p-4 md:p-5">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-xs font-bold text-red-300 md:text-sm">
+              🚨 ATENÇÃO AGORA
+            </p>
+
+            <h2 className="mt-1 text-xl font-black text-white md:text-2xl">
+              {isCarteiraGeral
+                ? "4 ações precisam da sua atenção"
+                : `Atenções de ${contextoSelecionado.nome}`}
+            </h2>
+          </div>
+
+          <button
+            type="button"
+            className="shrink-0 rounded-xl bg-red-600 px-4 py-3 text-sm font-bold transition-all duration-150 hover:bg-red-500 active:scale-95 active:brightness-125"
+          >
+            Ver tudo
+          </button>
+        </div>
+
+        <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <button
+            type="button"
+            className="rounded-2xl border border-red-600 bg-red-950/40 p-4 text-left transition-all duration-150 hover:bg-red-900 active:scale-95 active:brightness-125"
+          >
+            <div className="text-4xl">📷</div>
+            <div className="mt-3 font-black text-white">Câmera</div>
+            <div className="text-sm text-red-300">Tulipas</div>
+            <div className="mt-1 text-xs text-slate-400">Offline</div>
+          </button>
+
+          <button
+            type="button"
+            className="rounded-2xl border border-orange-500 bg-orange-950/40 p-4 text-left transition-all duration-150 hover:bg-orange-900 active:scale-95 active:brightness-125"
+          >
+            <div className="text-4xl">🚪</div>
+            <div className="mt-3 font-black text-white">Portão</div>
+            <div className="text-sm text-orange-300">Flores</div>
+            <div className="mt-1 text-xs text-slate-400">
+              Aberto há 5 min
+            </div>
+          </button>
+
+          <button
+            type="button"
+            className="rounded-2xl border border-yellow-500 bg-yellow-950/40 p-4 text-left transition-all duration-150 hover:bg-yellow-900 active:scale-95 active:brightness-125"
+          >
+            <div className="text-4xl">☎️</div>
+            <div className="mt-3 font-black text-white">Interfone</div>
+            <div className="text-sm text-yellow-300">Alfa</div>
+            <div className="mt-1 text-xs text-slate-400">Defeito</div>
+          </button>
+
+          <button
+            type="button"
+            className="rounded-2xl border border-red-600 bg-red-950/40 p-4 text-left transition-all duration-150 hover:bg-red-900 active:scale-95 active:brightness-125"
+          >
+            <div className="text-4xl">📄</div>
+            <div className="mt-3 font-black text-white">Contrato</div>
+            <div className="text-sm text-red-300">Tulipas</div>
+            <div className="mt-1 text-xs text-slate-400">
+              Vence amanhã
+            </div>
+          </button>
+        </div>
+      </section>
+
+      {/* Indicadores rápidos personalizáveis */}
+
+      <section className="rounded-2xl border border-slate-700 bg-slate-900/70 p-4 md:p-5">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-xs font-bold text-blue-300 md:text-sm">
+              📊 INDICADORES RÁPIDOS
+            </p>
+
+            <h2 className="mt-1 text-xl font-black text-white md:text-2xl">
+              {isCarteiraGeral
+                ? "Tudo importante na palma da mão"
+                : `Indicadores de ${contextoSelecionado.nome}`}
+            </h2>
+
+            <p className="mt-1 text-xs text-slate-400 md:text-sm">
+              Escolha os indicadores que deseja acompanhar primeiro.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={abrirConfiguracaoIndicadores}
+            className="shrink-0 rounded-xl border border-slate-600 bg-slate-800 px-3 py-3 text-sm font-black text-white transition-all duration-150 hover:bg-slate-700 active:scale-95 active:brightness-125 md:px-4"
+          >
+            ⚙️ <span className="hidden sm:inline">Personalizar</span>
+          </button>
+        </div>
+
+        <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
+          {indicadoresAtivos.map((indicador) => (
+            <button
+              key={indicador.id}
+              type="button"
+              className="min-h-[138px] rounded-2xl border border-slate-700 bg-slate-800/80 p-4 text-left transition-all duration-150 hover:border-blue-600 hover:bg-slate-800 active:scale-95 active:brightness-125"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="text-3xl">{indicador.icone}</div>
+
+                <div className={`text-2xl font-black ${indicador.destaque}`}>
+                  {indicador.valor}
+                </div>
+              </div>
+
+              <div className="mt-4 font-black text-white">
+                {indicador.titulo}
+              </div>
+
+              <div className="mt-1 text-xs leading-relaxed text-slate-400">
+                {indicador.descricao}
+              </div>
+            </button>
+          ))}
+        </div>
+      </section>
+
+
+      {/* Agenda inteligente */}
+
+      <section
+        role="button"
+        tabIndex={0}
+        onClick={() => abrirAgenda("hoje")}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            abrirAgenda("hoje");
+          }
+        }}
+        className="cursor-pointer rounded-2xl border border-violet-700 bg-violet-950/20 p-4 transition-all duration-150 hover:bg-violet-900/20 active:scale-[0.99] active:brightness-125 md:p-5"
+      >
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-xs font-bold text-violet-300 md:text-sm">
+              📅 AGENDA INTELIGENTE
+            </p>
+
+            <h2 className="mt-1 text-xl font-black text-white md:text-2xl">
+              {isCarteiraGeral
+                ? "Compromissos de hoje"
+                : `Agenda de ${contextoSelecionado.nome}`}
+            </h2>
+
+            <p className="mt-1 text-xs text-slate-400 md:text-sm">
+              Sua operação organizada em um único lugar.
+            </p>
+          </div>
+
+          <div className="shrink-0 rounded-xl bg-violet-600 px-3 py-2 text-center">
+            <div className="text-2xl font-black text-white">12</div>
+            <div className="text-[10px] font-bold text-violet-100">
+              EVENTOS
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-5 grid grid-cols-3 gap-2 md:grid-cols-6 md:gap-3">
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              abrirAgenda("hoje");
+            }}
+            className="rounded-xl bg-slate-900 p-3 text-center transition-all duration-150 hover:bg-slate-800 active:scale-95 active:brightness-125"
+          >
+            <div className="text-2xl">🛠</div>
+            <div className="mt-1 font-black text-white">2</div>
+            <div className="text-[10px] text-slate-400">Manutenções</div>
+          </button>
+
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              abrirAgenda("hoje");
+            }}
+            className="rounded-xl bg-slate-900 p-3 text-center transition-all duration-150 hover:bg-slate-800 active:scale-95 active:brightness-125"
+          >
+            <div className="text-2xl">👥</div>
+            <div className="mt-1 font-black text-white">1</div>
+            <div className="text-[10px] text-slate-400">Assembleia</div>
+          </button>
+
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              abrirAgenda("sete-dias");
+            }}
+            className="rounded-xl bg-slate-900 p-3 text-center transition-all duration-150 hover:bg-slate-800 active:scale-95 active:brightness-125"
+          >
+            <div className="text-2xl">📄</div>
+            <div className="mt-1 font-black text-white">3</div>
+            <div className="text-[10px] text-slate-400">Contratos</div>
+          </button>
+
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              abrirAgenda("hoje");
+            }}
+            className="rounded-xl bg-slate-900 p-3 text-center transition-all duration-150 hover:bg-slate-800 active:scale-95 active:brightness-125"
+          >
+            <div className="text-2xl">👷</div>
+            <div className="mt-1 font-black text-white">2</div>
+            <div className="text-[10px] text-slate-400">Prestadores</div>
+          </button>
+
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              abrirAgenda("hoje");
+            }}
+            className="rounded-xl bg-slate-900 p-3 text-center transition-all duration-150 hover:bg-slate-800 active:scale-95 active:brightness-125"
+          >
+            <div className="text-2xl">📦</div>
+            <div className="mt-1 font-black text-white">5</div>
+            <div className="text-[10px] text-slate-400">Entregas</div>
+          </button>
+
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              abrirAgenda("sete-dias");
+            }}
+            className="rounded-xl bg-slate-900 p-3 text-center transition-all duration-150 hover:bg-slate-800 active:scale-95 active:brightness-125"
+          >
+            <div className="text-2xl">🔔</div>
+            <div className="mt-1 font-black text-white">4</div>
+            <div className="text-[10px] text-slate-400">Lembretes</div>
+          </button>
+        </div>
+
+        <div className="mt-4 flex items-center justify-between rounded-xl bg-slate-900/80 px-4 py-3">
+          <div>
+            <p className="text-xs font-bold text-violet-300">
+              PRÓXIMO COMPROMISSO
+            </p>
+            <p className="mt-1 text-sm font-black text-white">
+              🛠 Revisão do portão social — 09:30
+            </p>
+          </div>
+
+          <span className="text-sm font-black text-violet-300">
+            Ver agenda →
+          </span>
+        </div>
+      </section>
+
+
+      {/* Saúde financeira */}
+
+      <section
+        role="button"
+        tabIndex={0}
+        onClick={() => abrirFinanceiro("resumo")}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            abrirFinanceiro("resumo");
+          }
+        }}
+        className="cursor-pointer rounded-2xl border border-emerald-700 bg-emerald-950/20 p-4 transition-all duration-150 hover:bg-emerald-900/20 active:scale-[0.99] active:brightness-125 md:p-5"
+      >
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-xs font-bold text-emerald-300 md:text-sm">
+              💰 SAÚDE FINANCEIRA
+            </p>
+
+            <h2 className="mt-1 text-xl font-black text-white md:text-2xl">
+              {isCarteiraGeral
+                ? "Caixa saudável"
+                : `Saúde financeira — ${contextoSelecionado.nome}`}
+            </h2>
+
+            <p className="mt-1 text-xs text-slate-400 md:text-sm">
+              Previsão positiva para os próximos 30 dias.
+            </p>
+          </div>
+
+          <div className="shrink-0 text-right">
+            <div className="text-3xl font-black text-emerald-400 md:text-4xl">
+              R$ 187 mil
+            </div>
+
+            <div className="text-xs font-bold text-emerald-300">
+              ▲ +6% no mês
+            </div>
+
+            <div className="text-[10px] text-slate-400">
+              Saldo previsto
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              abrirFinanceiro("urgentes");
+            }}
+            className="rounded-xl border border-red-900 bg-slate-900 p-3 text-left transition-all duration-150 hover:bg-slate-800 active:scale-95 active:brightness-125"
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-2xl">🔴</span>
+              <span className="text-xl font-black text-red-300">3</span>
+            </div>
+            <div className="mt-2 font-black text-white">Contas urgentes</div>
+            <div className="mt-1 text-xs text-slate-400">
+              R$ 19.630 próximos do prazo
+            </div>
+          </button>
+
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              abrirFinanceiro("inadimplencia");
+            }}
+            className="rounded-xl border border-orange-900 bg-slate-900 p-3 text-left transition-all duration-150 hover:bg-slate-800 active:scale-95 active:brightness-125"
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-2xl">📉</span>
+              <span className="text-xl font-black text-orange-300">6,4%</span>
+            </div>
+            <div className="mt-2 font-black text-white">Inadimplência</div>
+            <div className="mt-1 text-xs text-slate-400">
+              11 unidades em atraso
+            </div>
+          </button>
+
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              abrirFinanceiro("pagamentos");
+            }}
+            className="rounded-xl border border-blue-900 bg-slate-900 p-3 text-left transition-all duration-150 hover:bg-slate-800 active:scale-95 active:brightness-125"
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-2xl">💳</span>
+              <span className="text-xl font-black text-blue-300">4</span>
+            </div>
+            <div className="mt-2 font-black text-white">
+              Próximos pagamentos
+            </div>
+            <div className="mt-1 text-xs text-slate-400">
+              R$ 33.300 nos próximos dias
+            </div>
+          </button>
+
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              abrirFinanceiro("resumo");
+            }}
+            className="rounded-xl border border-emerald-900 bg-slate-900 p-3 text-left transition-all duration-150 hover:bg-slate-800 active:scale-95 active:brightness-125"
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-2xl">📈</span>
+              <span className="text-xl font-black text-emerald-300">+8%</span>
+            </div>
+            <div className="mt-2 font-black text-white">Receitas do mês</div>
+            <div className="mt-1 text-xs text-slate-400">
+              Acima do mês anterior
+            </div>
+          </button>
+        </div>
+
+        <div className="mt-4 flex items-center justify-between rounded-xl border border-red-900/70 bg-red-950/20 px-4 py-3">
+          <div>
+            <p className="text-xs font-bold text-red-300">
+              PRIORIDADE FINANCEIRA
+            </p>
+            <p className="mt-1 text-sm font-black text-white">
+              Seguro predial vence amanhã
+            </p>
+          </div>
+
+          <span className="text-sm font-black text-red-300">
+            Ver detalhes →
+          </span>
+        </div>
+      </section>
+
+      {/* Resumo inteligente */}
+
+      <section
+        role="button"
+        tabIndex={0}
+        onClick={abrirResumo}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            abrirResumo();
+          }
+        }}
+        className="cursor-pointer rounded-2xl border border-cyan-700 bg-cyan-950/20 p-4 transition-all duration-150 hover:bg-cyan-900/20 active:scale-[0.99] active:brightness-125 md:p-5"
+      >
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-xs font-bold text-cyan-300 md:text-sm">
+              🤖 RESUMO INTELIGENTE
+            </p>
+
+            <h2 className="mt-1 text-xl font-black text-white md:text-2xl">
+              {isCarteiraGeral
+                ? "Sua carteira está estável"
+                : `${contextoSelecionado.nome} está sob acompanhamento`}
+            </h2>
+
+            <p className="mt-1 text-xs text-slate-400 md:text-sm">
+              Análise automática baseada nos dados atuais do painel.
+            </p>
+          </div>
+
+          <div className="shrink-0 rounded-xl border border-cyan-700 bg-cyan-950/40 px-3 py-2 text-center">
+            <div className="text-xs font-black text-cyan-300">IA</div>
+            <div className="mt-1 text-[10px] font-bold text-cyan-100">
+              BETA
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-5 rounded-2xl border border-slate-700 bg-slate-900/80 p-4">
+          <p className="text-sm leading-relaxed text-slate-200">
+            Bom dia, João.{" "}
+            {isCarteiraGeral
+              ? "Hoje existem 4 prioridades, 2 manutenções e 1 contrato vencendo amanhã. A situação financeira permanece saudável."
+              : `Neste momento, ${contextoSelecionado.nome} possui ${
+                  condominioAtual?.problemas.length ?? 0
+                } pendência${
+                  (condominioAtual?.problemas.length ?? 0) === 1 ? "" : "s"
+                } ativa${
+                  (condominioAtual?.problemas.length ?? 0) === 1 ? "" : "s"
+                } e segue com acompanhamento operacional.`}
+          </p>
+        </div>
+
+        <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <div className="rounded-xl bg-slate-900 p-3">
+            <div className="text-2xl">🚨</div>
+            <div className="mt-2 font-black text-white">
+              {isCarteiraGeral ? "4 prioridades" : "Atenção ativa"}
+            </div>
+            <div className="mt-1 text-xs text-slate-400">
+              Exigem acompanhamento
+            </div>
+          </div>
+
+          <div className="rounded-xl bg-slate-900 p-3">
+            <div className="text-2xl">📅</div>
+            <div className="mt-2 font-black text-white">
+              2 manutenções
+            </div>
+            <div className="mt-1 text-xs text-slate-400">
+              Programadas para hoje
+            </div>
+          </div>
+
+          <div className="rounded-xl bg-slate-900 p-3">
+            <div className="text-2xl">💰</div>
+            <div className="mt-2 font-black text-emerald-300">
+              Caixa saudável
+            </div>
+            <div className="mt-1 text-xs text-slate-400">
+              Previsão positiva
+            </div>
+          </div>
+
+          <div className="rounded-xl bg-slate-900 p-3">
+            <div className="text-2xl">📄</div>
+            <div className="mt-2 font-black text-orange-300">
+              1 contrato
+            </div>
+            <div className="mt-1 text-xs text-slate-400">
+              Vence amanhã
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-4 flex items-center justify-between rounded-xl border border-cyan-800 bg-cyan-950/20 px-4 py-3">
+          <div>
+            <p className="text-xs font-bold text-cyan-300">
+              PRINCIPAL PONTO DE ATENÇÃO
+            </p>
+
+            <p className="mt-1 text-sm font-black text-white">
+              {isCarteiraGeral
+                ? "Residencial Flores exige maior acompanhamento hoje"
+                : `${contextoSelecionado.nome} está sendo monitorado`}
+            </p>
+          </div>
+
+          <span className="text-sm font-black text-cyan-300">
+            Ver análise →
+          </span>
+        </div>
+      </section>
+
+      {/* Popup Resumo Inteligente */}
+
+      {popupResumoAberto && (
+        <div className="fixed inset-0 z-[129] flex items-center justify-center bg-black/75 p-3 md:p-6">
+          <div className="max-h-[92vh] w-full max-w-3xl overflow-y-auto rounded-3xl border border-slate-700 bg-slate-900 p-4 shadow-2xl md:p-6">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-sm font-bold text-cyan-300">
+                  🤖 RESUMO INTELIGENTE
+                </p>
+
+                <h2 className="mt-1 text-2xl font-black text-white">
+                  Análise do contexto atual
                 </h2>
+
+                <p className="mt-2 text-sm text-slate-400">
+                  {contextoSelecionado.icone} {contextoSelecionado.nome}
+                </p>
               </div>
 
               <button
                 type="button"
-                onClick={() => setComunicadoAberto(null)}
-                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-800 text-xl font-black"
+                onClick={fecharResumo}
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-800 text-xl font-black transition-all hover:bg-slate-700 active:scale-95"
               >
                 ✕
               </button>
             </div>
 
-            <p className="mt-4 whitespace-pre-wrap text-sm leading-relaxed text-slate-200">
-              {comunicadoAberto.mensagem}
-            </p>
-
-            <p className="mt-4 text-xs text-slate-500">
-              Enviado em {comunicadoAberto.criadoEmFormatado}
-            </p>
-
-            {precisaConfirmarCiencia ? (
-              comunicadoAberto.visualizacoes?.[slug]?.ciente === true ? (
-                <div className="mt-5 rounded-xl border border-green-700 bg-green-950/30 p-4 text-center font-black text-green-300">
-                  ✅ Ciente registrado
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  onClick={confirmarCiencia}
-                  disabled={salvandoCiencia}
-                  className="mt-5 w-full rounded-2xl bg-green-600 py-4 text-lg font-black text-white hover:bg-green-500 disabled:bg-slate-600"
-                >
-                  {salvandoCiencia
-                    ? "Registrando..."
-                    : "✅ Li e estou ciente"}
-                </button>
-              )
-            ) : (
-              <button
-                type="button"
-                onClick={() => setComunicadoAberto(null)}
-                className="mt-5 w-full rounded-2xl bg-blue-600 py-4 font-black text-white"
-              >
-                Fechar
-              </button>
-            )}
-          </div>
-        </div>
-        );
-      })()}
-
-      {mostrarPopupChamada && (
-        <div className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center p-4 overflow-y-auto">
-          <div className="w-full max-w-md bg-slate-900 border-4 border-green-400 rounded-3xl p-5 text-center shadow-2xl my-4">
-            <p className="text-6xl mb-3">🚨</p>
-
-            <h2 className="text-3xl font-black text-green-400 mb-2">
-              CHAMADA RECEBIDA
-            </h2>
-
-            <div className="bg-slate-800 rounded-2xl p-4 mt-4 border border-green-500/30">
-              <p className="text-2xl font-black text-white">{nome}</p>
-              <p className="text-slate-300 mt-2">Motivo: {motivo}</p>
-
-              {audioVisitante && (
-                <div className="mt-4 bg-slate-900 rounded-2xl p-4 border border-blue-500/40">
-                  <p className="text-sm text-blue-300 font-bold mb-3">
-                    🎙️ Áudio do visitante
+            <div className="mt-5 rounded-2xl border border-cyan-700 bg-cyan-950/25 p-5">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-xs font-bold text-cyan-300">
+                    ANÁLISE AUTOMÁTICA
                   </p>
 
-                  <audio
-                    controls
-                    className="w-full"
-                    src={audioVisitante}
-                    onPointerDown={silenciarToqueAoOuvirAudio}
-                    onTouchStart={silenciarToqueAoOuvirAudio}
-                    onClick={silenciarToqueAoOuvirAudio}
-                    onPlay={silenciarToqueAoOuvirAudio}
-                    onPlaying={silenciarToqueAoOuvirAudio}
-                  />
+                  <p className="mt-3 text-sm leading-relaxed text-slate-200">
+                    {isCarteiraGeral
+                      ? "Sua carteira apresenta boa estabilidade operacional. Hoje existem quatro prioridades, duas manutenções programadas e um contrato vencendo amanhã. A situação financeira permanece saudável, mas o Residencial Flores merece maior atenção."
+                      : `${contextoSelecionado.nome} está sendo acompanhado de forma específica. O sistema identificou ${
+                          condominioAtual?.problemas.length ?? 0
+                        } pendência${
+                          (condominioAtual?.problemas.length ?? 0) === 1
+                            ? ""
+                            : "s"
+                        } ativa${
+                          (condominioAtual?.problemas.length ?? 0) === 1
+                            ? ""
+                            : "s"
+                        } e mantém os demais indicadores sob monitoramento.`}
+                  </p>
                 </div>
-              )}
 
-              <p className="text-yellow-400 mt-2 font-bold">Status: {status}</p>
-            </div>
-
-            <div className="mt-4 bg-slate-800 rounded-2xl p-3">
-              <p className="text-green-400 text-sm font-bold mb-2">
-                📷 Câmera do portão
-              </p>
-
-              {fotoCameraAtual ? (
-                <img
-                  src={`${fotoCameraAtual}?t=${fotoCameraAtualizadaEm}`}
-                  alt="Câmera do portão"
-                  className="w-full rounded-xl border border-slate-600"
-                />
-              ) : (
-                <p className="text-slate-400 text-sm">Capturando imagem...</p>
-              )}
-            </div>
-
-            <button
-              onClick={atenderSolicitacao}
-              className="w-full mt-5 bg-green-500 hover:bg-green-400 text-black text-xl font-black py-4 rounded-2xl"
-            >
-              ✅ ATENDER AGORA
-            </button>
-
-            <div className="mt-4 bg-slate-800 border border-yellow-500/40 rounded-2xl p-3">
-              <p className="text-yellow-300 text-sm font-bold">
-                Ouça o áudio e veja a câmera. Para responder, clique em ATENDER AGORA.
-              </p>
-            </div>
-
-            <button
-              onClick={finalizarSolicitacao}
-              className="w-full mt-3 bg-red-600 hover:bg-red-500 text-white font-bold py-3 rounded-2xl"
-            >
-              ❌ FINALIZAR
-            </button>
-          </div>
-        </div>
-      )}
-
-      {audioPopup && (
-        <div className="fixed inset-0 z-[999] bg-black/95 flex items-center justify-center p-4">
-          <div className="w-full max-w-md bg-slate-900 border-4 border-blue-400 rounded-3xl p-5 text-center shadow-2xl">
-            <p className="text-6xl mb-3">🎙️</p>
-            <h2 className="text-2xl font-black text-blue-300 mb-4">
-              {audioPopup.titulo}
-            </h2>
-
-            <div className="bg-slate-800 rounded-2xl p-4 border border-blue-500/40">
-              <audio
-                controls
-                className="w-full"
-                src={audioPopup.audio}
-                onPointerDown={silenciarToqueAoOuvirAudio}
-                onTouchStart={silenciarToqueAoOuvirAudio}
-                onClick={silenciarToqueAoOuvirAudio}
-                onPlay={silenciarToqueAoOuvirAudio}
-                onPlaying={silenciarToqueAoOuvirAudio}
-              />
-            </div>
-
-            <button
-              onClick={() => {
-                silenciarToqueAoOuvirAudio();
-                setAudioPopup(null);
-              }}
-              className="w-full mt-5 bg-blue-600 hover:bg-blue-500 text-white font-black py-4 rounded-2xl"
-            >
-              ENTENDI
-            </button>
-          </div>
-        </div>
-      )}
-
-      {mostrarCameraGrande && (
-        <div className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center p-4 overflow-y-auto">
-          <div className="w-full max-w-md bg-slate-900 border-4 border-green-400 rounded-3xl p-5 text-center shadow-2xl">
-            <h2 className="text-2xl font-black text-green-400 mb-4">
-              📷 Câmera do portão
-            </h2>
-
-            {fotoCameraAtual ? (
-              <img
-                src={`${fotoCameraAtual}?t=${fotoCameraAtualizadaEm}`}
-                alt="Câmera do portão"
-                className="w-full rounded-2xl border border-slate-600"
-              />
-            ) : (
-              <p className="text-slate-400 text-sm bg-slate-800 rounded-2xl p-6">
-                Nenhuma foto capturada ainda.
-              </p>
-            )}
-
-            <div className="grid grid-cols-2 gap-3 mt-4">
-              <button
-                onClick={capturarFotoCamera}
-                disabled={capturandoCamera}
-                className="bg-slate-700 hover:bg-slate-600 disabled:bg-gray-500 text-white text-sm font-bold py-3 rounded-2xl"
-              >
-                {capturandoCamera ? "📸 Atualizando" : "📸 Atualizar"}
-              </button>
-
-              <button
-                onClick={() => setMostrarCameraGrande(false)}
-                className="bg-red-600 hover:bg-red-500 text-white text-sm font-bold py-3 rounded-2xl"
-              >
-                Fechar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {mostrarHistorico && (
-        <div className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center p-4 overflow-y-auto">
-          <div className="w-full max-w-md bg-slate-900 border-4 border-slate-600 rounded-3xl p-5 shadow-2xl my-4">
-            <div className="flex items-center justify-between gap-3 mb-4">
-              <h3 className="text-2xl font-black">📋 Histórico</h3>
-
-              <button
-                onClick={() => setMostrarHistorico(false)}
-                className="bg-slate-700 hover:bg-slate-600 text-white text-xs font-bold px-3 py-2 rounded-xl"
-              >
-                FECHAR
-              </button>
-            </div>
-
-            <button
-              onClick={limparHistorico}
-              className="w-full bg-red-600 hover:bg-red-500 text-white text-sm font-bold py-3 rounded-2xl mb-4"
-            >
-              LIMPAR HISTÓRICO
-            </button>
-
-            {historicoLista.length > 0 ? (
-              <div className="space-y-3 max-h-[70vh] overflow-y-auto pr-1">
-                {historicoLista.map((item, index) => (
-                  <div
-                    key={index}
-                    className="bg-slate-800 border border-slate-700 rounded-2xl p-3"
-                  >
-                    <p className="text-green-400 text-sm font-bold">
-                      {item.nome} - {item.motivo}
-                    </p>
-
-                    {item.fotoCamera && (
-                      <img
-                        src={item.fotoCamera}
-                        alt="Snapshot da câmera"
-                        className="w-full mt-3 rounded-xl border border-slate-600"
-                      />
-                    )}
-
-                    <p className="text-slate-400 text-xs mt-3">
-                      Finalizado em: {item.finalizadoEmFormatado}
-                    </p>
-
-                    <p className="text-blue-300 text-xs mt-1">
-                      Tipo: {item.tipoFinalizacao || "Não informado"}
-                    </p>
+                <div className="shrink-0 rounded-xl bg-cyan-600 px-3 py-2 text-center">
+                  <div className="font-black text-white">IA</div>
+                  <div className="text-[10px] font-bold text-cyan-100">
+                    BETA
                   </div>
-                ))}
+                </div>
               </div>
-            ) : (
-              <p className="text-green-400 text-sm bg-slate-800 rounded-2xl p-4">
-                🔔 Nenhum atendimento finalizado
-              </p>
-            )}
-          </div>
-        </div>
-      )}
+            </div>
 
-      <div className="w-full max-w-md mx-auto bg-slate-900 rounded-3xl p-5 shadow-2xl border border-slate-800">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <h1 className="text-3xl font-black">🏠 Morador V2</h1>
-            <p className="text-slate-400 text-sm mt-1">Unidade: {slug}</p>
-          </div>
-
-          <div
-            className={
-              online
-                ? "bg-green-500/10 border border-green-500/40 text-green-400 text-xs font-bold px-3 py-2 rounded-xl"
-                : "bg-red-500/10 border border-red-500/40 text-red-400 text-xs font-bold px-3 py-2 rounded-xl"
-            }
-          >
-            {online ? "🟢 Disponível" : "🔴 Ausente"}
-          </div>
-        </div>
-
-        {comunicados.length > 0 && (
-          <div className="mt-5 rounded-2xl border border-blue-500/50 bg-blue-950/30 p-4">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="text-xs font-black text-blue-300">
-                  📢 COMUNICADOS
+            <div className="mt-5 grid grid-cols-1 gap-3 md:grid-cols-2">
+              <div className="rounded-2xl border border-red-800 bg-red-950/25 p-4">
+                <p className="text-xs font-bold text-red-300">
+                  🚨 PRIORIDADES
                 </p>
 
-                <h2 className="mt-1 text-lg font-black text-white">
-                  {comunicados.filter(
-                    (item) =>
-                      item.visualizacoes?.[slug]?.ciente !== true
-                  ).length > 0
-                    ? `${comunicados.filter(
-                        (item) =>
-                          item.visualizacoes?.[slug]?.ciente !== true
-                      ).length} comunicado(s) aguardando sua ciência`
-                    : "Comunicados do condomínio"}
-                </h2>
+                <p className="mt-2 text-lg font-black text-white">
+                  4 ações precisam de acompanhamento
+                </p>
+
+                <p className="mt-2 text-sm text-slate-400">
+                  Câmera offline, portão aberto, interfone com defeito e contrato
+                  próximo do vencimento.
+                </p>
               </div>
 
-              <span className="rounded-full bg-blue-600 px-3 py-1 text-xs font-black text-white">
-                {comunicados.length}
-              </span>
+              <div className="rounded-2xl border border-violet-800 bg-violet-950/25 p-4">
+                <p className="text-xs font-bold text-violet-300">
+                  📅 AGENDA
+                </p>
+
+                <p className="mt-2 text-lg font-black text-white">
+                  2 manutenções programadas
+                </p>
+
+                <p className="mt-2 text-sm text-slate-400">
+                  Revisão do portão social às 09:30 e inspeção dos extintores às
+                  14:00.
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-emerald-800 bg-emerald-950/25 p-4">
+                <p className="text-xs font-bold text-emerald-300">
+                  💰 FINANCEIRO
+                </p>
+
+                <p className="mt-2 text-lg font-black text-white">
+                  Caixa permanece saudável
+                </p>
+
+                <p className="mt-2 text-sm text-slate-400">
+                  A previsão para os próximos 30 dias é positiva. O seguro
+                  predial vence amanhã.
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-orange-800 bg-orange-950/25 p-4">
+                <p className="text-xs font-bold text-orange-300">
+                  ❤️ OPERAÇÃO
+                </p>
+
+                <p className="mt-2 text-lg font-black text-white">
+                  Estabilidade geral mantida
+                </p>
+
+                <p className="mt-2 text-sm text-slate-400">
+                  Dois condomínios estão saudáveis e um requer atenção
+                  operacional.
+                </p>
+              </div>
             </div>
 
-            <div className="mt-4 space-y-2">
-              {comunicados.slice(0, 3).map((comunicado) => {
-                const ciente =
-                  comunicado.visualizacoes?.[slug]?.ciente === true;
+            <div className="mt-5 rounded-2xl border border-slate-700 bg-slate-800 p-4">
+              <p className="text-xs font-bold text-blue-300">
+                📈 TENDÊNCIAS
+              </p>
+
+              <div className="mt-3 space-y-2 text-sm text-slate-300">
+                <p>• A saúde geral da carteira subiu 2%.</p>
+                <p>• As receitas do mês estão 8% acima do período anterior.</p>
+                <p>• Nenhuma ocorrência crítica foi registrada nas últimas 24 horas.</p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={fecharResumo}
+              className="mt-5 w-full rounded-xl bg-cyan-600 py-3 font-black text-white transition-all hover:bg-cyan-500 active:scale-95"
+            >
+              Entendi
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Popup de configuração dos indicadores */}
+
+      {popupIndicadoresAberto && (
+        <div className="fixed inset-0 z-[130] flex items-center justify-center bg-black/75 p-3 md:p-6">
+          <div className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-3xl border border-slate-700 bg-slate-900 p-4 shadow-2xl md:p-6">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-sm font-bold text-blue-300">
+                  ⚙️ PERSONALIZAR INDICADORES
+                </p>
+
+                <h2 className="mt-1 text-2xl font-black text-white">
+                  Sua visão rápida
+                </h2>
+
+                <p className="mt-2 text-sm text-slate-400">
+                  Selecione de 1 a 6 indicadores. A ordem escolhida será mantida
+                  na tela principal.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={fecharConfiguracaoIndicadores}
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-800 text-xl font-black transition-all hover:bg-slate-700 active:scale-95"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="mt-5 rounded-2xl border border-blue-800 bg-blue-950/20 p-4">
+              <div className="flex items-center justify-between gap-3">
+                <p className="font-black text-white">
+                  {indicadoresRascunho.length} selecionados
+                </p>
+
+                <p className="text-xs font-bold text-blue-300">
+                  Máximo: 6
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+              {indicadoresDisponiveis.map((indicador) => {
+                const selecionado = indicadoresRascunho.includes(indicador.id);
+                const limiteAtingido =
+                  indicadoresRascunho.length >= 6 && !selecionado;
 
                 return (
                   <button
-                    key={comunicado.id}
+                    key={indicador.id}
                     type="button"
-                    onClick={() => abrirComunicado(comunicado)}
-                    className="flex w-full items-center justify-between gap-3 rounded-xl bg-slate-900 p-3 text-left transition-all hover:bg-slate-800 active:scale-[0.98]"
+                    onClick={() => alternarIndicador(indicador.id)}
+                    disabled={limiteAtingido}
+                    className={`rounded-2xl border p-4 text-left transition-all duration-150 active:scale-[0.98] ${
+                      selecionado
+                        ? "border-blue-500 bg-blue-950/40"
+                        : "border-slate-700 bg-slate-800"
+                    } ${
+                      limiteAtingido
+                        ? "cursor-not-allowed opacity-40"
+                        : "hover:border-blue-600 hover:bg-slate-700"
+                    }`}
                   >
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-black text-white">
-                        {comunicado.tipo === "assembleia"
-                          ? "👥"
-                          : comunicado.tipo === "manutencao"
-                          ? "🛠️"
-                          : comunicado.tipo === "emergencia"
-                          ? "🚨"
-                          : "📢"}{" "}
-                        {comunicado.titulo}
-                      </p>
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <span className="text-3xl">{indicador.icone}</span>
 
-                      <p className="mt-1 truncate text-xs text-slate-400">
-                        {comunicado.mensagem}
-                      </p>
+                        <div>
+                          <p className="font-black text-white">
+                            {indicador.titulo}
+                          </p>
+
+                          <p className="mt-1 text-xs text-slate-400">
+                            {indicador.descricao}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div
+                        className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-sm font-black ${
+                          selecionado
+                            ? "border-blue-400 bg-blue-600 text-white"
+                            : "border-slate-500 bg-slate-900 text-slate-500"
+                        }`}
+                      >
+                        {selecionado ? "✓" : ""}
+                      </div>
                     </div>
-
-                    <span
-                      className={`shrink-0 rounded-full px-3 py-1 text-[10px] font-black ${
-                        ciente
-                          ? "bg-green-950 text-green-300"
-                          : "bg-orange-950 text-orange-300"
-                      }`}
-                    >
-                      {ciente ? "CIENTE" : "LER"}
-                    </span>
                   </button>
                 );
               })}
             </div>
-          </div>
-        )}
 
-        <div className="grid grid-cols-2 gap-3 mt-5">
-          <button
-            onClick={tocarBip}
-            className="bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold py-3 rounded-2xl"
-          >
-            🔊 Testar Som
-          </button>
-
-          <button
-            onClick={ativarNotificacoes}
-            className="bg-yellow-500 hover:bg-yellow-400 text-black text-sm font-bold py-3 rounded-2xl"
-          >
-            🔔 Notificações
-          </button>
-        </div>
-
-        <div className="grid grid-cols-2 gap-3 mt-3">
-          <button
-            onClick={abrirCameraGrande}
-            disabled={capturandoCamera}
-            className="bg-slate-700 hover:bg-slate-600 disabled:bg-gray-500 text-white text-sm font-bold py-3 rounded-2xl"
-          >
-            {capturandoCamera ? "📸 Atualizando" : "📷 Câmera"}
-          </button>
-
-          <button
-            onClick={acionarPortao}
-            disabled={abrindoPortao}
-            className="bg-purple-600 hover:bg-purple-500 disabled:bg-gray-500 text-white text-sm font-bold py-3 rounded-2xl"
-          >
-            {abrindoPortao ? "⏳ Abrindo" : "🚪 Abrir portão"}
-          </button>
-        </div>
-
-        {statusPortao && (
-          <p className="mt-3 text-center text-green-400 font-bold">
-            {statusPortao}
-          </p>
-        )}
-
-        <div className="grid grid-cols-2 gap-3 mt-3">
-          <button
-            onClick={instalarApp}
-            className={
-              appInstalavel
-                ? "bg-green-600 hover:bg-green-500 text-white text-sm font-bold py-3 rounded-2xl"
-                : "bg-slate-700 hover:bg-slate-600 text-white text-sm font-bold py-3 rounded-2xl"
-            }
-          >
-            📲 Instalar app
-          </button>
-
-          <button
-            onClick={() => setMostrarHistorico(true)}
-            className="bg-slate-700 hover:bg-slate-600 text-white text-sm font-bold py-3 rounded-2xl"
-          >
-            📋 Histórico
-          </button>
-        </div>
-
-        <div className="bg-slate-800 rounded-2xl p-4 mt-5 border border-slate-700">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <p
-                className={
-                  online ? "text-green-400 font-bold" : "text-red-400 font-bold"
-                }
-              >
-                {online ? "🟢 Atendimento ativo" : "🔴 Atendimento pausado"}
-              </p>
-              <p className="text-slate-400 text-xs mt-1">
-                Use quando estiver disponível ou ausente.
-              </p>
-            </div>
-
-            <button
-              onClick={alterarStatusOnline}
-              className="bg-slate-600 hover:bg-slate-500 text-white text-xs font-bold px-3 py-2 rounded-xl"
-            >
-              ALTERAR
-            </button>
-          </div>
-        </div>
-
-        <div className="bg-slate-800 rounded-2xl p-4 mt-4 border border-green-500/20">
-          <h2 className="font-black text-green-400 text-xl">🔔 {nome}</h2>
-
-          <p className="text-sm text-slate-300 mt-3">Motivo: {motivo}</p>
-
-          <p className="text-sm text-cyan-400 mt-2">
-            Modo: {modo === "porteiro" ? "Portaria" : "Direto para morador"}
-          </p>
-
-          <p className="text-sm text-yellow-400 mt-2">Status: {status}</p>
-
-          {horaChamada && (
-            <p className="text-sm text-blue-300 mt-2">Horário: {horaChamada}</p>
-          )}
-
-          {avisoAuto && (
-            <p className="text-sm text-orange-300 mt-2">⏱ {avisoAuto}</p>
-          )}
-
-          {aguardandoAtendimento && (
-            <button
-              onClick={atenderSolicitacao}
-              className="w-full mt-4 bg-green-500 hover:bg-green-400 text-black font-black py-3 rounded-2xl"
-            >
-              ✅ ATENDER
-            </button>
-          )}
-
-          {atendimentoEmAndamento ? (
-            <div className="mt-4 bg-slate-900 border border-slate-700 rounded-2xl p-4">
-              <h3 className="font-bold text-blue-300 mb-3">💬 Respostas rápidas</h3>
-
-              {respostasRapidas.map((item) => (
-                <button
-                  key={item.texto}
-                  onClick={() => enviarMensagemRapida(item.mensagem)}
-                  className="w-full mb-2 last:mb-0 bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-2xl"
-                >
-                  {item.icone} {item.texto}
-                </button>
-              ))}
-
-              {mensagemResponsavel && (
-                <div className="mt-4 bg-slate-800 rounded-xl p-3 border border-slate-700">
-                  <p className="text-sm text-green-400 font-bold">
-                    Última mensagem enviada:
-                  </p>
-                  <p className="text-sm text-white mt-1">{mensagemResponsavel}</p>
-
-                  <p
-                    className={
-                      visitanteVisualizou
-                        ? "text-xs text-green-400 mt-2 font-bold"
-                        : "text-xs text-yellow-400 mt-2 font-bold"
-                    }
-                  >
-                    {visitanteVisualizou
-                      ? "✅ Visitante visualizou"
-                      : "⏳ Aguardando visitante visualizar"}
-                  </p>
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="mt-4 bg-slate-900 border border-yellow-500/40 rounded-2xl p-4">
-              <p className="text-yellow-300 text-sm font-bold">
-                Respostas rápidas ficam liberadas depois de atender.
-              </p>
-            </div>
-          )}
-
-          {mensagensConversa.length > 0 && (
-            <div className="mt-4 bg-slate-900 border border-blue-500/40 rounded-2xl p-4">
-              <h3 className="font-bold text-blue-300 mb-3">
-                💬 Conversa do atendimento
-              </h3>
-
-              <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
-                {mensagensConversa.map((item) => (
-                  <div
-                    key={item.id}
-                    className={
-                      item.autor === "morador"
-                        ? "bg-green-600/30 border border-green-500 rounded-2xl p-3"
-                        : "bg-blue-600/30 border border-blue-500 rounded-2xl p-3"
-                    }
-                  >
-                    <p className="text-xs font-black mb-2">
-                      {item.autor === "morador" ? "Você" : "Visitante"}
-                    </p>
-
-                    {item.tipo === "texto" && (
-                      <p className="text-white font-bold">{item.texto}</p>
-                    )}
-
-                    {item.tipo === "audio" && item.audioBase64 && (
-                      <button
-                        onClick={() => {
-                          if (item.autor === "visitante") {
-                            silenciarToqueAoOuvirAudio();
-                          }
-
-                          setAudioPopup({
-                            titulo:
-                              item.autor === "morador"
-                                ? "🎙️ Seu áudio enviado"
-                                : "🎙️ Áudio do visitante",
-                            audio: item.audioBase64 || "",
-                          });
-                        }}
-                        className="w-full bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-xl py-3 font-bold text-white"
-                      >
-                        🎙️ Ouvir áudio
-                      </button>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {atendimentoEmAndamento ? (
-            <div className="mt-4 bg-slate-900 border border-cyan-500/40 rounded-2xl p-4 space-y-3">
+            <div className="mt-5 grid grid-cols-2 gap-3">
               <button
-                onClick={
-                  gravandoAudioMorador
-                    ? pararGravacaoMorador
-                    : iniciarGravacaoMorador
-                }
-                disabled={enviandoAudioMorador}
-                className={
-                  gravandoAudioMorador
-                    ? "w-full bg-red-600 py-3 rounded-xl font-black animate-pulse"
-                    : "w-full bg-cyan-600 hover:bg-cyan-500 disabled:bg-slate-700 py-3 rounded-xl font-black"
-                }
+                type="button"
+                onClick={fecharConfiguracaoIndicadores}
+                className="rounded-xl bg-slate-700 py-3 font-black text-white transition-all hover:bg-slate-600 active:scale-95"
               >
-                {gravandoAudioMorador ? "⏹️ PARAR GRAVAÇÃO" : "🎙️ GRAVAR ÁUDIO"}
+                Cancelar
               </button>
 
-              {audioRespostaBlob && (
-                <div className="space-y-3">
-                  <audio
-                    controls
-                    className="w-full"
-                    src={URL.createObjectURL(audioRespostaBlob)}
-                  />
+              <button
+                type="button"
+                onClick={salvarIndicadores}
+                className="rounded-xl bg-blue-600 py-3 font-black text-white transition-all hover:bg-blue-500 active:scale-95"
+              >
+                Salvar visão
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+
+
+      {/* Popup Saúde Financeira */}
+
+      {popupFinanceiroAberto && (
+        <div className="fixed inset-0 z-[128] flex items-center justify-center bg-black/75 p-3 md:p-6">
+          <div className="max-h-[92vh] w-full max-w-3xl overflow-y-auto rounded-3xl border border-slate-700 bg-slate-900 p-4 shadow-2xl md:p-6">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-sm font-bold text-emerald-300">
+                  💰 SAÚDE FINANCEIRA
+                </p>
+
+                <h2 className="mt-1 text-2xl font-black text-white">
+                  {itemFinanceiroSelecionado
+                    ? itemFinanceiroSelecionado.titulo
+                    : "Visão financeira da carteira"}
+                </h2>
+              </div>
+
+              <button
+                type="button"
+                onClick={fecharFinanceiro}
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-800 text-xl font-black transition-all hover:bg-slate-700 active:scale-95"
+              >
+                ✕
+              </button>
+            </div>
+
+            {!itemFinanceiroSelecionado ? (
+              <>
+                <div className="mt-5 grid grid-cols-2 gap-2 md:grid-cols-4">
+                  <button
+                    type="button"
+                    onClick={() => setAbaFinanceira("resumo")}
+                    className={`rounded-xl px-2 py-3 text-xs font-black transition-all active:scale-95 ${
+                      abaFinanceira === "resumo"
+                        ? "bg-emerald-600 text-white"
+                        : "bg-slate-800 text-slate-300"
+                    }`}
+                  >
+                    Resumo
+                  </button>
 
                   <button
-                    onClick={enviarAudioMorador}
-                    disabled={enviandoAudioMorador}
-                    className="w-full bg-blue-600 hover:bg-blue-500 disabled:bg-slate-700 py-3 rounded-xl font-black"
+                    type="button"
+                    onClick={() => setAbaFinanceira("urgentes")}
+                    className={`rounded-xl px-2 py-3 text-xs font-black transition-all active:scale-95 ${
+                      abaFinanceira === "urgentes"
+                        ? "bg-red-600 text-white"
+                        : "bg-slate-800 text-slate-300"
+                    }`}
                   >
-                    {enviandoAudioMorador
-                      ? "Enviando..."
-                      : "📤 ENVIAR ÁUDIO AO VISITANTE"}
+                    🔴 Urgentes
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setAbaFinanceira("inadimplencia")}
+                    className={`rounded-xl px-2 py-3 text-xs font-black transition-all active:scale-95 ${
+                      abaFinanceira === "inadimplencia"
+                        ? "bg-orange-600 text-white"
+                        : "bg-slate-800 text-slate-300"
+                    }`}
+                  >
+                    📉 Inadimplência
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setAbaFinanceira("pagamentos")}
+                    className={`rounded-xl px-2 py-3 text-xs font-black transition-all active:scale-95 ${
+                      abaFinanceira === "pagamentos"
+                        ? "bg-blue-600 text-white"
+                        : "bg-slate-800 text-slate-300"
+                    }`}
+                  >
+                    💳 Pagamentos
                   </button>
                 </div>
-              )}
-            </div>
-          ) : (
-            <div className="mt-4 bg-slate-900 border border-cyan-500/20 rounded-2xl p-4">
-              <p className="text-slate-400 text-sm">
-                🎙️ Gravação de resposta liberada depois de atender.
-              </p>
-            </div>
-          )}
 
-          {!gravandoAudioMorador &&
-            !audioRespostaBlob &&
-            !enviandoAudioMorador && (
-              <button
-                onClick={finalizarSolicitacao}
-                className="w-full mt-6 bg-red-600 hover:bg-red-500 text-white font-bold py-3 rounded-2xl"
-              >
-                ❌ FINALIZAR ATENDIMENTO
-              </button>
+                {abaFinanceira === "resumo" ? (
+                  <div className="mt-5">
+                    <div className="rounded-2xl border border-emerald-700 bg-emerald-950/25 p-5">
+                      <div className="flex items-start justify-between gap-4">
+                        <div>
+                          <p className="text-xs font-bold text-emerald-300">
+                            SALDO PREVISTO
+                          </p>
+
+                          <p className="mt-1 text-3xl font-black text-white">
+                            R$ 187.450
+                          </p>
+
+                          <p className="mt-2 text-sm text-emerald-300">
+                            🟢 Caixa saudável para os próximos 30 dias
+                          </p>
+                        </div>
+
+                        <div className="text-right">
+                          <p className="text-2xl font-black text-emerald-400">
+                            +6%
+                          </p>
+                          <p className="text-xs text-slate-400">
+                            no mês
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 grid grid-cols-2 gap-3">
+                      <div className="rounded-2xl border border-slate-700 bg-slate-800 p-4">
+                        <p className="text-xs font-bold text-slate-400">
+                          ENTRADAS DO MÊS
+                        </p>
+                        <p className="mt-2 text-2xl font-black text-emerald-300">
+                          R$ 214.800
+                        </p>
+                        <p className="mt-1 text-xs text-slate-400">
+                          94% já recebido
+                        </p>
+                      </div>
+
+                      <div className="rounded-2xl border border-slate-700 bg-slate-800 p-4">
+                        <p className="text-xs font-bold text-slate-400">
+                          SAÍDAS DO MÊS
+                        </p>
+                        <p className="mt-2 text-2xl font-black text-red-300">
+                          R$ 162.300
+                        </p>
+                        <p className="mt-1 text-xs text-slate-400">
+                          76% do previsto
+                        </p>
+                      </div>
+
+                      <div className="rounded-2xl border border-slate-700 bg-slate-800 p-4">
+                        <p className="text-xs font-bold text-slate-400">
+                          INADIMPLÊNCIA
+                        </p>
+                        <p className="mt-2 text-2xl font-black text-orange-300">
+                          6,4%
+                        </p>
+                        <p className="mt-1 text-xs text-slate-400">
+                          11 unidades
+                        </p>
+                      </div>
+
+                      <div className="rounded-2xl border border-slate-700 bg-slate-800 p-4">
+                        <p className="text-xs font-bold text-slate-400">
+                          CONTAS PRÓXIMAS
+                        </p>
+                        <p className="mt-2 text-2xl font-black text-blue-300">
+                          R$ 33.300
+                        </p>
+                        <p className="mt-1 text-xs text-slate-400">
+                          Próximos 7 dias
+                        </p>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setAbaFinanceira("urgentes")}
+                      className="mt-4 w-full rounded-2xl border border-red-800 bg-red-950/30 p-4 text-left transition-all hover:bg-red-950/50 active:scale-[0.98]"
+                    >
+                      <p className="text-xs font-bold text-red-300">
+                        🚨 PRIORIDADE
+                      </p>
+
+                      <p className="mt-1 font-black text-white">
+                        Seguro predial vence amanhã
+                      </p>
+
+                      <p className="mt-1 text-sm text-slate-400">
+                        Nenhuma ação foi registrada até o momento.
+                      </p>
+                    </button>
+                  </div>
+                ) : (
+                  <div className="mt-5 space-y-3">
+                    {itensFinanceirosFiltrados.map((item) => (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onClick={() => setItemFinanceiroSelecionado(item)}
+                        className="w-full rounded-2xl border border-slate-700 bg-slate-800 p-4 text-left transition-all duration-150 hover:border-emerald-600 hover:bg-slate-700 active:scale-[0.98] active:brightness-125"
+                      >
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex min-w-0 items-start gap-3">
+                            <div className="text-3xl">{item.icone}</div>
+
+                            <div className="min-w-0">
+                              <p className="font-black text-white">
+                                {item.titulo}
+                              </p>
+
+                              <p className="mt-1 text-sm text-emerald-300">
+                                {item.condominio}
+                              </p>
+
+                              <p className="mt-1 text-xs text-slate-400">
+                                {item.vencimento}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="shrink-0 text-right">
+                            <p className="text-lg font-black text-white">
+                              {item.valor}
+                            </p>
+
+                            <span className="mt-2 inline-flex rounded-full bg-slate-900 px-3 py-1 text-[10px] font-black text-slate-300">
+                              {item.status}
+                            </span>
+
+                            <p className="mt-2 text-xs text-slate-500">
+                              Detalhes →
+                            </p>
+                          </div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="mt-5">
+                <div className="rounded-2xl border border-emerald-700 bg-emerald-950/25 p-5">
+                  <div className="flex items-start gap-4">
+                    <div className="text-5xl">
+                      {itemFinanceiroSelecionado.icone}
+                    </div>
+
+                    <div>
+                      <p className="text-sm font-bold text-emerald-300">
+                        {itemFinanceiroSelecionado.condominio}
+                      </p>
+
+                      <p className="mt-1 text-xl font-black text-white">
+                        {itemFinanceiroSelecionado.titulo}
+                      </p>
+
+                      <p className="mt-2 text-2xl font-black text-white">
+                        {itemFinanceiroSelecionado.valor}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-4 grid grid-cols-2 gap-3">
+                  <div className="rounded-2xl border border-slate-700 bg-slate-800 p-4">
+                    <p className="text-xs font-bold text-slate-400">
+                      PRAZO
+                    </p>
+
+                    <p className="mt-1 font-black text-white">
+                      {itemFinanceiroSelecionado.vencimento}
+                    </p>
+                  </div>
+
+                  <div className="rounded-2xl border border-slate-700 bg-slate-800 p-4">
+                    <p className="text-xs font-bold text-slate-400">
+                      STATUS
+                    </p>
+
+                    <p className="mt-1 font-black text-emerald-300">
+                      {itemFinanceiroSelecionado.status}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-4 rounded-2xl border border-slate-700 bg-slate-800 p-4">
+                  <p className="font-black text-white">Detalhes financeiros</p>
+
+                  <p className="mt-3 text-sm leading-relaxed text-slate-300">
+                    {itemFinanceiroSelecionado.detalhes}
+                  </p>
+                </div>
+
+                <div className="mt-4 grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setItemFinanceiroSelecionado(null)}
+                    className="rounded-xl bg-slate-700 py-3 font-black text-white transition-all hover:bg-slate-600 active:scale-95"
+                  >
+                    Voltar
+                  </button>
+
+                  <button
+                    type="button"
+                    className="rounded-xl bg-emerald-600 py-3 font-black text-white transition-all hover:bg-emerald-500 active:scale-95"
+                  >
+                    Abrir financeiro
+                  </button>
+                </div>
+              </div>
             )}
+          </div>
         </div>
+      )}
 
-      </div>
-    </main>
+      {/* Popup Agenda Inteligente */}
+
+      {popupAgendaAberto && (
+        <div className="fixed inset-0 z-[125] flex items-center justify-center bg-black/75 p-3 md:p-6">
+          <div className="max-h-[92vh] w-full max-w-3xl overflow-y-auto rounded-3xl border border-slate-700 bg-slate-900 p-4 shadow-2xl md:p-6">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-sm font-bold text-violet-300">
+                  📅 AGENDA INTELIGENTE
+                </p>
+
+                <h2 className="mt-1 text-2xl font-black text-white">
+                  {eventoAgendaSelecionado
+                    ? eventoAgendaSelecionado.titulo
+                    : "Compromissos e prazos"}
+                </h2>
+              </div>
+
+              <button
+                type="button"
+                onClick={fecharAgenda}
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-800 text-xl font-black transition-all hover:bg-slate-700 active:scale-95"
+              >
+                ✕
+              </button>
+            </div>
+
+            {!eventoAgendaSelecionado ? (
+              <>
+                <div className="mt-5 grid grid-cols-3 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setPeriodoAgenda("hoje")}
+                    className={`rounded-xl px-2 py-3 text-xs font-black transition-all active:scale-95 ${
+                      periodoAgenda === "hoje"
+                        ? "bg-violet-600 text-white"
+                        : "bg-slate-800 text-slate-300"
+                    }`}
+                  >
+                    Hoje
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setPeriodoAgenda("sete-dias")}
+                    className={`rounded-xl px-2 py-3 text-xs font-black transition-all active:scale-95 ${
+                      periodoAgenda === "sete-dias"
+                        ? "bg-violet-600 text-white"
+                        : "bg-slate-800 text-slate-300"
+                    }`}
+                  >
+                    Próximos 7 dias
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setPeriodoAgenda("mes")}
+                    className={`rounded-xl px-2 py-3 text-xs font-black transition-all active:scale-95 ${
+                      periodoAgenda === "mes"
+                        ? "bg-violet-600 text-white"
+                        : "bg-slate-800 text-slate-300"
+                    }`}
+                  >
+                    Este mês
+                  </button>
+                </div>
+
+                <div className="mt-5 space-y-3">
+                  {eventosAgendaFiltrados.map((evento) => (
+                    <button
+                      key={evento.id}
+                      type="button"
+                      onClick={() => setEventoAgendaSelecionado(evento)}
+                      className="w-full rounded-2xl border border-slate-700 bg-slate-800 p-4 text-left transition-all duration-150 hover:border-violet-600 hover:bg-slate-700 active:scale-[0.98] active:brightness-125"
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex min-w-0 items-start gap-3">
+                          <div className="text-3xl">{evento.icone}</div>
+
+                          <div className="min-w-0">
+                            <p className="font-black text-white">
+                              {evento.titulo}
+                            </p>
+
+                            <p className="mt-1 text-sm text-violet-300">
+                              {evento.condominio}
+                            </p>
+
+                            <p className="mt-1 text-xs text-slate-400">
+                              {evento.data} • {evento.horario}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="shrink-0 text-right">
+                          <span className="inline-flex rounded-full bg-violet-950 px-3 py-1 text-[10px] font-black text-violet-300">
+                            {evento.status}
+                          </span>
+
+                          <p className="mt-2 text-xs text-slate-500">
+                            Detalhes →
+                          </p>
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <div className="mt-5">
+                <div className="rounded-2xl border border-violet-700 bg-violet-950/25 p-5">
+                  <div className="flex items-start gap-4">
+                    <div className="text-5xl">
+                      {eventoAgendaSelecionado.icone}
+                    </div>
+
+                    <div>
+                      <p className="text-sm font-bold text-violet-300">
+                        {eventoAgendaSelecionado.condominio}
+                      </p>
+
+                      <p className="mt-1 text-xl font-black text-white">
+                        {eventoAgendaSelecionado.titulo}
+                      </p>
+
+                      <p className="mt-2 text-sm text-slate-300">
+                        {eventoAgendaSelecionado.data} •{" "}
+                        {eventoAgendaSelecionado.horario}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-4 rounded-2xl border border-slate-700 bg-slate-800 p-4">
+                  <p className="text-xs font-bold text-slate-400">
+                    STATUS
+                  </p>
+
+                  <p className="mt-1 font-black text-violet-300">
+                    {eventoAgendaSelecionado.status}
+                  </p>
+                </div>
+
+                <div className="mt-4 rounded-2xl border border-slate-700 bg-slate-800 p-4">
+                  <p className="font-black text-white">Detalhes do evento</p>
+
+                  <p className="mt-3 text-sm leading-relaxed text-slate-300">
+                    {eventoAgendaSelecionado.detalhes}
+                  </p>
+                </div>
+
+                <div className="mt-4 grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setEventoAgendaSelecionado(null)}
+                    className="rounded-xl bg-slate-700 py-3 font-black text-white transition-all hover:bg-slate-600 active:scale-95"
+                  >
+                    Voltar
+                  </button>
+
+                  <button
+                    type="button"
+                    className="rounded-xl bg-violet-600 py-3 font-black text-white transition-all hover:bg-violet-500 active:scale-95"
+                  >
+                    Abrir evento
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Popup Central de Comunicação */}
+
+      {popupComunicacaoAberto && (
+        <div className="fixed inset-0 z-[160] flex items-center justify-center bg-black/80 p-3 md:p-6">
+          <div className="max-h-[94vh] w-full max-w-4xl overflow-y-auto rounded-3xl border border-slate-700 bg-slate-900 p-4 shadow-2xl md:p-6">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-sm font-bold text-blue-300">
+                  📢 CENTRAL DE COMUNICAÇÃO
+                </p>
+
+                <h2 className="mt-1 text-2xl font-black text-white md:text-3xl">
+                  Nova comunicação
+                </h2>
+
+                <p className="mt-2 text-sm text-slate-400">
+                  {isCarteiraGeral
+                    ? "Escolha o condomínio e envie uma comunicação organizada."
+                    : `Comunicação para ${contextoSelecionado.nome}.`}
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={fecharComunicacao}
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-800 text-xl font-black transition-all hover:bg-slate-700 active:scale-95"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="mt-5 grid gap-5 lg:grid-cols-[1.2fr_0.8fr]">
+              <div className="space-y-5">
+                <div>
+                  <p className="mb-3 text-xs font-bold text-slate-400">
+                    TIPO DE COMUNICAÇÃO
+                  </p>
+
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                    {[
+                      ["comunicado", "📢 Comunicado"],
+                      ["assembleia", "👥 Assembleia"],
+                      ["manutencao", "🛠️ Manutenção"],
+                      ["emergencia", "🚨 Emergência"],
+                    ].map(([id, nome]) => (
+                      <button
+                        key={id}
+                        type="button"
+                        onClick={() =>
+                          setTipoComunicacao(id as TipoComunicacao)
+                        }
+                        className={`rounded-xl px-3 py-3 text-xs font-black transition-all active:scale-95 ${
+                          tipoComunicacao === id
+                            ? "bg-blue-600 text-white"
+                            : "bg-slate-800 text-slate-300 hover:bg-slate-700"
+                        }`}
+                      >
+                        {nome}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-xs font-bold text-slate-400">
+                    DESTINATÁRIOS
+                  </label>
+
+                  <select
+                    value={destinatarioComunicacao}
+                    onChange={(event) =>
+                      setDestinatarioComunicacao(
+                        event.target.value as DestinatarioComunicacao
+                      )
+                    }
+                    className="w-full rounded-xl border border-slate-700 bg-slate-800 p-3 text-white outline-none focus:border-blue-500"
+                  >
+                    <option value="todos">Todos os envolvidos</option>
+                    <option value="moradores">Todos os moradores</option>
+                    <option value="proprietarios">Apenas proprietários</option>
+                    <option value="inquilinos">Apenas inquilinos</option>
+                    <option value="conselho">Conselho</option>
+                    <option value="zeladoria">Zeladoria</option>
+                    <option value="portaria">Portaria</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-xs font-bold text-slate-400">
+                    TÍTULO
+                  </label>
+
+                  <input
+                    value={tituloComunicacao}
+                    onChange={(event) =>
+                      setTituloComunicacao(event.target.value)
+                    }
+                    placeholder="Ex: Manutenção preventiva do portão social"
+                    className="w-full rounded-xl border border-slate-700 bg-slate-800 p-3 text-white outline-none placeholder:text-slate-500 focus:border-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <div className="mb-2 flex items-center justify-between gap-3">
+                    <label className="text-xs font-bold text-slate-400">
+                      MENSAGEM
+                    </label>
+
+                    <button
+                      type="button"
+                      onClick={sugerirTextoComunicacao}
+                      className="rounded-lg bg-violet-950 px-3 py-2 text-xs font-black text-violet-300 transition-all hover:bg-violet-900 active:scale-95"
+                    >
+                      🤖 Sugerir texto
+                    </button>
+                  </div>
+
+                  <textarea
+                    value={mensagemComunicacao}
+                    onChange={(event) =>
+                      setMensagemComunicacao(event.target.value)
+                    }
+                    placeholder="Escreva aqui todas as informações que precisam ser enviadas..."
+                    rows={8}
+                    className="w-full resize-none rounded-xl border border-slate-700 bg-slate-800 p-3 text-white outline-none placeholder:text-slate-500 focus:border-blue-500"
+                  />
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-slate-700 bg-slate-800 p-3">
+                    <input
+                      type="checkbox"
+                      checked={enviarPush}
+                      onChange={(event) => setEnviarPush(event.target.checked)}
+                    />
+                    <span>
+                      <span className="block text-sm font-black text-white">
+                        🔔 Enviar push
+                      </span>
+                      <span className="text-xs text-slate-400">
+                        Notificar os destinatários
+                      </span>
+                    </span>
+                  </label>
+
+                  <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-slate-700 bg-slate-800 p-3">
+                    <input
+                      type="checkbox"
+                      checked={registrarHistorico}
+                      onChange={(event) =>
+                        setRegistrarHistorico(event.target.checked)
+                      }
+                    />
+                    <span>
+                      <span className="block text-sm font-black text-white">
+                        🕘 Registrar no histórico
+                      </span>
+                      <span className="text-xs text-slate-400">
+                        Preservar envio e respostas
+                      </span>
+                    </span>
+                  </label>
+                </div>
+
+                <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-green-800 bg-green-950/20 p-4">
+                  <input
+                    type="checkbox"
+                    checked={exigirCiencia}
+                    onChange={(event) =>
+                      setExigirCiencia(event.target.checked)
+                    }
+                    className="mt-1"
+                  />
+
+                  <span>
+                    <span className="block font-black text-green-300">
+                      ✅ Exigir “Li e estou ciente”
+                    </span>
+
+                    <span className="mt-1 block text-xs leading-relaxed text-slate-400">
+                      Registra quem visualizou, a data, o horário e quem
+                      confirmou ciência. Não significa concordância com o
+                      conteúdo.
+                    </span>
+                  </span>
+                </label>
+
+                <div className="rounded-xl border border-slate-700 bg-slate-800 p-4">
+                  <label className="flex cursor-pointer items-center gap-3">
+                    <input
+                      type="checkbox"
+                      checked={agendarComunicacao}
+                      onChange={(event) =>
+                        setAgendarComunicacao(event.target.checked)
+                      }
+                    />
+
+                    <span className="font-black text-white">
+                      📅 Agendar envio
+                    </span>
+                  </label>
+
+                  {agendarComunicacao && (
+                    <input
+                      type="datetime-local"
+                      value={dataAgendamento}
+                      onChange={(event) =>
+                        setDataAgendamento(event.target.value)
+                      }
+                      className="mt-3 w-full rounded-xl border border-slate-700 bg-slate-900 p-3 text-white outline-none focus:border-blue-500"
+                    />
+                  )}
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div className="rounded-2xl border border-blue-800 bg-blue-950/20 p-4">
+                  <p className="text-xs font-bold text-blue-300">
+                    PRÉVIA PARA O MORADOR
+                  </p>
+
+                  <div className="mt-4 rounded-2xl bg-slate-950 p-4">
+                    <p className="text-xs font-bold text-slate-500">
+                      {tipoComunicacao === "assembleia"
+                        ? "👥 ASSEMBLEIA"
+                        : tipoComunicacao === "manutencao"
+                        ? "🛠️ MANUTENÇÃO"
+                        : tipoComunicacao === "emergencia"
+                        ? "🚨 EMERGÊNCIA"
+                        : "📢 COMUNICADO"}
+                    </p>
+
+                    <p className="mt-2 text-lg font-black text-white">
+                      {tituloComunicacao || "Título da comunicação"}
+                    </p>
+
+                    <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-slate-300">
+                      {mensagemComunicacao ||
+                        "A mensagem escrita aparecerá aqui para conferência antes do envio."}
+                    </p>
+
+                    {exigirCiencia && (
+                      <div className="mt-4 rounded-xl bg-green-600 px-4 py-3 text-center text-sm font-black text-white">
+                        ✅ Li e estou ciente
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-cyan-800 bg-cyan-950/20 p-4">
+                  <p className="text-xs font-bold text-cyan-300">
+                    ACOMPANHAMENTO APÓS O ENVIO
+                  </p>
+
+                  <div className="mt-4 grid grid-cols-3 gap-2">
+                    <div className="rounded-xl bg-slate-900 p-3 text-center">
+                      <p className="text-2xl font-black text-white">94</p>
+                      <p className="text-[10px] text-slate-400">Enviados</p>
+                    </div>
+
+                    <div className="rounded-xl bg-slate-900 p-3 text-center">
+                      <p className="text-2xl font-black text-blue-300">0</p>
+                      <p className="text-[10px] text-slate-400">Visualizados</p>
+                    </div>
+
+                    <div className="rounded-xl bg-slate-900 p-3 text-center">
+                      <p className="text-2xl font-black text-green-300">0</p>
+                      <p className="text-[10px] text-slate-400">Cientes</p>
+                    </div>
+                  </div>
+
+                  <p className="mt-3 text-xs leading-relaxed text-slate-400">
+                    Depois do envio será possível abrir a lista nominal, ver
+                    data e horário de visualização e reenviar apenas para quem
+                    ainda não abriu.
+                  </p>
+                </div>
+
+                <div className="rounded-2xl border border-orange-800 bg-orange-950/20 p-4">
+                  <p className="text-xs font-bold text-orange-300">
+                    DESTINO ATUAL
+                  </p>
+
+                  <p className="mt-2 font-black text-white">
+                    {isCarteiraGeral
+                      ? "Carteira geral — selecione o condomínio antes do envio"
+                      : contextoSelecionado.nome}
+                  </p>
+
+                  <p className="mt-1 text-xs text-slate-400">
+                    O histórico ficará associado ao contexto selecionado no
+                    painel.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-5 grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={fecharComunicacao}
+                className="rounded-xl bg-slate-700 py-3 font-black text-white transition-all hover:bg-slate-600 active:scale-95"
+              >
+                Cancelar
+              </button>
+
+              <button
+                type="button"
+                onClick={enviarComunicacao}
+                disabled={salvandoComunicacao}
+                className="rounded-xl bg-blue-600 py-3 font-black text-white transition-all hover:bg-blue-500 active:scale-95 disabled:cursor-not-allowed disabled:bg-slate-600"
+              >
+                {salvandoComunicacao
+                  ? "Salvando..."
+                  : agendarComunicacao
+                  ? "📅 Agendar comunicação"
+                  : "📢 Enviar comunicação"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Popup Comunicados enviados */}
+
+      {popupComunicadosEnviadosAberto && (
+        <div className="fixed inset-0 z-[165] flex items-center justify-center bg-black/80 p-3 md:p-6">
+          <div className="max-h-[94vh] w-full max-w-5xl overflow-y-auto rounded-3xl border border-slate-700 bg-slate-900 p-4 shadow-2xl md:p-6">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-sm font-bold text-blue-300">
+                  📚 CENTRAL DE COMUNICAÇÃO
+                </p>
+
+                <h2 className="mt-1 text-2xl font-black text-white md:text-3xl">
+                  Comunicados enviados
+                </h2>
+
+                <p className="mt-2 text-sm text-slate-400">
+                  Histórico de {contextoSelecionado.nome}, com visualizações e
+                  confirmações de ciência.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setPopupComunicadosEnviadosAberto(false)}
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-800 text-xl font-black transition-all hover:bg-slate-700 active:scale-95"
+              >
+                ✕
+              </button>
+            </div>
+
+            {comunicadosEnviados.length === 0 ? (
+              <div className="mt-5 rounded-2xl border border-slate-700 bg-slate-800 p-8 text-center">
+                <div className="text-4xl">📭</div>
+                <p className="mt-3 font-black text-white">
+                  Nenhum comunicado enviado
+                </p>
+                <p className="mt-2 text-sm text-slate-400">
+                  Os próximos comunicados aparecerão aqui automaticamente.
+                </p>
+              </div>
+            ) : (
+              <div className="mt-5 space-y-3">
+                {comunicadosEnviados.map((comunicado) => {
+                  const visualizacoes = Object.values(
+                    comunicado.visualizacoes || {}
+                  );
+                  const totalVisualizados = visualizacoes.filter(
+                    (item) => Boolean(item.visualizadoEm)
+                  ).length;
+                  const totalCientes = visualizacoes.filter(
+                    (item) => item.ciente === true
+                  ).length;
+
+                  return (
+                    <div
+                      key={comunicado.id}
+                      className="rounded-2xl border border-slate-700 bg-slate-800 p-4"
+                    >
+                      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="rounded-full bg-blue-950 px-3 py-1 text-[10px] font-black text-blue-300">
+                              {comunicado.tipo === "assembleia"
+                                ? "👥 ASSEMBLEIA"
+                                : comunicado.tipo === "manutencao"
+                                ? "🛠️ MANUTENÇÃO"
+                                : comunicado.tipo === "emergencia"
+                                ? "🚨 EMERGÊNCIA"
+                                : "📢 COMUNICADO"}
+                            </span>
+
+                            <span
+                              className={`rounded-full px-3 py-1 text-[10px] font-black ${
+                                comunicado.status === "agendado"
+                                  ? "bg-orange-950 text-orange-300"
+                                  : "bg-green-950 text-green-300"
+                              }`}
+                            >
+                              {comunicado.status === "agendado"
+                                ? "AGENDADO"
+                                : "ENVIADO"}
+                            </span>
+                          </div>
+
+                          <h3 className="mt-3 text-lg font-black text-white">
+                            {comunicado.titulo}
+                          </h3>
+
+                          <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-slate-300">
+                            {comunicado.mensagem}
+                          </p>
+
+                          <p className="mt-3 text-xs text-slate-500">
+                            Criado em {comunicado.criadoEmFormatado} por{" "}
+                            {comunicado.enviadoPor}
+                          </p>
+                        </div>
+
+                        <div className="grid shrink-0 grid-cols-2 gap-2 sm:grid-cols-3">
+                          <div className="rounded-xl bg-slate-900 p-3 text-center">
+                            <p className="text-xl font-black text-blue-300">
+                              {totalVisualizados}
+                            </p>
+                            <p className="text-[10px] text-slate-400">
+                              Visualizados
+                            </p>
+                          </div>
+
+                          <div className="rounded-xl bg-slate-900 p-3 text-center">
+                            <p className="text-xl font-black text-green-300">
+                              {totalCientes}
+                            </p>
+                            <p className="text-[10px] text-slate-400">
+                              Cientes
+                            </p>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => reenviarComunicado(comunicado)}
+                            className="col-span-2 rounded-xl bg-blue-600 px-4 py-3 text-xs font-black text-white transition-all hover:bg-blue-500 active:scale-95 sm:col-span-1"
+                          >
+                            🔁 Reenviar
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Popup Saúde da Carteira */}
+
+      {popupSaudeAberto && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/75 p-3 md:p-6">
+          <div className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-3xl border border-slate-700 bg-slate-900 p-4 shadow-2xl md:p-6">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-sm font-bold text-green-300">
+                  {isCarteiraGeral
+                ? "❤️ SAÚDE DA CARTEIRA"
+                : "❤️ SAÚDE DO CONDOMÍNIO"}
+                </p>
+
+                <h2 className="mt-1 text-2xl font-black text-white">
+                  {condominioSelecionado
+                    ? condominioSelecionado.nome
+                    : isCarteiraGeral
+                    ? "Situação dos condomínios"
+                    : `Situação de ${contextoSelecionado.nome}`}
+                </h2>
+              </div>
+
+              <button
+                type="button"
+                onClick={fecharSaude}
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-800 text-xl font-black transition-all hover:bg-slate-700 active:scale-95"
+              >
+                ✕
+              </button>
+            </div>
+
+            {!condominioSelecionado ? (
+              <>
+                <div className="mt-5 grid grid-cols-4 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setFiltroSaude("todos")}
+                    className={`rounded-xl px-2 py-3 text-xs font-black transition-all active:scale-95 ${
+                      filtroSaude === "todos"
+                        ? "bg-blue-600 text-white"
+                        : "bg-slate-800 text-slate-300"
+                    }`}
+                  >
+                    Todos
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setFiltroSaude("saudaveis")}
+                    className={`rounded-xl px-2 py-3 text-xs font-black transition-all active:scale-95 ${
+                      filtroSaude === "saudaveis"
+                        ? "bg-green-600 text-white"
+                        : "bg-slate-800 text-slate-300"
+                    }`}
+                  >
+                    🟢 {saudaveis}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setFiltroSaude("atencao")}
+                    className={`rounded-xl px-2 py-3 text-xs font-black transition-all active:scale-95 ${
+                      filtroSaude === "atencao"
+                        ? "bg-orange-600 text-white"
+                        : "bg-slate-800 text-slate-300"
+                    }`}
+                  >
+                    🟠 {atencao}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setFiltroSaude("criticos")}
+                    className={`rounded-xl px-2 py-3 text-xs font-black transition-all active:scale-95 ${
+                      filtroSaude === "criticos"
+                        ? "bg-red-600 text-white"
+                        : "bg-slate-800 text-slate-300"
+                    }`}
+                  >
+                    🔴 {criticos}
+                  </button>
+                </div>
+
+                <div className="mt-5 space-y-3">
+                  {condominiosFiltrados.map((condominio) => (
+                    <button
+                      key={condominio.id}
+                      type="button"
+                      onClick={() => setCondominioSelecionado(condominio)}
+                      className={`w-full rounded-2xl border p-4 text-left transition-all duration-150 active:scale-[0.98] active:brightness-125 ${classesStatus(
+                        condominio.status
+                      )}`}
+                    >
+                      <div className="flex items-center justify-between gap-4">
+                        <div>
+                          <p className="font-black text-white">
+                            {iconeStatus(condominio.status)} {condominio.nome}
+                          </p>
+
+                          <p className="mt-1 text-sm text-slate-400">
+                            {textoStatus(condominio.status)}
+                          </p>
+                        </div>
+
+                        <div className="text-right">
+                          <p className="text-2xl font-black text-white">
+                            {condominio.percentual}%
+                          </p>
+
+                          <p className="text-xs text-slate-500">
+                            Ver detalhes →
+                          </p>
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+
+                  {condominiosFiltrados.length === 0 && (
+                    <div className="rounded-2xl border border-slate-700 bg-slate-800 p-6 text-center">
+                      <p className="font-black text-slate-300">
+                        Nenhum condomínio neste filtro
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </>
+            ) : (
+              <div className="mt-5">
+                <div
+                  className={`rounded-2xl border p-5 ${classesStatus(
+                    condominioSelecionado.status
+                  )}`}
+                >
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <p className="text-sm font-bold text-slate-300">
+                        SITUAÇÃO ATUAL
+                      </p>
+
+                      <p className="mt-1 text-xl font-black text-white">
+                        {iconeStatus(condominioSelecionado.status)}{" "}
+                        {textoStatus(condominioSelecionado.status)}
+                      </p>
+                    </div>
+
+                    <p className="text-4xl font-black text-white">
+                      {condominioSelecionado.percentual}%
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-4 rounded-2xl border border-slate-700 bg-slate-800 p-4">
+                  <p className="font-black text-white">
+                    Problemas encontrados
+                  </p>
+
+                  {condominioSelecionado.problemas.length > 0 ? (
+                    <div className="mt-3 space-y-2">
+                      {condominioSelecionado.problemas.map((problema) => (
+                        <button
+                          key={problema}
+                          type="button"
+                          className="w-full rounded-xl border border-orange-800 bg-orange-950/30 p-3 text-left text-sm font-bold text-orange-200 transition-all active:scale-[0.98]"
+                        >
+                          🟠 {problema}
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="mt-3 text-sm text-green-300">
+                      ✅ Nenhum problema ativo neste condomínio.
+                    </p>
+                  )}
+                </div>
+
+                <div className="mt-4 grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setCondominioSelecionado(null)}
+                    className="rounded-xl bg-slate-700 py-3 font-black transition-all hover:bg-slate-600 active:scale-95"
+                  >
+                    Voltar
+                  </button>
+
+                  <button
+                    type="button"
+                    className="rounded-xl bg-blue-600 py-3 font-black transition-all hover:bg-blue-500 active:scale-95"
+                  >
+                    Abrir condomínio
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
