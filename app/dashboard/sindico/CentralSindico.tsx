@@ -13,7 +13,7 @@ type TipoComunicacao =
   | "emergencia";
 
 type DestinatarioComunicacao =
-  | "todos"
+  | ""
   | "moradores"
   | "proprietarios"
   | "inquilinos"
@@ -545,8 +545,10 @@ export default function CentralSindico() {
   const [popupComunicacaoAberto, setPopupComunicacaoAberto] = useState(false);
   const [tipoComunicacao, setTipoComunicacao] =
     useState<TipoComunicacao>("comunicado");
+  const [condominioComunicacaoId, setCondominioComunicacaoId] =
+    useState<ContextoPainel | "">("");
   const [destinatarioComunicacao, setDestinatarioComunicacao] =
-    useState<DestinatarioComunicacao>("todos");
+    useState<DestinatarioComunicacao>("");
   const [tituloComunicacao, setTituloComunicacao] = useState("");
   const [mensagemComunicacao, setMensagemComunicacao] = useState("");
   const [exigirCiencia, setExigirCiencia] = useState(true);
@@ -801,7 +803,10 @@ export default function CentralSindico() {
 
   function abrirComunicacao(tipo: TipoComunicacao = "comunicado") {
     setTipoComunicacao(tipo);
-    setDestinatarioComunicacao("todos");
+    setCondominioComunicacaoId(
+      contextoAtual === "carteira-geral" ? "" : contextoAtual
+    );
+    setDestinatarioComunicacao("");
     setTituloComunicacao("");
     setMensagemComunicacao("");
     setExigirCiencia(true);
@@ -848,8 +853,18 @@ export default function CentralSindico() {
   }
 
   async function enviarComunicacao() {
-    if (isCarteiraGeral) {
-      alert("Selecione um condomínio antes de enviar o comunicado.");
+    if (!condominioComunicacaoId) {
+      alert("Escolha o condomínio que receberá o comunicado.");
+      return;
+    }
+
+    if (condominioComunicacaoId === "carteira-geral") {
+      alert("Escolha um condomínio específico.");
+      return;
+    }
+
+    if (!destinatarioComunicacao) {
+      alert("Escolha quem receberá o comunicado.");
       return;
     }
 
@@ -872,13 +887,22 @@ export default function CentralSindico() {
       setSalvandoComunicacao(true);
 
       const agora = Date.now();
+      const condominioSelecionadoParaEnvio =
+        opcoesContexto.find(
+          (opcao) => opcao.id === condominioComunicacaoId
+        ) ?? null;
+
+      if (!condominioSelecionadoParaEnvio) {
+        throw new Error("Condomínio selecionado não encontrado.");
+      }
+
       const referenciaNovoComunicado = push(
-        ref(db, `comunicados-v2/${contextoAtual}`)
+        ref(db, `comunicados-v2/${condominioComunicacaoId}`)
       );
 
       await set(referenciaNovoComunicado, {
-        condominioId: contextoAtual,
-        condominioNome: contextoSelecionado.nome,
+        condominioId: condominioComunicacaoId,
+        condominioNome: condominioSelecionadoParaEnvio.nome,
         tipo: tipoComunicacao,
         destinatario: destinatarioComunicacao,
         titulo: tituloComunicacao.trim(),
@@ -894,13 +918,58 @@ export default function CentralSindico() {
         enviadoPor: "João",
       });
 
+      const comunicadoId = referenciaNovoComunicado.key;
+
+      if (!comunicadoId) {
+        throw new Error("O Firebase não retornou o ID do comunicado.");
+      }
+
+      if (enviarPush && !agendarComunicacao) {
+        const respostaPush = await fetch("/api/enviar-notificacao-v2", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            tipo: "comunicado-v2",
+            condominioId: contextoAtual,
+            comunicadoId,
+            titulo: tituloComunicacao.trim(),
+            mensagem: mensagemComunicacao.trim(),
+          }),
+        });
+
+        const dadosPush = await respostaPush.json().catch(() => ({}));
+
+        if (!respostaPush.ok || dadosPush?.ok === false) {
+          console.error("Falha no push do comunicado:", dadosPush);
+
+          await update(
+            ref(
+              db,
+              `comunicados-v2/${condominioComunicacaoId}/${comunicadoId}`
+            ),
+            {
+              pushProcessado: false,
+              erroPush:
+                dadosPush?.erro ||
+                dadosPush?.detalhes ||
+                "Não foi possível enviar o push.",
+            }
+          );
+        }
+      }
+
       if (registrarHistorico) {
         const referenciaHistorico = push(
-          ref(db, `historico-comunicacoes-v2/${contextoAtual}`)
+          ref(
+            db,
+            `historico-comunicacoes-v2/${condominioComunicacaoId}`
+          )
         );
 
         await set(referenciaHistorico, {
-          comunicadoId: referenciaNovoComunicado.key,
+          comunicadoId,
           tipo: tipoComunicacao,
           titulo: tituloComunicacao.trim(),
           acao: agendarComunicacao
@@ -942,7 +1011,33 @@ export default function CentralSindico() {
         }
       );
 
-      alert("Reenvio registrado com sucesso.");
+      const respostaPush = await fetch("/api/enviar-notificacao-v2", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          tipo: "comunicado-v2",
+          condominioId: comunicado.condominioId,
+          comunicadoId: comunicado.id,
+          titulo: comunicado.titulo,
+          mensagem: comunicado.mensagem,
+        }),
+      });
+
+      const dadosPush = await respostaPush.json().catch(() => ({}));
+
+      if (!respostaPush.ok || dadosPush?.ok === false) {
+        throw new Error(
+          dadosPush?.erro ||
+            dadosPush?.detalhes ||
+            "Não foi possível reenviar o push."
+        );
+      }
+
+      alert(
+        `Push reenviado. ${dadosPush.enviados || 0} dispositivo(s) notificado(s).`
+      );
     } catch (erro) {
       console.error("Erro ao registrar reenvio:", erro);
       alert("Não foi possível registrar o reenvio.");
@@ -2431,7 +2526,43 @@ export default function CentralSindico() {
 
                 <div>
                   <label className="mb-2 block text-xs font-bold text-slate-400">
-                    DESTINATÁRIOS
+                    CONDOMÍNIO *
+                  </label>
+
+                  <select
+                    value={condominioComunicacaoId}
+                    onChange={(event) =>
+                      setCondominioComunicacaoId(
+                        event.target.value as ContextoPainel | ""
+                      )
+                    }
+                    className={`w-full rounded-xl border bg-slate-800 p-3 text-white outline-none focus:border-blue-500 ${
+                      condominioComunicacaoId
+                        ? "border-slate-700"
+                        : "border-orange-500"
+                    }`}
+                  >
+                    <option value="">Escolha o condomínio</option>
+
+                    {opcoesContexto
+                      .filter((opcao) => opcao.id !== "carteira-geral")
+                      .map((opcao) => (
+                        <option key={opcao.id} value={opcao.id}>
+                          {opcao.icone} {opcao.nome}
+                        </option>
+                      ))}
+                  </select>
+
+                  {!condominioComunicacaoId && (
+                    <p className="mt-2 text-xs font-bold text-orange-300">
+                      Obrigatório para evitar envio sem destinatário.
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-xs font-bold text-slate-400">
+                    DESTINATÁRIOS *
                   </label>
 
                   <select
@@ -2441,9 +2572,13 @@ export default function CentralSindico() {
                         event.target.value as DestinatarioComunicacao
                       )
                     }
-                    className="w-full rounded-xl border border-slate-700 bg-slate-800 p-3 text-white outline-none focus:border-blue-500"
+                    className={`w-full rounded-xl border bg-slate-800 p-3 text-white outline-none focus:border-blue-500 ${
+                      destinatarioComunicacao
+                        ? "border-slate-700"
+                        : "border-orange-500"
+                    }`}
                   >
-                    <option value="todos">Todos os envolvidos</option>
+                    <option value="">Escolha quem receberá</option>
                     <option value="moradores">Todos os moradores</option>
                     <option value="proprietarios">Apenas proprietários</option>
                     <option value="inquilinos">Apenas inquilinos</option>
@@ -2451,6 +2586,21 @@ export default function CentralSindico() {
                     <option value="zeladoria">Zeladoria</option>
                     <option value="portaria">Portaria</option>
                   </select>
+
+                  {!destinatarioComunicacao && (
+                    <p className="mt-2 text-xs font-bold text-orange-300">
+                      Escolha obrigatória antes do envio.
+                    </p>
+                  )}
+
+                  {destinatarioComunicacao !== "" &&
+                    destinatarioComunicacao !== "moradores" && (
+                      <p className="mt-2 text-xs text-yellow-300">
+                        Nesta primeira integração, o push e a leitura pelo
+                        aplicativo estão disponíveis para moradores. Os demais
+                        perfis serão ligados aos seus painéis posteriormente.
+                      </p>
+                    )}
                 </div>
 
                 <div>
@@ -2650,9 +2800,12 @@ export default function CentralSindico() {
                   </p>
 
                   <p className="mt-2 font-black text-white">
-                    {isCarteiraGeral
-                      ? "Carteira geral — selecione o condomínio antes do envio"
-                      : contextoSelecionado.nome}
+                    {condominioComunicacaoId
+                      ? opcoesContexto.find(
+                          (opcao) =>
+                            opcao.id === condominioComunicacaoId
+                        )?.nome || "Condomínio selecionado"
+                      : "Nenhum condomínio escolhido"}
                   </p>
 
                   <p className="mt-1 text-xs text-slate-400">
@@ -2675,7 +2828,11 @@ export default function CentralSindico() {
               <button
                 type="button"
                 onClick={enviarComunicacao}
-                disabled={salvandoComunicacao}
+                disabled={
+                  salvandoComunicacao ||
+                  !condominioComunicacaoId ||
+                  !destinatarioComunicacao
+                }
                 className="rounded-xl bg-blue-600 py-3 font-black text-white transition-all hover:bg-blue-500 active:scale-95 disabled:cursor-not-allowed disabled:bg-slate-600"
               >
                 {salvandoComunicacao
