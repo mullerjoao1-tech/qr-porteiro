@@ -4,6 +4,22 @@ import { useMemo, useState } from "react";
 
 type FiltroSaude = "todos" | "saudaveis" | "atencao" | "criticos";
 
+type TipoComunicacao =
+  | "comunicado"
+  | "assembleia"
+  | "manutencao"
+  | "emergencia";
+
+type DestinatarioComunicacao =
+  | "todos"
+  | "moradores"
+  | "proprietarios"
+  | "inquilinos"
+  | "conselho"
+  | "zeladoria"
+  | "portaria";
+
+
 type ContextoPainel =
   | "carteira-geral"
   | "cnd-tulipas"
@@ -496,6 +512,18 @@ export default function CentralSindico() {
   const [popupIndicadoresAberto, setPopupIndicadoresAberto] = useState(false);
   const [popupAgendaAberto, setPopupAgendaAberto] = useState(false);
   const [popupFinanceiroAberto, setPopupFinanceiroAberto] = useState(false);
+  const [popupComunicacaoAberto, setPopupComunicacaoAberto] = useState(false);
+  const [tipoComunicacao, setTipoComunicacao] =
+    useState<TipoComunicacao>("comunicado");
+  const [destinatarioComunicacao, setDestinatarioComunicacao] =
+    useState<DestinatarioComunicacao>("todos");
+  const [tituloComunicacao, setTituloComunicacao] = useState("");
+  const [mensagemComunicacao, setMensagemComunicacao] = useState("");
+  const [exigirCiencia, setExigirCiencia] = useState(true);
+  const [enviarPush, setEnviarPush] = useState(true);
+  const [registrarHistorico, setRegistrarHistorico] = useState(true);
+  const [agendarComunicacao, setAgendarComunicacao] = useState(false);
+  const [dataAgendamento, setDataAgendamento] = useState("");
   const [abaFinanceira, setAbaFinanceira] =
     useState<AbaFinanceira>("resumo");
   const [itemFinanceiroSelecionado, setItemFinanceiroSelecionado] =
@@ -703,6 +731,79 @@ export default function CentralSindico() {
     setAbaFinanceira("resumo");
   }
 
+  function abrirComunicacao(tipo: TipoComunicacao = "comunicado") {
+    setTipoComunicacao(tipo);
+    setDestinatarioComunicacao("todos");
+    setTituloComunicacao("");
+    setMensagemComunicacao("");
+    setExigirCiencia(true);
+    setEnviarPush(true);
+    setRegistrarHistorico(true);
+    setAgendarComunicacao(false);
+    setDataAgendamento("");
+    setPopupComunicacaoAberto(true);
+  }
+
+  function fecharComunicacao() {
+    setPopupComunicacaoAberto(false);
+  }
+
+  function sugerirTextoComunicacao() {
+    if (tipoComunicacao === "assembleia") {
+      setTituloComunicacao("Convocação de Assembleia");
+      setMensagemComunicacao(
+        "Informamos que será realizada assembleia do condomínio. Consulte abaixo a data, o horário, o local e a pauta. Ao final, confirme que leu e está ciente."
+      );
+      return;
+    }
+
+    if (tipoComunicacao === "manutencao") {
+      setTituloComunicacao("Manutenção programada");
+      setMensagemComunicacao(
+        "Informamos que será realizada uma manutenção programada no condomínio. Durante o período informado, poderá ocorrer indisponibilidade temporária do equipamento ou da área afetada. A conclusão será comunicada aos envolvidos."
+      );
+      return;
+    }
+
+    if (tipoComunicacao === "emergencia") {
+      setTituloComunicacao("Comunicado importante");
+      setMensagemComunicacao(
+        "Atenção: foi identificada uma situação que exige cuidado imediato. Leia as orientações abaixo e confirme que está ciente."
+      );
+      return;
+    }
+
+    setTituloComunicacao("Comunicado aos moradores");
+    setMensagemComunicacao(
+      "Olá! Temos uma informação importante para compartilhar com os moradores. Leia o comunicado abaixo e confirme que está ciente."
+    );
+  }
+
+  function enviarComunicacao() {
+    if (!tituloComunicacao.trim()) {
+      alert("Digite o título do comunicado.");
+      return;
+    }
+
+    if (!mensagemComunicacao.trim()) {
+      alert("Digite a mensagem do comunicado.");
+      return;
+    }
+
+    if (agendarComunicacao && !dataAgendamento) {
+      alert("Escolha a data e o horário do agendamento.");
+      return;
+    }
+
+    alert(
+      agendarComunicacao
+        ? "Comunicado agendado com sucesso."
+        : "Comunicado preparado para envio com sucesso."
+    );
+
+    setPopupComunicacaoAberto(false);
+  }
+
   return (
     <div className="space-y-5">
       {/* Cabeçalho */}
@@ -719,10 +820,19 @@ export default function CentralSindico() {
             </p>
           </div>
 
-          <div className="relative">
+          <div className="flex w-full flex-col gap-3 md:w-auto">
             <button
               type="button"
-              onClick={() => setSeletorContextoAberto((aberto) => !aberto)}
+              onClick={() => abrirComunicacao("comunicado")}
+              className="w-full rounded-2xl bg-white px-5 py-3 text-sm font-black text-blue-700 shadow-lg transition-all hover:bg-blue-50 active:scale-95"
+            >
+              📢 Enviar comunicado
+            </button>
+
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setSeletorContextoAberto((aberto) => !aberto)}
               className={`flex w-full min-w-[250px] items-center justify-between gap-4 rounded-2xl border px-4 py-3 text-left shadow-lg backdrop-blur transition-all hover:brightness-110 active:scale-[0.98] md:w-auto ${resumoContexto.borda} ${resumoContexto.fundo}`}
             >
               <div className="min-w-0">
@@ -815,6 +925,7 @@ export default function CentralSindico() {
                 })}
               </div>
             )}
+            </div>
           </div>
         </div>
 
@@ -2087,6 +2198,326 @@ export default function CentralSindico() {
                 </div>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Popup Central de Comunicação */}
+
+      {popupComunicacaoAberto && (
+        <div className="fixed inset-0 z-[160] flex items-center justify-center bg-black/80 p-3 md:p-6">
+          <div className="max-h-[94vh] w-full max-w-4xl overflow-y-auto rounded-3xl border border-slate-700 bg-slate-900 p-4 shadow-2xl md:p-6">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-sm font-bold text-blue-300">
+                  📢 CENTRAL DE COMUNICAÇÃO
+                </p>
+
+                <h2 className="mt-1 text-2xl font-black text-white md:text-3xl">
+                  Nova comunicação
+                </h2>
+
+                <p className="mt-2 text-sm text-slate-400">
+                  {isCarteiraGeral
+                    ? "Escolha o condomínio e envie uma comunicação organizada."
+                    : `Comunicação para ${contextoSelecionado.nome}.`}
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={fecharComunicacao}
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-800 text-xl font-black transition-all hover:bg-slate-700 active:scale-95"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="mt-5 grid gap-5 lg:grid-cols-[1.2fr_0.8fr]">
+              <div className="space-y-5">
+                <div>
+                  <p className="mb-3 text-xs font-bold text-slate-400">
+                    TIPO DE COMUNICAÇÃO
+                  </p>
+
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                    {[
+                      ["comunicado", "📢 Comunicado"],
+                      ["assembleia", "👥 Assembleia"],
+                      ["manutencao", "🛠️ Manutenção"],
+                      ["emergencia", "🚨 Emergência"],
+                    ].map(([id, nome]) => (
+                      <button
+                        key={id}
+                        type="button"
+                        onClick={() =>
+                          setTipoComunicacao(id as TipoComunicacao)
+                        }
+                        className={`rounded-xl px-3 py-3 text-xs font-black transition-all active:scale-95 ${
+                          tipoComunicacao === id
+                            ? "bg-blue-600 text-white"
+                            : "bg-slate-800 text-slate-300 hover:bg-slate-700"
+                        }`}
+                      >
+                        {nome}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-xs font-bold text-slate-400">
+                    DESTINATÁRIOS
+                  </label>
+
+                  <select
+                    value={destinatarioComunicacao}
+                    onChange={(event) =>
+                      setDestinatarioComunicacao(
+                        event.target.value as DestinatarioComunicacao
+                      )
+                    }
+                    className="w-full rounded-xl border border-slate-700 bg-slate-800 p-3 text-white outline-none focus:border-blue-500"
+                  >
+                    <option value="todos">Todos os envolvidos</option>
+                    <option value="moradores">Todos os moradores</option>
+                    <option value="proprietarios">Apenas proprietários</option>
+                    <option value="inquilinos">Apenas inquilinos</option>
+                    <option value="conselho">Conselho</option>
+                    <option value="zeladoria">Zeladoria</option>
+                    <option value="portaria">Portaria</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-xs font-bold text-slate-400">
+                    TÍTULO
+                  </label>
+
+                  <input
+                    value={tituloComunicacao}
+                    onChange={(event) =>
+                      setTituloComunicacao(event.target.value)
+                    }
+                    placeholder="Ex: Manutenção preventiva do portão social"
+                    className="w-full rounded-xl border border-slate-700 bg-slate-800 p-3 text-white outline-none placeholder:text-slate-500 focus:border-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <div className="mb-2 flex items-center justify-between gap-3">
+                    <label className="text-xs font-bold text-slate-400">
+                      MENSAGEM
+                    </label>
+
+                    <button
+                      type="button"
+                      onClick={sugerirTextoComunicacao}
+                      className="rounded-lg bg-violet-950 px-3 py-2 text-xs font-black text-violet-300 transition-all hover:bg-violet-900 active:scale-95"
+                    >
+                      🤖 Sugerir texto
+                    </button>
+                  </div>
+
+                  <textarea
+                    value={mensagemComunicacao}
+                    onChange={(event) =>
+                      setMensagemComunicacao(event.target.value)
+                    }
+                    placeholder="Escreva aqui todas as informações que precisam ser enviadas..."
+                    rows={8}
+                    className="w-full resize-none rounded-xl border border-slate-700 bg-slate-800 p-3 text-white outline-none placeholder:text-slate-500 focus:border-blue-500"
+                  />
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-slate-700 bg-slate-800 p-3">
+                    <input
+                      type="checkbox"
+                      checked={enviarPush}
+                      onChange={(event) => setEnviarPush(event.target.checked)}
+                    />
+                    <span>
+                      <span className="block text-sm font-black text-white">
+                        🔔 Enviar push
+                      </span>
+                      <span className="text-xs text-slate-400">
+                        Notificar os destinatários
+                      </span>
+                    </span>
+                  </label>
+
+                  <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-slate-700 bg-slate-800 p-3">
+                    <input
+                      type="checkbox"
+                      checked={registrarHistorico}
+                      onChange={(event) =>
+                        setRegistrarHistorico(event.target.checked)
+                      }
+                    />
+                    <span>
+                      <span className="block text-sm font-black text-white">
+                        🕘 Registrar no histórico
+                      </span>
+                      <span className="text-xs text-slate-400">
+                        Preservar envio e respostas
+                      </span>
+                    </span>
+                  </label>
+                </div>
+
+                <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-green-800 bg-green-950/20 p-4">
+                  <input
+                    type="checkbox"
+                    checked={exigirCiencia}
+                    onChange={(event) =>
+                      setExigirCiencia(event.target.checked)
+                    }
+                    className="mt-1"
+                  />
+
+                  <span>
+                    <span className="block font-black text-green-300">
+                      ✅ Exigir “Li e estou ciente”
+                    </span>
+
+                    <span className="mt-1 block text-xs leading-relaxed text-slate-400">
+                      Registra quem visualizou, a data, o horário e quem
+                      confirmou ciência. Não significa concordância com o
+                      conteúdo.
+                    </span>
+                  </span>
+                </label>
+
+                <div className="rounded-xl border border-slate-700 bg-slate-800 p-4">
+                  <label className="flex cursor-pointer items-center gap-3">
+                    <input
+                      type="checkbox"
+                      checked={agendarComunicacao}
+                      onChange={(event) =>
+                        setAgendarComunicacao(event.target.checked)
+                      }
+                    />
+
+                    <span className="font-black text-white">
+                      📅 Agendar envio
+                    </span>
+                  </label>
+
+                  {agendarComunicacao && (
+                    <input
+                      type="datetime-local"
+                      value={dataAgendamento}
+                      onChange={(event) =>
+                        setDataAgendamento(event.target.value)
+                      }
+                      className="mt-3 w-full rounded-xl border border-slate-700 bg-slate-900 p-3 text-white outline-none focus:border-blue-500"
+                    />
+                  )}
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div className="rounded-2xl border border-blue-800 bg-blue-950/20 p-4">
+                  <p className="text-xs font-bold text-blue-300">
+                    PRÉVIA PARA O MORADOR
+                  </p>
+
+                  <div className="mt-4 rounded-2xl bg-slate-950 p-4">
+                    <p className="text-xs font-bold text-slate-500">
+                      {tipoComunicacao === "assembleia"
+                        ? "👥 ASSEMBLEIA"
+                        : tipoComunicacao === "manutencao"
+                        ? "🛠️ MANUTENÇÃO"
+                        : tipoComunicacao === "emergencia"
+                        ? "🚨 EMERGÊNCIA"
+                        : "📢 COMUNICADO"}
+                    </p>
+
+                    <p className="mt-2 text-lg font-black text-white">
+                      {tituloComunicacao || "Título da comunicação"}
+                    </p>
+
+                    <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-slate-300">
+                      {mensagemComunicacao ||
+                        "A mensagem escrita aparecerá aqui para conferência antes do envio."}
+                    </p>
+
+                    {exigirCiencia && (
+                      <div className="mt-4 rounded-xl bg-green-600 px-4 py-3 text-center text-sm font-black text-white">
+                        ✅ Li e estou ciente
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-cyan-800 bg-cyan-950/20 p-4">
+                  <p className="text-xs font-bold text-cyan-300">
+                    ACOMPANHAMENTO APÓS O ENVIO
+                  </p>
+
+                  <div className="mt-4 grid grid-cols-3 gap-2">
+                    <div className="rounded-xl bg-slate-900 p-3 text-center">
+                      <p className="text-2xl font-black text-white">94</p>
+                      <p className="text-[10px] text-slate-400">Enviados</p>
+                    </div>
+
+                    <div className="rounded-xl bg-slate-900 p-3 text-center">
+                      <p className="text-2xl font-black text-blue-300">0</p>
+                      <p className="text-[10px] text-slate-400">Visualizados</p>
+                    </div>
+
+                    <div className="rounded-xl bg-slate-900 p-3 text-center">
+                      <p className="text-2xl font-black text-green-300">0</p>
+                      <p className="text-[10px] text-slate-400">Cientes</p>
+                    </div>
+                  </div>
+
+                  <p className="mt-3 text-xs leading-relaxed text-slate-400">
+                    Depois do envio será possível abrir a lista nominal, ver
+                    data e horário de visualização e reenviar apenas para quem
+                    ainda não abriu.
+                  </p>
+                </div>
+
+                <div className="rounded-2xl border border-orange-800 bg-orange-950/20 p-4">
+                  <p className="text-xs font-bold text-orange-300">
+                    DESTINO ATUAL
+                  </p>
+
+                  <p className="mt-2 font-black text-white">
+                    {isCarteiraGeral
+                      ? "Carteira geral — selecione o condomínio antes do envio"
+                      : contextoSelecionado.nome}
+                  </p>
+
+                  <p className="mt-1 text-xs text-slate-400">
+                    O histórico ficará associado ao contexto selecionado no
+                    painel.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-5 grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={fecharComunicacao}
+                className="rounded-xl bg-slate-700 py-3 font-black text-white transition-all hover:bg-slate-600 active:scale-95"
+              >
+                Cancelar
+              </button>
+
+              <button
+                type="button"
+                onClick={enviarComunicacao}
+                className="rounded-xl bg-blue-600 py-3 font-black text-white transition-all hover:bg-blue-500 active:scale-95"
+              >
+                {agendarComunicacao
+                  ? "📅 Agendar comunicação"
+                  : "📢 Enviar comunicação"}
+              </button>
+            </div>
           </div>
         </div>
       )}

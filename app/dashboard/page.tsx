@@ -99,6 +99,19 @@ export default function Dashboard() {
   const [telaAtiva, setTelaAtiva] = useState<Tela>("dashboard");
   const [menuMobileAberto, setMenuMobileAberto] = useState(false);
   const [localAberto, setLocalAberto] = useState<LocalCadastrado | null>(null);
+  const [modalNovoLocalAberto, setModalNovoLocalAberto] = useState(false);
+  const [buscaLocal, setBuscaLocal] = useState("");
+  const [filtroTipoLocal, setFiltroTipoLocal] = useState("todos");
+  const [filtroStatusLocal, setFiltroStatusLocal] = useState("todos");
+  const [abaLocalAtiva, setAbaLocalAtiva] = useState<
+    | "geral"
+    | "estrutura"
+    | "operacao"
+    | "hardware"
+    | "financeiro"
+    | "historico"
+    | "configuracoes"
+  >("geral");
   const [atualizacaoSelecionada, setAtualizacaoSelecionada] =
     useState<AtualizacaoCadastral | null>(null);
   const [unidadeImplantacaoSelecionada, setUnidadeImplantacaoSelecionada] =
@@ -751,6 +764,64 @@ export default function Dashboard() {
   const localSelecionado = locais.find((item) => item.id === localSelecionadoId);
   const modoCondominio = localSelecionado?.tipo === "condominio";
 
+
+  const locaisFiltrados = locais
+    .filter((local) => {
+      const termo = buscaLocal.trim().toLowerCase();
+
+      const passaBusca =
+        !termo ||
+        [
+          local.nome,
+          local.codigo,
+          local.cidade,
+          local.estado,
+          local.tipo,
+          local.slug,
+          local.plano,
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase()
+          .includes(termo);
+
+      const passaTipo =
+        filtroTipoLocal === "todos" || local.tipo === filtroTipoLocal;
+
+      const passaStatus =
+        filtroStatusLocal === "todos" || local.status === filtroStatusLocal;
+
+      return passaBusca && passaTipo && passaStatus;
+    })
+    .sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
+
+  const totalCondominios = locais.filter(
+    (local) => local.tipo === "condominio"
+  ).length;
+
+  const totalOutrosLocais = locais.filter(
+    (local) => local.tipo !== "condominio"
+  ).length;
+
+  const totalLocaisAtivos = locais.filter(
+    (local) => local.status === "ativo"
+  ).length;
+
+  function abrirPerfilLocal(local: LocalCadastrado) {
+    setLocalAberto(local);
+    setAbaLocalAtiva("geral");
+  }
+
+  function fecharPerfilLocal() {
+    setLocalAberto(null);
+    setAbaLocalAtiva("geral");
+  }
+
+  function fecharNovoLocal() {
+    if (salvando) return;
+    setModalNovoLocalAberto(false);
+  }
+
   const menu: {
   id: Tela;
   nome: string;
@@ -1224,118 +1295,385 @@ export default function Dashboard() {
   <CentralSindico />
 )}
           {telaAtiva === "locais" && (
-            <div>
-              <h2 className="text-3xl font-black text-blue-300 mb-2">
-                Locais
-              </h2>
+            <div className="space-y-5">
+              {/* Cabeçalho */}
 
-              <p className="text-slate-400 mb-8">
-                Cadastre condomínios, casas, chácaras, airbnbs ou portarias.
-              </p>
+              <section className="rounded-3xl bg-gradient-to-r from-blue-700 to-cyan-600 p-5 text-white md:p-7">
+                <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
+                  <div>
+                    <p className="text-sm font-bold text-blue-100">
+                      🏢 MÓDULO DE LOCAIS
+                    </p>
 
-              <div className="grid lg:grid-cols-2 gap-6">
-                <div className="bg-slate-900 rounded-2xl p-6 border border-slate-800">
-                  <h3 className="text-2xl font-bold mb-5">
-                    Cadastrar novo local
-                  </h3>
+                    <h2 className="mt-1 text-3xl font-black md:text-4xl">
+                      Locais
+                    </h2>
 
-                  <div className="space-y-4">
+                    <p className="mt-2 text-sm text-blue-100 md:text-base">
+                      Gerencie condomínios, casas, empresas, chácaras,
+                      portarias e outros espaços conectados ao QR Acesso.
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setModalNovoLocalAberto(true)}
+                    className="rounded-2xl bg-white px-5 py-3 font-black text-blue-700 shadow-lg transition-all hover:bg-blue-50 active:scale-95"
+                  >
+                    ＋ Novo local
+                  </button>
+                </div>
+              </section>
+
+              {/* Indicadores */}
+
+              <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+                <div className="rounded-2xl border border-slate-700 bg-slate-900 p-4">
+                  <p className="text-xs font-bold text-slate-400">
+                    TOTAL CADASTRADO
+                  </p>
+                  <p className="mt-2 text-3xl font-black text-white">
+                    {locais.length}
+                  </p>
+                </div>
+
+                <div className="rounded-2xl border border-blue-800 bg-blue-950/25 p-4">
+                  <p className="text-xs font-bold text-blue-300">
+                    CONDOMÍNIOS
+                  </p>
+                  <p className="mt-2 text-3xl font-black text-white">
+                    {totalCondominios}
+                  </p>
+                </div>
+
+                <div className="rounded-2xl border border-cyan-800 bg-cyan-950/25 p-4">
+                  <p className="text-xs font-bold text-cyan-300">
+                    OUTROS LOCAIS
+                  </p>
+                  <p className="mt-2 text-3xl font-black text-white">
+                    {totalOutrosLocais}
+                  </p>
+                </div>
+
+                <div className="rounded-2xl border border-green-800 bg-green-950/25 p-4">
+                  <p className="text-xs font-bold text-green-300">
+                    ATIVOS
+                  </p>
+                  <p className="mt-2 text-3xl font-black text-white">
+                    {totalLocaisAtivos}
+                  </p>
+                </div>
+              </section>
+
+              {/* Pesquisa e filtros */}
+
+              <section className="rounded-2xl border border-slate-800 bg-slate-900 p-4 md:p-5">
+                <div className="grid gap-3 lg:grid-cols-[1fr_240px_190px]">
+                  <div className="relative">
+                    <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-lg">
+                      🔍
+                    </span>
+
                     <input
-                      value={nomeLocal}
-                      onChange={(e) => setNomeLocal(e.target.value)}
-                      placeholder="Ex: Residencial Mar Azul"
-                      className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3"
+                      value={buscaLocal}
+                      onChange={(event) => setBuscaLocal(event.target.value)}
+                      placeholder="Pesquisar por nome, cidade, código ou plano..."
+                      className="w-full rounded-xl border border-slate-700 bg-slate-800 py-3 pl-12 pr-4 text-white outline-none transition-all placeholder:text-slate-500 focus:border-blue-500"
                     />
+                  </div>
 
-                    <select
-                      value={tipoLocal}
-                      onChange={(e) => setTipoLocal(e.target.value)}
-                      className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3"
+                  <select
+                    value={filtroTipoLocal}
+                    onChange={(event) =>
+                      setFiltroTipoLocal(event.target.value)
+                    }
+                    className="w-full rounded-xl border border-slate-700 bg-slate-800 p-3 text-white outline-none focus:border-blue-500"
+                  >
+                    <option value="todos">Todos os tipos</option>
+                    <option value="condominio">🏢 Condomínios</option>
+                    <option value="casa">🏠 Casas</option>
+                    <option value="empresa">🏭 Empresas</option>
+                    <option value="airbnb">🧳 Airbnb</option>
+                    <option value="chacara">🌳 Chácaras</option>
+                    <option value="portaria">🛡️ Portarias</option>
+                  </select>
+
+                  <select
+                    value={filtroStatusLocal}
+                    onChange={(event) =>
+                      setFiltroStatusLocal(event.target.value)
+                    }
+                    className="w-full rounded-xl border border-slate-700 bg-slate-800 p-3 text-white outline-none focus:border-blue-500"
+                  >
+                    <option value="todos">Todos os status</option>
+                    <option value="ativo">🟢 Ativos</option>
+                    <option value="inativo">⚪ Inativos</option>
+                    <option value="implantacao">🟠 Em implantação</option>
+                  </select>
+                </div>
+
+                <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+                  <p className="text-sm text-slate-400">
+                    {locaisFiltrados.length} local
+                    {locaisFiltrados.length === 1 ? "" : "is"} encontrado
+                    {locaisFiltrados.length === 1 ? "" : "s"}.
+                  </p>
+
+                  {(buscaLocal ||
+                    filtroTipoLocal !== "todos" ||
+                    filtroStatusLocal !== "todos") && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setBuscaLocal("");
+                        setFiltroTipoLocal("todos");
+                        setFiltroStatusLocal("todos");
+                      }}
+                      className="rounded-xl bg-slate-800 px-4 py-2 text-sm font-black text-slate-300 transition-all hover:bg-slate-700 active:scale-95"
                     >
-                      <option value="condominio">Condomínio</option>
-                      <option value="casa">Casa</option>
-                      <option value="airbnb">Airbnb</option>
-                      <option value="chacara">Chácara</option>
-                      <option value="empresa">Empresa</option>
-                      <option value="portaria">Portaria</option>
-                    </select>
+                      Limpar filtros
+                    </button>
+                  )}
+                </div>
+              </section>
 
-                    <div className="grid grid-cols-2 gap-3">
-                      <input
-                        value={cidade}
-                        onChange={(e) => setCidade(e.target.value)}
-                        placeholder="Cidade"
-                        className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3"
-                      />
+              {/* Lista */}
 
-                      <input
-                        value={estado}
-                        onChange={(e) => setEstado(e.target.value)}
-                        placeholder="Estado"
-                        className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3"
-                      />
+              <section className="rounded-2xl border border-slate-800 bg-slate-900 p-4 md:p-5">
+                <div>
+                  <p className="text-xs font-bold text-blue-300">
+                    LISTA DE LOCAIS
+                  </p>
+
+                  <h3 className="mt-1 text-2xl font-black text-white">
+                    Selecione um local
+                  </h3>
+                </div>
+
+                {locaisFiltrados.length === 0 ? (
+                  <div className="mt-5 rounded-2xl border border-slate-700 bg-slate-800 p-8 text-center">
+                    <div className="text-4xl">🏢</div>
+                    <p className="mt-3 font-black text-slate-300">
+                      Nenhum local encontrado
+                    </p>
+                    <p className="mt-2 text-sm text-slate-500">
+                      Ajuste os filtros ou cadastre um novo local.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="mt-5 grid gap-3">
+                    {locaisFiltrados.map((local) => {
+                      const unidadesDoLocal = unidades.filter(
+                        (unidade) => unidade.localId === local.id
+                      );
+
+                      const moradoresDoLocal = moradores.filter((morador) =>
+                        unidadesDoLocal.some(
+                          (unidade) => unidade.id === morador.unidadeId
+                        )
+                      );
+
+                      const ativo = local.status === "ativo";
+
+                      return (
+                        <button
+                          key={local.id}
+                          type="button"
+                          onClick={() => abrirPerfilLocal(local)}
+                          className="rounded-2xl border border-slate-700 bg-slate-800 p-4 text-left transition-all hover:border-blue-500 hover:bg-slate-700 active:scale-[0.98]"
+                        >
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="flex min-w-0 items-start gap-3">
+                              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-blue-950 text-2xl">
+                                {local.tipo === "condominio"
+                                  ? "🏢"
+                                  : local.tipo === "casa"
+                                  ? "🏠"
+                                  : local.tipo === "empresa"
+                                  ? "🏭"
+                                  : local.tipo === "airbnb"
+                                  ? "🧳"
+                                  : local.tipo === "chacara"
+                                  ? "🌳"
+                                  : "📍"}
+                              </div>
+
+                              <div className="min-w-0">
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <p className="text-xs font-black text-blue-300">
+                                    {local.codigo || "LOCAL"}
+                                  </p>
+
+                                  <span
+                                    className={`inline-flex rounded-full px-3 py-1 text-[10px] font-black ${
+                                      ativo
+                                        ? "bg-green-950 text-green-300"
+                                        : "bg-slate-900 text-slate-400"
+                                    }`}
+                                  >
+                                    {ativo ? "🟢 Saudável" : "⚪ Inativo"}
+                                  </span>
+                                </div>
+
+                                <h4 className="mt-1 truncate text-lg font-black text-white">
+                                  {local.nome}
+                                </h4>
+
+                                <p className="mt-1 text-sm text-slate-300">
+                                  📍 {local.cidade}/{local.estado}
+                                </p>
+
+                                <p className="mt-1 text-sm text-slate-400">
+                                  {formatarTextoTipo(local.tipo)} • Plano{" "}
+                                  {local.plano || "não informado"}
+                                </p>
+                              </div>
+                            </div>
+
+                            <div className="shrink-0 text-right">
+                              <p className="text-xs font-bold text-slate-300">
+                                🏠 {unidadesDoLocal.length} unidades
+                              </p>
+
+                              <p className="mt-1 text-xs font-bold text-slate-400">
+                                👥 {moradoresDoLocal.length} moradores
+                              </p>
+
+                              <p className="mt-1 text-xs font-bold text-slate-400">
+                                🚪 {local.tipo === "condominio" ? 1 : 0} portaria
+                              </p>
+
+                              <p className="mt-1 text-xs font-bold text-slate-400">
+                                📷 0 câmeras
+                              </p>
+
+                              <p className="mt-3 text-xs font-black text-blue-300">
+                                Abrir perfil →
+                              </p>
+                            </div>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </section>
+
+              {/* Modal de novo local */}
+
+              {modalNovoLocalAberto && (
+                <div className="fixed inset-0 z-[130] flex items-center justify-center bg-black/75 p-3 md:p-6">
+                  <div className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-3xl border border-slate-700 bg-slate-900 p-4 shadow-2xl md:p-6">
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <p className="text-sm font-bold text-blue-300">
+                          ＋ NOVO LOCAL
+                        </p>
+
+                        <h3 className="mt-1 text-2xl font-black text-white">
+                          Cadastro de local
+                        </h3>
+
+                        <p className="mt-2 text-sm text-slate-400">
+                          Cadastre condomínios, casas, empresas, chácaras,
+                          portarias e outros espaços.
+                        </p>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={fecharNovoLocal}
+                        disabled={salvando}
+                        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-800 text-xl font-black transition-all hover:bg-slate-700 active:scale-95 disabled:opacity-50"
+                      >
+                        ✕
+                      </button>
                     </div>
 
-                    <select
-                      value={plano}
-                      onChange={(e) => setPlano(e.target.value)}
-                      className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3"
-                    >
-                      <option value="residencial">Residencial</option>
-                      <option value="residencial-pro">Residencial Pro</option>
-                      <option value="airbnb">Airbnb</option>
-                      <option value="condominio">Condomínio</option>
-                      <option value="teste-piloto">Teste Piloto</option>
-                    </select>
+                    <div className="mt-5 space-y-4">
+                      <input
+                        value={nomeLocal}
+                        onChange={(event) =>
+                          setNomeLocal(event.target.value)
+                        }
+                        placeholder="Ex: Residencial Mar Azul"
+                        className="w-full rounded-xl border border-slate-700 bg-slate-800 p-3 text-white outline-none placeholder:text-slate-500 focus:border-blue-500"
+                      />
 
-                    <button
-                      onClick={cadastrarLocal}
-                      disabled={salvando}
-                      className="w-full bg-blue-600 hover:bg-blue-500 disabled:bg-slate-600 text-white font-black py-3 rounded-xl"
-                    >
-                      {salvando ? "Salvando..." : "Cadastrar local"}
-                    </button>
+                      <select
+                        value={tipoLocal}
+                        onChange={(event) =>
+                          setTipoLocal(event.target.value)
+                        }
+                        className="w-full rounded-xl border border-slate-700 bg-slate-800 p-3 text-white outline-none focus:border-blue-500"
+                      >
+                        <option value="condominio">Condomínio</option>
+                        <option value="casa">Casa</option>
+                        <option value="airbnb">Airbnb</option>
+                        <option value="chacara">Chácara</option>
+                        <option value="empresa">Empresa</option>
+                        <option value="portaria">Portaria</option>
+                      </select>
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <input
+                          value={cidade}
+                          onChange={(event) =>
+                            setCidade(event.target.value)
+                          }
+                          placeholder="Cidade"
+                          className="w-full rounded-xl border border-slate-700 bg-slate-800 p-3 text-white outline-none placeholder:text-slate-500 focus:border-blue-500"
+                        />
+
+                        <input
+                          value={estado}
+                          onChange={(event) =>
+                            setEstado(event.target.value)
+                          }
+                          placeholder="Estado"
+                          className="w-full rounded-xl border border-slate-700 bg-slate-800 p-3 text-white outline-none placeholder:text-slate-500 focus:border-blue-500"
+                        />
+                      </div>
+
+                      <select
+                        value={plano}
+                        onChange={(event) =>
+                          setPlano(event.target.value)
+                        }
+                        className="w-full rounded-xl border border-slate-700 bg-slate-800 p-3 text-white outline-none focus:border-blue-500"
+                      >
+                        <option value="residencial">Residencial</option>
+                        <option value="residencial-pro">
+                          Residencial Pro
+                        </option>
+                        <option value="airbnb">Airbnb</option>
+                        <option value="condominio">Condomínio</option>
+                        <option value="teste-piloto">Teste Piloto</option>
+                      </select>
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <button
+                          type="button"
+                          onClick={fecharNovoLocal}
+                          disabled={salvando}
+                          className="rounded-xl bg-slate-700 py-3 font-black text-white transition-all hover:bg-slate-600 active:scale-95 disabled:opacity-50"
+                        >
+                          Cancelar
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={cadastrarLocal}
+                          disabled={salvando}
+                          className="rounded-xl bg-blue-600 py-3 font-black text-white transition-all hover:bg-blue-500 active:scale-95 disabled:bg-slate-600"
+                        >
+                          {salvando ? "Salvando..." : "Cadastrar local"}
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 </div>
-
-                <div className="bg-slate-900 rounded-2xl p-6 border border-slate-800">
-                  <h3 className="text-2xl font-bold mb-5">
-                    Locais cadastrados
-                  </h3>
-
-                  <div className="space-y-3">
-                    {locais.map((local) => (
-  <div
-    key={local.id}
-    onClick={() => setLocalAberto(local)}
-    className="bg-slate-800 rounded-xl p-4 border border-slate-700 cursor-pointer hover:border-blue-500 hover:bg-slate-700 transition-all"
-  >
-                        <p className="text-xs text-blue-300 font-bold">
-                          {local.codigo || "LOC"}
-                        </p>
-
-                        <h4 className="text-lg font-black">{local.nome}</h4>
-
-                        <p className="text-sm text-slate-400 mt-1">
-                          {formatarTextoTipo(local.tipo)} • {local.cidade}/
-                          {local.estado}
-                        </p>
-
-                        <p className="text-xs text-blue-300 mt-2">
-                          QR principal:{" "}
-                          {local.qrPrincipal || `/acesso/${local.slug}`}
-                        </p>
-                      </div>
-                    ))}
-
-                    {locais.length === 0 && (
-                      <div className="bg-slate-800 rounded-xl p-4 text-slate-400">
-                        Nenhum local cadastrado ainda.
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
+              )}
             </div>
           )}
 
@@ -1929,119 +2267,567 @@ export default function Dashboard() {
             )}
 
             {localAberto && (
-              <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-                <div className="bg-slate-900 rounded-2xl p-6 w-full max-w-3xl max-h-[92vh] overflow-y-auto border border-slate-700">
-                  <div className="flex justify-between items-start gap-4 mb-6">
-                    <div>
-                      <p className="text-blue-400 font-bold">
-                        {localAberto.codigo}
-                      </p>
+              <div className="fixed inset-0 z-[125] flex items-center justify-center bg-black/75 p-3 md:p-6">
+                <div className="max-h-[94vh] w-full max-w-5xl overflow-y-auto rounded-3xl border border-slate-700 bg-slate-900 p-4 shadow-2xl md:p-6">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex min-w-0 items-start gap-4">
+                      <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-blue-950 text-3xl">
+                        {localAberto.tipo === "condominio"
+                          ? "🏢"
+                          : localAberto.tipo === "casa"
+                          ? "🏠"
+                          : localAberto.tipo === "empresa"
+                          ? "🏭"
+                          : "📍"}
+                      </div>
 
-                      <h2 className="text-3xl font-black">
-                        {localAberto.nome}
-                      </h2>
+                      <div className="min-w-0">
+                        <p className="text-xs font-black text-blue-300">
+                          {localAberto.codigo}
+                        </p>
 
-                      <p className="text-slate-400 mt-2">
-                        {localAberto.cidade}/{localAberto.estado}
-                      </p>
+                        <h3 className="mt-1 truncate text-2xl font-black text-white md:text-3xl">
+                          {localAberto.nome}
+                        </h3>
+
+                        <p className="mt-1 text-sm text-slate-400">
+                          📍 {localAberto.cidade}/{localAberto.estado} •{" "}
+                          {formatarTextoTipo(localAberto.tipo)}
+                        </p>
+                      </div>
                     </div>
 
                     <button
                       type="button"
-                      onClick={() => setLocalAberto(null)}
+                      onClick={fecharPerfilLocal}
                       disabled={excluindoLocal}
-                      className="bg-red-600 hover:bg-red-500 disabled:bg-slate-700 px-4 py-2 rounded-xl font-bold"
+                      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-800 text-xl font-black transition-all hover:bg-slate-700 active:scale-95 disabled:opacity-50"
                     >
-                      Fechar
+                      ✕
                     </button>
                   </div>
 
-                  <div className="grid md:grid-cols-3 gap-4 mb-6">
-                    <div className="bg-slate-800 rounded-xl p-4">
-                      <p className="text-slate-400 text-sm">
-                        Unidades
-                      </p>
-                      <p className="text-3xl font-black">
-                        {
-                          unidades.filter(
-                            (unidade) =>
-                              unidade.localId === localAberto.id
-                          ).length
-                        }
-                      </p>
-                    </div>
+                  <div className="mt-5 grid grid-cols-2 gap-2 md:hidden">
+                    {[
+                      ["geral", "🏢 Geral"],
+                      ["estrutura", "🏗️ Estrutura"],
+                      ["operacao", "🛡️ Operação"],
+                      ["hardware", "🔌 Hardware"],
+                      ["financeiro", "💰 Financeiro"],
+                      ["historico", "🕘 Histórico"],
+                      ["configuracoes", "⚙️ Configurações"],
+                    ].map(([id, nome]) => (
+                      <button
+                        key={id}
+                        type="button"
+                        onClick={() => setAbaLocalAtiva(id as any)}
+                        className={`min-h-[48px] rounded-xl px-3 py-3 text-left text-xs font-black transition-all active:scale-95 ${
+                          abaLocalAtiva === id
+                            ? "bg-blue-600 text-white"
+                            : "bg-slate-800 text-slate-300"
+                        }`}
+                      >
+                        {nome}
+                      </button>
+                    ))}
+                  </div>
 
-                    <div className="bg-slate-800 rounded-xl p-4">
-                      <p className="text-slate-400 text-sm">
-                        Moradores
-                      </p>
-                      <p className="text-3xl font-black">
-                        {
-                          moradores.filter((morador) =>
-                            unidades.some(
+                  <div className="mt-5 hidden gap-2 overflow-x-auto pb-2 md:flex">
+                    {[
+                      ["geral", "🏢 Geral"],
+                      ["estrutura", "🏗️ Estrutura"],
+                      ["operacao", "🛡️ Operação"],
+                      ["hardware", "🔌 Hardware"],
+                      ["financeiro", "💰 Financeiro"],
+                      ["historico", "🕘 Histórico"],
+                      ["configuracoes", "⚙️ Configurações"],
+                    ].map(([id, nome]) => (
+                      <button
+                        key={id}
+                        type="button"
+                        onClick={() => setAbaLocalAtiva(id as any)}
+                        className={`shrink-0 rounded-xl px-4 py-3 text-sm font-black transition-all active:scale-95 ${
+                          abaLocalAtiva === id
+                            ? "bg-blue-600 text-white"
+                            : "bg-slate-800 text-slate-300 hover:bg-slate-700"
+                        }`}
+                      >
+                        {nome}
+                      </button>
+                    ))}
+                  </div>
+
+                  {abaLocalAtiva === "geral" && (
+                    <div className="mt-5 space-y-4">
+                      <div className="grid gap-4 lg:grid-cols-3">
+                        <div className="rounded-2xl border border-slate-700 bg-slate-800 p-4 lg:col-span-2">
+                          <p className="text-xs font-bold text-slate-400">
+                            DADOS PRINCIPAIS
+                          </p>
+
+                          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                            <div>
+                              <p className="text-xs text-slate-500">
+                                Nome
+                              </p>
+                              <p className="mt-1 font-black text-white">
+                                {localAberto.nome}
+                              </p>
+                            </div>
+
+                            <div>
+                              <p className="text-xs text-slate-500">
+                                Tipo
+                              </p>
+                              <p className="mt-1 font-black text-white">
+                                {formatarTextoTipo(localAberto.tipo)}
+                              </p>
+                            </div>
+
+                            <div>
+                              <p className="text-xs text-slate-500">
+                                Cidade / Estado
+                              </p>
+                              <p className="mt-1 font-black text-white">
+                                {localAberto.cidade}/{localAberto.estado}
+                              </p>
+                            </div>
+
+                            <div>
+                              <p className="text-xs text-slate-500">
+                                Plano
+                              </p>
+                              <p className="mt-1 font-black text-blue-300">
+                                {localAberto.plano}
+                              </p>
+                            </div>
+
+                            <div>
+                              <p className="text-xs text-slate-500">
+                                Status
+                              </p>
+                              <p className="mt-1 font-black text-green-300">
+                                {localAberto.status === "ativo"
+                                  ? "🟢 Ativo"
+                                  : localAberto.status}
+                              </p>
+                            </div>
+
+                            <div>
+                              <p className="text-xs text-slate-500">
+                                QR principal
+                              </p>
+                              <p className="mt-1 break-all font-black text-cyan-300">
+                                {localAberto.qrPrincipal ||
+                                  `/acesso/${localAberto.slug}`}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="rounded-2xl border border-cyan-800 bg-cyan-950/25 p-4">
+                          <p className="text-xs font-bold text-cyan-300">
+                            🤖 RESUMO
+                          </p>
+
+                          <p className="mt-3 text-sm leading-relaxed text-slate-200">
+                            Local ativo com{" "}
+                            {
+                              unidades.filter(
+                                (unidade) =>
+                                  unidade.localId === localAberto.id
+                              ).length
+                            }{" "}
+                            unidade(s) cadastrada(s) e{" "}
+                            {
+                              moradores.filter((morador) =>
+                                unidades.some(
+                                  (unidade) =>
+                                    unidade.id === morador.unidadeId &&
+                                    unidade.localId === localAberto.id
+                                )
+                              ).length
+                            }{" "}
+                            morador(es) vinculado(s).
+                          </p>
+
+                          <div className="mt-4 rounded-xl bg-slate-900 p-3">
+                            <p className="text-xs text-slate-500">
+                              Situação atual
+                            </p>
+                            <p className="mt-1 font-black text-white">
+                              Operação em acompanhamento
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="grid gap-4 lg:grid-cols-[1.15fr_0.85fr]">
+                        <div className="rounded-2xl border border-slate-700 bg-slate-800 p-4">
+                          <p className="text-xs font-bold text-slate-400">
+                            RESUMO OPERACIONAL
+                          </p>
+
+                          <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                            <div className="rounded-xl bg-slate-900 p-3">
+                              <p className="text-xs text-slate-500">
+                                Unidades
+                              </p>
+                              <p className="mt-1 text-2xl font-black text-white">
+                                🏠{" "}
+                                {
+                                  unidades.filter(
+                                    (unidade) =>
+                                      unidade.localId === localAberto.id
+                                  ).length
+                                }
+                              </p>
+                            </div>
+
+                            <div className="rounded-xl bg-slate-900 p-3">
+                              <p className="text-xs text-slate-500">
+                                Moradores
+                              </p>
+                              <p className="mt-1 text-2xl font-black text-white">
+                                👥{" "}
+                                {
+                                  moradores.filter((morador) =>
+                                    unidades.some(
+                                      (unidade) =>
+                                        unidade.id === morador.unidadeId &&
+                                        unidade.localId === localAberto.id
+                                    )
+                                  ).length
+                                }
+                              </p>
+                            </div>
+
+                            <div className="rounded-xl bg-slate-900 p-3">
+                              <p className="text-xs text-slate-500">
+                                Portarias
+                              </p>
+                              <p className="mt-1 text-2xl font-black text-white">
+                                🚪 1
+                              </p>
+                            </div>
+
+                            <div className="rounded-xl bg-slate-900 p-3">
+                              <p className="text-xs text-slate-500">
+                                Câmeras
+                              </p>
+                              <p className="mt-1 text-2xl font-black text-white">
+                                📷 0
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="mt-4 rounded-xl border border-green-900 bg-green-950/20 p-3">
+                            <p className="text-xs font-bold text-green-300">
+                              SITUAÇÃO ATUAL
+                            </p>
+                            <p className="mt-1 text-sm font-black text-white">
+                              Operação estável. Nenhuma pendência crítica.
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="rounded-2xl border border-orange-800 bg-orange-950/20 p-4">
+                          <p className="text-xs font-bold text-orange-300">
+                            PRÓXIMAS AÇÕES
+                          </p>
+
+                          <div className="mt-4 space-y-3">
+                            <div className="flex items-start gap-3 rounded-xl bg-slate-900/70 p-3">
+                              <span className="text-lg">👥</span>
+                              <div>
+                                <p className="text-sm font-black text-white">
+                                  Concluir cadastro de moradores
+                                </p>
+                                <p className="mt-1 text-xs text-slate-400">
+                                  Ainda há unidades sem moradores vinculados.
+                                </p>
+                              </div>
+                            </div>
+
+                            <div className="flex items-start gap-3 rounded-xl bg-slate-900/70 p-3">
+                              <span className="text-lg">📷</span>
+                              <div>
+                                <p className="text-sm font-black text-white">
+                                  Integrar câmeras
+                                </p>
+                                <p className="mt-1 text-xs text-slate-400">
+                                  Nenhuma câmera está vinculada ao local.
+                                </p>
+                              </div>
+                            </div>
+
+                            <div className="flex items-start gap-3 rounded-xl bg-slate-900/70 p-3">
+                              <span className="text-lg">🔌</span>
+                              <div>
+                                <p className="text-sm font-black text-white">
+                                  Revisar hardware
+                                </p>
+                                <p className="mt-1 text-xs text-slate-400">
+                                  Validar portões, dispositivos e contingência.
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {abaLocalAtiva === "estrutura" && (
+                    <div className="mt-5 space-y-4">
+                      <div className="grid gap-4 md:grid-cols-2">
+                        <div className="rounded-2xl border border-blue-800 bg-blue-950/20 p-4">
+                          <p className="text-xs font-bold text-blue-300">
+                            🏠 UNIDADES
+                          </p>
+                          <p className="mt-2 text-3xl font-black text-white">
+                            {
+                              unidades.filter(
+                                (unidade) =>
+                                  unidade.localId === localAberto.id
+                              ).length
+                            }
+                          </p>
+                          <p className="mt-1 text-sm text-slate-400">
+                            Estruturas cadastradas neste local
+                          </p>
+
+                          <button
+                            type="button"
+                            onClick={() => abrirUnidadesDoLocal(localAberto)}
+                            className="mt-4 text-sm font-black text-blue-300"
+                          >
+                            Gerenciar unidades →
+                          </button>
+                        </div>
+
+                        <div className="rounded-2xl border border-cyan-800 bg-cyan-950/20 p-4">
+                          <p className="text-xs font-bold text-cyan-300">
+                            👥 MORADORES
+                          </p>
+                          <p className="mt-2 text-3xl font-black text-white">
+                            {
+                              moradores.filter((morador) =>
+                                unidades.some(
+                                  (unidade) =>
+                                    unidade.id === morador.unidadeId &&
+                                    unidade.localId === localAberto.id
+                                )
+                              ).length
+                            }
+                          </p>
+                          <p className="mt-1 text-sm text-slate-400">
+                            Pessoas vinculadas às unidades
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="rounded-2xl border border-slate-700 bg-slate-800 p-4">
+                        <p className="text-xs font-bold text-slate-400">
+                          ESTRUTURA DO LOCAL
+                        </p>
+
+                        <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                          {unidades
+                            .filter(
                               (unidade) =>
-                                unidade.id === morador.unidadeId &&
                                 unidade.localId === localAberto.id
                             )
-                          ).length
+                            .map((unidade) => (
+                              <div
+                                key={unidade.id}
+                                className="rounded-xl border border-slate-700 bg-slate-900 p-3"
+                              >
+                                <p className="text-xs font-black text-blue-300">
+                                  {unidade.codigo}
+                                </p>
+                                <p className="mt-1 font-black text-white">
+                                  🏠{" "}
+                                  {unidade.bloco
+                                    ? `${unidade.bloco} / ${unidade.nome}`
+                                    : unidade.nome}
+                                </p>
+                                <p className="mt-1 text-xs text-slate-400">
+                                  {formatarTextoTipo(unidade.tipo)}
+                                </p>
+                              </div>
+                            ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {abaLocalAtiva === "operacao" && (
+                    <div className="mt-5 space-y-4">
+                      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                        <div className="rounded-2xl border border-blue-800 bg-blue-950/20 p-4">
+                          <div className="text-2xl">🛡️</div>
+                          <p className="mt-2 font-black text-white">
+                            Portarias
+                          </p>
+                          <p className="mt-1 text-xs text-slate-400">
+                            1 portaria cadastrada
+                          </p>
+                        </div>
+
+                        <div className="rounded-2xl border border-orange-800 bg-orange-950/20 p-4">
+                          <div className="text-2xl">📦</div>
+                          <p className="mt-2 font-black text-white">
+                            Entregas
+                          </p>
+                          <p className="mt-1 text-xs text-slate-400">
+                            Operação preparada
+                          </p>
+                        </div>
+
+                        <div className="rounded-2xl border border-red-800 bg-red-950/20 p-4">
+                          <div className="text-2xl">🚨</div>
+                          <p className="mt-2 font-black text-white">
+                            Ocorrências
+                          </p>
+                          <p className="mt-1 text-xs text-slate-400">
+                            Nenhuma crítica
+                          </p>
+                        </div>
+
+                        <div className="rounded-2xl border border-violet-800 bg-violet-950/20 p-4">
+                          <div className="text-2xl">🛠️</div>
+                          <p className="mt-2 font-black text-white">
+                            Prestadores
+                          </p>
+                          <p className="mt-1 text-xs text-slate-400">
+                            Gestão em evolução
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="rounded-2xl border border-cyan-800 bg-cyan-950/20 p-4">
+                        <p className="text-xs font-bold text-cyan-300">
+                          🤖 RESUMO DA OPERAÇÃO
+                        </p>
+                        <p className="mt-2 text-sm leading-relaxed text-slate-300">
+                          A operação do local está estável. Nenhuma ocorrência
+                          crítica foi registrada e os recursos operacionais
+                          estão preparados para receber dados reais.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {abaLocalAtiva === "hardware" && (
+                    <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                      <div className="rounded-2xl border border-green-800 bg-green-950/20 p-4">
+                        <div className="text-3xl">🚪</div>
+                        <p className="mt-2 font-black text-white">
+                          Portões
+                        </p>
+                        <p className="mt-1 text-sm text-slate-400">
+                          Integração e controle de abertura
+                        </p>
+                      </div>
+
+                      <div className="rounded-2xl border border-violet-800 bg-violet-950/20 p-4">
+                        <div className="text-3xl">📷</div>
+                        <p className="mt-2 font-black text-white">
+                          Câmeras
+                        </p>
+                        <p className="mt-1 text-sm text-slate-400">
+                          Monitoramento e histórico visual
+                        </p>
+                      </div>
+
+                      <div className="rounded-2xl border border-blue-800 bg-blue-950/20 p-4">
+                        <div className="text-3xl">📡</div>
+                        <p className="mt-2 font-black text-white">
+                          Dispositivos
+                        </p>
+                        <p className="mt-1 text-sm text-slate-400">
+                          Tuya, BLE, NFC e ESP32
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {abaLocalAtiva === "financeiro" && (
+                    <div className="mt-5 rounded-2xl border border-emerald-800 bg-emerald-950/20 p-5">
+                      <p className="text-xs font-bold text-emerald-300">
+                        💰 SAÚDE FINANCEIRA
+                      </p>
+                      <p className="mt-2 text-2xl font-black text-white">
+                        Visão financeira do local
+                      </p>
+                      <p className="mt-2 text-sm text-slate-400">
+                        Caixa, inadimplência, contratos, pagamentos e previsões
+                        serão consolidados neste nível.
+                      </p>
+                    </div>
+                  )}
+
+                  {abaLocalAtiva === "historico" && (
+                    <div className="mt-5 rounded-2xl border border-blue-800 bg-blue-950/20 p-5">
+                      <p className="text-xs font-bold text-blue-300">
+                        🕘 HISTÓRICO DO LOCAL
+                      </p>
+                      <p className="mt-2 text-2xl font-black text-white">
+                        Linha do tempo geral
+                      </p>
+                      <p className="mt-2 text-sm text-slate-400">
+                        Eventos de unidades, moradores, acessos, entregas,
+                        hardware e operação serão consolidados aqui.
+                      </p>
+                    </div>
+                  )}
+
+                  {abaLocalAtiva !== "geral" &&
+                    abaLocalAtiva !== "estrutura" &&
+                    abaLocalAtiva !== "operacao" &&
+                    abaLocalAtiva !== "hardware" &&
+                    abaLocalAtiva !== "financeiro" &&
+                    abaLocalAtiva !== "historico" &&
+                    abaLocalAtiva !== "configuracoes" && (
+                      <div className="mt-5 rounded-2xl border border-slate-700 bg-slate-800 p-8 text-center">
+                        <div className="text-4xl">🚧</div>
+                        <p className="mt-3 font-black text-white">
+                          Módulo preparado
+                        </p>
+                        <p className="mt-2 text-sm text-slate-400">
+                          Esta área será conectada aos dados reais nas próximas
+                          etapas.
+                        </p>
+                      </div>
+                    )}
+
+                  {abaLocalAtiva === "configuracoes" && (
+                    <div className="mt-5 rounded-2xl border border-red-900 bg-red-950/20 p-4">
+                      <p className="font-black text-red-300">
+                        🧪 Limpeza de ambiente de teste
+                      </p>
+
+                      <p className="mt-2 text-sm leading-relaxed text-red-100/80">
+                        Exclui este local e todos os dados ligados a ele:
+                        unidades, moradores, solicitações e implantação. Use
+                        somente para cadastros fictícios.
+                      </p>
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          excluirLocalTesteCompleto(localAberto)
                         }
-                      </p>
+                        disabled={excluindoLocal}
+                        className="mt-4 w-full rounded-xl bg-red-700 py-3 font-black text-white transition-all hover:bg-red-600 disabled:bg-slate-700"
+                      >
+                        {excluindoLocal
+                          ? "Excluindo local e dados..."
+                          : "🗑️ Excluir local de teste completo"}
+                      </button>
                     </div>
-
-                    <div className="bg-slate-800 rounded-xl p-4">
-                      <p className="text-slate-400 text-sm">
-                        QR Principal
-                      </p>
-                      <p className="text-sm font-bold mt-2 break-all">
-                        {localAberto.qrPrincipal}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <button
-                      type="button"
-                      onClick={() => abrirUnidadesDoLocal(localAberto)}
-                      disabled={excluindoLocal}
-                      className="bg-blue-600 hover:bg-blue-500 disabled:bg-slate-700 rounded-xl py-3 font-bold"
-                    >
-                      Ver unidades
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => abrirUnidadesDoLocal(localAberto)}
-                      disabled={excluindoLocal}
-                      className="bg-green-600 hover:bg-green-500 disabled:bg-slate-700 rounded-xl py-3 font-bold"
-                    >
-                      Adicionar unidade
-                    </button>
-                  </div>
-
-                  <div className="mt-6 rounded-2xl border border-red-900 bg-red-950/20 p-4">
-                    <p className="font-black text-red-300">
-                      🧪 Limpeza de ambiente de teste
-                    </p>
-
-                    <p className="mt-2 text-sm leading-relaxed text-red-100/80">
-                      Exclui este local e todos os dados ligados a ele:
-                      unidades, moradores, solicitações e implantação.
-                      Use somente para cadastros fictícios.
-                    </p>
-
-                    <button
-                      type="button"
-                      onClick={() =>
-                        excluirLocalTesteCompleto(localAberto)
-                      }
-                      disabled={excluindoLocal}
-                      className="mt-4 w-full bg-red-700 hover:bg-red-600 disabled:bg-slate-700 disabled:text-slate-400 rounded-xl py-3 font-black"
-                    >
-                      {excluindoLocal
-                        ? "Excluindo local e dados..."
-                        : "🗑️ Excluir local de teste completo"}
-                    </button>
-                  </div>
+                  )}
                 </div>
               </div>
             )}
