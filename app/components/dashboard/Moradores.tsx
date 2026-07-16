@@ -749,7 +749,29 @@ export default function Moradores({
               </button>
             </div>
 
-            <div className="mt-5 flex gap-2 overflow-x-auto pb-2">
+            {/* Abas no celular: todas visíveis */}
+
+            <div className="mt-5 grid grid-cols-2 gap-2 md:hidden">
+              {abas.map((aba) => (
+                <button
+                  key={aba.id}
+                  type="button"
+                  onClick={() => setAbaAtiva(aba.id)}
+                  className={`min-h-[48px] rounded-xl px-3 py-3 text-left text-xs font-black transition-all active:scale-95 ${
+                    abaAtiva === aba.id
+                      ? "bg-blue-600 text-white"
+                      : "bg-slate-800 text-slate-300 hover:bg-slate-700"
+                  }`}
+                >
+                  <span className="mr-2">{aba.icone}</span>
+                  {aba.nome}
+                </button>
+              ))}
+            </div>
+
+            {/* Abas no computador */}
+
+            <div className="mt-5 hidden gap-2 overflow-x-auto pb-2 md:flex">
               {abas.map((aba) => (
                 <button
                   key={aba.id}
