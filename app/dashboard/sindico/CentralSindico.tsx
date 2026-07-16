@@ -29,7 +29,7 @@ type ComunicadoSalvo = {
   destinatario: DestinatarioComunicacao;
   titulo: string;
   mensagem: string;
-  exigirCiencia: boolean;
+  exigeCiencia: boolean;
   enviarPush: boolean;
   registrarHistorico: boolean;
   agendado: boolean;
@@ -883,7 +883,7 @@ export default function CentralSindico() {
         destinatario: destinatarioComunicacao,
         titulo: tituloComunicacao.trim(),
         mensagem: mensagemComunicacao.trim(),
-        exigirCiencia,
+        exigeCiencia: exigirCiencia,
         enviarPush,
         registrarHistorico,
         agendado: agendarComunicacao,

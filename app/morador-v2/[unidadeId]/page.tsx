@@ -23,7 +23,8 @@ type ComunicadoMorador = {
   tipo: "comunicado" | "assembleia" | "manutencao" | "emergencia";
   titulo: string;
   mensagem: string;
-  exigeCiencia: boolean;
+  exigeCiencia?: boolean;
+  exigirCiencia?: boolean;
   status: "enviado" | "agendado";
   criadoEm: number;
   criadoEmFormatado: string;
@@ -1142,7 +1143,12 @@ Mensagem: ${mensagemErro}`
 
   return (
     <main className="min-h-screen bg-slate-950 text-white p-4 relative">
-      {comunicadoAberto && (
+      {comunicadoAberto && (() => {
+        const precisaConfirmarCiencia =
+          comunicadoAberto.exigeCiencia !== false &&
+          comunicadoAberto.exigirCiencia !== false;
+
+        return (
         <div className="fixed inset-0 z-[1200] flex items-center justify-center overflow-y-auto bg-black/90 p-4">
           <div className="my-4 w-full max-w-md rounded-3xl border-2 border-blue-500 bg-slate-900 p-5 shadow-2xl">
             <div className="flex items-start justify-between gap-4">
@@ -1179,7 +1185,7 @@ Mensagem: ${mensagemErro}`
               Enviado em {comunicadoAberto.criadoEmFormatado}
             </p>
 
-            {comunicadoAberto.exigeCiencia ? (
+            {precisaConfirmarCiencia ? (
               comunicadoAberto.visualizacoes?.[slug]?.ciente === true ? (
                 <div className="mt-5 rounded-xl border border-green-700 bg-green-950/30 p-4 text-center font-black text-green-300">
                   ✅ Ciente registrado
@@ -1207,7 +1213,8 @@ Mensagem: ${mensagemErro}`
             )}
           </div>
         </div>
-      )}
+        );
+      })()}
 
       {mostrarPopupChamada && (
         <div className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center p-4 overflow-y-auto">
