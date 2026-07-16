@@ -21,6 +21,27 @@ type IndicadorRapido = {
   destaque: string;
 };
 
+type PeriodoAgenda = "hoje" | "sete-dias" | "mes";
+
+type EventoAgenda = {
+  id: string;
+  periodo: PeriodoAgenda;
+  tipo:
+    | "manutencao"
+    | "assembleia"
+    | "contrato"
+    | "prestador"
+    | "entrega"
+    | "lembrete";
+  icone: string;
+  titulo: string;
+  condominio: string;
+  data: string;
+  horario: string;
+  status: string;
+  detalhes: string;
+};
+
 const condominios: CondominioSaude[] = [
   {
     id: "cnd-tulipas",
@@ -115,6 +136,166 @@ const indicadoresDisponiveis: IndicadorRapido[] = [
   },
 ];
 
+const eventosAgenda: EventoAgenda[] = [
+  {
+    id: "evt-001",
+    periodo: "hoje",
+    tipo: "manutencao",
+    icone: "🛠",
+    titulo: "Revisão do portão social",
+    condominio: "Residencial Tulipas",
+    data: "Hoje",
+    horario: "09:30",
+    status: "Confirmada",
+    detalhes:
+      "Prestador confirmado para revisar o tempo de fechamento e os sensores do portão social.",
+  },
+  {
+    id: "evt-002",
+    periodo: "hoje",
+    tipo: "manutencao",
+    icone: "🛠",
+    titulo: "Inspeção dos extintores",
+    condominio: "Condomínio Alfa",
+    data: "Hoje",
+    horario: "14:00",
+    status: "Agendada",
+    detalhes:
+      "Inspeção preventiva dos extintores das áreas comuns e atualização das etiquetas de validade.",
+  },
+  {
+    id: "evt-003",
+    periodo: "hoje",
+    tipo: "assembleia",
+    icone: "👥",
+    titulo: "Assembleia extraordinária",
+    condominio: "Residencial Flores",
+    data: "Hoje",
+    horario: "19:30",
+    status: "Confirmada",
+    detalhes:
+      "Pauta principal: aprovação da modernização do sistema de controle de acesso.",
+  },
+  {
+    id: "evt-004",
+    periodo: "hoje",
+    tipo: "prestador",
+    icone: "👷",
+    titulo: "Equipe de jardinagem",
+    condominio: "Residencial Tulipas",
+    data: "Hoje",
+    horario: "08:00",
+    status: "Entrada confirmada",
+    detalhes:
+      "Equipe com dois profissionais autorizados para manutenção das áreas verdes.",
+  },
+  {
+    id: "evt-005",
+    periodo: "hoje",
+    tipo: "prestador",
+    icone: "👷",
+    titulo: "Técnico de elevadores",
+    condominio: "Residencial Flores",
+    data: "Hoje",
+    horario: "16:00",
+    status: "Aguardando chegada",
+    detalhes:
+      "Visita técnica preventiva no elevador do Bloco 2. Documentação já validada.",
+  },
+  {
+    id: "evt-006",
+    periodo: "hoje",
+    tipo: "entrega",
+    icone: "📦",
+    titulo: "Entrega de materiais",
+    condominio: "Condomínio Alfa",
+    data: "Hoje",
+    horario: "11:00",
+    status: "Programada",
+    detalhes:
+      "Entrega de materiais para manutenção da área comum. Recebimento pela zeladoria.",
+  },
+  {
+    id: "evt-007",
+    periodo: "sete-dias",
+    tipo: "contrato",
+    icone: "📄",
+    titulo: "Renovação da limpeza",
+    condominio: "Residencial Tulipas",
+    data: "Amanhã",
+    horario: "Prazo final",
+    status: "Vencendo",
+    detalhes:
+      "Contrato da empresa de limpeza vence amanhã e aguarda decisão de renovação.",
+  },
+  {
+    id: "evt-008",
+    periodo: "sete-dias",
+    tipo: "manutencao",
+    icone: "🛠",
+    titulo: "Limpeza da caixa-d'água",
+    condominio: "Residencial Flores",
+    data: "Sexta-feira",
+    horario: "08:30",
+    status: "Confirmada",
+    detalhes:
+      "Serviço programado com aviso prévio aos moradores e bloqueio temporário do abastecimento.",
+  },
+  {
+    id: "evt-009",
+    periodo: "sete-dias",
+    tipo: "lembrete",
+    icone: "🔔",
+    titulo: "Enviar pauta da assembleia",
+    condominio: "Condomínio Alfa",
+    data: "Sábado",
+    horario: "10:00",
+    status: "Pendente",
+    detalhes:
+      "Preparar e enviar a pauta aos moradores dentro do prazo de convocação.",
+  },
+  {
+    id: "evt-010",
+    periodo: "mes",
+    tipo: "contrato",
+    icone: "📄",
+    titulo: "Revisão do contrato de elevadores",
+    condominio: "Residencial Flores",
+    data: "28 de julho",
+    horario: "Prazo final",
+    status: "Em análise",
+    detalhes:
+      "Comparar reajuste, escopo de manutenção e tempo de atendimento antes da renovação.",
+  },
+  {
+    id: "evt-011",
+    periodo: "mes",
+    tipo: "assembleia",
+    icone: "👥",
+    titulo: "Assembleia ordinária",
+    condominio: "Residencial Tulipas",
+    data: "30 de julho",
+    horario: "19:00",
+    status: "Planejada",
+    detalhes:
+      "Prestação de contas, previsão orçamentária e definição das próximas melhorias.",
+  },
+  {
+    id: "evt-012",
+    periodo: "mes",
+    tipo: "manutencao",
+    icone: "🛠",
+    titulo: "Teste do sistema de emergência",
+    condominio: "Condomínio Alfa",
+    data: "31 de julho",
+    horario: "15:00",
+    status: "Planejada",
+    detalhes:
+      "Teste preventivo dos equipamentos e procedimentos de emergência das áreas comuns.",
+  },
+];
+
+
 function textoStatus(status: CondominioSaude["status"]) {
   if (status === "saudavel") return "Saudável";
   if (status === "atencao") return "Atenção";
@@ -146,6 +327,10 @@ export default function CentralSindico() {
     useState<CondominioSaude | null>(null);
 
   const [popupIndicadoresAberto, setPopupIndicadoresAberto] = useState(false);
+  const [popupAgendaAberto, setPopupAgendaAberto] = useState(false);
+  const [periodoAgenda, setPeriodoAgenda] = useState<PeriodoAgenda>("hoje");
+  const [eventoAgendaSelecionado, setEventoAgendaSelecionado] =
+    useState<EventoAgenda | null>(null);
   const [indicadoresVisiveis, setIndicadoresVisiveis] = useState<string[]>([
     "chamadas",
     "entregas",
@@ -181,6 +366,10 @@ export default function CentralSindico() {
     }
     return condominio.status === "critico";
   });
+
+  const eventosAgendaFiltrados = eventosAgenda.filter(
+    (evento) => evento.periodo === periodoAgenda
+  );
 
   const indicadoresAtivos = useMemo(
     () =>
@@ -231,6 +420,18 @@ export default function CentralSindico() {
   function salvarIndicadores() {
     setIndicadoresVisiveis(indicadoresRascunho);
     setPopupIndicadoresAberto(false);
+  }
+
+  function abrirAgenda(periodo: PeriodoAgenda = "hoje") {
+    setPeriodoAgenda(periodo);
+    setEventoAgendaSelecionado(null);
+    setPopupAgendaAberto(true);
+  }
+
+  function fecharAgenda() {
+    setPopupAgendaAberto(false);
+    setEventoAgendaSelecionado(null);
+    setPeriodoAgenda("hoje");
   }
 
   return (
@@ -367,6 +568,139 @@ export default function CentralSindico() {
               </div>
             </button>
           ))}
+        </div>
+      </section>
+
+
+      {/* Agenda inteligente */}
+
+      <section
+        role="button"
+        tabIndex={0}
+        onClick={() => abrirAgenda("hoje")}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            abrirAgenda("hoje");
+          }
+        }}
+        className="cursor-pointer rounded-2xl border border-violet-700 bg-violet-950/20 p-4 transition-all duration-150 hover:bg-violet-900/20 active:scale-[0.99] active:brightness-125 md:p-5"
+      >
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-xs font-bold text-violet-300 md:text-sm">
+              📅 AGENDA INTELIGENTE
+            </p>
+
+            <h2 className="mt-1 text-xl font-black text-white md:text-2xl">
+              Compromissos de hoje
+            </h2>
+
+            <p className="mt-1 text-xs text-slate-400 md:text-sm">
+              Sua operação organizada em um único lugar.
+            </p>
+          </div>
+
+          <div className="shrink-0 rounded-xl bg-violet-600 px-3 py-2 text-center">
+            <div className="text-2xl font-black text-white">12</div>
+            <div className="text-[10px] font-bold text-violet-100">
+              EVENTOS
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-5 grid grid-cols-3 gap-2 md:grid-cols-6 md:gap-3">
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              abrirAgenda("hoje");
+            }}
+            className="rounded-xl bg-slate-900 p-3 text-center transition-all duration-150 hover:bg-slate-800 active:scale-95 active:brightness-125"
+          >
+            <div className="text-2xl">🛠</div>
+            <div className="mt-1 font-black text-white">2</div>
+            <div className="text-[10px] text-slate-400">Manutenções</div>
+          </button>
+
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              abrirAgenda("hoje");
+            }}
+            className="rounded-xl bg-slate-900 p-3 text-center transition-all duration-150 hover:bg-slate-800 active:scale-95 active:brightness-125"
+          >
+            <div className="text-2xl">👥</div>
+            <div className="mt-1 font-black text-white">1</div>
+            <div className="text-[10px] text-slate-400">Assembleia</div>
+          </button>
+
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              abrirAgenda("sete-dias");
+            }}
+            className="rounded-xl bg-slate-900 p-3 text-center transition-all duration-150 hover:bg-slate-800 active:scale-95 active:brightness-125"
+          >
+            <div className="text-2xl">📄</div>
+            <div className="mt-1 font-black text-white">3</div>
+            <div className="text-[10px] text-slate-400">Contratos</div>
+          </button>
+
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              abrirAgenda("hoje");
+            }}
+            className="rounded-xl bg-slate-900 p-3 text-center transition-all duration-150 hover:bg-slate-800 active:scale-95 active:brightness-125"
+          >
+            <div className="text-2xl">👷</div>
+            <div className="mt-1 font-black text-white">2</div>
+            <div className="text-[10px] text-slate-400">Prestadores</div>
+          </button>
+
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              abrirAgenda("hoje");
+            }}
+            className="rounded-xl bg-slate-900 p-3 text-center transition-all duration-150 hover:bg-slate-800 active:scale-95 active:brightness-125"
+          >
+            <div className="text-2xl">📦</div>
+            <div className="mt-1 font-black text-white">5</div>
+            <div className="text-[10px] text-slate-400">Entregas</div>
+          </button>
+
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              abrirAgenda("sete-dias");
+            }}
+            className="rounded-xl bg-slate-900 p-3 text-center transition-all duration-150 hover:bg-slate-800 active:scale-95 active:brightness-125"
+          >
+            <div className="text-2xl">🔔</div>
+            <div className="mt-1 font-black text-white">4</div>
+            <div className="text-[10px] text-slate-400">Lembretes</div>
+          </button>
+        </div>
+
+        <div className="mt-4 flex items-center justify-between rounded-xl bg-slate-900/80 px-4 py-3">
+          <div>
+            <p className="text-xs font-bold text-violet-300">
+              PRÓXIMO COMPROMISSO
+            </p>
+            <p className="mt-1 text-sm font-black text-white">
+              🛠 Revisão do portão social — 09:30
+            </p>
+          </div>
+
+          <span className="text-sm font-black text-violet-300">
+            Ver agenda →
+          </span>
         </div>
       </section>
 
@@ -564,6 +898,180 @@ export default function CentralSindico() {
                 Salvar visão
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+
+      {/* Popup Agenda Inteligente */}
+
+      {popupAgendaAberto && (
+        <div className="fixed inset-0 z-[125] flex items-center justify-center bg-black/75 p-3 md:p-6">
+          <div className="max-h-[92vh] w-full max-w-3xl overflow-y-auto rounded-3xl border border-slate-700 bg-slate-900 p-4 shadow-2xl md:p-6">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-sm font-bold text-violet-300">
+                  📅 AGENDA INTELIGENTE
+                </p>
+
+                <h2 className="mt-1 text-2xl font-black text-white">
+                  {eventoAgendaSelecionado
+                    ? eventoAgendaSelecionado.titulo
+                    : "Compromissos e prazos"}
+                </h2>
+              </div>
+
+              <button
+                type="button"
+                onClick={fecharAgenda}
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-800 text-xl font-black transition-all hover:bg-slate-700 active:scale-95"
+              >
+                ✕
+              </button>
+            </div>
+
+            {!eventoAgendaSelecionado ? (
+              <>
+                <div className="mt-5 grid grid-cols-3 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setPeriodoAgenda("hoje")}
+                    className={`rounded-xl px-2 py-3 text-xs font-black transition-all active:scale-95 ${
+                      periodoAgenda === "hoje"
+                        ? "bg-violet-600 text-white"
+                        : "bg-slate-800 text-slate-300"
+                    }`}
+                  >
+                    Hoje
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setPeriodoAgenda("sete-dias")}
+                    className={`rounded-xl px-2 py-3 text-xs font-black transition-all active:scale-95 ${
+                      periodoAgenda === "sete-dias"
+                        ? "bg-violet-600 text-white"
+                        : "bg-slate-800 text-slate-300"
+                    }`}
+                  >
+                    Próximos 7 dias
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setPeriodoAgenda("mes")}
+                    className={`rounded-xl px-2 py-3 text-xs font-black transition-all active:scale-95 ${
+                      periodoAgenda === "mes"
+                        ? "bg-violet-600 text-white"
+                        : "bg-slate-800 text-slate-300"
+                    }`}
+                  >
+                    Este mês
+                  </button>
+                </div>
+
+                <div className="mt-5 space-y-3">
+                  {eventosAgendaFiltrados.map((evento) => (
+                    <button
+                      key={evento.id}
+                      type="button"
+                      onClick={() => setEventoAgendaSelecionado(evento)}
+                      className="w-full rounded-2xl border border-slate-700 bg-slate-800 p-4 text-left transition-all duration-150 hover:border-violet-600 hover:bg-slate-700 active:scale-[0.98] active:brightness-125"
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex min-w-0 items-start gap-3">
+                          <div className="text-3xl">{evento.icone}</div>
+
+                          <div className="min-w-0">
+                            <p className="font-black text-white">
+                              {evento.titulo}
+                            </p>
+
+                            <p className="mt-1 text-sm text-violet-300">
+                              {evento.condominio}
+                            </p>
+
+                            <p className="mt-1 text-xs text-slate-400">
+                              {evento.data} • {evento.horario}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="shrink-0 text-right">
+                          <span className="inline-flex rounded-full bg-violet-950 px-3 py-1 text-[10px] font-black text-violet-300">
+                            {evento.status}
+                          </span>
+
+                          <p className="mt-2 text-xs text-slate-500">
+                            Detalhes →
+                          </p>
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <div className="mt-5">
+                <div className="rounded-2xl border border-violet-700 bg-violet-950/25 p-5">
+                  <div className="flex items-start gap-4">
+                    <div className="text-5xl">
+                      {eventoAgendaSelecionado.icone}
+                    </div>
+
+                    <div>
+                      <p className="text-sm font-bold text-violet-300">
+                        {eventoAgendaSelecionado.condominio}
+                      </p>
+
+                      <p className="mt-1 text-xl font-black text-white">
+                        {eventoAgendaSelecionado.titulo}
+                      </p>
+
+                      <p className="mt-2 text-sm text-slate-300">
+                        {eventoAgendaSelecionado.data} •{" "}
+                        {eventoAgendaSelecionado.horario}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-4 rounded-2xl border border-slate-700 bg-slate-800 p-4">
+                  <p className="text-xs font-bold text-slate-400">
+                    STATUS
+                  </p>
+
+                  <p className="mt-1 font-black text-violet-300">
+                    {eventoAgendaSelecionado.status}
+                  </p>
+                </div>
+
+                <div className="mt-4 rounded-2xl border border-slate-700 bg-slate-800 p-4">
+                  <p className="font-black text-white">Detalhes do evento</p>
+
+                  <p className="mt-3 text-sm leading-relaxed text-slate-300">
+                    {eventoAgendaSelecionado.detalhes}
+                  </p>
+                </div>
+
+                <div className="mt-4 grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setEventoAgendaSelecionado(null)}
+                    className="rounded-xl bg-slate-700 py-3 font-black text-white transition-all hover:bg-slate-600 active:scale-95"
+                  >
+                    Voltar
+                  </button>
+
+                  <button
+                    type="button"
+                    className="rounded-xl bg-violet-600 py-3 font-black text-white transition-all hover:bg-violet-500 active:scale-95"
+                  >
+                    Abrir evento
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
