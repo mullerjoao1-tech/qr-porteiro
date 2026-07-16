@@ -1,6 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { onValue, push, ref, set, update } from "firebase/database";
+import { db } from "../../services/firebase";
 
 type FiltroSaude = "todos" | "saudaveis" | "atencao" | "criticos";
 
@@ -18,6 +20,34 @@ type DestinatarioComunicacao =
   | "conselho"
   | "zeladoria"
   | "portaria";
+
+type ComunicadoSalvo = {
+  id: string;
+  condominioId: string;
+  condominioNome: string;
+  tipo: TipoComunicacao;
+  destinatario: DestinatarioComunicacao;
+  titulo: string;
+  mensagem: string;
+  exigeCiencia: boolean;
+  enviarPush: boolean;
+  registrarHistorico: boolean;
+  agendado: boolean;
+  dataAgendamento: string;
+  status: "enviado" | "agendado";
+  criadoEm: number;
+  criadoEmFormatado: string;
+  enviadoPor: string;
+  visualizacoes?: Record<
+    string,
+    {
+      unidadeId: string;
+      visualizadoEm?: number;
+      ciente?: boolean;
+      cienteEm?: number;
+    }
+  >;
+};
 
 
 type ContextoPainel =
@@ -524,6 +554,12 @@ export default function CentralSindico() {
   const [registrarHistorico, setRegistrarHistorico] = useState(true);
   const [agendarComunicacao, setAgendarComunicacao] = useState(false);
   const [dataAgendamento, setDataAgendamento] = useState("");
+  const [popupComunicadosEnviadosAberto, setPopupComunicadosEnviadosAberto] =
+    useState(false);
+  const [comunicadosEnviados, setComunicadosEnviados] = useState<
+    ComunicadoSalvo[]
+  >([]);
+  const [salvandoComunicacao, setSalvandoComunicacao] = useState(false);
   const [abaFinanceira, setAbaFinanceira] =
     useState<AbaFinanceira>("resumo");
   const [itemFinanceiroSelecionado, setItemFinanceiroSelecionado] =
@@ -549,6 +585,38 @@ export default function CentralSindico() {
     opcoesContexto[0];
 
   const isCarteiraGeral = contextoAtual === "carteira-geral";
+
+  useEffect(() => {
+    if (isCarteiraGeral) {
+      setComunicadosEnviados([]);
+      return;
+    }
+
+    const referenciaComunicados = ref(
+      db,
+      `comunicados-v2/${contextoAtual}`
+    );
+
+    const pararDeOuvir = onValue(referenciaComunicados, (snapshot) => {
+      const dados = snapshot.val();
+
+      if (!dados) {
+        setComunicadosEnviados([]);
+        return;
+      }
+
+      const lista = Object.entries(dados)
+        .map(([id, valor]) => ({
+          id,
+          ...(valor as Omit<ComunicadoSalvo, "id">),
+        }))
+        .sort((a, b) => (b.criadoEm || 0) - (a.criadoEm || 0));
+
+      setComunicadosEnviados(lista);
+    });
+
+    return () => pararDeOuvir();
+  }, [contextoAtual, isCarteiraGeral]);
 
   const condominiosDoContexto = isCarteiraGeral
     ? condominios
@@ -779,7 +847,12 @@ export default function CentralSindico() {
     );
   }
 
-  function enviarComunicacao() {
+  async function enviarComunicacao() {
+    if (isCarteiraGeral) {
+      alert("Selecione um condomínio antes de enviar o comunicado.");
+      return;
+    }
+
     if (!tituloComunicacao.trim()) {
       alert("Digite o título do comunicado.");
       return;
@@ -795,13 +868,85 @@ export default function CentralSindico() {
       return;
     }
 
-    alert(
-      agendarComunicacao
-        ? "Comunicado agendado com sucesso."
-        : "Comunicado preparado para envio com sucesso."
-    );
+    try {
+      setSalvandoComunicacao(true);
 
-    setPopupComunicacaoAberto(false);
+      const agora = Date.now();
+      const referenciaNovoComunicado = push(
+        ref(db, `comunicados-v2/${contextoAtual}`)
+      );
+
+      await set(referenciaNovoComunicado, {
+        condominioId: contextoAtual,
+        condominioNome: contextoSelecionado.nome,
+        tipo: tipoComunicacao,
+        destinatario: destinatarioComunicacao,
+        titulo: tituloComunicacao.trim(),
+        mensagem: mensagemComunicacao.trim(),
+        exigeCiencia,
+        enviarPush,
+        registrarHistorico,
+        agendado: agendarComunicacao,
+        dataAgendamento: agendarComunicacao ? dataAgendamento : "",
+        status: agendarComunicacao ? "agendado" : "enviado",
+        criadoEm: agora,
+        criadoEmFormatado: new Date(agora).toLocaleString("pt-BR"),
+        enviadoPor: "João",
+      });
+
+      if (registrarHistorico) {
+        const referenciaHistorico = push(
+          ref(db, `historico-comunicacoes-v2/${contextoAtual}`)
+        );
+
+        await set(referenciaHistorico, {
+          comunicadoId: referenciaNovoComunicado.key,
+          tipo: tipoComunicacao,
+          titulo: tituloComunicacao.trim(),
+          acao: agendarComunicacao
+            ? "comunicacao_agendada"
+            : "comunicacao_enviada",
+          criadoEm: agora,
+          criadoEmFormatado: new Date(agora).toLocaleString("pt-BR"),
+          responsavel: "João",
+        });
+      }
+
+      alert(
+        agendarComunicacao
+          ? "Comunicado agendado e salvo com sucesso."
+          : "Comunicado enviado e salvo com sucesso."
+      );
+
+      setPopupComunicacaoAberto(false);
+      setTituloComunicacao("");
+      setMensagemComunicacao("");
+    } catch (erro) {
+      console.error("Erro ao salvar comunicado:", erro);
+      alert("Não foi possível salvar o comunicado no Firebase.");
+    } finally {
+      setSalvandoComunicacao(false);
+    }
+  }
+
+  async function reenviarComunicado(comunicado: ComunicadoSalvo) {
+    try {
+      await update(
+        ref(
+          db,
+          `comunicados-v2/${comunicado.condominioId}/${comunicado.id}`
+        ),
+        {
+          reenviadoEm: Date.now(),
+          reenviadoEmFormatado: new Date().toLocaleString("pt-BR"),
+        }
+      );
+
+      alert("Reenvio registrado com sucesso.");
+    } catch (erro) {
+      console.error("Erro ao registrar reenvio:", erro);
+      alert("Não foi possível registrar o reenvio.");
+    }
   }
 
   return (
@@ -821,13 +966,32 @@ export default function CentralSindico() {
           </div>
 
           <div className="flex w-full flex-col gap-3 md:w-auto">
-            <button
-              type="button"
-              onClick={() => abrirComunicacao("comunicado")}
-              className="w-full rounded-2xl bg-white px-5 py-3 text-sm font-black text-blue-700 shadow-lg transition-all hover:bg-blue-50 active:scale-95"
-            >
-              📢 Enviar comunicado
-            </button>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => abrirComunicacao("comunicado")}
+                className="rounded-2xl bg-white px-4 py-3 text-xs font-black text-blue-700 shadow-lg transition-all hover:bg-blue-50 active:scale-95 md:text-sm"
+              >
+                📢 Enviar comunicado
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  if (isCarteiraGeral) {
+                    alert(
+                      "Selecione um condomínio para visualizar os comunicados enviados."
+                    );
+                    return;
+                  }
+
+                  setPopupComunicadosEnviadosAberto(true);
+                }}
+                className="rounded-2xl border border-white/40 bg-white/15 px-4 py-3 text-xs font-black text-white shadow-lg transition-all hover:bg-white/25 active:scale-95 md:text-sm"
+              >
+                📚 Comunicados enviados
+              </button>
+            </div>
 
             <div className="relative">
               <button
@@ -2511,13 +2675,151 @@ export default function CentralSindico() {
               <button
                 type="button"
                 onClick={enviarComunicacao}
-                className="rounded-xl bg-blue-600 py-3 font-black text-white transition-all hover:bg-blue-500 active:scale-95"
+                disabled={salvandoComunicacao}
+                className="rounded-xl bg-blue-600 py-3 font-black text-white transition-all hover:bg-blue-500 active:scale-95 disabled:cursor-not-allowed disabled:bg-slate-600"
               >
-                {agendarComunicacao
+                {salvandoComunicacao
+                  ? "Salvando..."
+                  : agendarComunicacao
                   ? "📅 Agendar comunicação"
                   : "📢 Enviar comunicação"}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Popup Comunicados enviados */}
+
+      {popupComunicadosEnviadosAberto && (
+        <div className="fixed inset-0 z-[165] flex items-center justify-center bg-black/80 p-3 md:p-6">
+          <div className="max-h-[94vh] w-full max-w-5xl overflow-y-auto rounded-3xl border border-slate-700 bg-slate-900 p-4 shadow-2xl md:p-6">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-sm font-bold text-blue-300">
+                  📚 CENTRAL DE COMUNICAÇÃO
+                </p>
+
+                <h2 className="mt-1 text-2xl font-black text-white md:text-3xl">
+                  Comunicados enviados
+                </h2>
+
+                <p className="mt-2 text-sm text-slate-400">
+                  Histórico de {contextoSelecionado.nome}, com visualizações e
+                  confirmações de ciência.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setPopupComunicadosEnviadosAberto(false)}
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-800 text-xl font-black transition-all hover:bg-slate-700 active:scale-95"
+              >
+                ✕
+              </button>
+            </div>
+
+            {comunicadosEnviados.length === 0 ? (
+              <div className="mt-5 rounded-2xl border border-slate-700 bg-slate-800 p-8 text-center">
+                <div className="text-4xl">📭</div>
+                <p className="mt-3 font-black text-white">
+                  Nenhum comunicado enviado
+                </p>
+                <p className="mt-2 text-sm text-slate-400">
+                  Os próximos comunicados aparecerão aqui automaticamente.
+                </p>
+              </div>
+            ) : (
+              <div className="mt-5 space-y-3">
+                {comunicadosEnviados.map((comunicado) => {
+                  const visualizacoes = Object.values(
+                    comunicado.visualizacoes || {}
+                  );
+                  const totalVisualizados = visualizacoes.filter(
+                    (item) => Boolean(item.visualizadoEm)
+                  ).length;
+                  const totalCientes = visualizacoes.filter(
+                    (item) => item.ciente === true
+                  ).length;
+
+                  return (
+                    <div
+                      key={comunicado.id}
+                      className="rounded-2xl border border-slate-700 bg-slate-800 p-4"
+                    >
+                      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="rounded-full bg-blue-950 px-3 py-1 text-[10px] font-black text-blue-300">
+                              {comunicado.tipo === "assembleia"
+                                ? "👥 ASSEMBLEIA"
+                                : comunicado.tipo === "manutencao"
+                                ? "🛠️ MANUTENÇÃO"
+                                : comunicado.tipo === "emergencia"
+                                ? "🚨 EMERGÊNCIA"
+                                : "📢 COMUNICADO"}
+                            </span>
+
+                            <span
+                              className={`rounded-full px-3 py-1 text-[10px] font-black ${
+                                comunicado.status === "agendado"
+                                  ? "bg-orange-950 text-orange-300"
+                                  : "bg-green-950 text-green-300"
+                              }`}
+                            >
+                              {comunicado.status === "agendado"
+                                ? "AGENDADO"
+                                : "ENVIADO"}
+                            </span>
+                          </div>
+
+                          <h3 className="mt-3 text-lg font-black text-white">
+                            {comunicado.titulo}
+                          </h3>
+
+                          <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-slate-300">
+                            {comunicado.mensagem}
+                          </p>
+
+                          <p className="mt-3 text-xs text-slate-500">
+                            Criado em {comunicado.criadoEmFormatado} por{" "}
+                            {comunicado.enviadoPor}
+                          </p>
+                        </div>
+
+                        <div className="grid shrink-0 grid-cols-2 gap-2 sm:grid-cols-3">
+                          <div className="rounded-xl bg-slate-900 p-3 text-center">
+                            <p className="text-xl font-black text-blue-300">
+                              {totalVisualizados}
+                            </p>
+                            <p className="text-[10px] text-slate-400">
+                              Visualizados
+                            </p>
+                          </div>
+
+                          <div className="rounded-xl bg-slate-900 p-3 text-center">
+                            <p className="text-xl font-black text-green-300">
+                              {totalCientes}
+                            </p>
+                            <p className="text-[10px] text-slate-400">
+                              Cientes
+                            </p>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => reenviarComunicado(comunicado)}
+                            className="col-span-2 rounded-xl bg-blue-600 px-4 py-3 text-xs font-black text-white transition-all hover:bg-blue-500 active:scale-95 sm:col-span-1"
+                          >
+                            🔁 Reenviar
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
       )}

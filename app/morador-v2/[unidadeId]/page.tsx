@@ -16,6 +16,28 @@ type MensagemConversa = {
   criadoEm: number;
 };
 
+type ComunicadoMorador = {
+  id: string;
+  condominioId: string;
+  condominioNome: string;
+  tipo: "comunicado" | "assembleia" | "manutencao" | "emergencia";
+  titulo: string;
+  mensagem: string;
+  exigeCiencia: boolean;
+  status: "enviado" | "agendado";
+  criadoEm: number;
+  criadoEmFormatado: string;
+  visualizacoes?: Record<
+    string,
+    {
+      unidadeId: string;
+      visualizadoEm?: number;
+      ciente?: boolean;
+      cienteEm?: number;
+    }
+  >;
+};
+
 function blobParaBase64(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -69,6 +91,10 @@ export default function MoradorV2() {
   const [audioPopup, setAudioPopup] = useState<{ titulo: string; audio: string } | null>(null);
   const [installPrompt, setInstallPrompt] = useState<any>(null);
   const [appInstalavel, setAppInstalavel] = useState(false);
+  const [comunicados, setComunicados] = useState<ComunicadoMorador[]>([]);
+  const [comunicadoAberto, setComunicadoAberto] =
+    useState<ComunicadoMorador | null>(null);
+  const [salvandoCiencia, setSalvandoCiencia] = useState(false);
 
   const intervaloSomRef = useRef<NodeJS.Timeout | null>(null);
   const finalizacaoAutoRef = useRef<NodeJS.Timeout | null>(null);
@@ -82,6 +108,18 @@ export default function MoradorV2() {
   const mediaRecorderMoradorRef = useRef<MediaRecorder | null>(null);
   const audioChunksMoradorRef = useRef<Blob[]>([]);
 
+  function identificarCondominioPeloSlug(unidadeSlug: string) {
+    const valor = unidadeSlug.toLowerCase();
+
+    if (valor.includes("tulipas")) return "cnd-tulipas";
+    if (valor.includes("flores")) return "cnd-flores";
+    if (valor.includes("alfa")) return "cnd-alfa";
+
+    return "cnd-tulipas";
+  }
+
+  const condominioId = identificarCondominioPeloSlug(slug);
+  const caminhoComunicados = `comunicados-v2/${condominioId}`;
   const caminhoFirebase = `unidades-v2/${slug}/chamada`;
   const caminhoHistorico = `historico-v2/${slug}`;
   const caminhoStatus = `status-v2/${slug}`;
@@ -141,6 +179,103 @@ export default function MoradorV2() {
       await update(referencia, dados);
     } catch (erro) {
       console.error("Erro analytics:", erro);
+    }
+  }
+
+  useEffect(() => {
+    const referenciaComunicados = ref(db, caminhoComunicados);
+
+    const pararDeOuvirComunicados = onValue(
+      referenciaComunicados,
+      (snapshot) => {
+        const dados = snapshot.val();
+
+        if (!dados) {
+          setComunicados([]);
+          return;
+        }
+
+        const agora = Date.now();
+
+        const lista = Object.entries(dados)
+          .map(([id, valor]) => ({
+            id,
+            ...(valor as Omit<ComunicadoMorador, "id">),
+          }))
+          .filter((comunicado) => {
+            if (comunicado.status === "enviado") return true;
+
+            if (
+              comunicado.status === "agendado" &&
+              comunicado.criadoEm <= agora
+            ) {
+              return true;
+            }
+
+            return false;
+          })
+          .sort((a, b) => (b.criadoEm || 0) - (a.criadoEm || 0));
+
+        setComunicados(lista);
+      }
+    );
+
+    return () => pararDeOuvirComunicados();
+  }, [caminhoComunicados]);
+
+  async function abrirComunicado(comunicado: ComunicadoMorador) {
+    setComunicadoAberto(comunicado);
+
+    const visualizacaoAtual =
+      comunicado.visualizacoes?.[slug]?.visualizadoEm;
+
+    if (visualizacaoAtual) return;
+
+    try {
+      await update(
+        ref(
+          db,
+          `${caminhoComunicados}/${comunicado.id}/visualizacoes/${slug}`
+        ),
+        {
+          unidadeId: slug,
+          visualizadoEm: Date.now(),
+          ciente: comunicado.visualizacoes?.[slug]?.ciente === true,
+        }
+      );
+    } catch (erro) {
+      console.error("Erro ao registrar visualização:", erro);
+    }
+  }
+
+  async function confirmarCiencia() {
+    if (!comunicadoAberto || salvandoCiencia) return;
+
+    try {
+      setSalvandoCiencia(true);
+
+      await update(
+        ref(
+          db,
+          `${caminhoComunicados}/${comunicadoAberto.id}/visualizacoes/${slug}`
+        ),
+        {
+          unidadeId: slug,
+          visualizadoEm:
+            comunicadoAberto.visualizacoes?.[slug]?.visualizadoEm ||
+            Date.now(),
+          ciente: true,
+          cienteEm: Date.now(),
+        }
+      );
+
+      setComunicadoAberto(null);
+      alert("Sua ciência foi registrada com sucesso.");
+    } catch (erro) {
+      console.error("Erro ao registrar ciência:", erro);
+      alert("Não foi possível registrar sua ciência.");
+    } finally {
+      setSalvandoCiencia(false);
     }
   }
 
@@ -1007,6 +1142,73 @@ Mensagem: ${mensagemErro}`
 
   return (
     <main className="min-h-screen bg-slate-950 text-white p-4 relative">
+      {comunicadoAberto && (
+        <div className="fixed inset-0 z-[1200] flex items-center justify-center overflow-y-auto bg-black/90 p-4">
+          <div className="my-4 w-full max-w-md rounded-3xl border-2 border-blue-500 bg-slate-900 p-5 shadow-2xl">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-xs font-black text-blue-300">
+                  {comunicadoAberto.tipo === "assembleia"
+                    ? "👥 ASSEMBLEIA"
+                    : comunicadoAberto.tipo === "manutencao"
+                    ? "🛠️ MANUTENÇÃO"
+                    : comunicadoAberto.tipo === "emergencia"
+                    ? "🚨 EMERGÊNCIA"
+                    : "📢 COMUNICADO"}
+                </p>
+
+                <h2 className="mt-2 text-2xl font-black text-white">
+                  {comunicadoAberto.titulo}
+                </h2>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setComunicadoAberto(null)}
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-800 text-xl font-black"
+              >
+                ✕
+              </button>
+            </div>
+
+            <p className="mt-4 whitespace-pre-wrap text-sm leading-relaxed text-slate-200">
+              {comunicadoAberto.mensagem}
+            </p>
+
+            <p className="mt-4 text-xs text-slate-500">
+              Enviado em {comunicadoAberto.criadoEmFormatado}
+            </p>
+
+            {comunicadoAberto.exigeCiencia ? (
+              comunicadoAberto.visualizacoes?.[slug]?.ciente === true ? (
+                <div className="mt-5 rounded-xl border border-green-700 bg-green-950/30 p-4 text-center font-black text-green-300">
+                  ✅ Ciente registrado
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={confirmarCiencia}
+                  disabled={salvandoCiencia}
+                  className="mt-5 w-full rounded-2xl bg-green-600 py-4 text-lg font-black text-white hover:bg-green-500 disabled:bg-slate-600"
+                >
+                  {salvandoCiencia
+                    ? "Registrando..."
+                    : "✅ Li e estou ciente"}
+                </button>
+              )
+            ) : (
+              <button
+                type="button"
+                onClick={() => setComunicadoAberto(null)}
+                className="mt-5 w-full rounded-2xl bg-blue-600 py-4 font-black text-white"
+              >
+                Fechar
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
       {mostrarPopupChamada && (
         <div className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center p-4 overflow-y-auto">
           <div className="w-full max-w-md bg-slate-900 border-4 border-green-400 rounded-3xl p-5 text-center shadow-2xl my-4">
@@ -1230,6 +1432,77 @@ Mensagem: ${mensagemErro}`
             {online ? "🟢 Disponível" : "🔴 Ausente"}
           </div>
         </div>
+
+        {comunicados.length > 0 && (
+          <div className="mt-5 rounded-2xl border border-blue-500/50 bg-blue-950/30 p-4">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-xs font-black text-blue-300">
+                  📢 COMUNICADOS
+                </p>
+
+                <h2 className="mt-1 text-lg font-black text-white">
+                  {comunicados.filter(
+                    (item) =>
+                      item.visualizacoes?.[slug]?.ciente !== true
+                  ).length > 0
+                    ? `${comunicados.filter(
+                        (item) =>
+                          item.visualizacoes?.[slug]?.ciente !== true
+                      ).length} comunicado(s) aguardando sua ciência`
+                    : "Comunicados do condomínio"}
+                </h2>
+              </div>
+
+              <span className="rounded-full bg-blue-600 px-3 py-1 text-xs font-black text-white">
+                {comunicados.length}
+              </span>
+            </div>
+
+            <div className="mt-4 space-y-2">
+              {comunicados.slice(0, 3).map((comunicado) => {
+                const ciente =
+                  comunicado.visualizacoes?.[slug]?.ciente === true;
+
+                return (
+                  <button
+                    key={comunicado.id}
+                    type="button"
+                    onClick={() => abrirComunicado(comunicado)}
+                    className="flex w-full items-center justify-between gap-3 rounded-xl bg-slate-900 p-3 text-left transition-all hover:bg-slate-800 active:scale-[0.98]"
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-black text-white">
+                        {comunicado.tipo === "assembleia"
+                          ? "👥"
+                          : comunicado.tipo === "manutencao"
+                          ? "🛠️"
+                          : comunicado.tipo === "emergencia"
+                          ? "🚨"
+                          : "📢"}{" "}
+                        {comunicado.titulo}
+                      </p>
+
+                      <p className="mt-1 truncate text-xs text-slate-400">
+                        {comunicado.mensagem}
+                      </p>
+                    </div>
+
+                    <span
+                      className={`shrink-0 rounded-full px-3 py-1 text-[10px] font-black ${
+                        ciente
+                          ? "bg-green-950 text-green-300"
+                          : "bg-orange-950 text-orange-300"
+                      }`}
+                    >
+                      {ciente ? "CIENTE" : "LER"}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-2 gap-3 mt-5">
           <button
