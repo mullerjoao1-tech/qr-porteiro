@@ -42,6 +42,24 @@ type EventoAgenda = {
   detalhes: string;
 };
 
+type AbaFinanceira =
+  | "resumo"
+  | "urgentes"
+  | "inadimplencia"
+  | "pagamentos";
+
+type ItemFinanceiro = {
+  id: string;
+  aba: Exclude<AbaFinanceira, "resumo">;
+  icone: string;
+  titulo: string;
+  condominio: string;
+  valor: string;
+  vencimento: string;
+  status: string;
+  detalhes: string;
+};
+
 const condominios: CondominioSaude[] = [
   {
     id: "cnd-tulipas",
@@ -295,6 +313,118 @@ const eventosAgenda: EventoAgenda[] = [
   },
 ];
 
+const itensFinanceiros: ItemFinanceiro[] = [
+  {
+    id: "fin-001",
+    aba: "urgentes",
+    icone: "🔴",
+    titulo: "Seguro predial",
+    condominio: "Residencial Tulipas",
+    valor: "R$ 8.450",
+    vencimento: "Vence amanhã",
+    status: "Ação imediata",
+    detalhes:
+      "A renovação ainda não foi registrada. É necessário confirmar o pagamento ou a negociação com a seguradora.",
+  },
+  {
+    id: "fin-002",
+    aba: "urgentes",
+    icone: "🟠",
+    titulo: "Manutenção dos elevadores",
+    condominio: "Residencial Flores",
+    valor: "R$ 4.980",
+    vencimento: "Vence em 2 dias",
+    status: "Próximo do prazo",
+    detalhes:
+      "Pagamento mensal da empresa responsável pela manutenção preventiva dos elevadores.",
+  },
+  {
+    id: "fin-003",
+    aba: "urgentes",
+    icone: "🟠",
+    titulo: "Serviço de limpeza",
+    condominio: "Condomínio Alfa",
+    valor: "R$ 6.200",
+    vencimento: "Vence em 3 dias",
+    status: "Próximo do prazo",
+    detalhes:
+      "Pagamento recorrente da equipe de limpeza das áreas comuns.",
+  },
+  {
+    id: "fin-004",
+    aba: "inadimplencia",
+    icone: "🏠",
+    titulo: "Unidades em atraso",
+    condominio: "Residencial Tulipas",
+    valor: "R$ 12.840",
+    vencimento: "7 unidades",
+    status: "Em acompanhamento",
+    detalhes:
+      "Sete unidades possuem débitos vencidos. Três delas estão há mais de 30 dias em atraso.",
+  },
+  {
+    id: "fin-005",
+    aba: "inadimplencia",
+    icone: "🏢",
+    titulo: "Unidades em atraso",
+    condominio: "Residencial Flores",
+    valor: "R$ 7.320",
+    vencimento: "4 unidades",
+    status: "Em acompanhamento",
+    detalhes:
+      "Quatro unidades possuem débitos vencidos. Nenhuma ultrapassou 60 dias.",
+  },
+  {
+    id: "fin-006",
+    aba: "inadimplencia",
+    icone: "📊",
+    titulo: "Índice consolidado",
+    condominio: "Carteira completa",
+    valor: "6,4%",
+    vencimento: "11 unidades",
+    status: "Atenção",
+    detalhes:
+      "A inadimplência consolidada está acima da meta de 5% definida para a carteira.",
+  },
+  {
+    id: "fin-007",
+    aba: "pagamentos",
+    icone: "💳",
+    titulo: "Folha da portaria",
+    condominio: "Residencial Tulipas",
+    valor: "R$ 18.600",
+    vencimento: "Amanhã",
+    status: "Programado",
+    detalhes:
+      "Pagamento da folha da equipe de portaria programado para amanhã.",
+  },
+  {
+    id: "fin-008",
+    aba: "pagamentos",
+    icone: "⚡",
+    titulo: "Energia das áreas comuns",
+    condominio: "Residencial Flores",
+    valor: "R$ 5.740",
+    vencimento: "Em 4 dias",
+    status: "Programado",
+    detalhes:
+      "Conta de energia das áreas comuns e equipamentos compartilhados.",
+  },
+  {
+    id: "fin-009",
+    aba: "pagamentos",
+    icone: "💧",
+    titulo: "Abastecimento de água",
+    condominio: "Condomínio Alfa",
+    valor: "R$ 3.980",
+    vencimento: "Em 5 dias",
+    status: "Programado",
+    detalhes:
+      "Conta mensal de abastecimento de água das áreas comuns.",
+  },
+];
+
+
 
 function textoStatus(status: CondominioSaude["status"]) {
   if (status === "saudavel") return "Saudável";
@@ -328,6 +458,11 @@ export default function CentralSindico() {
 
   const [popupIndicadoresAberto, setPopupIndicadoresAberto] = useState(false);
   const [popupAgendaAberto, setPopupAgendaAberto] = useState(false);
+  const [popupFinanceiroAberto, setPopupFinanceiroAberto] = useState(false);
+  const [abaFinanceira, setAbaFinanceira] =
+    useState<AbaFinanceira>("resumo");
+  const [itemFinanceiroSelecionado, setItemFinanceiroSelecionado] =
+    useState<ItemFinanceiro | null>(null);
   const [periodoAgenda, setPeriodoAgenda] = useState<PeriodoAgenda>("hoje");
   const [eventoAgendaSelecionado, setEventoAgendaSelecionado] =
     useState<EventoAgenda | null>(null);
@@ -370,6 +505,11 @@ export default function CentralSindico() {
   const eventosAgendaFiltrados = eventosAgenda.filter(
     (evento) => evento.periodo === periodoAgenda
   );
+
+  const itensFinanceirosFiltrados =
+    abaFinanceira === "resumo"
+      ? []
+      : itensFinanceiros.filter((item) => item.aba === abaFinanceira);
 
   const indicadoresAtivos = useMemo(
     () =>
@@ -432,6 +572,18 @@ export default function CentralSindico() {
     setPopupAgendaAberto(false);
     setEventoAgendaSelecionado(null);
     setPeriodoAgenda("hoje");
+  }
+
+  function abrirFinanceiro(aba: AbaFinanceira = "resumo") {
+    setAbaFinanceira(aba);
+    setItemFinanceiroSelecionado(null);
+    setPopupFinanceiroAberto(true);
+  }
+
+  function fecharFinanceiro() {
+    setPopupFinanceiroAberto(false);
+    setItemFinanceiroSelecionado(null);
+    setAbaFinanceira("resumo");
   }
 
   return (
@@ -704,6 +856,142 @@ export default function CentralSindico() {
         </div>
       </section>
 
+
+      {/* Saúde financeira */}
+
+      <section
+        role="button"
+        tabIndex={0}
+        onClick={() => abrirFinanceiro("resumo")}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            abrirFinanceiro("resumo");
+          }
+        }}
+        className="cursor-pointer rounded-2xl border border-emerald-700 bg-emerald-950/20 p-4 transition-all duration-150 hover:bg-emerald-900/20 active:scale-[0.99] active:brightness-125 md:p-5"
+      >
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-xs font-bold text-emerald-300 md:text-sm">
+              💰 SAÚDE FINANCEIRA
+            </p>
+
+            <h2 className="mt-1 text-xl font-black text-white md:text-2xl">
+              Caixa saudável
+            </h2>
+
+            <p className="mt-1 text-xs text-slate-400 md:text-sm">
+              Previsão positiva para os próximos 30 dias.
+            </p>
+          </div>
+
+          <div className="shrink-0 text-right">
+            <div className="text-3xl font-black text-emerald-400 md:text-4xl">
+              R$ 187 mil
+            </div>
+
+            <div className="text-xs font-bold text-emerald-300">
+              ▲ +6% no mês
+            </div>
+
+            <div className="text-[10px] text-slate-400">
+              Saldo previsto
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              abrirFinanceiro("urgentes");
+            }}
+            className="rounded-xl border border-red-900 bg-slate-900 p-3 text-left transition-all duration-150 hover:bg-slate-800 active:scale-95 active:brightness-125"
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-2xl">🔴</span>
+              <span className="text-xl font-black text-red-300">3</span>
+            </div>
+            <div className="mt-2 font-black text-white">Contas urgentes</div>
+            <div className="mt-1 text-xs text-slate-400">
+              R$ 19.630 próximos do prazo
+            </div>
+          </button>
+
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              abrirFinanceiro("inadimplencia");
+            }}
+            className="rounded-xl border border-orange-900 bg-slate-900 p-3 text-left transition-all duration-150 hover:bg-slate-800 active:scale-95 active:brightness-125"
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-2xl">📉</span>
+              <span className="text-xl font-black text-orange-300">6,4%</span>
+            </div>
+            <div className="mt-2 font-black text-white">Inadimplência</div>
+            <div className="mt-1 text-xs text-slate-400">
+              11 unidades em atraso
+            </div>
+          </button>
+
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              abrirFinanceiro("pagamentos");
+            }}
+            className="rounded-xl border border-blue-900 bg-slate-900 p-3 text-left transition-all duration-150 hover:bg-slate-800 active:scale-95 active:brightness-125"
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-2xl">💳</span>
+              <span className="text-xl font-black text-blue-300">4</span>
+            </div>
+            <div className="mt-2 font-black text-white">
+              Próximos pagamentos
+            </div>
+            <div className="mt-1 text-xs text-slate-400">
+              R$ 33.300 nos próximos dias
+            </div>
+          </button>
+
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              abrirFinanceiro("resumo");
+            }}
+            className="rounded-xl border border-emerald-900 bg-slate-900 p-3 text-left transition-all duration-150 hover:bg-slate-800 active:scale-95 active:brightness-125"
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-2xl">📈</span>
+              <span className="text-xl font-black text-emerald-300">+8%</span>
+            </div>
+            <div className="mt-2 font-black text-white">Receitas do mês</div>
+            <div className="mt-1 text-xs text-slate-400">
+              Acima do mês anterior
+            </div>
+          </button>
+        </div>
+
+        <div className="mt-4 flex items-center justify-between rounded-xl border border-red-900/70 bg-red-950/20 px-4 py-3">
+          <div>
+            <p className="text-xs font-bold text-red-300">
+              PRIORIDADE FINANCEIRA
+            </p>
+            <p className="mt-1 text-sm font-black text-white">
+              Seguro predial vence amanhã
+            </p>
+          </div>
+
+          <span className="text-sm font-black text-red-300">
+            Ver detalhes →
+          </span>
+        </div>
+      </section>
+
       {/* Saúde da carteira */}
 
       <section
@@ -902,6 +1190,306 @@ export default function CentralSindico() {
         </div>
       )}
 
+
+
+      {/* Popup Saúde Financeira */}
+
+      {popupFinanceiroAberto && (
+        <div className="fixed inset-0 z-[128] flex items-center justify-center bg-black/75 p-3 md:p-6">
+          <div className="max-h-[92vh] w-full max-w-3xl overflow-y-auto rounded-3xl border border-slate-700 bg-slate-900 p-4 shadow-2xl md:p-6">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-sm font-bold text-emerald-300">
+                  💰 SAÚDE FINANCEIRA
+                </p>
+
+                <h2 className="mt-1 text-2xl font-black text-white">
+                  {itemFinanceiroSelecionado
+                    ? itemFinanceiroSelecionado.titulo
+                    : "Visão financeira da carteira"}
+                </h2>
+              </div>
+
+              <button
+                type="button"
+                onClick={fecharFinanceiro}
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-800 text-xl font-black transition-all hover:bg-slate-700 active:scale-95"
+              >
+                ✕
+              </button>
+            </div>
+
+            {!itemFinanceiroSelecionado ? (
+              <>
+                <div className="mt-5 grid grid-cols-2 gap-2 md:grid-cols-4">
+                  <button
+                    type="button"
+                    onClick={() => setAbaFinanceira("resumo")}
+                    className={`rounded-xl px-2 py-3 text-xs font-black transition-all active:scale-95 ${
+                      abaFinanceira === "resumo"
+                        ? "bg-emerald-600 text-white"
+                        : "bg-slate-800 text-slate-300"
+                    }`}
+                  >
+                    Resumo
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setAbaFinanceira("urgentes")}
+                    className={`rounded-xl px-2 py-3 text-xs font-black transition-all active:scale-95 ${
+                      abaFinanceira === "urgentes"
+                        ? "bg-red-600 text-white"
+                        : "bg-slate-800 text-slate-300"
+                    }`}
+                  >
+                    🔴 Urgentes
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setAbaFinanceira("inadimplencia")}
+                    className={`rounded-xl px-2 py-3 text-xs font-black transition-all active:scale-95 ${
+                      abaFinanceira === "inadimplencia"
+                        ? "bg-orange-600 text-white"
+                        : "bg-slate-800 text-slate-300"
+                    }`}
+                  >
+                    📉 Inadimplência
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setAbaFinanceira("pagamentos")}
+                    className={`rounded-xl px-2 py-3 text-xs font-black transition-all active:scale-95 ${
+                      abaFinanceira === "pagamentos"
+                        ? "bg-blue-600 text-white"
+                        : "bg-slate-800 text-slate-300"
+                    }`}
+                  >
+                    💳 Pagamentos
+                  </button>
+                </div>
+
+                {abaFinanceira === "resumo" ? (
+                  <div className="mt-5">
+                    <div className="rounded-2xl border border-emerald-700 bg-emerald-950/25 p-5">
+                      <div className="flex items-start justify-between gap-4">
+                        <div>
+                          <p className="text-xs font-bold text-emerald-300">
+                            SALDO PREVISTO
+                          </p>
+
+                          <p className="mt-1 text-3xl font-black text-white">
+                            R$ 187.450
+                          </p>
+
+                          <p className="mt-2 text-sm text-emerald-300">
+                            🟢 Caixa saudável para os próximos 30 dias
+                          </p>
+                        </div>
+
+                        <div className="text-right">
+                          <p className="text-2xl font-black text-emerald-400">
+                            +6%
+                          </p>
+                          <p className="text-xs text-slate-400">
+                            no mês
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 grid grid-cols-2 gap-3">
+                      <div className="rounded-2xl border border-slate-700 bg-slate-800 p-4">
+                        <p className="text-xs font-bold text-slate-400">
+                          ENTRADAS DO MÊS
+                        </p>
+                        <p className="mt-2 text-2xl font-black text-emerald-300">
+                          R$ 214.800
+                        </p>
+                        <p className="mt-1 text-xs text-slate-400">
+                          94% já recebido
+                        </p>
+                      </div>
+
+                      <div className="rounded-2xl border border-slate-700 bg-slate-800 p-4">
+                        <p className="text-xs font-bold text-slate-400">
+                          SAÍDAS DO MÊS
+                        </p>
+                        <p className="mt-2 text-2xl font-black text-red-300">
+                          R$ 162.300
+                        </p>
+                        <p className="mt-1 text-xs text-slate-400">
+                          76% do previsto
+                        </p>
+                      </div>
+
+                      <div className="rounded-2xl border border-slate-700 bg-slate-800 p-4">
+                        <p className="text-xs font-bold text-slate-400">
+                          INADIMPLÊNCIA
+                        </p>
+                        <p className="mt-2 text-2xl font-black text-orange-300">
+                          6,4%
+                        </p>
+                        <p className="mt-1 text-xs text-slate-400">
+                          11 unidades
+                        </p>
+                      </div>
+
+                      <div className="rounded-2xl border border-slate-700 bg-slate-800 p-4">
+                        <p className="text-xs font-bold text-slate-400">
+                          CONTAS PRÓXIMAS
+                        </p>
+                        <p className="mt-2 text-2xl font-black text-blue-300">
+                          R$ 33.300
+                        </p>
+                        <p className="mt-1 text-xs text-slate-400">
+                          Próximos 7 dias
+                        </p>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setAbaFinanceira("urgentes")}
+                      className="mt-4 w-full rounded-2xl border border-red-800 bg-red-950/30 p-4 text-left transition-all hover:bg-red-950/50 active:scale-[0.98]"
+                    >
+                      <p className="text-xs font-bold text-red-300">
+                        🚨 PRIORIDADE
+                      </p>
+
+                      <p className="mt-1 font-black text-white">
+                        Seguro predial vence amanhã
+                      </p>
+
+                      <p className="mt-1 text-sm text-slate-400">
+                        Nenhuma ação foi registrada até o momento.
+                      </p>
+                    </button>
+                  </div>
+                ) : (
+                  <div className="mt-5 space-y-3">
+                    {itensFinanceirosFiltrados.map((item) => (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onClick={() => setItemFinanceiroSelecionado(item)}
+                        className="w-full rounded-2xl border border-slate-700 bg-slate-800 p-4 text-left transition-all duration-150 hover:border-emerald-600 hover:bg-slate-700 active:scale-[0.98] active:brightness-125"
+                      >
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex min-w-0 items-start gap-3">
+                            <div className="text-3xl">{item.icone}</div>
+
+                            <div className="min-w-0">
+                              <p className="font-black text-white">
+                                {item.titulo}
+                              </p>
+
+                              <p className="mt-1 text-sm text-emerald-300">
+                                {item.condominio}
+                              </p>
+
+                              <p className="mt-1 text-xs text-slate-400">
+                                {item.vencimento}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="shrink-0 text-right">
+                            <p className="text-lg font-black text-white">
+                              {item.valor}
+                            </p>
+
+                            <span className="mt-2 inline-flex rounded-full bg-slate-900 px-3 py-1 text-[10px] font-black text-slate-300">
+                              {item.status}
+                            </span>
+
+                            <p className="mt-2 text-xs text-slate-500">
+                              Detalhes →
+                            </p>
+                          </div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="mt-5">
+                <div className="rounded-2xl border border-emerald-700 bg-emerald-950/25 p-5">
+                  <div className="flex items-start gap-4">
+                    <div className="text-5xl">
+                      {itemFinanceiroSelecionado.icone}
+                    </div>
+
+                    <div>
+                      <p className="text-sm font-bold text-emerald-300">
+                        {itemFinanceiroSelecionado.condominio}
+                      </p>
+
+                      <p className="mt-1 text-xl font-black text-white">
+                        {itemFinanceiroSelecionado.titulo}
+                      </p>
+
+                      <p className="mt-2 text-2xl font-black text-white">
+                        {itemFinanceiroSelecionado.valor}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-4 grid grid-cols-2 gap-3">
+                  <div className="rounded-2xl border border-slate-700 bg-slate-800 p-4">
+                    <p className="text-xs font-bold text-slate-400">
+                      PRAZO
+                    </p>
+
+                    <p className="mt-1 font-black text-white">
+                      {itemFinanceiroSelecionado.vencimento}
+                    </p>
+                  </div>
+
+                  <div className="rounded-2xl border border-slate-700 bg-slate-800 p-4">
+                    <p className="text-xs font-bold text-slate-400">
+                      STATUS
+                    </p>
+
+                    <p className="mt-1 font-black text-emerald-300">
+                      {itemFinanceiroSelecionado.status}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-4 rounded-2xl border border-slate-700 bg-slate-800 p-4">
+                  <p className="font-black text-white">Detalhes financeiros</p>
+
+                  <p className="mt-3 text-sm leading-relaxed text-slate-300">
+                    {itemFinanceiroSelecionado.detalhes}
+                  </p>
+                </div>
+
+                <div className="mt-4 grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setItemFinanceiroSelecionado(null)}
+                    className="rounded-xl bg-slate-700 py-3 font-black text-white transition-all hover:bg-slate-600 active:scale-95"
+                  >
+                    Voltar
+                  </button>
+
+                  <button
+                    type="button"
+                    className="rounded-xl bg-emerald-600 py-3 font-black text-white transition-all hover:bg-emerald-500 active:scale-95"
+                  >
+                    Abrir financeiro
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Popup Agenda Inteligente */}
 
