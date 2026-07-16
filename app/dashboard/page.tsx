@@ -97,6 +97,7 @@ type MoradorCadastrado = {
 
 export default function Dashboard() {
   const [telaAtiva, setTelaAtiva] = useState<Tela>("dashboard");
+  const [menuMobileAberto, setMenuMobileAberto] = useState(false);
   const [localAberto, setLocalAberto] = useState<LocalCadastrado | null>(null);
   const [atualizacaoSelecionada, setAtualizacaoSelecionada] =
     useState<AtualizacaoCadastral | null>(null);
@@ -768,6 +769,27 @@ export default function Dashboard() {
 
   return (
     <main className="min-h-screen bg-slate-950 text-white">
+      <header className="sticky top-0 z-40 flex items-center justify-between border-b border-slate-800 bg-slate-950 px-4 py-3 md:hidden">
+        <button onClick={()=>setMenuMobileAberto(true)} className="rounded-xl bg-slate-800 px-3 py-2">☰</button>
+        <span className="font-black text-blue-400">QR Central</span>
+        <div className="w-8"/>
+      </header>
+
+      {menuMobileAberto && (
+        <div className="fixed inset-0 z-50 md:hidden">
+          <div className="absolute inset-0 bg-black/70" onClick={()=>setMenuMobileAberto(false)} />
+          <aside className="absolute left-0 top-0 h-full w-72 bg-slate-900 p-5">
+            <nav className="space-y-2">
+              {menu.map((item)=>(
+                <button key={item.id} onClick={()=>{setTelaAtiva(item.id as Tela);setMenuMobileAberto(false);}} className="w-full rounded-xl bg-slate-800 px-4 py-3 text-left">
+                  <span className="mr-2">{item.icone}</span>{item.nome}
+                </button>
+              ))}
+            </nav>
+          </aside>
+        </div>
+      )}
+
       <div className="flex min-h-screen">
         <aside className="w-72 bg-slate-900 border-r border-slate-800 p-5 hidden md:block">
           <div className="mb-8">
@@ -787,7 +809,7 @@ export default function Dashboard() {
             {menu.map((item) => (
               <button
                 key={item.id}
-                onClick={() => setTelaAtiva(item.id as Tela)}
+                onClick={() => { setTelaAtiva(item.id as Tela); setMenuMobileAberto(false); }}
                 className={`w-full text-left px-4 py-3 rounded-xl font-bold transition-all ${
                   telaAtiva === item.id
                     ? "bg-blue-600 text-white"
@@ -808,7 +830,7 @@ export default function Dashboard() {
           </div>
         </aside>
 
-        <section className="flex-1 p-4 md:p-8">
+        <section className="min-w-0 flex-1 overflow-x-hidden p-3 sm:p-4 md:p-8">
           {telaAtiva === "dashboard" && (
             <div>
               <h2 className="text-3xl font-black text-blue-300 mb-2">
@@ -1525,6 +1547,7 @@ export default function Dashboard() {
           )}
 
           {telaAtiva !== "dashboard" &&
+            telaAtiva !== "sindico" &&
             telaAtiva !== "locais" &&
             telaAtiva !== "unidades" &&
             telaAtiva !== "moradores" &&
