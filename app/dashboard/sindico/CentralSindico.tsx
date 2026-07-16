@@ -58,18 +58,45 @@ export default function CentralSindico() {
 
       </div>
 
-      <div className="rounded-2xl border border-slate-700 bg-slate-900 p-8">
+     <div className="rounded-2xl border border-red-700 bg-red-950/20 p-5">
 
-        <h2 className="text-2xl font-black">
-          Central de Gestão
-        </h2>
+    <div className="flex items-center justify-between">
 
-        <p className="mt-3 text-slate-400">
-          Aqui ficará a Central de Gestão que já criamos para o Tulipas,
-          agora integrada ao QR Central.
-        </p>
+        <div>
 
-      </div>
+            <p className="text-red-300 text-sm font-bold">
+                🚨 ATENÇÃO AGORA
+            </p>
+
+            <h2 className="text-2xl font-black text-white mt-1">
+                4 ações pendentes
+            </h2>
+
+        </div>
+
+        <button className="rounded-xl bg-red-600 px-4 py-2 font-bold hover:bg-red-500">
+            Ver tudo
+        </button>
+
+    </div>
+
+    <div className="mt-5 space-y-3">
+
+        <div className="rounded-xl bg-slate-900 p-4">
+            🔴 Câmera Portão Principal Offline
+        </div>
+
+        <div className="rounded-xl bg-slate-900 p-4">
+            🟠 Portão Social aberto há 5 minutos
+        </div>
+
+        <div className="rounded-xl bg-slate-900 p-4">
+            🟡 Morador informou defeito no interfone
+        </div>
+
+    </div>
+
+</div>
 
     </div>
   );
