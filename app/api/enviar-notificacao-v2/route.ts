@@ -38,6 +38,22 @@ function iniciarFirebaseAdmin() {
   }
 
   const chaveServico = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
+  console.log("NODE_ENV:", process.env.NODE_ENV);
+
+console.log(
+  "FIREBASE_SERVICE_ACCOUNT_KEY existe?",
+  !!process.env.FIREBASE_SERVICE_ACCOUNT_KEY
+);
+
+console.log(
+  "FIREBASE_DATABASE_URL:",
+  process.env.FIREBASE_DATABASE_URL
+);
+
+console.log(
+  "NEXT_PUBLIC_APP_URL:",
+  process.env.NEXT_PUBLIC_APP_URL
+);
   const databaseURL =
     process.env.FIREBASE_DATABASE_URL ||
     "https://qr-porteiro-app-default-rtdb.firebaseio.com";
