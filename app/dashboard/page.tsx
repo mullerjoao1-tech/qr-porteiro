@@ -7,9 +7,11 @@ import Unidades from "../components/dashboard/Unidades";
 import Moradores from "../components/dashboard/Moradores";
 import AtualizacaoPendenteModal from "./AtualizacaoPendenteModal";
 import UnidadeImplantacaoModal from "./UnidadeImplantacaoModal";
+import CentralSindico from "./sindico/CentralSindico";
 
 type Tela =
   | "dashboard"
+  | "sindico"
   | "locais"
   | "unidades"
   | "moradores"
@@ -748,8 +750,13 @@ export default function Dashboard() {
   const localSelecionado = locais.find((item) => item.id === localSelecionadoId);
   const modoCondominio = localSelecionado?.tipo === "condominio";
 
-  const menu = [
+  const menu: {
+  id: Tela;
+  nome: string;
+  icone: string;
+}[] = [
     { id: "dashboard", nome: "Dashboard", icone: "🏠" },
+  { id: "sindico", nome: "Síndico", icone: "🏢" },
     { id: "locais", nome: "Locais", icone: "🏢" },
     { id: "unidades", nome: "Unidades", icone: "🚪" },
     { id: "moradores", nome: "Moradores", icone: "👥" },
@@ -757,7 +764,7 @@ export default function Dashboard() {
     { id: "pendentes", nome: "Pendentes", icone: "⏳" },
     { id: "implantacao", nome: "Implantação", icone: "🚀" },
     { id: "contingencia", nome: "Contingência", icone: "🛟" },
-  ] as const;
+  ];
 
   return (
     <main className="min-h-screen bg-slate-950 text-white">
@@ -851,7 +858,9 @@ export default function Dashboard() {
               </div>
             </div>
           )}
-
+{telaAtiva === "sindico" && (
+  <CentralSindico />
+)}
           {telaAtiva === "locais" && (
             <div>
               <h2 className="text-3xl font-black text-blue-300 mb-2">
