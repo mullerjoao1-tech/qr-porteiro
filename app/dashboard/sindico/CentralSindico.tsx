@@ -4,6 +4,12 @@ import { useMemo, useState } from "react";
 
 type FiltroSaude = "todos" | "saudaveis" | "atencao" | "criticos";
 
+type ContextoPainel =
+  | "carteira-geral"
+  | "cnd-tulipas"
+  | "cnd-flores"
+  | "cnd-alfa";
+
 type CondominioSaude = {
   id: string;
   nome: string;
@@ -59,6 +65,33 @@ type ItemFinanceiro = {
   status: string;
   detalhes: string;
 };
+
+const opcoesContexto: Array<{
+  id: ContextoPainel;
+  nome: string;
+  icone: string;
+}> = [
+  {
+    id: "carteira-geral",
+    nome: "Carteira Geral",
+    icone: "🌐",
+  },
+  {
+    id: "cnd-tulipas",
+    nome: "Residencial Tulipas",
+    icone: "🏢",
+  },
+  {
+    id: "cnd-flores",
+    nome: "Residencial Flores",
+    icone: "🏢",
+  },
+  {
+    id: "cnd-alfa",
+    nome: "Condomínio Alfa",
+    icone: "🏢",
+  },
+];
 
 const condominios: CondominioSaude[] = [
   {
@@ -451,6 +484,10 @@ function classesStatus(status: CondominioSaude["status"]) {
 }
 
 export default function CentralSindico() {
+  const [contextoAtual, setContextoAtual] =
+    useState<ContextoPainel>("carteira-geral");
+  const [seletorContextoAberto, setSeletorContextoAberto] = useState(false);
+  const [popupResumoAberto, setPopupResumoAberto] = useState(false);
   const [popupSaudeAberto, setPopupSaudeAberto] = useState(false);
   const [filtroSaude, setFiltroSaude] = useState<FiltroSaude>("todos");
   const [condominioSelecionado, setCondominioSelecionado] =
@@ -479,6 +516,70 @@ export default function CentralSindico() {
     "unidades",
   ]);
 
+  const contextoSelecionado =
+    opcoesContexto.find((opcao) => opcao.id === contextoAtual) ??
+    opcoesContexto[0];
+
+  const isCarteiraGeral = contextoAtual === "carteira-geral";
+
+  const condominiosDoContexto = isCarteiraGeral
+    ? condominios
+    : condominios.filter((condominio) => condominio.id === contextoAtual);
+
+  const textoEscopo = isCarteiraGeral
+    ? "Painel consolidado dos 3 condomínios"
+    : "Painel específico deste condomínio";
+
+  const condominioAtual = !isCarteiraGeral
+    ? condominios.find((condominio) => condominio.id === contextoAtual) ?? null
+    : null;
+
+  const resumoContexto = isCarteiraGeral
+    ? {
+        status: "Carteira consolidada",
+        detalhe: "2 saudáveis • 1 em atenção • 0 críticos",
+        borda: "border-white/30",
+        fundo: "bg-white/15",
+        corStatus: "text-blue-100",
+        icone: "🌐",
+      }
+    : condominioAtual?.status === "saudavel"
+    ? {
+        status: "Saudável",
+        detalhe: "Nenhuma prioridade crítica",
+        borda: "border-green-300/70",
+        fundo: "bg-green-400/15",
+        corStatus: "text-green-100",
+        icone: "🟢",
+      }
+    : condominioAtual?.status === "atencao"
+    ? {
+        status: "Atenção",
+        detalhe: `${
+          condominioAtual.problemas.length
+        } pendência${condominioAtual.problemas.length === 1 ? "" : "s"} ativa${
+          condominioAtual.problemas.length === 1 ? "" : "s"
+        }`,
+        borda: "border-orange-300/70",
+        fundo: "bg-orange-400/15",
+        corStatus: "text-orange-100",
+        icone: "🟠",
+      }
+    : {
+        status: "Crítico",
+        detalhe: `${
+          condominioAtual?.problemas.length ?? 0
+        } prioridade${
+          (condominioAtual?.problemas.length ?? 0) === 1 ? "" : "s"
+        } exige${
+          (condominioAtual?.problemas.length ?? 0) === 1 ? "" : "m"
+        } ação`,
+        borda: "border-red-300/70",
+        fundo: "bg-red-400/15",
+        corStatus: "text-red-100",
+        icone: "🔴",
+      };
+
   const saudaveis = condominios.filter(
     (condominio) => condominio.status === "saudavel"
   ).length;
@@ -491,7 +592,7 @@ export default function CentralSindico() {
     (condominio) => condominio.status === "critico"
   ).length;
 
-  const condominiosFiltrados = condominios.filter((condominio) => {
+  const condominiosFiltrados = condominiosDoContexto.filter((condominio) => {
     if (filtroSaude === "todos") return true;
     if (filtroSaude === "saudaveis") {
       return condominio.status === "saudavel";
@@ -522,6 +623,22 @@ export default function CentralSindico() {
         ),
     [indicadoresVisiveis]
   );
+
+  function trocarContexto(novoContexto: ContextoPainel) {
+    setContextoAtual(novoContexto);
+    setSeletorContextoAberto(false);
+    setCondominioSelecionado(null);
+    setEventoAgendaSelecionado(null);
+    setItemFinanceiroSelecionado(null);
+  }
+
+  function abrirResumo() {
+    setPopupResumoAberto(true);
+  }
+
+  function fecharResumo() {
+    setPopupResumoAberto(false);
+  }
 
   function abrirSaude(filtro: FiltroSaude = "todos") {
     setFiltroSaude(filtro);
@@ -590,14 +707,138 @@ export default function CentralSindico() {
     <div className="space-y-5">
       {/* Cabeçalho */}
 
-      <section className="rounded-3xl bg-gradient-to-r from-blue-700 to-cyan-600 p-5 text-white md:p-8">
-        <h1 className="text-3xl font-black md:text-4xl">
-          👋 Bom dia, João
-        </h1>
+      <section className="relative rounded-3xl bg-gradient-to-r from-blue-700 to-cyan-600 p-5 text-white md:p-8">
+        <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h1 className="text-3xl font-black md:text-4xl">
+              👋 Bom dia, João
+            </h1>
 
-        <p className="mt-2 text-sm text-blue-100 md:text-base">
-          Você administra 3 condomínios
-        </p>
+            <p className="mt-2 text-sm text-blue-100 md:text-base">
+              {textoEscopo}
+            </p>
+          </div>
+
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setSeletorContextoAberto((aberto) => !aberto)}
+              className={`flex w-full min-w-[250px] items-center justify-between gap-4 rounded-2xl border px-4 py-3 text-left shadow-lg backdrop-blur transition-all hover:brightness-110 active:scale-[0.98] md:w-auto ${resumoContexto.borda} ${resumoContexto.fundo}`}
+            >
+              <div className="min-w-0">
+                <p className="text-[10px] font-bold uppercase tracking-wide text-blue-100">
+                  {isCarteiraGeral ? "🌐 CARTEIRA" : "🏢 CONDOMÍNIO"}
+                </p>
+
+                <p className="mt-1 truncate text-lg font-black text-white">
+                  {contextoSelecionado.icone} {contextoSelecionado.nome}
+                </p>
+
+                <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
+                  <span className={`text-xs font-black ${resumoContexto.corStatus}`}>
+                    {resumoContexto.icone} {resumoContexto.status}
+                  </span>
+
+                  <span className="text-[10px] font-bold text-blue-100/90">
+                    {resumoContexto.detalhe}
+                  </span>
+                </div>
+              </div>
+
+              <span
+                className={`shrink-0 text-lg transition-transform ${
+                  seletorContextoAberto ? "rotate-180" : ""
+                }`}
+              >
+                ▼
+              </span>
+            </button>
+
+            {seletorContextoAberto && (
+              <div className="absolute right-0 top-full z-[90] mt-2 w-full min-w-[260px] overflow-hidden rounded-2xl border border-slate-600 bg-slate-900 p-2 shadow-2xl md:w-[300px]">
+                {opcoesContexto.map((opcao) => {
+                  const selecionada = opcao.id === contextoAtual;
+                  const condominioOpcao =
+                    opcao.id === "carteira-geral"
+                      ? null
+                      : condominios.find(
+                          (condominio) => condominio.id === opcao.id
+                        );
+
+                  const statusOpcao =
+                    opcao.id === "carteira-geral"
+                      ? "🌐 2 saudáveis • 1 atenção • 0 críticos"
+                      : condominioOpcao?.status === "saudavel"
+                      ? "🟢 Saudável"
+                      : condominioOpcao?.status === "atencao"
+                      ? `🟠 Atenção • ${
+                          condominioOpcao.problemas.length
+                        } pendência${
+                          condominioOpcao.problemas.length === 1 ? "" : "s"
+                        }`
+                      : `🔴 Crítico • ${
+                          condominioOpcao?.problemas.length ?? 0
+                        } prioridade${
+                          (condominioOpcao?.problemas.length ?? 0) === 1
+                            ? ""
+                            : "s"
+                        }`;
+
+                  return (
+                    <button
+                      key={opcao.id}
+                      type="button"
+                      onClick={() => trocarContexto(opcao.id)}
+                      className={`flex w-full items-center justify-between gap-3 rounded-xl px-4 py-3 text-left transition-all active:scale-[0.98] ${
+                        selecionada
+                          ? "bg-blue-600 text-white"
+                          : "text-slate-200 hover:bg-slate-800"
+                      }`}
+                    >
+                      <div className="min-w-0">
+                        <span className="block truncate font-black">
+                          {opcao.icone} {opcao.nome}
+                        </span>
+
+                        <span
+                          className={`mt-1 block text-[10px] font-bold ${
+                            selecionada ? "text-blue-100" : "text-slate-400"
+                          }`}
+                        >
+                          {statusOpcao}
+                        </span>
+                      </div>
+
+                      {selecionada && <span className="shrink-0">✓</span>}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {!isCarteiraGeral && (
+          <div className="mt-5 flex items-center justify-between rounded-2xl border border-white/20 bg-black/10 px-4 py-3">
+            <div>
+              <p className="text-xs font-bold text-blue-100">
+                👁 MODO CONDOMÍNIO
+              </p>
+
+              <p className="mt-1 text-sm font-black text-white">
+                <>{contextoSelecionado.nome}<br />Todos os módulos utilizam este contexto.</>
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => trocarContexto("carteira-geral")}
+              className="shrink-0 rounded-xl bg-white/15 px-3 py-2 text-xs font-black transition-all hover:bg-white/25 active:scale-95"
+            >
+              Ver geral
+            </button>
+          </div>
+        )}
       </section>
 
       {/* Atenção agora */}
@@ -610,7 +851,9 @@ export default function CentralSindico() {
             </p>
 
             <h2 className="mt-1 text-xl font-black text-white md:text-2xl">
-              4 ações precisam da sua atenção
+              {isCarteiraGeral
+                ? "4 ações precisam da sua atenção"
+                : `Atenções de ${contextoSelecionado.nome}`}
             </h2>
           </div>
 
@@ -679,7 +922,9 @@ export default function CentralSindico() {
             </p>
 
             <h2 className="mt-1 text-xl font-black text-white md:text-2xl">
-              Tudo importante na palma da mão
+              {isCarteiraGeral
+                ? "Tudo importante na palma da mão"
+                : `Indicadores de ${contextoSelecionado.nome}`}
             </h2>
 
             <p className="mt-1 text-xs text-slate-400 md:text-sm">
@@ -744,7 +989,9 @@ export default function CentralSindico() {
             </p>
 
             <h2 className="mt-1 text-xl font-black text-white md:text-2xl">
-              Compromissos de hoje
+              {isCarteiraGeral
+                ? "Compromissos de hoje"
+                : `Agenda de ${contextoSelecionado.nome}`}
             </h2>
 
             <p className="mt-1 text-xs text-slate-400 md:text-sm">
@@ -877,7 +1124,9 @@ export default function CentralSindico() {
             </p>
 
             <h2 className="mt-1 text-xl font-black text-white md:text-2xl">
-              Caixa saudável
+              {isCarteiraGeral
+                ? "Caixa saudável"
+                : `Saúde financeira — ${contextoSelecionado.nome}`}
             </h2>
 
             <p className="mt-1 text-xs text-slate-400 md:text-sm">
@@ -992,88 +1241,266 @@ export default function CentralSindico() {
         </div>
       </section>
 
-      {/* Saúde da carteira */}
+      {/* Resumo inteligente */}
 
       <section
         role="button"
         tabIndex={0}
-        onClick={() => abrirSaude("todos")}
+        onClick={abrirResumo}
         onKeyDown={(event) => {
           if (event.key === "Enter" || event.key === " ") {
-            abrirSaude("todos");
+            abrirResumo();
           }
         }}
-        className="cursor-pointer rounded-2xl border border-green-700 bg-green-950/20 p-4 transition-all duration-150 hover:bg-green-900/20 active:scale-[0.99] active:brightness-125 md:p-5"
+        className="cursor-pointer rounded-2xl border border-cyan-700 bg-cyan-950/20 p-4 transition-all duration-150 hover:bg-cyan-900/20 active:scale-[0.99] active:brightness-125 md:p-5"
       >
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="text-xs font-bold text-green-300 md:text-sm">
-              ❤️ SAÚDE DA CARTEIRA
+            <p className="text-xs font-bold text-cyan-300 md:text-sm">
+              🤖 RESUMO INTELIGENTE
             </p>
 
-            <h2 className="mt-1 text-2xl font-black text-white">
-              3 Condomínios
+            <h2 className="mt-1 text-xl font-black text-white md:text-2xl">
+              {isCarteiraGeral
+                ? "Sua carteira está estável"
+                : `${contextoSelecionado.nome} está sob acompanhamento`}
             </h2>
+
+            <p className="mt-1 text-xs text-slate-400 md:text-sm">
+              Análise automática baseada nos dados atuais do painel.
+            </p>
           </div>
 
-          <div className="text-right">
-            <div className="text-4xl font-black text-green-400">96%</div>
-
-            <div className="text-xs font-bold text-green-300">
-              ▲ +2%
+          <div className="shrink-0 rounded-xl border border-cyan-700 bg-cyan-950/40 px-3 py-2 text-center">
+            <div className="text-xs font-black text-cyan-300">IA</div>
+            <div className="mt-1 text-[10px] font-bold text-cyan-100">
+              BETA
             </div>
-
-            <div className="text-xs text-slate-400">Geral</div>
           </div>
         </div>
 
-        <div className="mt-5 grid grid-cols-3 gap-2 md:gap-3">
-          <button
-            type="button"
-            onClick={(event) => {
-              event.stopPropagation();
-              abrirSaude("saudaveis");
-            }}
-            className="rounded-xl bg-slate-900 p-3 text-center transition-all duration-150 hover:bg-slate-800 active:scale-95 active:brightness-125"
-          >
-            <div className="text-2xl">🟢</div>
-            <div className="mt-1 font-black text-white">{saudaveis}</div>
-            <div className="text-[10px] text-slate-400 md:text-xs">
-              Saudáveis
-            </div>
-          </button>
+        <div className="mt-5 rounded-2xl border border-slate-700 bg-slate-900/80 p-4">
+          <p className="text-sm leading-relaxed text-slate-200">
+            Bom dia, João.{" "}
+            {isCarteiraGeral
+              ? "Hoje existem 4 prioridades, 2 manutenções e 1 contrato vencendo amanhã. A situação financeira permanece saudável."
+              : `Neste momento, ${contextoSelecionado.nome} possui ${
+                  condominioAtual?.problemas.length ?? 0
+                } pendência${
+                  (condominioAtual?.problemas.length ?? 0) === 1 ? "" : "s"
+                } ativa${
+                  (condominioAtual?.problemas.length ?? 0) === 1 ? "" : "s"
+                } e segue com acompanhamento operacional.`}
+          </p>
+        </div>
 
-          <button
-            type="button"
-            onClick={(event) => {
-              event.stopPropagation();
-              abrirSaude("atencao");
-            }}
-            className="rounded-xl bg-slate-900 p-3 text-center transition-all duration-150 hover:bg-slate-800 active:scale-95 active:brightness-125"
-          >
-            <div className="text-2xl">🟠</div>
-            <div className="mt-1 font-black text-white">{atencao}</div>
-            <div className="text-[10px] text-slate-400 md:text-xs">
-              Atenção
+        <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <div className="rounded-xl bg-slate-900 p-3">
+            <div className="text-2xl">🚨</div>
+            <div className="mt-2 font-black text-white">
+              {isCarteiraGeral ? "4 prioridades" : "Atenção ativa"}
             </div>
-          </button>
+            <div className="mt-1 text-xs text-slate-400">
+              Exigem acompanhamento
+            </div>
+          </div>
 
-          <button
-            type="button"
-            onClick={(event) => {
-              event.stopPropagation();
-              abrirSaude("criticos");
-            }}
-            className="rounded-xl bg-slate-900 p-3 text-center transition-all duration-150 hover:bg-slate-800 active:scale-95 active:brightness-125"
-          >
-            <div className="text-2xl">🔴</div>
-            <div className="mt-1 font-black text-white">{criticos}</div>
-            <div className="text-[10px] text-slate-400 md:text-xs">
-              Críticos
+          <div className="rounded-xl bg-slate-900 p-3">
+            <div className="text-2xl">📅</div>
+            <div className="mt-2 font-black text-white">
+              2 manutenções
             </div>
-          </button>
+            <div className="mt-1 text-xs text-slate-400">
+              Programadas para hoje
+            </div>
+          </div>
+
+          <div className="rounded-xl bg-slate-900 p-3">
+            <div className="text-2xl">💰</div>
+            <div className="mt-2 font-black text-emerald-300">
+              Caixa saudável
+            </div>
+            <div className="mt-1 text-xs text-slate-400">
+              Previsão positiva
+            </div>
+          </div>
+
+          <div className="rounded-xl bg-slate-900 p-3">
+            <div className="text-2xl">📄</div>
+            <div className="mt-2 font-black text-orange-300">
+              1 contrato
+            </div>
+            <div className="mt-1 text-xs text-slate-400">
+              Vence amanhã
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-4 flex items-center justify-between rounded-xl border border-cyan-800 bg-cyan-950/20 px-4 py-3">
+          <div>
+            <p className="text-xs font-bold text-cyan-300">
+              PRINCIPAL PONTO DE ATENÇÃO
+            </p>
+
+            <p className="mt-1 text-sm font-black text-white">
+              {isCarteiraGeral
+                ? "Residencial Flores exige maior acompanhamento hoje"
+                : `${contextoSelecionado.nome} está sendo monitorado`}
+            </p>
+          </div>
+
+          <span className="text-sm font-black text-cyan-300">
+            Ver análise →
+          </span>
         </div>
       </section>
+
+      {/* Popup Resumo Inteligente */}
+
+      {popupResumoAberto && (
+        <div className="fixed inset-0 z-[129] flex items-center justify-center bg-black/75 p-3 md:p-6">
+          <div className="max-h-[92vh] w-full max-w-3xl overflow-y-auto rounded-3xl border border-slate-700 bg-slate-900 p-4 shadow-2xl md:p-6">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-sm font-bold text-cyan-300">
+                  🤖 RESUMO INTELIGENTE
+                </p>
+
+                <h2 className="mt-1 text-2xl font-black text-white">
+                  Análise do contexto atual
+                </h2>
+
+                <p className="mt-2 text-sm text-slate-400">
+                  {contextoSelecionado.icone} {contextoSelecionado.nome}
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={fecharResumo}
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-800 text-xl font-black transition-all hover:bg-slate-700 active:scale-95"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="mt-5 rounded-2xl border border-cyan-700 bg-cyan-950/25 p-5">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-xs font-bold text-cyan-300">
+                    ANÁLISE AUTOMÁTICA
+                  </p>
+
+                  <p className="mt-3 text-sm leading-relaxed text-slate-200">
+                    {isCarteiraGeral
+                      ? "Sua carteira apresenta boa estabilidade operacional. Hoje existem quatro prioridades, duas manutenções programadas e um contrato vencendo amanhã. A situação financeira permanece saudável, mas o Residencial Flores merece maior atenção."
+                      : `${contextoSelecionado.nome} está sendo acompanhado de forma específica. O sistema identificou ${
+                          condominioAtual?.problemas.length ?? 0
+                        } pendência${
+                          (condominioAtual?.problemas.length ?? 0) === 1
+                            ? ""
+                            : "s"
+                        } ativa${
+                          (condominioAtual?.problemas.length ?? 0) === 1
+                            ? ""
+                            : "s"
+                        } e mantém os demais indicadores sob monitoramento.`}
+                  </p>
+                </div>
+
+                <div className="shrink-0 rounded-xl bg-cyan-600 px-3 py-2 text-center">
+                  <div className="font-black text-white">IA</div>
+                  <div className="text-[10px] font-bold text-cyan-100">
+                    BETA
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-5 grid grid-cols-1 gap-3 md:grid-cols-2">
+              <div className="rounded-2xl border border-red-800 bg-red-950/25 p-4">
+                <p className="text-xs font-bold text-red-300">
+                  🚨 PRIORIDADES
+                </p>
+
+                <p className="mt-2 text-lg font-black text-white">
+                  4 ações precisam de acompanhamento
+                </p>
+
+                <p className="mt-2 text-sm text-slate-400">
+                  Câmera offline, portão aberto, interfone com defeito e contrato
+                  próximo do vencimento.
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-violet-800 bg-violet-950/25 p-4">
+                <p className="text-xs font-bold text-violet-300">
+                  📅 AGENDA
+                </p>
+
+                <p className="mt-2 text-lg font-black text-white">
+                  2 manutenções programadas
+                </p>
+
+                <p className="mt-2 text-sm text-slate-400">
+                  Revisão do portão social às 09:30 e inspeção dos extintores às
+                  14:00.
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-emerald-800 bg-emerald-950/25 p-4">
+                <p className="text-xs font-bold text-emerald-300">
+                  💰 FINANCEIRO
+                </p>
+
+                <p className="mt-2 text-lg font-black text-white">
+                  Caixa permanece saudável
+                </p>
+
+                <p className="mt-2 text-sm text-slate-400">
+                  A previsão para os próximos 30 dias é positiva. O seguro
+                  predial vence amanhã.
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-orange-800 bg-orange-950/25 p-4">
+                <p className="text-xs font-bold text-orange-300">
+                  ❤️ OPERAÇÃO
+                </p>
+
+                <p className="mt-2 text-lg font-black text-white">
+                  Estabilidade geral mantida
+                </p>
+
+                <p className="mt-2 text-sm text-slate-400">
+                  Dois condomínios estão saudáveis e um requer atenção
+                  operacional.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-5 rounded-2xl border border-slate-700 bg-slate-800 p-4">
+              <p className="text-xs font-bold text-blue-300">
+                📈 TENDÊNCIAS
+              </p>
+
+              <div className="mt-3 space-y-2 text-sm text-slate-300">
+                <p>• A saúde geral da carteira subiu 2%.</p>
+                <p>• As receitas do mês estão 8% acima do período anterior.</p>
+                <p>• Nenhuma ocorrência crítica foi registrada nas últimas 24 horas.</p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={fecharResumo}
+              className="mt-5 w-full rounded-xl bg-cyan-600 py-3 font-black text-white transition-all hover:bg-cyan-500 active:scale-95"
+            >
+              Entendi
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Popup de configuração dos indicadores */}
 
@@ -1672,13 +2099,17 @@ export default function CentralSindico() {
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-sm font-bold text-green-300">
-                  ❤️ SAÚDE DA CARTEIRA
+                  {isCarteiraGeral
+                ? "❤️ SAÚDE DA CARTEIRA"
+                : "❤️ SAÚDE DO CONDOMÍNIO"}
                 </p>
 
                 <h2 className="mt-1 text-2xl font-black text-white">
                   {condominioSelecionado
                     ? condominioSelecionado.nome
-                    : "Situação dos condomínios"}
+                    : isCarteiraGeral
+                    ? "Situação dos condomínios"
+                    : `Situação de ${contextoSelecionado.nome}`}
                 </h2>
               </div>
 
