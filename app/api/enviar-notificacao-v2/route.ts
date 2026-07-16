@@ -37,7 +37,11 @@ function iniciarFirebaseAdmin() {
     return getApp();
   }
 
-  const chaveServico = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
+ const chaveServico = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
+
+console.log("========== DEBUG ==========");
+console.log(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
+console.log("===========================");
   console.log("NODE_ENV:", process.env.NODE_ENV);
 
 console.log(
