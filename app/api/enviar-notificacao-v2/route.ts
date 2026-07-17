@@ -38,9 +38,6 @@ function iniciarFirebaseAdmin() {
   }
 
   const chaveServico = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
-  const databaseURL =
-    process.env.FIREBASE_DATABASE_URL ||
-    "https://qr-porteiro-app-default-rtdb.firebaseio.com";
 
   if (!chaveServico) {
     throw new Error(
@@ -53,8 +50,6 @@ function iniciarFirebaseAdmin() {
   try {
     conteudoChave = JSON.parse(chaveServico);
 
-    // Na Vercel, o JSON pode ter sido salvo entre aspas e precisar
-    // ser convertido uma segunda vez.
     if (typeof conteudoChave === "string") {
       conteudoChave = JSON.parse(conteudoChave);
     }
@@ -74,7 +69,7 @@ function iniciarFirebaseAdmin() {
     );
   }
 
-  const serviceAccountJson = conteudoChave as {
+  const dados = conteudoChave as {
     project_id?: string;
     client_email?: string;
     private_key?: string;
@@ -83,12 +78,9 @@ function iniciarFirebaseAdmin() {
     privateKey?: string;
   };
 
-  const projectId =
-    serviceAccountJson.project_id || serviceAccountJson.projectId;
-  const clientEmail =
-    serviceAccountJson.client_email || serviceAccountJson.clientEmail;
-  const privateKey =
-    serviceAccountJson.private_key || serviceAccountJson.privateKey;
+  const projectId = dados.project_id || dados.projectId;
+  const clientEmail = dados.client_email || dados.clientEmail;
+  const privateKey = dados.private_key || dados.privateKey;
 
   if (!projectId || !clientEmail || !privateKey) {
     throw new Error(
@@ -104,7 +96,9 @@ function iniciarFirebaseAdmin() {
 
   return initializeApp({
     credential: cert(serviceAccount),
-    databaseURL,
+    databaseURL:
+      process.env.FIREBASE_DATABASE_URL ||
+      "https://qr-porteiro-app-default-rtdb.firebaseio.com",
   });
 }
 
@@ -156,62 +150,15 @@ function detalharErroPush(erro: unknown) {
   };
 }
 
-async function enviarPushIndividual({
-  token,
-  unidadeId,
-  titulo,
-  mensagem,
-  link,
-  tipo,
-  condominioId = "",
-  comunicadoId = "",
-}: {
-  token: string;
-  unidadeId: string;
-  titulo: string;
-  mensagem: string;
-  link: string;
-  tipo: "chamada-v2" | "comunicado-v2" | "teste-push-v2";
-  condominioId?: string;
-  comunicadoId?: string;
-}) {
-  return getMessaging().send({
-    token,
-    notification: {
-      title: titulo,
-      body: mensagem,
-    },
-    data: {
-      tipo,
-      unidadeId: String(unidadeId),
-      condominioId: String(condominioId),
-      comunicadoId: String(comunicadoId),
-    },
-    webpush: {
-      fcmOptions: {
-        link,
-      },
-      headers: {
-        Urgency: "high",
-      },
-    },
-  });
-}
-
 export async function GET() {
   try {
     const app = iniciarFirebaseAdmin();
 
     return NextResponse.json({
       ok: true,
-      mensagem: "Rota V2 funcionando para chamadas e comunicados",
+      mensagem: "Rota V2 pronta para chamadas e comunicados",
       projetoFirebaseAdmin: app.options.projectId || "não identificado",
-      databaseURL:
-        app.options.databaseURL || "não identificada",
-      appUrl:
-        process.env.NEXT_PUBLIC_APP_URL ||
-        process.env.VERCEL_URL ||
-        "não configurada",
+      databaseURL: app.options.databaseURL || "não identificada",
     });
   } catch (erro) {
     return NextResponse.json(
@@ -228,11 +175,12 @@ export async function POST(request: Request) {
   try {
     const app = iniciarFirebaseAdmin();
     const db = getDatabase(app);
+    const messaging = getMessaging(app);
     const corpo = (await request.json().catch(() => ({}))) as CorpoRequisicao;
     const urlBase = obterUrlBase(request);
 
     // ======================================================
-    // TESTE DIRETO DE UM ÚNICO TOKEN
+    // TESTE DIRETO DE UM ÚNICO MORADOR
     // ======================================================
 
     if (corpo.tipo === "teste-push-v2") {
@@ -261,34 +209,29 @@ export async function POST(request: Request) {
         );
       }
 
-      try {
-        const resposta = await enviarPushIndividual({
-          token,
-          unidadeId,
-          titulo: "🔔 Teste QR Acesso",
-          mensagem: "O push do painel do morador está funcionando.",
-          link: `${urlBase}/morador-v2/${encodeURIComponent(unidadeId)}`,
+      const resposta = await messaging.send({
+        token,
+        notification: {
+          title: "🔔 Teste QR Acesso",
+          body: "O push do painel do morador está funcionando.",
+        },
+        data: {
           tipo: "teste-push-v2",
-        });
-
-        return NextResponse.json({
-          ok: true,
-          mensagem: "Push de teste enviado",
-          unidadeId,
-          resposta,
-          projetoFirebaseAdmin: app.options.projectId,
-        });
-      } catch (erro) {
-        return NextResponse.json(
-          {
-            ok: false,
-            unidadeId,
-            projetoFirebaseAdmin: app.options.projectId,
-            erro: detalharErroPush(erro),
+          unidadeId: String(unidadeId),
+        },
+        webpush: {
+          fcmOptions: {
+            link: `${urlBase}/morador-v2/${encodeURIComponent(unidadeId)}`,
           },
-          { status: 500 }
-        );
-      }
+        },
+      });
+
+      return NextResponse.json({
+        ok: true,
+        mensagem: "Push de teste enviado",
+        unidadeId,
+        resposta,
+      });
     }
 
     // ======================================================
@@ -338,73 +281,74 @@ export async function POST(request: Request) {
         );
       }
 
-      const envios = await Promise.all(
-        destinatarios.map(async ([unidadeId, token]) => {
-          const link =
-            `${urlBase}/morador-v2/${encodeURIComponent(unidadeId)}` +
-            `?comunicado=${encodeURIComponent(comunicadoId)}`;
+      const resultados = [];
 
-          try {
-            const resposta = await enviarPushIndividual({
-              token,
-              unidadeId,
-              titulo: `📢 ${titulo}`,
-              mensagem:
+      for (const [unidadeId, token] of destinatarios) {
+        try {
+          const resposta = await messaging.send({
+            token,
+            notification: {
+              title: `📢 ${titulo}`,
+              body:
                 mensagem.length > 120
                   ? `${mensagem.slice(0, 117)}...`
                   : mensagem,
-              link,
+            },
+            data: {
               tipo: "comunicado-v2",
-              condominioId,
-              comunicadoId,
-            });
+              unidadeId: String(unidadeId),
+              condominioId: String(condominioId),
+              comunicadoId: String(comunicadoId),
+            },
+            webpush: {
+              fcmOptions: {
+                link:
+                  `${urlBase}/morador-v2/${encodeURIComponent(unidadeId)}` +
+                  `?comunicado=${encodeURIComponent(comunicadoId)}`,
+              },
+            },
+          });
 
-            await db
-              .ref(
-                `comunicados-v2/${condominioId}/${comunicadoId}/enviosPush/${unidadeId}`
-              )
-              .set({
-                unidadeId,
-                enviado: true,
-                enviadoEm: Date.now(),
-                resposta,
-              });
-
-            return {
+          await db
+            .ref(
+              `comunicados-v2/${condominioId}/${comunicadoId}/enviosPush/${unidadeId}`
+            )
+            .set({
               unidadeId,
               enviado: true,
+              enviadoEm: Date.now(),
               resposta,
-            };
-          } catch (erro) {
-            const detalhesErro = detalharErroPush(erro);
+            });
 
-            console.error(
-              `ERRO PUSH PARA ${unidadeId}:`,
-              detalhesErro
-            );
+          resultados.push({
+            unidadeId,
+            enviado: true,
+            resposta,
+          });
+        } catch (erro) {
+          const detalhes = detalharErroPush(erro);
 
-            await db
-              .ref(
-                `comunicados-v2/${condominioId}/${comunicadoId}/enviosPush/${unidadeId}`
-              )
-              .set({
-                unidadeId,
-                enviado: false,
-                tentativaEm: Date.now(),
-                erro: detalhesErro,
-              });
-
-            return {
+          await db
+            .ref(
+              `comunicados-v2/${condominioId}/${comunicadoId}/enviosPush/${unidadeId}`
+            )
+            .set({
               unidadeId,
               enviado: false,
-              erro: detalhesErro,
-            };
-          }
-        })
-      );
+              tentativaEm: Date.now(),
+              erro: detalhes,
+            });
 
-      const enviados = envios.filter((item) => item.enviado).length;
-      const falhas = envios.length - enviados;
+          resultados.push({
+            unidadeId,
+            enviado: false,
+            erro: detalhes,
+          });
+        }
+      }
+
+      const enviados = resultados.filter((item) => item.enviado).length;
+      const falhas = resultados.length - enviados;
 
       await db
         .ref(`comunicados-v2/${condominioId}/${comunicadoId}`)
@@ -419,20 +363,17 @@ export async function POST(request: Request) {
         {
           ok: enviados > 0,
           mensagem: "Processamento do comunicado concluído",
-          projetoFirebaseAdmin: app.options.projectId,
-          condominioId,
-          filtroUtilizado: filtroCondominio,
           totalDestinatarios: destinatarios.length,
           enviados,
           falhas,
-          resultados: envios,
+          resultados,
         },
         { status: enviados > 0 ? 200 : 500 }
       );
     }
 
     // ======================================================
-    // CHAMADA INDIVIDUAL V2
+    // CHAMADA INDIVIDUAL V2 — MESMA BASE DO TULIPAS
     // ======================================================
 
     const unidadeId = corpo.unidadeId?.trim();
@@ -466,23 +407,32 @@ export async function POST(request: Request) {
     const nome = chamada?.nome || "Visitante";
     const motivo = chamada?.motivo || "Não informado";
 
-    const resposta = await enviarPushIndividual({
+    const resposta = await messaging.send({
       token,
-      unidadeId,
-      titulo: `🔔 ${nome} está chamando`,
-      mensagem: `Motivo: ${motivo}`,
-      link: `${urlBase}/morador-v2/${encodeURIComponent(unidadeId)}`,
-      tipo: "chamada-v2",
+      notification: {
+        title: `🔔 ${nome} está chamando`,
+        body: `Motivo: ${motivo}`,
+      },
+      data: {
+        unidadeId: String(unidadeId),
+        nome: String(nome),
+        motivo: String(motivo),
+        tipo: "chamada-v2",
+      },
+      webpush: {
+        fcmOptions: {
+          link: `${urlBase}/morador-v2/${encodeURIComponent(unidadeId)}`,
+        },
+      },
     });
 
     return NextResponse.json({
       ok: true,
       mensagem: "Notificação V2 enviada",
       resposta,
-      projetoFirebaseAdmin: app.options.projectId,
     });
   } catch (erro) {
-    console.error("ERRO GERAL PUSH V2:", erro);
+    console.error("ERRO PUSH V2:", erro);
 
     return NextResponse.json(
       {
