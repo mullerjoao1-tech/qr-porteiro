@@ -67,6 +67,7 @@ export default function AcessoV2Condominio() {
 
   const [enviando, setEnviando] = useState(false);
   const [mensagem, setMensagem] = useState("");
+  const [diagnostico, setDiagnostico] = useState("");
 
   const [gravandoAudio, setGravandoAudio] = useState(false);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
@@ -198,11 +199,7 @@ export default function AcessoV2Condominio() {
   const precisaDescricao = motivo === "Outros";
 
   
-     async function chamarUnidade() {
-    if (!unidadeSelecionada) {
-      alert("Selecione uma unidade.");
-      return;
-    }
+  async function chamarUnidade() {
     if (!unidadeSelecionada) {
       alert("Selecione uma unidade.");
       return;
@@ -234,6 +231,7 @@ export default function AcessoV2Condominio() {
     try {
       setEnviando(true);
       setMensagem("");
+      setDiagnostico("1/3 • Gravando chamada no Firebase...");
       setPopupTexto("");
       ultimoPopupRef.current = "";
       chamadaFoiEnviadaRef.current = true;
@@ -255,22 +253,63 @@ export default function AcessoV2Condominio() {
         mensagemMorador: null,
         enviadoEm: null,
       });
-const respostaPush = await fetch("/api/enviar-notificacao-v2", {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-  },
-  body: JSON.stringify({
-    unidadeId: unidadeSelecionada.id,
-  }),
-});
 
-const dadosPush = await respostaPush.json();
-console.log("RESPOSTA PUSH V2:", dadosPush);
-      setMensagem(`✅ Chamada enviada para ${unidadeSelecionada.nome}. Aguarde o atendimento.`);
-    } catch (erro) {
-      console.error("Erro ao chamar unidade:", erro);
-      alert("Erro ao enviar chamada. Tente novamente.");
+      setDiagnostico("2/3 • Chamada gravada. Enviando push...");
+
+      const respostaPush = await fetch("/api/enviar-notificacao-v2", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          unidadeId: unidadeSelecionada.id,
+        }),
+      });
+
+      const textoResposta = await respostaPush.text();
+
+      let dadosPush: any = null;
+
+      try {
+        dadosPush = textoResposta ? JSON.parse(textoResposta) : null;
+      } catch {
+        dadosPush = textoResposta;
+      }
+
+      console.log("RESPOSTA PUSH V2:", dadosPush);
+
+      if (!respostaPush.ok) {
+        const detalhe =
+          typeof dadosPush === "string"
+            ? dadosPush
+            : dadosPush?.mensagem ||
+              dadosPush?.erro?.mensagem ||
+              dadosPush?.erro?.message ||
+              dadosPush?.error?.message ||
+              dadosPush?.error ||
+              JSON.stringify(dadosPush);
+
+        throw new Error(
+          `Push retornou HTTP ${respostaPush.status}${
+            detalhe ? `: ${detalhe}` : ""
+          }`
+        );
+      }
+
+      setDiagnostico("3/3 • Chamada e push enviados com sucesso.");
+      setMensagem(
+        `✅ Chamada enviada para ${unidadeSelecionada.nome}. Aguarde o atendimento.`
+      );
+    } catch (erro: any) {
+      console.warn("Falha ao enviar chamada/push:", erro);
+
+      const detalhe =
+        erro?.message || erro?.code || String(erro) || "Erro desconhecido";
+
+      setDiagnostico(`❌ ERRO: ${detalhe}`);
+      setMensagem("");
+      chamadaAtivaRef.current = false;
+      chamadaFoiEnviadaRef.current = false;
     } finally {
       setEnviando(false);
     }
@@ -519,6 +558,7 @@ console.log("RESPOSTA PUSH V2:", dadosPush);
     setMotivo("");
     setOutroMotivo("");
     setMensagem("");
+    setDiagnostico("");
     setPopupTexto("");
     setAudioBlob(null);
     setGravandoAudio(false);
@@ -535,6 +575,7 @@ console.log("RESPOSTA PUSH V2:", dadosPush);
     setMotivo("");
     setOutroMotivo("");
     setMensagem("");
+    setDiagnostico("");
     setPopupTexto("");
     setAudioBlob(null);
     setGravandoAudio(false);
@@ -804,7 +845,21 @@ const ocupada =
               {enviando ? "Enviando..." : "🔔 CHAMAR"}
             </button>
 
-                        {mensagem && (
+                        {diagnostico && (
+              <div
+                className={
+                  diagnostico.startsWith("❌")
+                    ? "mt-5 bg-red-500/15 border border-red-500 rounded-2xl p-4 text-red-300 font-bold text-center break-words"
+                    : diagnostico.startsWith("3/3")
+                    ? "mt-5 bg-green-500/15 border border-green-500 rounded-2xl p-4 text-green-300 font-bold text-center"
+                    : "mt-5 bg-yellow-500/15 border border-yellow-500 rounded-2xl p-4 text-yellow-200 font-bold text-center"
+                }
+              >
+                {diagnostico}
+              </div>
+            )}
+
+            {mensagem && (
               <div className="mt-5 space-y-4">
                 <div className="bg-green-500/15 border border-green-500 rounded-2xl p-4 text-green-300 font-bold text-center">
                   {mensagem}

@@ -37,54 +37,54 @@ function iniciarFirebaseAdmin() {
     return getApp();
   }
 
-  const chaveServico = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
+  const chaveServico = process.env.FIREBASE_SERVICE_ACCOUNT_KEY?.trim();
 
-  if (!chaveServico) {
-    throw new Error(
-      "A variável FIREBASE_SERVICE_ACCOUNT_KEY não está configurada."
-    );
-  }
+  let projectId = process.env.FIREBASE_PROJECT_ID?.trim();
+  let clientEmail = process.env.FIREBASE_CLIENT_EMAIL?.trim();
+  let privateKey = process.env.FIREBASE_PRIVATE_KEY?.trim();
 
-  let conteudoChave: unknown;
+  if (chaveServico) {
+    let conteudoChave: unknown;
 
-  try {
-    conteudoChave = JSON.parse(chaveServico);
+    try {
+      conteudoChave = JSON.parse(chaveServico);
 
-    if (typeof conteudoChave === "string") {
-      conteudoChave = JSON.parse(conteudoChave);
+      if (typeof conteudoChave === "string") {
+        conteudoChave = JSON.parse(conteudoChave);
+      }
+    } catch {
+      throw new Error(
+        "FIREBASE_SERVICE_ACCOUNT_KEY existe, mas não contém um JSON válido."
+      );
     }
-  } catch {
-    throw new Error(
-      "FIREBASE_SERVICE_ACCOUNT_KEY não contém um JSON válido."
-    );
+
+    if (
+      !conteudoChave ||
+      typeof conteudoChave !== "object" ||
+      Array.isArray(conteudoChave)
+    ) {
+      throw new Error(
+        "FIREBASE_SERVICE_ACCOUNT_KEY não possui o formato esperado."
+      );
+    }
+
+    const dados = conteudoChave as {
+      project_id?: string;
+      client_email?: string;
+      private_key?: string;
+      projectId?: string;
+      clientEmail?: string;
+      privateKey?: string;
+    };
+
+    projectId = dados.project_id || dados.projectId || projectId;
+    clientEmail = dados.client_email || dados.clientEmail || clientEmail;
+    privateKey = dados.private_key || dados.privateKey || privateKey;
   }
-
-  if (
-    !conteudoChave ||
-    typeof conteudoChave !== "object" ||
-    Array.isArray(conteudoChave)
-  ) {
-    throw new Error(
-      "FIREBASE_SERVICE_ACCOUNT_KEY não possui o formato esperado."
-    );
-  }
-
-  const dados = conteudoChave as {
-    project_id?: string;
-    client_email?: string;
-    private_key?: string;
-    projectId?: string;
-    clientEmail?: string;
-    privateKey?: string;
-  };
-
-  const projectId = dados.project_id || dados.projectId;
-  const clientEmail = dados.client_email || dados.clientEmail;
-  const privateKey = dados.private_key || dados.privateKey;
 
   if (!projectId || !clientEmail || !privateKey) {
     throw new Error(
-      "A conta de serviço não possui project_id, client_email ou private_key."
+      "Credenciais do Firebase Admin ausentes. Configure FIREBASE_SERVICE_ACCOUNT_KEY ou FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL e FIREBASE_PRIVATE_KEY no arquivo .env.local do Studio."
     );
   }
 
@@ -97,7 +97,7 @@ function iniciarFirebaseAdmin() {
   return initializeApp({
     credential: cert(serviceAccount),
     databaseURL:
-      process.env.FIREBASE_DATABASE_URL ||
+      process.env.FIREBASE_DATABASE_URL?.trim() ||
       "https://qr-porteiro-app-default-rtdb.firebaseio.com",
   });
 }
@@ -164,6 +164,7 @@ export async function GET() {
     return NextResponse.json(
       {
         ok: false,
+        mensagem: detalharErroPush(erro).mensagem,
         erro: detalharErroPush(erro),
       },
       { status: 500 }
@@ -437,6 +438,7 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         ok: false,
+        mensagem: detalharErroPush(erro).mensagem,
         erro: detalharErroPush(erro),
       },
       { status: 500 }
