@@ -1,8 +1,15 @@
-importScripts("https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js");
-importScripts("https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js");
+/* QR Acesso Studio — Firebase Cloud Messaging Service Worker */
+
+importScripts(
+  "https://www.gstatic.com/firebasejs/12.14.0/firebase-app-compat.js"
+);
+
+importScripts(
+  "https://www.gstatic.com/firebasejs/12.14.0/firebase-messaging-compat.js"
+);
 
 firebase.initializeApp({
-  apiKey: "AIzaSyBAdV3dc8bN938ivb8YAwqZ3vw6a24Bh0",
+  apiKey: "AIzaSyBAdV3dc8bN938ivb8YAwhQZ3vw6a24Bh0",
   authDomain: "qr-porteiro-app.firebaseapp.com",
   databaseURL: "https://qr-porteiro-app-default-rtdb.firebaseio.com",
   projectId: "qr-porteiro-app",
