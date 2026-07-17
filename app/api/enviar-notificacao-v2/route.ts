@@ -37,27 +37,7 @@ function iniciarFirebaseAdmin() {
     return getApp();
   }
 
- const chaveServico = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
-
-console.log("========== DEBUG ==========");
-console.log(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
-console.log("===========================");
-  console.log("NODE_ENV:", process.env.NODE_ENV);
-
-console.log(
-  "FIREBASE_SERVICE_ACCOUNT_KEY existe?",
-  !!process.env.FIREBASE_SERVICE_ACCOUNT_KEY
-);
-
-console.log(
-  "FIREBASE_DATABASE_URL:",
-  process.env.FIREBASE_DATABASE_URL
-);
-
-console.log(
-  "NEXT_PUBLIC_APP_URL:",
-  process.env.NEXT_PUBLIC_APP_URL
-);
+  const chaveServico = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
   const databaseURL =
     process.env.FIREBASE_DATABASE_URL ||
     "https://qr-porteiro-app-default-rtdb.firebaseio.com";
@@ -68,21 +48,59 @@ console.log(
     );
   }
 
-  let serviceAccount: ServiceAccount;
+  let conteudoChave: unknown;
 
   try {
-    serviceAccount = JSON.parse(chaveServico) as ServiceAccount;
+    conteudoChave = JSON.parse(chaveServico);
+
+    // Na Vercel, o JSON pode ter sido salvo entre aspas e precisar
+    // ser convertido uma segunda vez.
+    if (typeof conteudoChave === "string") {
+      conteudoChave = JSON.parse(conteudoChave);
+    }
   } catch {
     throw new Error(
       "FIREBASE_SERVICE_ACCOUNT_KEY não contém um JSON válido."
     );
   }
 
-  if (!serviceAccount.projectId) {
+  if (
+    !conteudoChave ||
+    typeof conteudoChave !== "object" ||
+    Array.isArray(conteudoChave)
+  ) {
     throw new Error(
-      "A conta de serviço não possui project_id/projectId."
+      "FIREBASE_SERVICE_ACCOUNT_KEY não possui o formato esperado."
     );
   }
+
+  const serviceAccountJson = conteudoChave as {
+    project_id?: string;
+    client_email?: string;
+    private_key?: string;
+    projectId?: string;
+    clientEmail?: string;
+    privateKey?: string;
+  };
+
+  const projectId =
+    serviceAccountJson.project_id || serviceAccountJson.projectId;
+  const clientEmail =
+    serviceAccountJson.client_email || serviceAccountJson.clientEmail;
+  const privateKey =
+    serviceAccountJson.private_key || serviceAccountJson.privateKey;
+
+  if (!projectId || !clientEmail || !privateKey) {
+    throw new Error(
+      "A conta de serviço não possui project_id, client_email ou private_key."
+    );
+  }
+
+  const serviceAccount: ServiceAccount = {
+    projectId,
+    clientEmail,
+    privateKey: privateKey.replace(/\\n/g, "\n"),
+  };
 
   return initializeApp({
     credential: cert(serviceAccount),
