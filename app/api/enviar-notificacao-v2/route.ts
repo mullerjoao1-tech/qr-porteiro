@@ -32,6 +32,16 @@ type CorpoTeste = {
 
 type CorpoRequisicao = CorpoChamada | CorpoComunicado | CorpoTeste;
 
+type RegistroTokenMorador =
+  | string
+  | {
+      token?: string;
+      unidadeId?: string;
+      condominioId?: string;
+      atualizadoEm?: number;
+    };
+
+
 function iniciarFirebaseAdmin() {
   if (getApps().length > 0) {
     return getApp();
@@ -128,6 +138,27 @@ function textoFiltroCondominio(condominioId: string) {
   return normalizado.replace(/^cnd-/, "");
 }
 
+function normalizarRegistroToken(
+  unidadeIdChave: string,
+  valor: RegistroTokenMorador
+) {
+  if (typeof valor === "string") {
+    return {
+      unidadeId: unidadeIdChave,
+      condominioId: "",
+      token: valor.trim(),
+      formatoAntigo: true,
+    };
+  }
+
+  return {
+    unidadeId: String(valor?.unidadeId || unidadeIdChave),
+    condominioId: String(valor?.condominioId || ""),
+    token: String(valor?.token || "").trim(),
+    formatoAntigo: false,
+  };
+}
+
 function detalharErroPush(erro: unknown) {
   const erroFirebase = erro as FirebaseMessagingError & {
     code?: string;
@@ -198,9 +229,13 @@ export async function POST(request: Request) {
         .ref(`configuracoes-v2/tokensMorador/${unidadeId}`)
         .get();
 
-      const token = tokenSnapshot.val();
+      const registroToken = tokenSnapshot.val() as RegistroTokenMorador | null;
+      const tokenNormalizado = registroToken
+        ? normalizarRegistroToken(unidadeId, registroToken)
+        : null;
+      const token = tokenNormalizado?.token || "";
 
-      if (!token || typeof token !== "string") {
+      if (!token) {
         return NextResponse.json(
           {
             ok: false,
@@ -258,16 +293,28 @@ export async function POST(request: Request) {
         .get();
 
       const tokensCadastrados =
-        (tokensSnapshot.val() as Record<string, unknown> | null) || {};
+        (tokensSnapshot.val() as Record<string, RegistroTokenMorador> | null) ||
+        {};
 
       const filtroCondominio = textoFiltroCondominio(condominioId);
 
-      const destinatarios = Object.entries(tokensCadastrados).filter(
-        ([unidadeId, token]) =>
-          typeof token === "string" &&
-          token.trim().length > 0 &&
-          unidadeId.toLowerCase().includes(filtroCondominio)
-      ) as Array<[string, string]>;
+      const destinatarios = Object.entries(tokensCadastrados)
+        .map(([unidadeIdChave, valor]) =>
+          normalizarRegistroToken(unidadeIdChave, valor)
+        )
+        .filter((registro) => {
+          if (!registro.token) return false;
+
+          if (registro.condominioId) {
+            return registro.condominioId === condominioId;
+          }
+
+          // Compatibilidade temporária com tokens antigos:
+          // tenta reconhecer o condomínio pelo ID da unidade.
+          return registro.unidadeId
+            .toLowerCase()
+            .includes(filtroCondominio);
+        });
 
       if (destinatarios.length === 0) {
         return NextResponse.json(
@@ -284,7 +331,8 @@ export async function POST(request: Request) {
 
       const resultados = [];
 
-      for (const [unidadeId, token] of destinatarios) {
+      for (const destinatario of destinatarios) {
+        const { unidadeId, token } = destinatario;
         try {
           const resposta = await messaging.send({
             token,
@@ -390,9 +438,13 @@ export async function POST(request: Request) {
       .ref(`configuracoes-v2/tokensMorador/${unidadeId}`)
       .get();
 
-    const token = tokenSnapshot.val();
+    const registroToken = tokenSnapshot.val() as RegistroTokenMorador | null;
+    const tokenNormalizado = registroToken
+      ? normalizarRegistroToken(unidadeId, registroToken)
+      : null;
+    const token = tokenNormalizado?.token || "";
 
-    if (!token || typeof token !== "string") {
+    if (!token) {
       return NextResponse.json(
         { ok: false, erro: "Token do morador V2 não encontrado" },
         { status: 400 }

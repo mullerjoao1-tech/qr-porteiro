@@ -74,7 +74,8 @@ export default function AcessoV2Condominio() {
   const [enviandoAudio, setEnviandoAudio] = useState(false);
 
   const [popupTexto, setPopupTexto] = useState("");
-  const [popupTipo, setPopupTipo] = useState<"mensagem" | "encerrado">("mensagem");
+  const [popupAudioBase64, setPopupAudioBase64] = useState("");
+  const [popupTipo, setPopupTipo] = useState<"mensagem" | "audio" | "encerrado">("mensagem");
 
   const chamadaAtivaRef = useRef(false);
   const chamadaFoiEnviadaRef = useRef(false);
@@ -119,6 +120,7 @@ export default function AcessoV2Condominio() {
       if (!chamada) {
         if (chamadaAtivaRef.current && chamadaFoiEnviadaRef.current) {
           setPopupTipo("encerrado");
+          setPopupAudioBase64("");
           setPopupTexto("Atendimento encerrado pelo responsável.");
 
           setUnidadeSelecionada(null);
@@ -145,6 +147,43 @@ export default function AcessoV2Condominio() {
 
       chamadaAtivaRef.current = true;
 
+      const mensagens = chamada.mensagens
+        ? (Object.entries(chamada.mensagens) as Array<
+            [string, MensagemConversa]
+          >)
+            .filter(([, item]) => item?.autor === "morador")
+            .sort(
+              ([idA, itemA], [idB, itemB]) =>
+                Number(itemA?.criadoEm || idA) - Number(itemB?.criadoEm || idB)
+            )
+        : [];
+
+      const ultimaMensagemMorador =
+        mensagens.length > 0 ? mensagens[mensagens.length - 1] : null;
+
+      if (ultimaMensagemMorador) {
+        const [idMensagemBanco, item] = ultimaMensagemMorador;
+        const idMensagem = `${idMensagemBanco}-${item.criadoEm || ""}`;
+
+        if (idMensagem !== ultimoPopupRef.current) {
+          ultimoPopupRef.current = idMensagem;
+
+          if (item.tipo === "audio" && item.audioBase64) {
+            setPopupTipo("audio");
+            setPopupTexto("Você recebeu um áudio do morador.");
+            setPopupAudioBase64(item.audioBase64);
+            return;
+          }
+
+          if (item.tipo === "texto" && item.texto) {
+            setPopupTipo("mensagem");
+            setPopupAudioBase64("");
+            setPopupTexto(item.texto);
+            return;
+          }
+        }
+      }
+
       const textoResposta =
         chamada.mensagemRapida ||
         chamada.respostaRapida ||
@@ -153,11 +192,16 @@ export default function AcessoV2Condominio() {
         chamada.mensagemMorador ||
         "";
 
-      const idMensagem = `${textoResposta}-${chamada.enviadoEm || ""}`;
+      const idMensagemAntiga = `${textoResposta}-${chamada.enviadoEm || ""}`;
 
-      if (textoResposta && idMensagem !== ultimoPopupRef.current) {
-        ultimoPopupRef.current = idMensagem;
+      if (
+        textoResposta &&
+        idMensagemAntiga !== ultimoPopupRef.current &&
+        textoResposta !== "ATENDIMENTO_ENCERRADO"
+      ) {
+        ultimoPopupRef.current = idMensagemAntiga;
         setPopupTipo("mensagem");
+        setPopupAudioBase64("");
         setPopupTexto(textoResposta);
       }
     });
@@ -233,6 +277,7 @@ export default function AcessoV2Condominio() {
       setMensagem("");
       setDiagnostico("1/3 • Gravando chamada no Firebase...");
       setPopupTexto("");
+      setPopupAudioBase64("");
       ultimoPopupRef.current = "";
       chamadaFoiEnviadaRef.current = true;
       chamadaAtivaRef.current = true;
@@ -538,6 +583,7 @@ export default function AcessoV2Condominio() {
 
     setMensagem("");
     setPopupTexto("");
+    setPopupAudioBase64("");
     setUnidadeSelecionada(null);
     setNome("");
     setMotivo("");
@@ -560,6 +606,7 @@ export default function AcessoV2Condominio() {
     setMensagem("");
     setDiagnostico("");
     setPopupTexto("");
+    setPopupAudioBase64("");
     setAudioBlob(null);
     setGravandoAudio(false);
     chamadaAtivaRef.current = false;
@@ -577,6 +624,7 @@ export default function AcessoV2Condominio() {
     setMensagem("");
     setDiagnostico("");
     setPopupTexto("");
+    setPopupAudioBase64("");
     setAudioBlob(null);
     setGravandoAudio(false);
     chamadaAtivaRef.current = false;
@@ -596,18 +644,45 @@ export default function AcessoV2Condominio() {
             }
           >
             <p className="text-5xl mb-4">
-              {popupTipo === "encerrado" ? "✅" : "💬"}
+              {popupTipo === "encerrado"
+                ? "✅"
+                : popupTipo === "audio"
+                ? "🎧"
+                : "💬"}
             </p>
 
             <h2 className="text-2xl font-black mb-3">
               {popupTipo === "encerrado"
                 ? "ATENDIMENTO ENCERRADO"
+                : popupTipo === "audio"
+                ? "NOVO ÁUDIO"
                 : "NOVA MENSAGEM"}
             </h2>
 
             <p className="text-3xl font-black leading-relaxed py-6">
               {popupTexto}
             </p>
+
+            {popupTipo === "audio" && popupAudioBase64 && (
+              <div className="bg-white/15 border border-white/30 rounded-2xl p-4 mb-4">
+                <audio
+                  controls
+                  className="w-full"
+                  src={popupAudioBase64}
+                  onPlay={async () => {
+                    if (!unidadeSelecionada) return;
+
+                    await update(
+                      ref(db, `unidades-v2/${unidadeSelecionada.id}/chamada`),
+                      {
+                        visualizadoPeloVisitante: true,
+                        mensagemVisualizada: true,
+                      }
+                    );
+                  }}
+                />
+              </div>
+            )}
 
             <button
               onClick={async () => {
@@ -621,6 +696,7 @@ export default function AcessoV2Condominio() {
   }
 
   setPopupTexto("");
+  setPopupAudioBase64("");
 }}
               className="mt-7 w-full bg-white text-black text-2xl font-black py-5 rounded-2xl"
             >

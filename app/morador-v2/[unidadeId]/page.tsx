@@ -130,8 +130,8 @@ export default function MoradorV2() {
   const caminhoLogs = `logs-v2/${slug}`;
   const caminhoAnalytics = `analytics-v2/${slug}`;
 
-  const TEMPO_AGUARDANDO = 5 * 60 * 1000;
-  const TEMPO_EM_ATENDIMENTO = 3 * 60 * 1000;
+  const TEMPO_AGUARDANDO = 30 * 1000;
+const TEMPO_EM_ATENDIMENTO = 30 * 1000;
 
   const chamadaAtiva =
     nome !== "Nenhuma solicitação" &&
@@ -564,7 +564,10 @@ export default function MoradorV2() {
 
     if (dados.status === "Em atendimento") {
       tempoLimite = TEMPO_EM_ATENDIMENTO;
-      dataBase = dados.atendidoEm || dados.criadoEm;
+      dataBase =
+        dados.ultimaAtividade ||
+        dados.atendidoEm ||
+        dados.criadoEm;
     }
 
     if (!dataBase) return;
@@ -596,11 +599,15 @@ export default function MoradorV2() {
     await registrarAnalytics("timeout");
     await registrarLog("timeout_atendimento", "Chamada finalizada automaticamente");
 
-    await salvarHistorico("Automática");
+    const timeoutAguardando = status === "Aguardando atendimento";
+
+    await salvarHistorico(timeoutAguardando ? "Não atendida" : "Automática");
 
     await update(ref(db, caminhoFirebase), {
       status: "Encerrado",
-      mensagemResponsavel: "ATENDIMENTO_ENCERRADO",
+      mensagemResponsavel: timeoutAguardando
+        ? "Tempo de espera esgotado."
+        : "ATENDIMENTO_ENCERRADO",
       notificar: false,
       encerradoEm: new Date().toISOString(),
     });
@@ -636,10 +643,13 @@ export default function MoradorV2() {
     await registrarAnalytics("atendida");
     await registrarLog("chamada_atendida", "Chamada atendida pelo painel");
 
+    const agora = Date.now();
+
     await update(ref(db, caminhoFirebase), {
       status: "Em atendimento",
       notificar: false,
-      atendidoEm: new Date().toISOString(),
+      atendidoEm: new Date(agora).toISOString(),
+      ultimaAtividade: agora,
     });
 
     setPopupAtendimentoAberto(false);
@@ -1028,9 +1038,12 @@ export default function MoradorV2() {
           "O Firebase não retornou um token de notificação."
         );
       }
-
-      await update(ref(db, "configuracoes-v2"), {
-        [`tokensMorador/${slug}`]: token,
+const condominioId = identificarCondominioPeloSlug(slug);
+      await set(ref(db, `configuracoes-v2/tokensMorador/${slug}`), {
+        token,
+        unidadeId: slug,
+        condominioId,
+        atualizadoEm: Date.now(),
       });
 
       await registrarLog(

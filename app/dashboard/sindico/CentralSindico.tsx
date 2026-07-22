@@ -932,7 +932,7 @@ export default function CentralSindico() {
           },
           body: JSON.stringify({
             tipo: "comunicado-v2",
-            condominioId: contextoAtual,
+            condominioId: condominioComunicacaoId,
             comunicadoId,
             titulo: tituloComunicacao.trim(),
             mensagem: mensagemComunicacao.trim(),
