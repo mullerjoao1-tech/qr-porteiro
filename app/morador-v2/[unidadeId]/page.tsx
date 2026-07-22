@@ -130,8 +130,8 @@ export default function MoradorV2() {
   const caminhoLogs = `logs-v2/${slug}`;
   const caminhoAnalytics = `analytics-v2/${slug}`;
 
- const TEMPO_AGUARDANDO = 5 * 60 * 1000;
-const TEMPO_EM_ATENDIMENTO = 3 * 60 * 1000;
+  const TEMPO_AGUARDANDO = 5 * 60 * 1000;
+  const TEMPO_EM_ATENDIMENTO = 3 * 60 * 1000;
 
   const chamadaAtiva =
     nome !== "Nenhuma solicitação" &&
@@ -564,10 +564,7 @@ const TEMPO_EM_ATENDIMENTO = 3 * 60 * 1000;
 
     if (dados.status === "Em atendimento") {
       tempoLimite = TEMPO_EM_ATENDIMENTO;
-      dataBase =
-        dados.ultimaAtividade ||
-        dados.atendidoEm ||
-        dados.criadoEm;
+      dataBase = dados.atendidoEm || dados.criadoEm;
     }
 
     if (!dataBase) return;
@@ -643,13 +640,10 @@ const TEMPO_EM_ATENDIMENTO = 3 * 60 * 1000;
     await registrarAnalytics("atendida");
     await registrarLog("chamada_atendida", "Chamada atendida pelo painel");
 
-    const agora = Date.now();
-
     await update(ref(db, caminhoFirebase), {
       status: "Em atendimento",
       notificar: false,
-      atendidoEm: new Date(agora).toISOString(),
-      ultimaAtividade: agora,
+      atendidoEm: new Date().toISOString(),
     });
 
     setPopupAtendimentoAberto(false);
