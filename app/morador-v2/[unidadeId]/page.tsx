@@ -130,8 +130,8 @@ export default function MoradorV2() {
   const caminhoLogs = `logs-v2/${slug}`;
   const caminhoAnalytics = `analytics-v2/${slug}`;
 
-  const TEMPO_AGUARDANDO = 30 * 1000;
-const TEMPO_EM_ATENDIMENTO = 30 * 1000;
+ const TEMPO_AGUARDANDO = 5 * 60 * 1000;
+const TEMPO_EM_ATENDIMENTO = 3 * 60 * 1000;
 
   const chamadaAtiva =
     nome !== "Nenhuma solicitação" &&
