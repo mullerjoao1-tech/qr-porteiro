@@ -273,6 +273,8 @@ export default function AcessoV2Condominio() {
     if (motivo === "Outros" && !nomeFinal) nomeFinal = "Outro chamado";
 
     try {
+      setDiagnostico("");
+setMensagem("");
       setEnviando(true);
       setMensagem("");
       setDiagnostico("1/3 • Gravando chamada no Firebase...");
@@ -580,7 +582,12 @@ export default function AcessoV2Condominio() {
     );
 
     await remove(ref(db, `unidades-v2/${unidadeSelecionada.id}/chamada`));
+setEnviando(false);
+setEnviandoAudio(false);
 
+setDiagnostico("");
+setBusca("");
+setBlocoSelecionado("");
     setMensagem("");
     setPopupTexto("");
     setPopupAudioBase64("");
