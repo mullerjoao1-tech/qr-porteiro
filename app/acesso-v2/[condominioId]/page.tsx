@@ -244,47 +244,63 @@ export default function AcessoV2Condominio() {
 
   
   async function chamarUnidade() {
-    if (!unidadeSelecionada) {
-      alert("Selecione uma unidade.");
-      return;
-    }
+  if (!unidadeSelecionada) {
+    alert("Selecione uma unidade.");
+    return;
+  }
 
-    if (!motivo) {
-      alert("Escolha o motivo da chamada.");
-      return;
-    }
+  if (!motivo) {
+    alert("Escolha o motivo da chamada.");
+    return;
+  }
 
-    if (precisaNome && !nome.trim()) {
-      alert("Digite seu nome.");
-      return;
-    }
+  if (precisaNome && !nome.trim()) {
+    alert("Digite seu nome.");
+    return;
+  }
 
-    if (precisaDescricao && !outroMotivo.trim()) {
-      alert("Descreva o motivo.");
-      return;
-    }
+  if (precisaDescricao && !outroMotivo.trim()) {
+    alert("Descreva o motivo.");
+    return;
+  }
 
-    const motivoFinal = motivo === "Outros" ? outroMotivo.trim() : motivo;
+  const motivoFinal =
+    motivo === "Outros" ? outroMotivo.trim() : motivo;
 
-    let nomeFinal = nome.trim();
+  let nomeFinal = nome.trim();
 
-    if (motivo === "Entrega") nomeFinal = "Entrega";
-    if (motivo === "Entrega de comida") nomeFinal = "Entrega de comida";
-    if (motivo === "Outros" && !nomeFinal) nomeFinal = "Outro chamado";
+  if (motivo === "Entrega") {
+    nomeFinal = "Entrega";
+  }
 
-    try {
-      setDiagnostico("");
-setMensagem("");
-      setEnviando(true);
-      setMensagem("");
-      setDiagnostico("1/3 • Gravando chamada no Firebase...");
-      setPopupTexto("");
-      setPopupAudioBase64("");
-      ultimoPopupRef.current = "";
-      chamadaFoiEnviadaRef.current = true;
-      chamadaAtivaRef.current = true;
+  if (motivo === "Entrega de comida") {
+    nomeFinal = "Entrega de comida";
+  }
 
-      await update(ref(db, `unidades-v2/${unidadeSelecionada.id}/chamada`), {
+  if (motivo === "Outros" && !nomeFinal) {
+    nomeFinal = "Outro chamado";
+  }
+
+  const unidadeIdAtual = unidadeSelecionada.id;
+  const unidadeNomeAtual = unidadeSelecionada.nome;
+
+  try {
+    setDiagnostico("");
+    setMensagem("");
+    setEnviando(true);
+
+    setPopupTexto("");
+    setPopupAudioBase64("");
+
+    ultimoPopupRef.current = "";
+    chamadaFoiEnviadaRef.current = true;
+    chamadaAtivaRef.current = true;
+
+    setDiagnostico("Gravando chamada...");
+
+    await update(
+      ref(db, `unidades-v2/${unidadeIdAtual}/chamada`),
+      {
         nome: nomeFinal,
         motivo: motivoFinal,
         status: "Aguardando atendimento",
@@ -299,68 +315,80 @@ setMensagem("");
         resposta: null,
         mensagemMorador: null,
         enviadoEm: null,
-      });
-
-      setDiagnostico("2/3 • Chamada gravada. Enviando push...");
-
-      const respostaPush = await fetch("/api/enviar-notificacao-v2", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          unidadeId: unidadeSelecionada.id,
-        }),
-      });
-
-      const textoResposta = await respostaPush.text();
-
-      let dadosPush: any = null;
-
-      try {
-        dadosPush = textoResposta ? JSON.parse(textoResposta) : null;
-      } catch {
-        dadosPush = textoResposta;
       }
+    );
 
-      console.log("RESPOSTA PUSH V2:", dadosPush);
+    /*
+     * A chamada já está gravada neste ponto.
+     * O morador recebe o evento pelo Realtime Database.
+     * Portanto, liberamos imediatamente a tela do visitante.
+     */
+    setEnviando(false);
+    setDiagnostico("✅ Chamada enviada.");
 
-      if (!respostaPush.ok) {
-        const detalhe =
-          typeof dadosPush === "string"
-            ? dadosPush
-            : dadosPush?.mensagem ||
-              dadosPush?.erro?.mensagem ||
-              dadosPush?.erro?.message ||
-              dadosPush?.error?.message ||
-              dadosPush?.error ||
-              JSON.stringify(dadosPush);
+    setMensagem(
+      `✅ Chamada enviada para ${unidadeNomeAtual}. Aguarde o atendimento.`
+    );
 
-        throw new Error(
-          `Push retornou HTTP ${respostaPush.status}${
-            detalhe ? `: ${detalhe}` : ""
-          }`
+    /*
+     * O push é enviado separadamente.
+     * Ele não deixa mais o botão preso em "Enviando...".
+     */
+    fetch("/api/enviar-notificacao-v2", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        unidadeId: unidadeIdAtual,
+      }),
+    })
+      .then(async (respostaPush) => {
+        const textoResposta = await respostaPush.text();
+
+        let dadosPush: any = null;
+
+        try {
+          dadosPush = textoResposta
+            ? JSON.parse(textoResposta)
+            : null;
+        } catch {
+          dadosPush = textoResposta;
+        }
+
+        console.log("RESPOSTA PUSH V2:", dadosPush);
+
+        if (!respostaPush.ok) {
+          console.warn(
+            "A chamada foi gravada, mas o push não foi confirmado:",
+            dadosPush
+          );
+        }
+      })
+      .catch((erroPush) => {
+        console.warn(
+          "A chamada foi gravada, mas ocorreu falha no push:",
+          erroPush
         );
-      }
+      });
+  } catch (erro: any) {
+    console.error("Falha ao gravar a chamada:", erro);
 
-      setDiagnostico("3/3 • Chamada e push enviados com sucesso.");
-      setMensagem(
-        `✅ Chamada enviada para ${unidadeSelecionada.nome}. Aguarde o atendimento.`
-      );
-    } catch (erro: any) {
-      console.warn("Falha ao enviar chamada/push:", erro);
+    const detalhe =
+      erro?.message ||
+      erro?.code ||
+      String(erro) ||
+      "Erro desconhecido";
 
-      const detalhe =
-        erro?.message || erro?.code || String(erro) || "Erro desconhecido";
+    setDiagnostico(`❌ ERRO: ${detalhe}`);
+    setMensagem("");
 
-      setDiagnostico(`❌ ERRO: ${detalhe}`);
-      setMensagem("");
-      chamadaAtivaRef.current = false;
-      chamadaFoiEnviadaRef.current = false;
-    } finally {
-      setEnviando(false);
-    }
+    chamadaAtivaRef.current = false;
+    chamadaFoiEnviadaRef.current = false;
+
+    setEnviando(false);
   }
+}
 
   async function iniciarGravacao() {
     if (!unidadeSelecionada) {

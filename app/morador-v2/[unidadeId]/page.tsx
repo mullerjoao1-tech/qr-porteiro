@@ -21,8 +21,31 @@ type ComunicadoMorador = {
   condominioId: string;
   condominioNome: string;
   tipo: "comunicado" | "assembleia" | "manutencao" | "emergencia";
+  destinatario?:
+    | "unidade"
+    | "bloco"
+    | "moradores"
+    | "proprietarios"
+    | "inquilinos"
+    | "conselho"
+    | "administradora"
+    | "zeladoria"
+    | "portaria";
+  unidadeId?: string;
+  blocoSelecionado?: string;
+  unidadesDestinatarias?: string[];
   titulo: string;
   mensagem: string;
+  detalhesModelo?: {
+    dataEvento?: string;
+    horarioEvento?: string;
+    localEvento?: string;
+    pauta?: string;
+    empresaResponsavel?: string;
+    impactoPrevisto?: string;
+    tipoEmergencia?: string;
+    orientacaoImediata?: string;
+  };
   exigeCiencia?: boolean;
   exigirCiencia?: boolean;
   status: "enviado" | "agendado";
@@ -54,6 +77,29 @@ function ordenarMensagens(mensagens?: Record<string, MensagemConversa>) {
   return Object.entries(mensagens)
     .map(([id, mensagem]) => ({ id, ...mensagem }))
     .sort((a, b) => (a.criadoEm || 0) - (b.criadoEm || 0));
+}
+
+function formatarDataComunicado(data?: string) {
+  if (!data) return "";
+
+  const [ano, mes, dia] = data.split("-");
+  if (!ano || !mes || !dia) return data;
+
+  return `${dia}/${mes}/${ano}`;
+}
+
+function iconeTipoComunicado(tipo: ComunicadoMorador["tipo"]) {
+  if (tipo === "assembleia") return "👥";
+  if (tipo === "manutencao") return "🛠️";
+  if (tipo === "emergencia") return "🚨";
+  return "📢";
+}
+
+function textoTipoComunicado(tipo: ComunicadoMorador["tipo"]) {
+  if (tipo === "assembleia") return "ASSEMBLEIA";
+  if (tipo === "manutencao") return "MANUTENÇÃO";
+  if (tipo === "emergencia") return "EMERGÊNCIA";
+  return "COMUNICADO";
 }
 
 export default function MoradorV2() {
@@ -207,15 +253,31 @@ export default function MoradorV2() {
             ...(valor as Omit<ComunicadoMorador, "id">),
           }))
           .filter((comunicado) => {
-            if (comunicado.status === "enviado") return true;
+            const estaDisponivel =
+              comunicado.status === "enviado" ||
+              (comunicado.status === "agendado" &&
+                comunicado.criadoEm <= agora);
 
-            if (
-              comunicado.status === "agendado" &&
-              comunicado.criadoEm <= agora
-            ) {
-              return true;
+            if (!estaDisponivel) return false;
+
+            // Compatibilidade com comunicados antigos, criados antes da
+            // separação por público: continuam aparecendo para os moradores.
+            if (!comunicado.destinatario) return true;
+
+            if (comunicado.destinatario === "moradores") return true;
+
+            if (comunicado.destinatario === "unidade") {
+              return (
+                comunicado.unidadeId === slug ||
+                comunicado.unidadesDestinatarias?.includes(slug) === true
+              );
             }
 
+            if (comunicado.destinatario === "bloco") {
+              return comunicado.unidadesDestinatarias?.includes(slug) === true;
+            }
+
+            // Públicos próprios não devem aparecer no painel comum do morador.
             return false;
           })
           .sort((a, b) => (b.criadoEm || 0) - (a.criadoEm || 0));
@@ -1170,71 +1232,193 @@ Mensagem: ${mensagemErro}`
           comunicadoAberto.exigeCiencia !== false &&
           comunicadoAberto.exigirCiencia !== false;
 
-        return (
-        <div className="fixed inset-0 z-[1200] flex items-center justify-center overflow-y-auto bg-black/90 p-4">
-          <div className="my-4 w-full max-w-md rounded-3xl border-2 border-blue-500 bg-slate-900 p-5 shadow-2xl">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-xs font-black text-blue-300">
-                  {comunicadoAberto.tipo === "assembleia"
-                    ? "👥 ASSEMBLEIA"
-                    : comunicadoAberto.tipo === "manutencao"
-                    ? "🛠️ MANUTENÇÃO"
-                    : comunicadoAberto.tipo === "emergencia"
-                    ? "🚨 EMERGÊNCIA"
-                    : "📢 COMUNICADO"}
-                </p>
+        const detalhes = comunicadoAberto.detalhesModelo || {};
+        const temInformacoesRapidas =
+          Boolean(detalhes.dataEvento) ||
+          Boolean(detalhes.horarioEvento) ||
+          Boolean(detalhes.localEvento) ||
+          Boolean(detalhes.empresaResponsavel);
 
-                <h2 className="mt-2 text-2xl font-black text-white">
-                  {comunicadoAberto.titulo}
-                </h2>
+        const ehEmergencia = comunicadoAberto.tipo === "emergencia";
+
+        return (
+          <div className="fixed inset-0 z-[1200] flex items-center justify-center overflow-y-auto bg-black/90 p-4">
+            <div
+              className={`my-4 w-full max-w-md overflow-hidden rounded-3xl border-2 bg-slate-900 shadow-2xl ${
+                ehEmergencia ? "border-red-500" : "border-blue-500"
+              }`}
+            >
+              <div
+                className={`p-5 ${
+                  ehEmergencia
+                    ? "bg-gradient-to-r from-red-950 to-slate-900"
+                    : "bg-gradient-to-r from-blue-950 to-slate-900"
+                }`}
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p
+                      className={`text-xs font-black ${
+                        ehEmergencia ? "text-red-300" : "text-blue-300"
+                      }`}
+                    >
+                      {iconeTipoComunicado(comunicadoAberto.tipo)}{" "}
+                      {textoTipoComunicado(comunicadoAberto.tipo)}
+                    </p>
+
+                    <h2 className="mt-2 text-2xl font-black leading-tight text-white">
+                      {comunicadoAberto.titulo}
+                    </h2>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setComunicadoAberto(null)}
+                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-800/90 text-xl font-black"
+                  >
+                    ✕
+                  </button>
+                </div>
               </div>
 
-              <button
-                type="button"
-                onClick={() => setComunicadoAberto(null)}
-                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-800 text-xl font-black"
-              >
-                ✕
-              </button>
-            </div>
+              <div className="p-5">
+                {temInformacoesRapidas && (
+                  <div className="grid grid-cols-2 gap-3">
+                    {detalhes.dataEvento && (
+                      <div className="rounded-2xl border border-slate-700 bg-slate-800 p-3">
+                        <p className="text-[10px] font-black text-slate-400">
+                          📅 DATA
+                        </p>
+                        <p className="mt-1 text-sm font-black text-white">
+                          {formatarDataComunicado(detalhes.dataEvento)}
+                        </p>
+                      </div>
+                    )}
 
-            <p className="mt-4 whitespace-pre-wrap text-sm leading-relaxed text-slate-200">
-              {comunicadoAberto.mensagem}
-            </p>
+                    {detalhes.horarioEvento && (
+                      <div className="rounded-2xl border border-slate-700 bg-slate-800 p-3">
+                        <p className="text-[10px] font-black text-slate-400">
+                          🕗 HORÁRIO
+                        </p>
+                        <p className="mt-1 text-sm font-black text-white">
+                          {detalhes.horarioEvento}
+                        </p>
+                      </div>
+                    )}
 
-            <p className="mt-4 text-xs text-slate-500">
-              Enviado em {comunicadoAberto.criadoEmFormatado}
-            </p>
+                    {detalhes.localEvento && (
+                      <div className="rounded-2xl border border-slate-700 bg-slate-800 p-3">
+                        <p className="text-[10px] font-black text-slate-400">
+                          📍 LOCAL
+                        </p>
+                        <p className="mt-1 text-sm font-black text-white">
+                          {detalhes.localEvento}
+                        </p>
+                      </div>
+                    )}
 
-            {precisaConfirmarCiencia ? (
-              comunicadoAberto.visualizacoes?.[slug]?.ciente === true ? (
-                <div className="mt-5 rounded-xl border border-green-700 bg-green-950/30 p-4 text-center font-black text-green-300">
-                  ✅ Ciente registrado
+                    {detalhes.empresaResponsavel && (
+                      <div className="rounded-2xl border border-slate-700 bg-slate-800 p-3">
+                        <p className="text-[10px] font-black text-slate-400">
+                          👷 RESPONSÁVEL
+                        </p>
+                        <p className="mt-1 text-sm font-black text-white">
+                          {detalhes.empresaResponsavel}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {detalhes.pauta && (
+                  <div className="mt-4 rounded-2xl border border-violet-800 bg-violet-950/25 p-4">
+                    <p className="text-xs font-black text-violet-300">
+                      📋 PAUTA
+                    </p>
+                    <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-slate-200">
+                      {detalhes.pauta}
+                    </p>
+                  </div>
+                )}
+
+                {detalhes.impactoPrevisto && (
+                  <div className="mt-4 rounded-2xl border border-orange-800 bg-orange-950/25 p-4">
+                    <p className="text-xs font-black text-orange-300">
+                      ⚠️ IMPACTO PREVISTO
+                    </p>
+                    <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-slate-200">
+                      {detalhes.impactoPrevisto}
+                    </p>
+                  </div>
+                )}
+
+                {detalhes.tipoEmergencia && (
+                  <div className="mt-4 rounded-2xl border border-red-800 bg-red-950/30 p-4">
+                    <p className="text-xs font-black text-red-300">
+                      🚨 TIPO DA EMERGÊNCIA
+                    </p>
+                    <p className="mt-2 text-base font-black text-white">
+                      {detalhes.tipoEmergencia}
+                    </p>
+                  </div>
+                )}
+
+                {detalhes.orientacaoImediata && (
+                  <div className="mt-4 rounded-2xl border border-red-700 bg-red-950/40 p-4">
+                    <p className="text-xs font-black text-red-300">
+                      ⚡ ORIENTAÇÃO IMEDIATA
+                    </p>
+                    <p className="mt-2 whitespace-pre-wrap text-sm font-bold leading-relaxed text-white">
+                      {detalhes.orientacaoImediata}
+                    </p>
+                  </div>
+                )}
+
+                <div className="mt-4 rounded-2xl border border-slate-700 bg-slate-950/70 p-4">
+                  <p className="whitespace-pre-wrap text-sm leading-relaxed text-slate-200">
+                    {comunicadoAberto.mensagem}
+                  </p>
                 </div>
-              ) : (
-                <button
-                  type="button"
-                  onClick={confirmarCiencia}
-                  disabled={salvandoCiencia}
-                  className="mt-5 w-full rounded-2xl bg-green-600 py-4 text-lg font-black text-white hover:bg-green-500 disabled:bg-slate-600"
-                >
-                  {salvandoCiencia
-                    ? "Registrando..."
-                    : "✅ Li e estou ciente"}
-                </button>
-              )
-            ) : (
-              <button
-                type="button"
-                onClick={() => setComunicadoAberto(null)}
-                className="mt-5 w-full rounded-2xl bg-blue-600 py-4 font-black text-white"
-              >
-                Fechar
-              </button>
-            )}
+
+                <p className="mt-4 text-xs text-slate-500">
+                  Enviado em {comunicadoAberto.criadoEmFormatado}
+                </p>
+
+                {precisaConfirmarCiencia ? (
+                  comunicadoAberto.visualizacoes?.[slug]?.ciente === true ? (
+                    <div className="mt-5 rounded-xl border border-green-700 bg-green-950/30 p-4 text-center font-black text-green-300">
+                      ✅ Ciente registrado
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={confirmarCiencia}
+                      disabled={salvandoCiencia}
+                      className={`mt-5 w-full rounded-2xl py-4 text-lg font-black text-white disabled:bg-slate-600 ${
+                        ehEmergencia
+                          ? "bg-red-600 hover:bg-red-500"
+                          : "bg-green-600 hover:bg-green-500"
+                      }`}
+                    >
+                      {salvandoCiencia
+                        ? "Registrando..."
+                        : ehEmergencia
+                        ? "🚨 Confirmo que li e estou ciente"
+                        : "✅ Li e estou ciente"}
+                    </button>
+                  )
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setComunicadoAberto(null)}
+                    className="mt-5 w-full rounded-2xl bg-blue-600 py-4 font-black text-white"
+                  >
+                    Fechar
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
-        </div>
         );
       })()}
 

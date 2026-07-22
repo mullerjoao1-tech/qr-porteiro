@@ -1,23 +1,52 @@
-import { initializeApp } from "firebase/app";
+import { getApps, initializeApp } from "firebase/app";
 import { getDatabase } from "firebase/database";
 import { getMessaging, isSupported } from "firebase/messaging";
+
 const firebaseConfig = {
-  apiKey: "AIzaSyBAdV3dc8bN938ivb8YAwhQZ3vw6a24Bh0",
-  authDomain: "qr-porteiro-app.firebaseapp.com",
-  databaseURL: "https://qr-porteiro-app-default-rtdb.firebaseio.com",
-  projectId: "qr-porteiro-app",
-  storageBucket: "qr-porteiro-app.firebasestorage.app",
-  messagingSenderId: "778497713586",
-  appId: "1:778497713586:web:786071e95fd847961930ab",
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  databaseURL: process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId:
+    process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-const app = initializeApp(firebaseConfig);
+const camposObrigatorios = [
+  ["NEXT_PUBLIC_FIREBASE_API_KEY", firebaseConfig.apiKey],
+  ["NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN", firebaseConfig.authDomain],
+  ["NEXT_PUBLIC_FIREBASE_DATABASE_URL", firebaseConfig.databaseURL],
+  ["NEXT_PUBLIC_FIREBASE_PROJECT_ID", firebaseConfig.projectId],
+  ["NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET", firebaseConfig.storageBucket],
+  [
+    "NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID",
+    firebaseConfig.messagingSenderId,
+  ],
+  ["NEXT_PUBLIC_FIREBASE_APP_ID", firebaseConfig.appId],
+];
+
+const camposAusentes = camposObrigatorios
+  .filter(([, valor]) => !valor)
+  .map(([nome]) => nome);
+
+if (camposAusentes.length > 0) {
+  throw new Error(
+    `Configuração Firebase incompleta. Verifique no .env.local: ${camposAusentes.join(
+      ", "
+    )}`
+  );
+}
+
+const app = getApps().length > 0 ? getApps()[0] : initializeApp(firebaseConfig);
 
 export const db = getDatabase(app);
+
 export const messagingPromise =
   typeof window !== "undefined"
     ? isSupported().then((supported) =>
         supported ? getMessaging(app) : null
       )
     : Promise.resolve(null);
+
 export default app;

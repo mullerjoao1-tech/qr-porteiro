@@ -14,12 +14,33 @@ type TipoComunicacao =
 
 type DestinatarioComunicacao =
   | ""
+  | "unidade"
+  | "bloco"
   | "moradores"
   | "proprietarios"
   | "inquilinos"
   | "conselho"
+  | "administradora"
   | "zeladoria"
   | "portaria";
+
+type UnidadeComunicacao = {
+  id: string;
+  nome: string;
+  bloco: string;
+  tipo?: string;
+};
+
+type DetalhesModeloComunicacao = {
+  dataEvento?: string;
+  horarioEvento?: string;
+  localEvento?: string;
+  pauta?: string;
+  empresaResponsavel?: string;
+  impactoPrevisto?: string;
+  tipoEmergencia?: string;
+  orientacaoImediata?: string;
+};
 
 type ComunicadoSalvo = {
   id: string;
@@ -27,8 +48,13 @@ type ComunicadoSalvo = {
   condominioNome: string;
   tipo: TipoComunicacao;
   destinatario: DestinatarioComunicacao;
+  unidadeId?: string;
+  blocoSelecionado?: string;
+  unidadesDestinatarias?: string[];
+  totalDestinatarios?: number;
   titulo: string;
   mensagem: string;
+  detalhesModelo?: DetalhesModeloComunicacao;
   exigeCiencia: boolean;
   enviarPush: boolean;
   registrarHistorico: boolean;
@@ -549,10 +575,23 @@ export default function CentralSindico() {
     useState<ContextoPainel | "">("");
   const [destinatarioComunicacao, setDestinatarioComunicacao] =
     useState<DestinatarioComunicacao>("");
+  const [unidadesComunicacao, setUnidadesComunicacao] = useState<
+    UnidadeComunicacao[]
+  >([]);
+  const [unidadeComunicacaoId, setUnidadeComunicacaoId] = useState("");
+  const [blocoComunicacao, setBlocoComunicacao] = useState("");
   const [tituloComunicacao, setTituloComunicacao] = useState("");
   const [mensagemComunicacao, setMensagemComunicacao] = useState("");
+  const [dataEvento, setDataEvento] = useState("");
+  const [horarioEvento, setHorarioEvento] = useState("");
+  const [localEvento, setLocalEvento] = useState("");
+  const [pautaComunicacao, setPautaComunicacao] = useState("");
+  const [empresaResponsavel, setEmpresaResponsavel] = useState("");
+  const [impactoPrevisto, setImpactoPrevisto] = useState("");
+  const [tipoEmergencia, setTipoEmergencia] = useState("");
+  const [orientacaoImediata, setOrientacaoImediata] = useState("");
   const [exigirCiencia, setExigirCiencia] = useState(true);
-  const [enviarPush, setEnviarPush] = useState(true);
+  const [enviarPush, setEnviarPush] = useState(false);
   const [registrarHistorico, setRegistrarHistorico] = useState(true);
   const [agendarComunicacao, setAgendarComunicacao] = useState(false);
   const [dataAgendamento, setDataAgendamento] = useState("");
@@ -561,6 +600,8 @@ export default function CentralSindico() {
   const [comunicadosEnviados, setComunicadosEnviados] = useState<
     ComunicadoSalvo[]
   >([]);
+  const [comunicadoDetalhado, setComunicadoDetalhado] =
+    useState<ComunicadoSalvo | null>(null);
   const [salvandoComunicacao, setSalvandoComunicacao] = useState(false);
   const [abaFinanceira, setAbaFinanceira] =
     useState<AbaFinanceira>("resumo");
@@ -587,6 +628,36 @@ export default function CentralSindico() {
     opcoesContexto[0];
 
   const isCarteiraGeral = contextoAtual === "carteira-geral";
+
+  useEffect(() => {
+    const referenciaUnidades = ref(db, "unidades-v2");
+
+    const pararDeOuvirUnidades = onValue(referenciaUnidades, (snapshot) => {
+      const dados = snapshot.val();
+
+      if (!dados) {
+        setUnidadesComunicacao([]);
+        return;
+      }
+
+      const lista = Object.entries(dados)
+        .map(([chave, valor]) => {
+          const unidade = valor as Partial<UnidadeComunicacao>;
+
+          return {
+            id: unidade.id || chave,
+            nome: unidade.nome || chave,
+            bloco: unidade.bloco || "Sem bloco",
+            tipo: unidade.tipo || "Unidade",
+          };
+        })
+        .sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR", { numeric: true }));
+
+      setUnidadesComunicacao(lista);
+    });
+
+    return () => pararDeOuvirUnidades();
+  }, []);
 
   useEffect(() => {
     if (isCarteiraGeral) {
@@ -722,6 +793,39 @@ export default function CentralSindico() {
     [indicadoresVisiveis]
   );
 
+  const blocosComunicacao = useMemo(
+    () =>
+      Array.from(new Set(unidadesComunicacao.map((unidade) => unidade.bloco))).sort(
+        (a, b) => a.localeCompare(b, "pt-BR", { numeric: true })
+      ),
+    [unidadesComunicacao]
+  );
+
+  const unidadesDestinatarias = useMemo(() => {
+    if (destinatarioComunicacao === "unidade") {
+      return unidadesComunicacao.filter(
+        (unidade) => unidade.id === unidadeComunicacaoId
+      );
+    }
+
+    if (destinatarioComunicacao === "bloco") {
+      return unidadesComunicacao.filter(
+        (unidade) => unidade.bloco === blocoComunicacao
+      );
+    }
+
+    if (destinatarioComunicacao === "moradores") {
+      return unidadesComunicacao;
+    }
+
+    return [];
+  }, [
+    destinatarioComunicacao,
+    unidadesComunicacao,
+    unidadeComunicacaoId,
+    blocoComunicacao,
+  ]);
+
   function trocarContexto(novoContexto: ContextoPainel) {
     setContextoAtual(novoContexto);
     setSeletorContextoAberto(false);
@@ -801,16 +905,38 @@ export default function CentralSindico() {
     setAbaFinanceira("resumo");
   }
 
-  function abrirComunicacao(tipo: TipoComunicacao = "comunicado") {
+  function limparCamposDoModelo() {
+    setDataEvento("");
+    setHorarioEvento("");
+    setLocalEvento("");
+    setPautaComunicacao("");
+    setEmpresaResponsavel("");
+    setImpactoPrevisto("");
+    setTipoEmergencia("");
+    setOrientacaoImediata("");
+  }
+
+  function selecionarTipoComunicacao(tipo: TipoComunicacao) {
     setTipoComunicacao(tipo);
+    setTituloComunicacao("");
+    setMensagemComunicacao("");
+    limparCamposDoModelo();
+
+    if (tipo === "emergencia") {
+      setExigirCiencia(true);
+    }
+  }
+
+  function abrirComunicacao(tipo: TipoComunicacao = "comunicado") {
+    selecionarTipoComunicacao(tipo);
     setCondominioComunicacaoId(
       contextoAtual === "carteira-geral" ? "" : contextoAtual
     );
     setDestinatarioComunicacao("");
-    setTituloComunicacao("");
-    setMensagemComunicacao("");
+    setUnidadeComunicacaoId("");
+    setBlocoComunicacao("");
     setExigirCiencia(true);
-    setEnviarPush(true);
+    setEnviarPush(false);
     setRegistrarHistorico(true);
     setAgendarComunicacao(false);
     setDataAgendamento("");
@@ -821,11 +947,24 @@ export default function CentralSindico() {
     setPopupComunicacaoAberto(false);
   }
 
+  function formatarDataModelo(data: string) {
+    if (!data) return "data a definir";
+
+    const [ano, mes, dia] = data.split("-");
+    if (!ano || !mes || !dia) return data;
+
+    return `${dia}/${mes}/${ano}`;
+  }
+
   function sugerirTextoComunicacao() {
     if (tipoComunicacao === "assembleia") {
       setTituloComunicacao("Convocação de Assembleia");
       setMensagemComunicacao(
-        "Informamos que será realizada assembleia do condomínio. Consulte abaixo a data, o horário, o local e a pauta. Ao final, confirme que leu e está ciente."
+        `Prezados moradores,\n\nFicam todos convocados para a assembleia do condomínio, que será realizada em ${formatarDataModelo(
+          dataEvento
+        )}${horarioEvento ? `, às ${horarioEvento}` : ""}${
+          localEvento ? `, no(a) ${localEvento}` : ""
+        }.\n\nPauta: ${pautaComunicacao || "a pauta completa será informada em breve"}.\n\nPedimos a leitura deste comunicado e a confirmação de ciência.`
       );
       return;
     }
@@ -833,16 +972,32 @@ export default function CentralSindico() {
     if (tipoComunicacao === "manutencao") {
       setTituloComunicacao("Manutenção programada");
       setMensagemComunicacao(
-        "Informamos que será realizada uma manutenção programada no condomínio. Durante o período informado, poderá ocorrer indisponibilidade temporária do equipamento ou da área afetada. A conclusão será comunicada aos envolvidos."
+        `Prezados moradores,\n\nInformamos que será realizada uma manutenção${
+          localEvento ? ` no(a) ${localEvento}` : ""
+        } em ${formatarDataModelo(dataEvento)}${
+          horarioEvento ? `, a partir das ${horarioEvento}` : ""
+        }.${empresaResponsavel ? ` O serviço será executado por ${empresaResponsavel}.` : ""}\n\nImpacto previsto: ${
+          impactoPrevisto || "poderá haver indisponibilidade temporária na área ou no equipamento afetado"
+        }.\n\nA conclusão do serviço será comunicada aos envolvidos.`
       );
       return;
     }
 
     if (tipoComunicacao === "emergencia") {
-      setTituloComunicacao("Comunicado importante");
-      setMensagemComunicacao(
-        "Atenção: foi identificada uma situação que exige cuidado imediato. Leia as orientações abaixo e confirme que está ciente."
+      setTituloComunicacao(
+        tipoEmergencia
+          ? `Emergência: ${tipoEmergencia}`
+          : "Comunicado importante"
       );
+      setMensagemComunicacao(
+        `Atenção: foi identificada uma situação de emergência${
+          tipoEmergencia ? ` relacionada a ${tipoEmergencia}` : ""
+        }.\n\nOrientação imediata: ${
+          orientacaoImediata ||
+          "mantenha a calma, evite a área afetada e aguarde novas orientações"
+        }.\n\nLeia atentamente e confirme que está ciente.`
+      );
+      setExigirCiencia(true);
       return;
     }
 
@@ -865,6 +1020,30 @@ export default function CentralSindico() {
 
     if (!destinatarioComunicacao) {
       alert("Escolha quem receberá o comunicado.");
+      return;
+    }
+
+    if (destinatarioComunicacao === "unidade" && !unidadeComunicacaoId) {
+      alert("Escolha a unidade que receberá o comunicado.");
+      return;
+    }
+
+    if (destinatarioComunicacao === "bloco" && !blocoComunicacao) {
+      alert("Escolha o bloco que receberá o comunicado.");
+      return;
+    }
+
+    const destinosComEntregaNaUnidade: DestinatarioComunicacao[] = [
+      "unidade",
+      "bloco",
+      "moradores",
+    ];
+
+    if (
+      destinosComEntregaNaUnidade.includes(destinatarioComunicacao) &&
+      unidadesDestinatarias.length === 0
+    ) {
+      alert("Nenhuma unidade foi encontrada para o destino escolhido.");
       return;
     }
 
@@ -905,8 +1084,26 @@ export default function CentralSindico() {
         condominioNome: condominioSelecionadoParaEnvio.nome,
         tipo: tipoComunicacao,
         destinatario: destinatarioComunicacao,
+        unidadeId:
+          destinatarioComunicacao === "unidade" ? unidadeComunicacaoId : "",
+        blocoSelecionado:
+          destinatarioComunicacao === "bloco" ? blocoComunicacao : "",
+        unidadesDestinatarias: unidadesDestinatarias.map(
+          (unidade) => unidade.id
+        ),
+        totalDestinatarios: unidadesDestinatarias.length,
         titulo: tituloComunicacao.trim(),
         mensagem: mensagemComunicacao.trim(),
+        detalhesModelo: {
+          dataEvento,
+          horarioEvento,
+          localEvento,
+          pauta: pautaComunicacao,
+          empresaResponsavel,
+          impactoPrevisto,
+          tipoEmergencia,
+          orientacaoImediata,
+        },
         exigeCiencia: exigirCiencia,
         enviarPush,
         registrarHistorico,
@@ -922,6 +1119,43 @@ export default function CentralSindico() {
 
       if (!comunicadoId) {
         throw new Error("O Firebase não retornou o ID do comunicado.");
+      }
+
+      if (!agendarComunicacao && unidadesDestinatarias.length > 0) {
+        const atualizacoesEntrega: Record<string, unknown> = {};
+
+        unidadesDestinatarias.forEach((unidade) => {
+          atualizacoesEntrega[
+            `unidades-v2/${unidade.id}/comunicadoAtivo`
+          ] = {
+            id: comunicadoId,
+            condominioId: condominioComunicacaoId,
+            condominioNome: condominioSelecionadoParaEnvio.nome,
+            unidadeId: unidade.id,
+            unidadeNome: unidade.nome,
+            bloco: unidade.bloco,
+            tipo: tipoComunicacao,
+            titulo: tituloComunicacao.trim(),
+            mensagem: mensagemComunicacao.trim(),
+            detalhesModelo: {
+              dataEvento,
+              horarioEvento,
+              localEvento,
+              pauta: pautaComunicacao,
+              empresaResponsavel,
+              impactoPrevisto,
+              tipoEmergencia,
+              orientacaoImediata,
+            },
+            exigeCiencia: exigirCiencia,
+            status: "novo",
+            criadoEm: agora,
+            criadoEmFormatado: new Date(agora).toLocaleString("pt-BR"),
+            enviadoPor: "João",
+          };
+        });
+
+        await update(ref(db), atualizacoesEntrega);
       }
 
       if (enviarPush && !agendarComunicacao) {
@@ -990,11 +1224,119 @@ export default function CentralSindico() {
       setPopupComunicacaoAberto(false);
       setTituloComunicacao("");
       setMensagemComunicacao("");
+      setUnidadeComunicacaoId("");
+      setBlocoComunicacao("");
     } catch (erro) {
       console.error("Erro ao salvar comunicado:", erro);
       alert("Não foi possível salvar o comunicado no Firebase.");
     } finally {
       setSalvandoComunicacao(false);
+    }
+  }
+
+  function nomeUnidadePorId(unidadeId: string) {
+    return (
+      unidadesComunicacao.find((unidade) => unidade.id === unidadeId)?.nome ||
+      unidadeId
+    );
+  }
+
+  function formatarDataHora(timestamp?: number) {
+    if (!timestamp) return "—";
+    return new Date(timestamp).toLocaleString("pt-BR");
+  }
+
+  function descricaoDestino(comunicado: ComunicadoSalvo) {
+    if (comunicado.destinatario === "unidade") {
+      return nomeUnidadePorId(
+        comunicado.unidadeId || comunicado.unidadesDestinatarias?.[0] || ""
+      );
+    }
+
+    if (comunicado.destinatario === "bloco") {
+      return comunicado.blocoSelecionado || "Bloco";
+    }
+
+    if (comunicado.destinatario === "moradores") {
+      return "Todos os moradores";
+    }
+
+    if (comunicado.destinatario === "proprietarios") {
+      return "Apenas proprietários";
+    }
+
+    if (comunicado.destinatario === "inquilinos") {
+      return "Apenas inquilinos";
+    }
+
+    if (comunicado.destinatario === "conselho") return "Conselho";
+    if (comunicado.destinatario === "administradora") return "Administradora";
+    if (comunicado.destinatario === "zeladoria") return "Zeladoria";
+    if (comunicado.destinatario === "portaria") return "Portaria";
+
+    return "Destino não informado";
+  }
+
+  async function reenviarSomentePendentes(comunicado: ComunicadoSalvo) {
+    const idsDestinatarios = comunicado.unidadesDestinatarias || [];
+
+    if (idsDestinatarios.length === 0) {
+      alert("Este comunicado não possui uma lista nominal de destinatários.");
+      return;
+    }
+
+    const visualizacoes = comunicado.visualizacoes || {};
+    const idsPendentes = idsDestinatarios.filter(
+      (unidadeId) => visualizacoes[unidadeId]?.ciente !== true
+    );
+
+    if (idsPendentes.length === 0) {
+      alert("Todos os destinatários já confirmaram ciência.");
+      return;
+    }
+
+    try {
+      const agora = Date.now();
+      const atualizacoes: Record<string, unknown> = {};
+
+      idsPendentes.forEach((unidadeId) => {
+        atualizacoes[`unidades-v2/${unidadeId}/comunicadoAtivo`] = {
+          id: comunicado.id,
+          condominioId: comunicado.condominioId,
+          condominioNome: comunicado.condominioNome,
+          unidadeId,
+          unidadeNome: nomeUnidadePorId(unidadeId),
+          tipo: comunicado.tipo,
+          titulo: comunicado.titulo,
+          mensagem: comunicado.mensagem,
+          exigeCiencia: comunicado.exigeCiencia,
+          status: "novo",
+          criadoEm: comunicado.criadoEm,
+          criadoEmFormatado: comunicado.criadoEmFormatado,
+          reenviadoEm: agora,
+          reenviadoEmFormatado: new Date(agora).toLocaleString("pt-BR"),
+          enviadoPor: comunicado.enviadoPor,
+        };
+      });
+
+      atualizacoes[
+        `comunicados-v2/${comunicado.condominioId}/${comunicado.id}/reenviadoPendentesEm`
+      ] = agora;
+      atualizacoes[
+        `comunicados-v2/${comunicado.condominioId}/${comunicado.id}/reenviadoPendentesEmFormatado`
+      ] = new Date(agora).toLocaleString("pt-BR");
+      atualizacoes[
+        `comunicados-v2/${comunicado.condominioId}/${comunicado.id}/ultimoTotalPendentesReenviados`
+      ] = idsPendentes.length;
+
+      await update(ref(db), atualizacoes);
+
+      alert(
+        `Comunicado reenviado para ${idsPendentes.length} destinatário(s) pendente(s).`
+      );
+    } catch (erro) {
+      console.error("Erro ao reenviar para pendentes:", erro);
+      alert("Não foi possível reenviar o comunicado para os pendentes.");
     }
   }
 
@@ -2510,7 +2852,7 @@ export default function CentralSindico() {
                         key={id}
                         type="button"
                         onClick={() =>
-                          setTipoComunicacao(id as TipoComunicacao)
+                          selecionarTipoComunicacao(id as TipoComunicacao)
                         }
                         className={`rounded-xl px-3 py-3 text-xs font-black transition-all active:scale-95 ${
                           tipoComunicacao === id
@@ -2567,11 +2909,13 @@ export default function CentralSindico() {
 
                   <select
                     value={destinatarioComunicacao}
-                    onChange={(event) =>
-                      setDestinatarioComunicacao(
-                        event.target.value as DestinatarioComunicacao
-                      )
-                    }
+                    onChange={(event) => {
+                      const novoDestino =
+                        event.target.value as DestinatarioComunicacao;
+                      setDestinatarioComunicacao(novoDestino);
+                      setUnidadeComunicacaoId("");
+                      setBlocoComunicacao("");
+                    }}
                     className={`w-full rounded-xl border bg-slate-800 p-3 text-white outline-none focus:border-blue-500 ${
                       destinatarioComunicacao
                         ? "border-slate-700"
@@ -2579,10 +2923,13 @@ export default function CentralSindico() {
                     }`}
                   >
                     <option value="">Escolha quem receberá</option>
+                    <option value="unidade">Uma unidade específica</option>
+                    <option value="bloco">Um bloco inteiro</option>
                     <option value="moradores">Todos os moradores</option>
                     <option value="proprietarios">Apenas proprietários</option>
                     <option value="inquilinos">Apenas inquilinos</option>
                     <option value="conselho">Conselho</option>
+                    <option value="administradora">Administradora</option>
                     <option value="zeladoria">Zeladoria</option>
                     <option value="portaria">Portaria</option>
                   </select>
@@ -2593,15 +2940,273 @@ export default function CentralSindico() {
                     </p>
                   )}
 
-                  {destinatarioComunicacao !== "" &&
-                    destinatarioComunicacao !== "moradores" && (
-                      <p className="mt-2 text-xs text-yellow-300">
-                        Nesta primeira integração, o push e a leitura pelo
-                        aplicativo estão disponíveis para moradores. Os demais
-                        perfis serão ligados aos seus painéis posteriormente.
-                      </p>
-                    )}
+                  {destinatarioComunicacao === "unidade" && (
+                    <div className="mt-3">
+                      <label className="mb-2 block text-xs font-bold text-blue-300">
+                        ESCOLHA A UNIDADE *
+                      </label>
+                      <select
+                        value={unidadeComunicacaoId}
+                        onChange={(event) =>
+                          setUnidadeComunicacaoId(event.target.value)
+                        }
+                        className={`w-full rounded-xl border bg-slate-800 p-3 text-white outline-none focus:border-blue-500 ${
+                          unidadeComunicacaoId
+                            ? "border-slate-700"
+                            : "border-orange-500"
+                        }`}
+                      >
+                        <option value="">Selecione a unidade</option>
+                        {unidadesComunicacao.map((unidade) => (
+                          <option key={unidade.id} value={unidade.id}>
+                            {unidade.nome}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                  {destinatarioComunicacao === "bloco" && (
+                    <div className="mt-3">
+                      <label className="mb-2 block text-xs font-bold text-blue-300">
+                        ESCOLHA O BLOCO *
+                      </label>
+                      <select
+                        value={blocoComunicacao}
+                        onChange={(event) =>
+                          setBlocoComunicacao(event.target.value)
+                        }
+                        className={`w-full rounded-xl border bg-slate-800 p-3 text-white outline-none focus:border-blue-500 ${
+                          blocoComunicacao
+                            ? "border-slate-700"
+                            : "border-orange-500"
+                        }`}
+                      >
+                        <option value="">Selecione o bloco</option>
+                        {blocosComunicacao.map((bloco) => (
+                          <option key={bloco} value={bloco}>
+                            {bloco}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                  {["unidade", "bloco", "moradores"].includes(
+                    destinatarioComunicacao
+                  ) && (
+                    <p className="mt-2 text-xs font-bold text-cyan-300">
+                      {unidadesDestinatarias.length} unidade(s) receberão esta
+                      comunicação.
+                    </p>
+                  )}
+
+                  {[
+                    "proprietarios",
+                    "inquilinos",
+                    "conselho",
+                    "administradora",
+                    "zeladoria",
+                    "portaria",
+                  ].includes(destinatarioComunicacao) && (
+                    <p className="mt-2 text-xs text-yellow-300">
+                      Destino preparado na central. A entrega será conectada ao
+                      cadastro e ao painel específico desse perfil em uma etapa
+                      própria.
+                    </p>
+                  )}
                 </div>
+
+                {tipoComunicacao === "assembleia" && (
+                  <div className="rounded-2xl border border-violet-800 bg-violet-950/20 p-4">
+                    <p className="text-xs font-black text-violet-300">
+                      👥 DADOS DA ASSEMBLEIA
+                    </p>
+
+                    <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                      <div>
+                        <label className="mb-2 block text-xs font-bold text-slate-400">
+                          DATA
+                        </label>
+                        <input
+                          type="date"
+                          value={dataEvento}
+                          onChange={(event) => setDataEvento(event.target.value)}
+                          className="w-full rounded-xl border border-slate-700 bg-slate-800 p-3 text-white outline-none focus:border-violet-500"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="mb-2 block text-xs font-bold text-slate-400">
+                          HORÁRIO
+                        </label>
+                        <input
+                          type="time"
+                          value={horarioEvento}
+                          onChange={(event) =>
+                            setHorarioEvento(event.target.value)
+                          }
+                          className="w-full rounded-xl border border-slate-700 bg-slate-800 p-3 text-white outline-none focus:border-violet-500"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="mt-3">
+                      <label className="mb-2 block text-xs font-bold text-slate-400">
+                        LOCAL
+                      </label>
+                      <input
+                        value={localEvento}
+                        onChange={(event) => setLocalEvento(event.target.value)}
+                        placeholder="Ex: Salão de festas"
+                        className="w-full rounded-xl border border-slate-700 bg-slate-800 p-3 text-white outline-none placeholder:text-slate-500 focus:border-violet-500"
+                      />
+                    </div>
+
+                    <div className="mt-3">
+                      <label className="mb-2 block text-xs font-bold text-slate-400">
+                        PAUTA
+                      </label>
+                      <textarea
+                        value={pautaComunicacao}
+                        onChange={(event) =>
+                          setPautaComunicacao(event.target.value)
+                        }
+                        placeholder="Ex: Prestação de contas, orçamento e obras"
+                        rows={3}
+                        className="w-full resize-none rounded-xl border border-slate-700 bg-slate-800 p-3 text-white outline-none placeholder:text-slate-500 focus:border-violet-500"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {tipoComunicacao === "manutencao" && (
+                  <div className="rounded-2xl border border-orange-800 bg-orange-950/20 p-4">
+                    <p className="text-xs font-black text-orange-300">
+                      🛠️ DADOS DA MANUTENÇÃO
+                    </p>
+
+                    <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                      <div>
+                        <label className="mb-2 block text-xs font-bold text-slate-400">
+                          DATA
+                        </label>
+                        <input
+                          type="date"
+                          value={dataEvento}
+                          onChange={(event) => setDataEvento(event.target.value)}
+                          className="w-full rounded-xl border border-slate-700 bg-slate-800 p-3 text-white outline-none focus:border-orange-500"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="mb-2 block text-xs font-bold text-slate-400">
+                          HORÁRIO
+                        </label>
+                        <input
+                          type="time"
+                          value={horarioEvento}
+                          onChange={(event) =>
+                            setHorarioEvento(event.target.value)
+                          }
+                          className="w-full rounded-xl border border-slate-700 bg-slate-800 p-3 text-white outline-none focus:border-orange-500"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                      <div>
+                        <label className="mb-2 block text-xs font-bold text-slate-400">
+                          LOCAL / EQUIPAMENTO
+                        </label>
+                        <input
+                          value={localEvento}
+                          onChange={(event) => setLocalEvento(event.target.value)}
+                          placeholder="Ex: Portão social"
+                          className="w-full rounded-xl border border-slate-700 bg-slate-800 p-3 text-white outline-none placeholder:text-slate-500 focus:border-orange-500"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="mb-2 block text-xs font-bold text-slate-400">
+                          EMPRESA / RESPONSÁVEL
+                        </label>
+                        <input
+                          value={empresaResponsavel}
+                          onChange={(event) =>
+                            setEmpresaResponsavel(event.target.value)
+                          }
+                          placeholder="Ex: Empresa Técnica Ltda."
+                          className="w-full rounded-xl border border-slate-700 bg-slate-800 p-3 text-white outline-none placeholder:text-slate-500 focus:border-orange-500"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="mt-3">
+                      <label className="mb-2 block text-xs font-bold text-slate-400">
+                        IMPACTO PREVISTO
+                      </label>
+                      <textarea
+                        value={impactoPrevisto}
+                        onChange={(event) =>
+                          setImpactoPrevisto(event.target.value)
+                        }
+                        placeholder="Ex: Portão ficará indisponível por aproximadamente 30 minutos"
+                        rows={3}
+                        className="w-full resize-none rounded-xl border border-slate-700 bg-slate-800 p-3 text-white outline-none placeholder:text-slate-500 focus:border-orange-500"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {tipoComunicacao === "emergencia" && (
+                  <div className="rounded-2xl border border-red-800 bg-red-950/20 p-4">
+                    <p className="text-xs font-black text-red-300">
+                      🚨 DADOS DA EMERGÊNCIA
+                    </p>
+
+                    <div className="mt-4">
+                      <label className="mb-2 block text-xs font-bold text-slate-400">
+                        TIPO DA EMERGÊNCIA
+                      </label>
+                      <select
+                        value={tipoEmergencia}
+                        onChange={(event) =>
+                          setTipoEmergencia(event.target.value)
+                        }
+                        className="w-full rounded-xl border border-slate-700 bg-slate-800 p-3 text-white outline-none focus:border-red-500"
+                      >
+                        <option value="">Selecione</option>
+                        <option value="Vazamento">Vazamento</option>
+                        <option value="Incêndio ou fumaça">Incêndio ou fumaça</option>
+                        <option value="Segurança">Segurança</option>
+                        <option value="Portão ou acesso">Portão ou acesso</option>
+                        <option value="Energia elétrica">Energia elétrica</option>
+                        <option value="Elevador">Elevador</option>
+                        <option value="Outra situação">Outra situação</option>
+                      </select>
+                    </div>
+
+                    <div className="mt-3">
+                      <label className="mb-2 block text-xs font-bold text-slate-400">
+                        ORIENTAÇÃO IMEDIATA
+                      </label>
+                      <textarea
+                        value={orientacaoImediata}
+                        onChange={(event) =>
+                          setOrientacaoImediata(event.target.value)
+                        }
+                        placeholder="Ex: Não utilize o elevador e aguarde a liberação da equipe técnica"
+                        rows={3}
+                        className="w-full resize-none rounded-xl border border-slate-700 bg-slate-800 p-3 text-white outline-none placeholder:text-slate-500 focus:border-red-500"
+                      />
+                    </div>
+
+                    <p className="mt-3 text-xs font-bold text-red-300">
+                      Emergências mantêm a confirmação de ciência ativada.
+                    </p>
+                  </div>
+                )}
 
                 <div>
                   <label className="mb-2 block text-xs font-bold text-slate-400">
@@ -2649,6 +3254,7 @@ export default function CentralSindico() {
                     <input
                       type="checkbox"
                       checked={enviarPush}
+                      disabled
                       onChange={(event) => setEnviarPush(event.target.checked)}
                     />
                     <span>
@@ -2656,7 +3262,7 @@ export default function CentralSindico() {
                         🔔 Enviar push
                       </span>
                       <span className="text-xs text-slate-400">
-                        Notificar os destinatários
+                        Será ativado por último, após o listener e a ciência
                       </span>
                     </span>
                   </label>
@@ -2772,7 +3378,9 @@ export default function CentralSindico() {
 
                   <div className="mt-4 grid grid-cols-3 gap-2">
                     <div className="rounded-xl bg-slate-900 p-3 text-center">
-                      <p className="text-2xl font-black text-white">94</p>
+                      <p className="text-2xl font-black text-white">
+                        {unidadesDestinatarias.length}
+                      </p>
                       <p className="text-[10px] text-slate-400">Enviados</p>
                     </div>
 
@@ -2808,6 +3416,22 @@ export default function CentralSindico() {
                       : "Nenhum condomínio escolhido"}
                   </p>
 
+                  <p className="mt-2 text-sm font-black text-orange-200">
+                    {destinatarioComunicacao === "unidade"
+                      ? unidadesComunicacao.find(
+                          (unidade) => unidade.id === unidadeComunicacaoId
+                        )?.nome || "Escolha uma unidade"
+                      : destinatarioComunicacao === "bloco"
+                      ? blocoComunicacao || "Escolha um bloco"
+                      : destinatarioComunicacao === "moradores"
+                      ? "Todos os moradores"
+                      : destinatarioComunicacao === "administradora"
+                      ? "Administradora"
+                      : destinatarioComunicacao === "conselho"
+                      ? "Conselho"
+                      : destinatarioComunicacao || "Nenhum público escolhido"}
+                  </p>
+
                   <p className="mt-1 text-xs text-slate-400">
                     O histórico ficará associado ao contexto selecionado no
                     painel.
@@ -2831,7 +3455,11 @@ export default function CentralSindico() {
                 disabled={
                   salvandoComunicacao ||
                   !condominioComunicacaoId ||
-                  !destinatarioComunicacao
+                  !destinatarioComunicacao ||
+                  (destinatarioComunicacao === "unidade" &&
+                    !unidadeComunicacaoId) ||
+                  (destinatarioComunicacao === "bloco" &&
+                    !blocoComunicacao)
                 }
                 className="rounded-xl bg-blue-600 py-3 font-black text-white transition-all hover:bg-blue-500 active:scale-95 disabled:cursor-not-allowed disabled:bg-slate-600"
               >
@@ -2862,14 +3490,17 @@ export default function CentralSindico() {
                 </h2>
 
                 <p className="mt-2 text-sm text-slate-400">
-                  Histórico de {contextoSelecionado.nome}, com visualizações e
-                  confirmações de ciência.
+                  Histórico de {contextoSelecionado.nome}, com destinatários,
+                  visualizações e confirmações de ciência.
                 </p>
               </div>
 
               <button
                 type="button"
-                onClick={() => setPopupComunicadosEnviadosAberto(false)}
+                onClick={() => {
+                  setPopupComunicadosEnviadosAberto(false);
+                  setComunicadoDetalhado(null);
+                }}
                 className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-800 text-xl font-black transition-all hover:bg-slate-700 active:scale-95"
               >
                 ✕
@@ -2898,6 +3529,14 @@ export default function CentralSindico() {
                   const totalCientes = visualizacoes.filter(
                     (item) => item.ciente === true
                   ).length;
+                  const totalDestinatarios =
+                    comunicado.totalDestinatarios ||
+                    comunicado.unidadesDestinatarias?.length ||
+                    0;
+                  const totalPendentes = Math.max(
+                    totalDestinatarios - totalCientes,
+                    0
+                  );
 
                   return (
                     <div
@@ -2905,7 +3544,7 @@ export default function CentralSindico() {
                       className="rounded-2xl border border-slate-700 bg-slate-800 p-4"
                     >
                       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                        <div className="min-w-0">
+                        <div className="min-w-0 flex-1">
                           <div className="flex flex-wrap items-center gap-2">
                             <span className="rounded-full bg-blue-950 px-3 py-1 text-[10px] font-black text-blue-300">
                               {comunicado.tipo === "assembleia"
@@ -2938,16 +3577,21 @@ export default function CentralSindico() {
                             {comunicado.mensagem}
                           </p>
 
-                          <p className="mt-3 text-xs text-slate-500">
-                            Criado em {comunicado.criadoEmFormatado} por{" "}
-                            {comunicado.enviadoPor}
-                          </p>
+                          <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-xs">
+                            <span className="font-bold text-cyan-300">
+                              🎯 {descricaoDestino(comunicado)}
+                            </span>
+                            <span className="text-slate-400">
+                              Criado em {comunicado.criadoEmFormatado} por {" "}
+                              {comunicado.enviadoPor}
+                            </span>
+                          </div>
                         </div>
 
-                        <div className="grid shrink-0 grid-cols-2 gap-2 sm:grid-cols-3">
+                        <div className="grid shrink-0 grid-cols-3 gap-2">
                           <div className="rounded-xl bg-slate-900 p-3 text-center">
                             <p className="text-xl font-black text-blue-300">
-                              {totalVisualizados}
+                              {totalVisualizados}/{totalDestinatarios}
                             </p>
                             <p className="text-[10px] text-slate-400">
                               Visualizados
@@ -2956,21 +3600,49 @@ export default function CentralSindico() {
 
                           <div className="rounded-xl bg-slate-900 p-3 text-center">
                             <p className="text-xl font-black text-green-300">
-                              {totalCientes}
+                              {totalCientes}/{totalDestinatarios}
                             </p>
                             <p className="text-[10px] text-slate-400">
                               Cientes
                             </p>
                           </div>
 
-                          <button
-                            type="button"
-                            onClick={() => reenviarComunicado(comunicado)}
-                            className="col-span-2 rounded-xl bg-blue-600 px-4 py-3 text-xs font-black text-white transition-all hover:bg-blue-500 active:scale-95 sm:col-span-1"
-                          >
-                            🔁 Reenviar
-                          </button>
+                          <div className="rounded-xl bg-slate-900 p-3 text-center">
+                            <p className="text-xl font-black text-orange-300">
+                              {totalPendentes}
+                            </p>
+                            <p className="text-[10px] text-slate-400">
+                              Pendentes
+                            </p>
+                          </div>
                         </div>
+                      </div>
+
+                      <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-3">
+                        <button
+                          type="button"
+                          onClick={() => setComunicadoDetalhado(comunicado)}
+                          className="rounded-xl border border-cyan-700 bg-cyan-950/30 px-4 py-3 text-xs font-black text-cyan-200 transition-all hover:bg-cyan-900/40 active:scale-95"
+                        >
+                          👥 Ver destinatários
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => reenviarSomentePendentes(comunicado)}
+                          disabled={totalPendentes === 0}
+                          className="rounded-xl bg-orange-600 px-4 py-3 text-xs font-black text-white transition-all hover:bg-orange-500 active:scale-95 disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-400"
+                        >
+                          ⏳ Reenviar pendentes
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => reenviarComunicado(comunicado)}
+                          className="rounded-xl bg-blue-600 px-4 py-3 text-xs font-black text-white transition-all hover:bg-blue-500 active:scale-95"
+                        >
+                          🔁 Reenviar todos
+                        </button>
                       </div>
                     </div>
                   );
@@ -2980,6 +3652,108 @@ export default function CentralSindico() {
           </div>
         </div>
       )}
+
+      {/* Popup nominal dos destinatários */}
+
+      {comunicadoDetalhado && (() => {
+        const idsDestinatarios =
+          comunicadoDetalhado.unidadesDestinatarias || [];
+        const visualizacoes = comunicadoDetalhado.visualizacoes || {};
+
+        return (
+          <div className="fixed inset-0 z-[175] flex items-center justify-center bg-black/90 p-3 md:p-6">
+            <div className="max-h-[94vh] w-full max-w-3xl overflow-y-auto rounded-3xl border border-cyan-700 bg-slate-900 p-4 shadow-2xl md:p-6">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-sm font-bold text-cyan-300">
+                    👥 ACOMPANHAMENTO NOMINAL
+                  </p>
+                  <h2 className="mt-1 text-2xl font-black text-white">
+                    {comunicadoDetalhado.titulo}
+                  </h2>
+                  <p className="mt-2 text-sm text-slate-400">
+                    Destino: {descricaoDestino(comunicadoDetalhado)}
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setComunicadoDetalhado(null)}
+                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-800 text-xl font-black transition-all hover:bg-slate-700 active:scale-95"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {idsDestinatarios.length === 0 ? (
+                <div className="mt-5 rounded-2xl border border-orange-800 bg-orange-950/20 p-5 text-center">
+                  <p className="font-black text-orange-300">
+                    Este comunicado antigo não possui a lista nominal de destinatários.
+                  </p>
+                </div>
+              ) : (
+                <div className="mt-5 space-y-2">
+                  {idsDestinatarios.map((unidadeId) => {
+                    const registro = visualizacoes[unidadeId];
+                    const visualizou = Boolean(registro?.visualizadoEm);
+                    const ciente = registro?.ciente === true;
+
+                    return (
+                      <div
+                        key={unidadeId}
+                        className="grid grid-cols-1 gap-3 rounded-2xl border border-slate-700 bg-slate-800 p-4 sm:grid-cols-[1fr_auto_auto] sm:items-center"
+                      >
+                        <div>
+                          <p className="font-black text-white">
+                            {nomeUnidadePorId(unidadeId)}
+                          </p>
+                          <p className="mt-1 text-xs text-slate-500">
+                            {unidadeId}
+                          </p>
+                        </div>
+
+                        <div className="sm:text-center">
+                          <p
+                            className={`text-xs font-black ${
+                              visualizou ? "text-blue-300" : "text-slate-500"
+                            }`}
+                          >
+                            {visualizou ? "👁️ VISUALIZOU" : "○ NÃO ABRIU"}
+                          </p>
+                          <p className="mt-1 text-[10px] text-slate-500">
+                            {formatarDataHora(registro?.visualizadoEm)}
+                          </p>
+                        </div>
+
+                        <div className="sm:text-center">
+                          <p
+                            className={`text-xs font-black ${
+                              ciente ? "text-green-300" : "text-orange-300"
+                            }`}
+                          >
+                            {ciente ? "✅ CIENTE" : "⏳ PENDENTE"}
+                          </p>
+                          <p className="mt-1 text-[10px] text-slate-500">
+                            {formatarDataHora(registro?.cienteEm)}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              <button
+                type="button"
+                onClick={() => setComunicadoDetalhado(null)}
+                className="mt-5 w-full rounded-xl bg-cyan-600 py-3 font-black text-white transition-all hover:bg-cyan-500 active:scale-95"
+              >
+                Fechar acompanhamento
+              </button>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Popup Saúde da Carteira */}
 
