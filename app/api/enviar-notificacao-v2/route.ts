@@ -481,16 +481,14 @@ export async function POST(request: Request) {
 
     const resposta = await messaging.send({
       token,
-      notification: {
-        title: `🔔 ${nome} está chamando`,
-        body: `Motivo: ${motivo}`,
-      },
-      data: {
-        unidadeId: String(unidadeId),
-        nome: String(nome),
-        motivo: String(motivo),
-        tipo: "chamada-v2",
-      },
+     data: {
+  unidadeId: String(unidadeId),
+  nome: String(nome),
+  motivo: String(motivo),
+  tipo: "chamada-v2",
+  titulo: `🔔 ${nome} está chamando`,
+  mensagem: `Motivo: ${motivo}`,
+},
       webpush: {
         fcmOptions: {
           link: `${urlBase}/morador-v2/${encodeURIComponent(unidadeId)}`,
