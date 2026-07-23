@@ -57,6 +57,13 @@ type ComunicadoSalvo = {
   detalhesModelo?: DetalhesModeloComunicacao;
   exigeCiencia: boolean;
   enviarPush: boolean;
+  pushProcessado?: boolean;
+  pushEnviado?: boolean;
+  pushEnviadoEm?: number;
+  pushTotalDestinatarios?: number;
+  pushTotalEnviados?: number;
+  pushTotalFalhas?: number;
+  erroPush?: string | null;
   registrarHistorico: boolean;
   agendado: boolean;
   dataAgendamento: string;
@@ -1007,6 +1014,75 @@ export default function CentralSindico() {
     );
   }
 
+
+  async function enviarPushComunicadoParaUnidades({
+    unidadesIds,
+    comunicadoId,
+    titulo,
+    mensagem,
+  }: {
+    unidadesIds: string[];
+    comunicadoId: string;
+    titulo: string;
+    mensagem: string;
+  }) {
+    let totalEnviados = 0;
+    const falhas: string[] = [];
+
+    for (const unidadeId of unidadesIds) {
+      try {
+        const respostaPush = await fetch("/api/enviar-comunicado", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            unidadeId,
+            comunicadoId,
+            titulo,
+            mensagem,
+          }),
+        });
+
+        const dadosPush = await respostaPush.json().catch(() => ({}));
+
+        if (!respostaPush.ok || dadosPush?.ok === false) {
+          const detalheFalha =
+            dadosPush?.erro ||
+            dadosPush?.detalhes ||
+            "A rota não confirmou o envio.";
+
+          console.error(
+            `Falha no push do comunicado para ${unidadeId}:`,
+            dadosPush
+          );
+
+          falhas.push(`${unidadeId}: ${detalheFalha}`);
+          continue;
+        }
+
+        totalEnviados += 1;
+      } catch (erro) {
+        const detalheFalha =
+          erro instanceof Error ? erro.message : String(erro);
+
+        console.error(
+          `Erro ao enviar push do comunicado para ${unidadeId}:`,
+          erro
+        );
+
+        falhas.push(`${unidadeId}: ${detalheFalha}`);
+      }
+    }
+
+    return {
+      totalDestinatarios: unidadesIds.length,
+      totalEnviados,
+      totalFalhas: falhas.length,
+      falhas,
+    };
+  }
+
   async function enviarComunicacao() {
     if (!condominioComunicacaoId) {
       alert("Escolha o condomínio que receberá o comunicado.");
@@ -1075,6 +1151,10 @@ export default function CentralSindico() {
         throw new Error("Condomínio selecionado não encontrado.");
       }
 
+      const idsUnidadesDestinatarias = unidadesDestinatarias.map(
+        (unidade) => unidade.id
+      );
+
       const referenciaNovoComunicado = push(
         ref(db, `comunicados-v2/${condominioComunicacaoId}`)
       );
@@ -1088,10 +1168,8 @@ export default function CentralSindico() {
           destinatarioComunicacao === "unidade" ? unidadeComunicacaoId : "",
         blocoSelecionado:
           destinatarioComunicacao === "bloco" ? blocoComunicacao : "",
-        unidadesDestinatarias: unidadesDestinatarias.map(
-          (unidade) => unidade.id
-        ),
-        totalDestinatarios: unidadesDestinatarias.length,
+        unidadesDestinatarias: idsUnidadesDestinatarias,
+        totalDestinatarios: idsUnidadesDestinatarias.length,
         titulo: tituloComunicacao.trim(),
         mensagem: mensagemComunicacao.trim(),
         detalhesModelo: {
@@ -1106,6 +1184,14 @@ export default function CentralSindico() {
         },
         exigeCiencia: exigirCiencia,
         enviarPush,
+        pushProcessado: agendarComunicacao || !enviarPush,
+        pushEnviado: false,
+        pushTotalDestinatarios: enviarPush
+          ? idsUnidadesDestinatarias.length
+          : 0,
+        pushTotalEnviados: 0,
+        pushTotalFalhas: 0,
+        erroPush: null,
         registrarHistorico,
         agendado: agendarComunicacao,
         dataAgendamento: agendarComunicacao ? dataAgendamento : "",
@@ -1158,45 +1244,40 @@ export default function CentralSindico() {
         await update(ref(db), atualizacoesEntrega);
       }
 
+      let mensagemResultadoPush = "";
+
       if (enviarPush && !agendarComunicacao) {
-       const unidadeIdDestino = unidadesDestinatarias[0]?.id;
+        const resultadoPush = await enviarPushComunicadoParaUnidades({
+          unidadesIds: idsUnidadesDestinatarias,
+          comunicadoId,
+          titulo: tituloComunicacao.trim(),
+          mensagem: mensagemComunicacao.trim(),
+        });
 
-if (!unidadeIdDestino) {
-  throw new Error("Nenhuma unidade destinatária foi encontrada.");
-}
+        await update(
+          ref(
+            db,
+            `comunicados-v2/${condominioComunicacaoId}/${comunicadoId}`
+          ),
+          {
+            pushProcessado: true,
+            pushEnviado: resultadoPush.totalEnviados > 0,
+            pushEnviadoEm:
+              resultadoPush.totalEnviados > 0 ? Date.now() : null,
+            pushTotalDestinatarios: resultadoPush.totalDestinatarios,
+            pushTotalEnviados: resultadoPush.totalEnviados,
+            pushTotalFalhas: resultadoPush.totalFalhas,
+            erroPush:
+              resultadoPush.falhas.length > 0
+                ? resultadoPush.falhas.join(" | ")
+                : null,
+          }
+        );
 
-const respostaPush = await fetch("/api/enviar-comunicado", {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-  },
-  body: JSON.stringify({
-    unidadeId: unidadeIdDestino,
-    comunicadoId,
-    titulo: tituloComunicacao.trim(),
-    mensagem: mensagemComunicacao.trim(),
-  }),
-});
-
-        const dadosPush = await respostaPush.json().catch(() => ({}));
-
-        if (!respostaPush.ok || dadosPush?.ok === false) {
-          console.error("Falha no push do comunicado:", dadosPush);
-
-          await update(
-            ref(
-              db,
-              `comunicados-v2/${condominioComunicacaoId}/${comunicadoId}`
-            ),
-            {
-              pushProcessado: false,
-              erroPush:
-                dadosPush?.erro ||
-                dadosPush?.detalhes ||
-                "Não foi possível enviar o push.",
-            }
-          );
-        }
+        mensagemResultadoPush =
+          resultadoPush.totalFalhas === 0
+            ? ` Push confirmado para ${resultadoPush.totalEnviados} unidade(s).`
+            : ` Push confirmado para ${resultadoPush.totalEnviados} unidade(s) e falhou em ${resultadoPush.totalFalhas}.`;
       }
 
       if (registrarHistorico) {
@@ -1214,6 +1295,7 @@ const respostaPush = await fetch("/api/enviar-comunicado", {
           acao: agendarComunicacao
             ? "comunicacao_agendada"
             : "comunicacao_enviada",
+          enviarPush,
           criadoEm: agora,
           criadoEmFormatado: new Date(agora).toLocaleString("pt-BR"),
           responsavel: "João",
@@ -1223,7 +1305,7 @@ const respostaPush = await fetch("/api/enviar-comunicado", {
       alert(
         agendarComunicacao
           ? "Comunicado agendado e salvo com sucesso."
-          : "Comunicado enviado e salvo com sucesso."
+          : `Comunicado enviado e salvo com sucesso.${mensagemResultadoPush}`
       );
 
       setPopupComunicacaoAberto(false);
@@ -1233,11 +1315,16 @@ const respostaPush = await fetch("/api/enviar-comunicado", {
       setBlocoComunicacao("");
     } catch (erro) {
       console.error("Erro ao salvar comunicado:", erro);
-      alert("Não foi possível salvar o comunicado no Firebase.");
+      alert(
+        erro instanceof Error
+          ? erro.message
+          : "Não foi possível salvar o comunicado no Firebase."
+      );
     } finally {
       setSalvandoComunicacao(false);
     }
   }
+
 
   function nomeUnidadePorId(unidadeId: string) {
     return (
@@ -1340,32 +1427,39 @@ const respostaPush = await fetch("/api/enviar-comunicado", {
       let mensagemResultadoPush = "";
 
       if (comunicado.enviarPush) {
-        const respostaPush = await fetch("/api/enviar-comunicado", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            tipo: "comunicado-v2",
-            condominioId: comunicado.condominioId,
-            comunicadoId: comunicado.id,
-            titulo: comunicado.titulo,
-            mensagem: comunicado.mensagem,
-            unidadesDestinatarias: idsPendentes,
-          }),
+        const resultadoPush = await enviarPushComunicadoParaUnidades({
+          unidadesIds: idsPendentes,
+          comunicadoId: comunicado.id,
+          titulo: comunicado.titulo,
+          mensagem: comunicado.mensagem,
         });
 
-        const dadosPush = await respostaPush.json().catch(() => ({}));
+        await update(
+          ref(
+            db,
+            `comunicados-v2/${comunicado.condominioId}/${comunicado.id}`
+          ),
+          {
+            pushProcessado: true,
+            pushEnviado: resultadoPush.totalEnviados > 0,
+            pushEnviadoEm:
+              resultadoPush.totalEnviados > 0 ? Date.now() : null,
+            pushTotalDestinatarios: resultadoPush.totalDestinatarios,
+            pushTotalEnviados: resultadoPush.totalEnviados,
+            pushTotalFalhas: resultadoPush.totalFalhas,
+            erroPush:
+              resultadoPush.falhas.length > 0
+                ? resultadoPush.falhas.join(" | ")
+                : null,
+          }
+        );
 
-        if (!respostaPush.ok || dadosPush?.ok === false) {
-          console.error("Falha no push para pendentes:", dadosPush);
-          mensagemResultadoPush =
-            " O comunicado foi renovado no painel, mas o push falhou.";
-        } else {
-          mensagemResultadoPush = ` Push enviado para ${
-            dadosPush.enviados || 0
-          } dispositivo(s).`;
-        }
+        mensagemResultadoPush =
+          resultadoPush.totalFalhas === 0
+            ? ` Push confirmado para ${resultadoPush.totalEnviados} unidade(s).`
+            : ` Push confirmado para ${resultadoPush.totalEnviados} unidade(s) e falhou em ${resultadoPush.totalFalhas}.`;
+      } else {
+        mensagemResultadoPush = " Este comunicado foi criado sem push.";
       }
 
       alert(
@@ -1373,92 +1467,108 @@ const respostaPush = await fetch("/api/enviar-comunicado", {
       );
     } catch (erro) {
       console.error("Erro ao reenviar para pendentes:", erro);
-      alert("Não foi possível reenviar o comunicado para os pendentes.");
+      alert(
+        erro instanceof Error
+          ? erro.message
+          : "Não foi possível reenviar o comunicado para os pendentes."
+      );
     }
   }
 
+
   async function reenviarComunicado(comunicado: ComunicadoSalvo) {
+    const unidadesParaReenvio = comunicado.unidadesDestinatarias || [];
+
+    if (unidadesParaReenvio.length === 0) {
+      alert("Este comunicado não possui unidades destinatárias.");
+      return;
+    }
+
     try {
+      const agora = Date.now();
+      const atualizacoesEntrega: Record<string, unknown> = {};
+
+      unidadesParaReenvio.forEach((unidadeId) => {
+        atualizacoesEntrega[`unidades-v2/${unidadeId}/comunicadoAtivo`] = {
+          id: comunicado.id,
+          condominioId: comunicado.condominioId,
+          condominioNome: comunicado.condominioNome,
+          unidadeId,
+          unidadeNome: nomeUnidadePorId(unidadeId),
+          tipo: comunicado.tipo,
+          titulo: comunicado.titulo,
+          mensagem: comunicado.mensagem,
+          detalhesModelo: comunicado.detalhesModelo || {},
+          exigeCiencia: comunicado.exigeCiencia,
+          status: "novo",
+          criadoEm: comunicado.criadoEm,
+          criadoEmFormatado: comunicado.criadoEmFormatado,
+          reenviadoEm: agora,
+          reenviadoEmFormatado: new Date(agora).toLocaleString("pt-BR"),
+          enviadoPor: comunicado.enviadoPor,
+        };
+      });
+
+      atualizacoesEntrega[
+        `comunicados-v2/${comunicado.condominioId}/${comunicado.id}/reenviadoEm`
+      ] = agora;
+      atualizacoesEntrega[
+        `comunicados-v2/${comunicado.condominioId}/${comunicado.id}/reenviadoEmFormatado`
+      ] = new Date(agora).toLocaleString("pt-BR");
+
+      await update(ref(db), atualizacoesEntrega);
+
+      const resultadoPush = await enviarPushComunicadoParaUnidades({
+        unidadesIds: unidadesParaReenvio,
+        comunicadoId: comunicado.id,
+        titulo: comunicado.titulo,
+        mensagem: comunicado.mensagem,
+      });
+
       await update(
         ref(
           db,
           `comunicados-v2/${comunicado.condominioId}/${comunicado.id}`
         ),
         {
-          reenviadoEm: Date.now(),
-          reenviadoEmFormatado: new Date().toLocaleString("pt-BR"),
+          enviarPush: true,
+          pushProcessado: true,
+          pushEnviado: resultadoPush.totalEnviados > 0,
+          pushEnviadoEm:
+            resultadoPush.totalEnviados > 0 ? Date.now() : null,
+          pushTotalDestinatarios: resultadoPush.totalDestinatarios,
+          pushTotalEnviados: resultadoPush.totalEnviados,
+          pushTotalFalhas: resultadoPush.totalFalhas,
+          erroPush:
+            resultadoPush.falhas.length > 0
+              ? resultadoPush.falhas.join(" | ")
+              : null,
         }
       );
 
-      const unidadesParaReenvio =
-  comunicado.unidadesDestinatarias || [];
+      if (resultadoPush.totalEnviados === 0) {
+        throw new Error(
+          "O comunicado voltou para o painel, mas nenhum push foi confirmado."
+        );
+      }
 
-if (unidadesParaReenvio.length === 0) {
-  throw new Error(
-    "Este comunicado não possui unidades destinatárias."
-  );
-}
-
-let totalEnviados = 0;
-const falhas: string[] = [];
-
-for (const unidadeId of unidadesParaReenvio) {
-  try {
-    const respostaPush = await fetch("/api/enviar-comunicado", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        unidadeId,
-        comunicadoId: comunicado.id,
-        titulo: comunicado.titulo,
-        mensagem: comunicado.mensagem,
-      }),
-    });
-
-    const dadosPush = await respostaPush
-      .json()
-      .catch(() => ({}));
-
-    if (!respostaPush.ok || dadosPush?.ok === false) {
-      console.error(
-        `Falha ao reenviar push para ${unidadeId}:`,
-        dadosPush
+      alert(
+        `Comunicado reenviado para ${unidadesParaReenvio.length} unidade(s). ` +
+          `Push confirmado para ${resultadoPush.totalEnviados}.` +
+          (resultadoPush.totalFalhas > 0
+            ? ` Falhou em ${resultadoPush.totalFalhas}.`
+            : "")
       );
-
-      falhas.push(unidadeId);
-      continue;
-    }
-
-    totalEnviados += 1;
-  } catch (erro) {
-    console.error(
-      `Erro ao reenviar push para ${unidadeId}:`,
-      erro
-    );
-
-    falhas.push(unidadeId);
-  }
-}
-
-if (totalEnviados === 0) {
-  throw new Error(
-    "Não foi possível reenviar o push para nenhuma unidade."
-  );
-}
-
-alert(
-  `Push reenviado para ${totalEnviados} unidade(s).` +
-    (falhas.length > 0
-      ? ` Falhou em ${falhas.length} unidade(s).`
-      : "")
-);
     } catch (erro) {
-      console.error("Erro ao registrar reenvio:", erro);
-      alert("Não foi possível registrar o reenvio.");
+      console.error("Erro ao reenviar comunicado:", erro);
+      alert(
+        erro instanceof Error
+          ? erro.message
+          : "Não foi possível reenviar o comunicado."
+      );
     }
   }
+
 
   return (
     <div className="space-y-5">
@@ -3658,6 +3768,40 @@ alert(
                               Criado em {comunicado.criadoEmFormatado} por {" "}
                               {comunicado.enviadoPor}
                             </span>
+                          </div>
+
+                          <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px] font-black">
+                            {comunicado.enviarPush === true ? (
+                              comunicado.pushProcessado === true ? (
+                                comunicado.pushEnviado === true ? (
+                                  <span className="rounded-full bg-green-950 px-3 py-1 text-green-300">
+                                    🔔 Push confirmado: {comunicado.pushTotalEnviados || 0}
+                                  </span>
+                                ) : (
+                                  <span className="rounded-full bg-red-950 px-3 py-1 text-red-300">
+                                    ⚠️ Push solicitado, mas não confirmado
+                                  </span>
+                                )
+                              ) : (
+                                <span className="rounded-full bg-yellow-950 px-3 py-1 text-yellow-300">
+                                  ⏳ Push solicitado, aguardando confirmação
+                                </span>
+                              )
+                            ) : comunicado.enviarPush === false ? (
+                              <span className="rounded-full bg-slate-900 px-3 py-1 text-slate-400">
+                                🔕 Enviado sem push
+                              </span>
+                            ) : (
+                              <span className="rounded-full bg-slate-900 px-3 py-1 text-slate-500">
+                                Push não registrado
+                              </span>
+                            )}
+
+                            {(comunicado.pushTotalFalhas || 0) > 0 && (
+                              <span className="rounded-full bg-orange-950 px-3 py-1 text-orange-300">
+                                Falhas: {comunicado.pushTotalFalhas}
+                              </span>
+                            )}
                           </div>
                         </div>
 
