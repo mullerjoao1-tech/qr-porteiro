@@ -257,6 +257,10 @@ export async function POST(request: Request) {
   url: `${urlBase}/morador-v2/${encodeURIComponent(unidadeId)}`,
 },
         webpush: {
+          headers: {
+            Urgency: "high",
+            TTL: "86400",
+          },
           fcmOptions: {
             link: `${urlBase}/morador-v2/${encodeURIComponent(unidadeId)}`,
           },
@@ -366,10 +370,16 @@ export async function POST(request: Request) {
     mensagem.length > 120
       ? `${mensagem.slice(0, 117)}...`
       : mensagem,
-  url: `${urlBase}/morador-v2/${encodeURIComponent(unidadeId)}`,
+  url:
+    `${urlBase}/morador-v2/${encodeURIComponent(unidadeId)}` +
+    `?comunicado=${encodeURIComponent(comunicadoId)}`,
 },
             webpush: {
-              fcmOptions: {
+          headers: {
+            Urgency: "high",
+            TTL: "86400",
+          },
+          fcmOptions: {
                 link:
                   `${urlBase}/morador-v2/${encodeURIComponent(unidadeId)}` +
                   `?comunicado=${encodeURIComponent(comunicadoId)}`,
@@ -491,7 +501,11 @@ export async function POST(request: Request) {
   url: `${urlBase}/morador-v2/${encodeURIComponent(unidadeId)}`,
 },
       webpush: {
-        fcmOptions: {
+          headers: {
+            Urgency: "high",
+            TTL: "86400",
+          },
+          fcmOptions: {
           link: `${urlBase}/morador-v2/${encodeURIComponent(unidadeId)}`,
         },
       },
