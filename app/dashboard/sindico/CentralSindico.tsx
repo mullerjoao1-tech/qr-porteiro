@@ -645,11 +645,11 @@ export default function CentralSindico() {
           const unidade = valor as Partial<UnidadeComunicacao>;
 
           return {
-            id: unidade.id || chave,
-            nome: unidade.nome || chave,
-            bloco: unidade.bloco || "Sem bloco",
-            tipo: unidade.tipo || "Unidade",
-          };
+  id: chave,
+  nome: unidade.nome || chave,
+  bloco: unidade.bloco || "Sem bloco",
+  tipo: unidade.tipo || "Unidade",
+};
         })
         .sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR", { numeric: true }));
 

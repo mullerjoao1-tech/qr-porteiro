@@ -209,7 +209,7 @@ export default function Painel() {
 
       const token = await getToken(messaging, {
         vapidKey:
-          "BF_-nw1UqwzDZox0uTNzgsDircH9cS3jLU74S-37w6edZAfSA4TaR-PXHuv1HMwdsvSBilJlRZTUIiUWxxZS_",
+          "BF_-nw1UqwzDZox0uTNzgsDircH9cS3jLU74S-37w6edZAfSA4TaR-PXHuv1HMwdsvSBilJlRZTUIiUWxxZS_w4",
         serviceWorkerRegistration: registroServiceWorker,
       });
 
