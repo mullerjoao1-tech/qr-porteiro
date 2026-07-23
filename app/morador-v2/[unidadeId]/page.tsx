@@ -652,32 +652,44 @@ export default function MoradorV2() {
     pararToqueContinuo();
     limparFinalizacaoAutomatica();
 
-    ultimaChamadaAtivaRef.current = false;
-    setPopupAtendimentoAberto(false);
-
-    await registrarAnalytics("timeout");
-    await registrarLog("timeout_atendimento", "Chamada finalizada automaticamente");
-
     const timeoutAguardando = status === "Aguardando atendimento";
 
-    await salvarHistorico(timeoutAguardando ? "Não atendida" : "Automática");
+    ultimaChamadaAtivaRef.current = false;
+    setPopupAtendimentoAberto(false);
+    setStatus("Encerrado");
+    setAvisoAuto("Atendimento encerrado. Limpando em instantes.");
 
-    await update(ref(db, caminhoFirebase), {
-      status: "Encerrado",
-      mensagemResponsavel: timeoutAguardando
-        ? "Tempo de espera esgotado."
-        : "ATENDIMENTO_ENCERRADO",
-      notificar: false,
-      encerradoEm: new Date().toISOString(),
-    });
+    try {
+      await update(ref(db, caminhoFirebase), {
+        status: "Encerrado",
+        mensagemResponsavel: timeoutAguardando
+          ? "Tempo de espera esgotado."
+          : "ATENDIMENTO_ENCERRADO",
+        notificar: false,
+        encerradoEm: new Date().toISOString(),
+      });
+    } catch (erro) {
+      console.error("Erro ao encerrar chamada automaticamente:", erro);
+    }
 
     ultimaChamadaDadosRef.current = null;
     setAudioVisitante("");
     setMensagensConversa([]);
     setAudioRespostaBlob(null);
 
-    setTimeout(async () => {
-      await remove(ref(db, caminhoFirebase));
+    void Promise.allSettled([
+      registrarAnalytics("timeout"),
+      registrarLog(
+        "timeout_atendimento",
+        "Chamada finalizada automaticamente"
+      ),
+      salvarHistorico(timeoutAguardando ? "Não atendida" : "Automática"),
+    ]);
+
+    setTimeout(() => {
+      void remove(ref(db, caminhoFirebase)).catch((erro) => {
+        console.error("Erro ao limpar chamada encerrada:", erro);
+      });
     }, 5000);
   }
 
@@ -699,17 +711,26 @@ export default function MoradorV2() {
       return;
     }
 
-    await registrarAnalytics("atendida");
-    await registrarLog("chamada_atendida", "Chamada atendida pelo painel");
-
-    await update(ref(db, caminhoFirebase), {
-      status: "Em atendimento",
-      notificar: false,
-      atendidoEm: new Date().toISOString(),
-    });
-
+    setStatus("Em atendimento");
     setPopupAtendimentoAberto(false);
     pararToqueContinuo();
+
+    try {
+      await update(ref(db, caminhoFirebase), {
+        status: "Em atendimento",
+        notificar: false,
+        atendidoEm: new Date().toISOString(),
+      });
+    } catch (erro) {
+      console.error("Erro ao atender chamada:", erro);
+      alert("Não foi possível confirmar o atendimento.");
+      return;
+    }
+
+    void Promise.allSettled([
+      registrarAnalytics("atendida"),
+      registrarLog("chamada_atendida", "Chamada atendida pelo painel"),
+    ]);
   }
 
   async function enviarMensagemRapida(mensagem: string) {
@@ -896,30 +917,43 @@ export default function MoradorV2() {
       return;
     }
 
+    limparFinalizacaoAutomatica();
+    pararToqueContinuo();
+
     ultimaChamadaAtivaRef.current = false;
     setPopupAtendimentoAberto(false);
+    setStatus("Encerrado");
+    setAvisoAuto("Atendimento encerrado. Limpando em instantes.");
 
-    await registrarAnalytics("finalizada");
-    await registrarLog("chamada_finalizada", "Chamada finalizada manualmente");
-
-    await salvarHistorico("Manual");
-
-    limparFinalizacaoAutomatica();
-
-    await update(ref(db, caminhoFirebase), {
-      status: "Encerrado",
-      mensagemResponsavel: "ATENDIMENTO_ENCERRADO",
-      notificar: false,
-      encerradoEm: new Date().toISOString(),
-    });
+    try {
+      await update(ref(db, caminhoFirebase), {
+        status: "Encerrado",
+        mensagemResponsavel: "ATENDIMENTO_ENCERRADO",
+        notificar: false,
+        encerradoEm: new Date().toISOString(),
+      });
+    } catch (erro) {
+      console.error("Erro ao finalizar chamada:", erro);
+      alert("Não foi possível finalizar o atendimento.");
+      return;
+    }
 
     ultimaChamadaDadosRef.current = null;
 
-    setTimeout(async () => {
-      await remove(ref(db, caminhoFirebase));
-    }, 5000);
+    void Promise.allSettled([
+      registrarAnalytics("finalizada"),
+      registrarLog(
+        "chamada_finalizada",
+        "Chamada finalizada manualmente"
+      ),
+      salvarHistorico("Manual"),
+    ]);
 
-    pararToqueContinuo();
+    setTimeout(() => {
+      void remove(ref(db, caminhoFirebase)).catch((erro) => {
+        console.error("Erro ao limpar chamada encerrada:", erro);
+      });
+    }, 5000);
   }
 
   function tocarBip() {
