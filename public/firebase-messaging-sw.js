@@ -9,13 +9,13 @@ importScripts(
 );
 
 firebase.initializeApp({
-  apiKey: "AIzaSyBAdV3dc8bN938ivb8YAwhQZ3vw6a24Bh0",
-  authDomain: "qr-porteiro-app.firebaseapp.com",
-  databaseURL: "https://qr-porteiro-app-default-rtdb.firebaseio.com",
-  projectId: "qr-porteiro-app",
-  storageBucket: "qr-porteiro-app.firebasestorage.app",
-  messagingSenderId: "778497713586",
-  appId: "1:778497713586:web:786071e95fd847961930ab",
+  apiKey: "AIzaSyBwWOYF4XCKnKE79i66Z8GmQV58i6n_pP4",
+  authDomain: "qr-acesso-studio.firebaseapp.com",
+  databaseURL: "https://qr-acesso-studio-default-rtdb.firebaseio.com",
+  projectId: "qr-acesso-studio",
+  storageBucket: "qr-acesso-studio.firebasestorage.app",
+  messagingSenderId: "173365953626",
+  appId: "1:173365953626:web:d2c9cd63dfc5f8128e0463",
 });
 
 const messaging = firebase.messaging();
@@ -51,6 +51,8 @@ messaging.onBackgroundMessage((payload) => {
         ? `?comunicado=${encodeURIComponent(comunicadoId)}`
         : "");
   } else if (dados.tipo === "chamada-v2" && unidadeId) {
+    urlDestino = `/morador-v2/${encodeURIComponent(unidadeId)}`;
+  } else if (dados.tipo === "teste-push-v2" && unidadeId) {
     urlDestino = `/morador-v2/${encodeURIComponent(unidadeId)}`;
   }
 

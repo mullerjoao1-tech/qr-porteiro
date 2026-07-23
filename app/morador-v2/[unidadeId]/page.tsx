@@ -1084,11 +1084,9 @@ export default function MoradorV2() {
       await navigator.serviceWorker.ready;
 
       const token = await getToken(messaging, {
-        vapidKey:
-          "BIEIQutWLbP05G1xFN1Zvg_hMnc4OGOkHRf6yI1bT8Igfmm1G8vRjYQhZyDGc5M3X6yhHkoWdJj4a_atPGqX7sk",
-        serviceWorkerRegistration: registroServiceWorker,
-      });
-
+  vapidKey: process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY!,
+  serviceWorkerRegistration: registroServiceWorker,
+});
       if (!token) {
         throw new Error(
           "O Firebase não retornou um token de notificação."

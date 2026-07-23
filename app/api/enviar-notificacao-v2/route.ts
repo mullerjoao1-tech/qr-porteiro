@@ -23,6 +23,7 @@ type CorpoComunicado = {
   comunicadoId: string;
   titulo: string;
   mensagem: string;
+  unidadesDestinatarias?: string[];
 };
 
 type CorpoTeste = {
@@ -275,7 +276,13 @@ export async function POST(request: Request) {
     // ======================================================
 
     if (corpo.tipo === "comunicado-v2") {
-      const { condominioId, comunicadoId, titulo, mensagem } = corpo;
+      const {
+        condominioId,
+        comunicadoId,
+        titulo,
+        mensagem,
+        unidadesDestinatarias,
+      } = corpo;
 
       if (!condominioId || !comunicadoId || !titulo || !mensagem) {
         return NextResponse.json(
@@ -298,6 +305,14 @@ export async function POST(request: Request) {
 
       const filtroCondominio = textoFiltroCondominio(condominioId);
 
+      const unidadesPermitidas = Array.isArray(unidadesDestinatarias)
+        ? new Set(
+            unidadesDestinatarias
+              .map((unidadeId) => String(unidadeId || "").trim())
+              .filter(Boolean)
+          )
+        : null;
+
       const destinatarios = Object.entries(tokensCadastrados)
         .map(([unidadeIdChave, valor]) =>
           normalizarRegistroToken(unidadeIdChave, valor)
@@ -305,15 +320,19 @@ export async function POST(request: Request) {
         .filter((registro) => {
           if (!registro.token) return false;
 
-          if (registro.condominioId) {
-            return registro.condominioId === condominioId;
+          const pertenceAoCondominio = registro.condominioId
+            ? registro.condominioId === condominioId
+            : registro.unidadeId
+                .toLowerCase()
+                .includes(filtroCondominio);
+
+          if (!pertenceAoCondominio) return false;
+
+          if (unidadesPermitidas && unidadesPermitidas.size > 0) {
+            return unidadesPermitidas.has(registro.unidadeId);
           }
 
-          // Compatibilidade temporária com tokens antigos:
-          // tenta reconhecer o condomínio pelo ID da unidade.
-          return registro.unidadeId
-            .toLowerCase()
-            .includes(filtroCondominio);
+          return true;
         });
 
       if (destinatarios.length === 0) {

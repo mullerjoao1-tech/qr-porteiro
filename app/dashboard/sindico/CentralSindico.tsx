@@ -1170,6 +1170,9 @@ export default function CentralSindico() {
             comunicadoId,
             titulo: tituloComunicacao.trim(),
             mensagem: mensagemComunicacao.trim(),
+            unidadesDestinatarias: unidadesDestinatarias.map(
+              (unidade) => unidade.id
+            ),
           }),
         });
 
@@ -1309,6 +1312,7 @@ export default function CentralSindico() {
           tipo: comunicado.tipo,
           titulo: comunicado.titulo,
           mensagem: comunicado.mensagem,
+          detalhesModelo: comunicado.detalhesModelo || {},
           exigeCiencia: comunicado.exigeCiencia,
           status: "novo",
           criadoEm: comunicado.criadoEm,
@@ -1331,8 +1335,39 @@ export default function CentralSindico() {
 
       await update(ref(db), atualizacoes);
 
+      let mensagemResultadoPush = "";
+
+      if (comunicado.enviarPush) {
+        const respostaPush = await fetch("/api/enviar-notificacao-v2", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            tipo: "comunicado-v2",
+            condominioId: comunicado.condominioId,
+            comunicadoId: comunicado.id,
+            titulo: comunicado.titulo,
+            mensagem: comunicado.mensagem,
+            unidadesDestinatarias: idsPendentes,
+          }),
+        });
+
+        const dadosPush = await respostaPush.json().catch(() => ({}));
+
+        if (!respostaPush.ok || dadosPush?.ok === false) {
+          console.error("Falha no push para pendentes:", dadosPush);
+          mensagemResultadoPush =
+            " O comunicado foi renovado no painel, mas o push falhou.";
+        } else {
+          mensagemResultadoPush = ` Push enviado para ${
+            dadosPush.enviados || 0
+          } dispositivo(s).`;
+        }
+      }
+
       alert(
-        `Comunicado reenviado para ${idsPendentes.length} destinatário(s) pendente(s).`
+        `Comunicado reenviado para ${idsPendentes.length} destinatário(s) pendente(s).${mensagemResultadoPush}`
       );
     } catch (erro) {
       console.error("Erro ao reenviar para pendentes:", erro);
@@ -1364,6 +1399,7 @@ export default function CentralSindico() {
           comunicadoId: comunicado.id,
           titulo: comunicado.titulo,
           mensagem: comunicado.mensagem,
+          unidadesDestinatarias: comunicado.unidadesDestinatarias || [],
         }),
       });
 
@@ -3254,7 +3290,6 @@ export default function CentralSindico() {
                     <input
                       type="checkbox"
                       checked={enviarPush}
-                      disabled
                       onChange={(event) => setEnviarPush(event.target.checked)}
                     />
                     <span>
@@ -3262,7 +3297,7 @@ export default function CentralSindico() {
                         🔔 Enviar push
                       </span>
                       <span className="text-xs text-slate-400">
-                        Será ativado por último, após o listener e a ciência
+                        Notificar os destinatários no celular
                       </span>
                     </span>
                   </label>
