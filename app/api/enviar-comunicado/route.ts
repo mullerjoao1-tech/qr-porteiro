@@ -167,18 +167,21 @@ export async function POST(request: Request) {
 
     const resposta = await messaging.send({
       token,
-      notification: {
-        title: `📢 ${titulo}`,
-        body:
-          mensagem.length > 120
-            ? `${mensagem.slice(0, 117)}...`
-            : mensagem,
-      },
       data: {
-        tipo: "comunicado-teste",
-        unidadeId,
-        comunicadoId: comunicadoId || "",
-      },
+  tipo: "comunicado-v2",
+  unidadeId,
+  comunicadoId: comunicadoId || "",
+  url:
+  `${urlBase}/morador-v2/${encodeURIComponent(unidadeId)}` +
+  (comunicadoId
+    ? `?comunicado=${encodeURIComponent(comunicadoId)}`
+    : ""),
+  titulo: `📢 ${titulo}`,
+  mensagem:
+    mensagem.length > 120
+      ? `${mensagem.slice(0, 117)}...`
+      : mensagem,
+},
       webpush: {
         fcmOptions: {
           link:

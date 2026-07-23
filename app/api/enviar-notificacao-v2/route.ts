@@ -248,14 +248,14 @@ export async function POST(request: Request) {
 
       const resposta = await messaging.send({
         token,
-        notification: {
-          title: "🔔 Teste QR Acesso",
-          body: "O push do painel do morador está funcionando.",
-        },
+        
         data: {
-          tipo: "teste-push-v2",
-          unidadeId: String(unidadeId),
-        },
+  tipo: "teste-push-v2",
+  unidadeId: String(unidadeId),
+  titulo: "🔔 Teste QR Acesso",
+  mensagem: "O push do painel do morador está funcionando.",
+  url: `${urlBase}/morador-v2/${encodeURIComponent(unidadeId)}`,
+},
         webpush: {
           fcmOptions: {
             link: `${urlBase}/morador-v2/${encodeURIComponent(unidadeId)}`,
@@ -355,19 +355,19 @@ export async function POST(request: Request) {
         try {
           const resposta = await messaging.send({
             token,
-            notification: {
-              title: `📢 ${titulo}`,
-              body:
-                mensagem.length > 120
-                  ? `${mensagem.slice(0, 117)}...`
-                  : mensagem,
-            },
-            data: {
-              tipo: "comunicado-v2",
-              unidadeId: String(unidadeId),
-              condominioId: String(condominioId),
-              comunicadoId: String(comunicadoId),
-            },
+            
+           data: {
+  tipo: "comunicado-v2",
+  unidadeId: String(unidadeId),
+  condominioId: String(condominioId),
+  comunicadoId: String(comunicadoId),
+  titulo: `📢 ${titulo}`,
+  mensagem:
+    mensagem.length > 120
+      ? `${mensagem.slice(0, 117)}...`
+      : mensagem,
+  url: `${urlBase}/morador-v2/${encodeURIComponent(unidadeId)}`,
+},
             webpush: {
               fcmOptions: {
                 link:
@@ -488,6 +488,7 @@ export async function POST(request: Request) {
   tipo: "chamada-v2",
   titulo: `🔔 ${nome} está chamando`,
   mensagem: `Motivo: ${motivo}`,
+  url: `${urlBase}/morador-v2/${encodeURIComponent(unidadeId)}`,
 },
       webpush: {
         fcmOptions: {

@@ -1159,22 +1159,24 @@ export default function CentralSindico() {
       }
 
       if (enviarPush && !agendarComunicacao) {
-        const respostaPush = await fetch("/api/enviar-notificacao-v2", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            tipo: "comunicado-v2",
-            condominioId: condominioComunicacaoId,
-            comunicadoId,
-            titulo: tituloComunicacao.trim(),
-            mensagem: mensagemComunicacao.trim(),
-            unidadesDestinatarias: unidadesDestinatarias.map(
-              (unidade) => unidade.id
-            ),
-          }),
-        });
+       const unidadeIdDestino = unidadesDestinatarias[0]?.id;
+
+if (!unidadeIdDestino) {
+  throw new Error("Nenhuma unidade destinatária foi encontrada.");
+}
+
+const respostaPush = await fetch("/api/enviar-comunicado", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({
+    unidadeId: unidadeIdDestino,
+    comunicadoId,
+    titulo: tituloComunicacao.trim(),
+    mensagem: mensagemComunicacao.trim(),
+  }),
+});
 
         const dadosPush = await respostaPush.json().catch(() => ({}));
 
@@ -1338,7 +1340,7 @@ export default function CentralSindico() {
       let mensagemResultadoPush = "";
 
       if (comunicado.enviarPush) {
-        const respostaPush = await fetch("/api/enviar-notificacao-v2", {
+        const respostaPush = await fetch("/api/enviar-comunicado", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -1388,34 +1390,70 @@ export default function CentralSindico() {
         }
       );
 
-      const respostaPush = await fetch("/api/enviar-notificacao-v2", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          tipo: "comunicado-v2",
-          condominioId: comunicado.condominioId,
-          comunicadoId: comunicado.id,
-          titulo: comunicado.titulo,
-          mensagem: comunicado.mensagem,
-          unidadesDestinatarias: comunicado.unidadesDestinatarias || [],
-        }),
-      });
+      const unidadesParaReenvio =
+  comunicado.unidadesDestinatarias || [];
 
-      const dadosPush = await respostaPush.json().catch(() => ({}));
+if (unidadesParaReenvio.length === 0) {
+  throw new Error(
+    "Este comunicado não possui unidades destinatárias."
+  );
+}
 
-      if (!respostaPush.ok || dadosPush?.ok === false) {
-        throw new Error(
-          dadosPush?.erro ||
-            dadosPush?.detalhes ||
-            "Não foi possível reenviar o push."
-        );
-      }
+let totalEnviados = 0;
+const falhas: string[] = [];
 
-      alert(
-        `Push reenviado. ${dadosPush.enviados || 0} dispositivo(s) notificado(s).`
+for (const unidadeId of unidadesParaReenvio) {
+  try {
+    const respostaPush = await fetch("/api/enviar-comunicado", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        unidadeId,
+        comunicadoId: comunicado.id,
+        titulo: comunicado.titulo,
+        mensagem: comunicado.mensagem,
+      }),
+    });
+
+    const dadosPush = await respostaPush
+      .json()
+      .catch(() => ({}));
+
+    if (!respostaPush.ok || dadosPush?.ok === false) {
+      console.error(
+        `Falha ao reenviar push para ${unidadeId}:`,
+        dadosPush
       );
+
+      falhas.push(unidadeId);
+      continue;
+    }
+
+    totalEnviados += 1;
+  } catch (erro) {
+    console.error(
+      `Erro ao reenviar push para ${unidadeId}:`,
+      erro
+    );
+
+    falhas.push(unidadeId);
+  }
+}
+
+if (totalEnviados === 0) {
+  throw new Error(
+    "Não foi possível reenviar o push para nenhuma unidade."
+  );
+}
+
+alert(
+  `Push reenviado para ${totalEnviados} unidade(s).` +
+    (falhas.length > 0
+      ? ` Falhou em ${falhas.length} unidade(s).`
+      : "")
+);
     } catch (erro) {
       console.error("Erro ao registrar reenvio:", erro);
       alert("Não foi possível registrar o reenvio.");

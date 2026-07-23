@@ -61,9 +61,9 @@ messaging.onBackgroundMessage((payload) => {
     icon: "/icons/icon-192x192.png",
     badge: "/icons/icon-192x192.png",
     tag:
-      dados.tipo === "comunicado-v2"
-        ? `comunicado-${comunicadoId || Date.now()}`
-        : `qr-acesso-${unidadeId || Date.now()}`,
+  dados.tipo === "comunicado-v2"
+    ? `comunicado-${comunicadoId || Date.now()}-${Date.now()}`
+    : `chamada-${unidadeId || "sem-unidade"}-${Date.now()}`,
     renotify: true,
     requireInteraction: dados.tipo === "chamada-v2",
     data: {
