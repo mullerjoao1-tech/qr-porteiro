@@ -7,7 +7,10 @@ import {
   ServiceAccount,
 } from "firebase-admin/app";
 import { getDatabase } from "firebase-admin/database";
-import { getMessaging } from "firebase-admin/messaging";
+import {
+  FirebaseMessagingError,
+  getMessaging,
+} from "firebase-admin/messaging";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -21,11 +24,21 @@ type RegistroTokenMorador =
       atualizadoEm?: number;
     };
 
-type CorpoComunicadoTeste = {
+type CorpoComunicado = {
+  tipo?: "comunicado-v2";
   unidadeId?: string;
+  unidadesDestinatarias?: string[];
+  condominioId?: string;
   comunicadoId?: string;
   titulo?: string;
   mensagem?: string;
+  enviarPush?: boolean;
+};
+
+type DestinatarioPush = {
+  unidadeId: string;
+  condominioId: string;
+  token: string;
 };
 
 function iniciarFirebaseAdmin() {
@@ -79,7 +92,9 @@ function iniciarFirebaseAdmin() {
   }
 
   if (!projectId || !clientEmail || !privateKey) {
-    throw new Error("Credenciais do Firebase Admin ausentes.");
+    throw new Error(
+      "Credenciais do Firebase Admin ausentes. Configure FIREBASE_SERVICE_ACCOUNT_KEY ou FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL e FIREBASE_PRIVATE_KEY."
+    );
   }
 
   const serviceAccount: ServiceAccount = {
@@ -96,35 +111,117 @@ function iniciarFirebaseAdmin() {
   });
 }
 
-function normalizarToken(
-  unidadeId: string,
-  valor: RegistroTokenMorador | null
-) {
-  if (!valor) return "";
+function obterUrlBase(request: Request) {
+  const urlConfigurada = process.env.NEXT_PUBLIC_APP_URL?.trim();
 
-  if (typeof valor === "string") {
-    return valor.trim();
+  if (urlConfigurada) {
+    return urlConfigurada.replace(/\/$/, "");
   }
 
-  return String(valor.token || "").trim();
+  const vercelUrl = process.env.VERCEL_URL?.trim();
+
+  if (vercelUrl) {
+    return `https://${vercelUrl}`;
+  }
+
+  return new URL(request.url).origin;
+}
+
+function normalizarRegistroToken(
+  unidadeIdChave: string,
+  valor: RegistroTokenMorador
+): DestinatarioPush {
+  if (typeof valor === "string") {
+    return {
+      unidadeId: unidadeIdChave,
+      condominioId: "",
+      token: valor.trim(),
+    };
+  }
+
+  return {
+    unidadeId: String(valor?.unidadeId || unidadeIdChave).trim(),
+    condominioId: String(valor?.condominioId || "").trim(),
+    token: String(valor?.token || "").trim(),
+  };
+}
+
+function detalharErroPush(erro: unknown) {
+  const erroFirebase = erro as FirebaseMessagingError & {
+    code?: string;
+    message?: string;
+    errorInfo?: {
+      code?: string;
+      message?: string;
+    };
+  };
+
+  return {
+    codigo:
+      erroFirebase?.errorInfo?.code ||
+      erroFirebase?.code ||
+      "erro-desconhecido",
+    mensagem:
+      erroFirebase?.errorInfo?.message ||
+      erroFirebase?.message ||
+      String(erro),
+  };
+}
+
+function removerDuplicados(destinatarios: DestinatarioPush[]) {
+  const tokensUsados = new Set<string>();
+
+  return destinatarios.filter((destinatario) => {
+    if (!destinatario.token || tokensUsados.has(destinatario.token)) {
+      return false;
+    }
+
+    tokensUsados.add(destinatario.token);
+    return true;
+  });
+}
+
+export async function GET() {
+  try {
+    const app = iniciarFirebaseAdmin();
+
+    return NextResponse.json({
+      ok: true,
+      mensagem: "Rota de comunicado V2 pronta",
+      projetoFirebaseAdmin: app.options.projectId || "não identificado",
+      databaseURL: app.options.databaseURL || "não identificada",
+    });
+  } catch (erro) {
+    return NextResponse.json(
+      {
+        ok: false,
+        erro: detalharErroPush(erro),
+      },
+      { status: 500 }
+    );
+  }
 }
 
 export async function POST(request: Request) {
   try {
     const corpo =
-      (await request.json().catch(() => ({}))) as CorpoComunicadoTeste;
+      (await request.json().catch(() => ({}))) as CorpoComunicado;
 
-    const unidadeId = corpo.unidadeId?.trim();
-    const comunicadoId = corpo.comunicadoId?.trim();
-    const titulo = corpo.titulo?.trim();
-    const mensagem = corpo.mensagem?.trim();
+    const unidadeId = String(corpo.unidadeId || "").trim();
+    const condominioId = String(corpo.condominioId || "").trim();
+    const comunicadoId = String(corpo.comunicadoId || "").trim();
+    const titulo = String(corpo.titulo || "").trim();
+    const mensagem = String(corpo.mensagem || "").trim();
 
-    if (!unidadeId) {
-      return NextResponse.json(
-        { ok: false, erro: "unidadeId não informado" },
-        { status: 400 }
-      );
-    }
+    const unidadesRecebidas = Array.isArray(corpo.unidadesDestinatarias)
+      ? corpo.unidadesDestinatarias
+          .map((id) => String(id || "").trim())
+          .filter(Boolean)
+      : [];
+
+    const unidadesSolicitadas = Array.from(
+      new Set([unidadeId, ...unidadesRecebidas].filter(Boolean))
+    );
 
     if (!titulo) {
       return NextResponse.json(
@@ -140,72 +237,192 @@ export async function POST(request: Request) {
       );
     }
 
-    const app = iniciarFirebaseAdmin();
-    const db = getDatabase(app);
-    const messaging = getMessaging(app);
-
-    const tokenSnapshot = await db
-      .ref(`configuracoes-v2/tokensMorador/${unidadeId}`)
-      .get();
-
-    const registroToken = tokenSnapshot.val() as RegistroTokenMorador | null;
-    const token = normalizarToken(unidadeId, registroToken);
-
-    if (!token) {
+    if (unidadesSolicitadas.length === 0 && !condominioId) {
       return NextResponse.json(
         {
           ok: false,
-          erro: `Token não encontrado para ${unidadeId}`,
+          erro:
+            "Informe unidadeId, unidadesDestinatarias ou condominioId.",
         },
         { status: 400 }
       );
     }
 
-    const urlBase =
-      process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ||
-      new URL(request.url).origin;
+    const app = iniciarFirebaseAdmin();
+    const db = getDatabase(app);
+    const messaging = getMessaging(app);
+    const urlBase = obterUrlBase(request);
 
-    const resposta = await messaging.send({
-      token,
-      data: {
-  tipo: "comunicado-v2",
-  unidadeId,
-  comunicadoId: comunicadoId || "",
-  url:
-  `${urlBase}/morador-v2/${encodeURIComponent(unidadeId)}` +
-  (comunicadoId
-    ? `?comunicado=${encodeURIComponent(comunicadoId)}`
-    : ""),
-  titulo: `📢 ${titulo}`,
-  mensagem:
-    mensagem.length > 120
-      ? `${mensagem.slice(0, 117)}...`
-      : mensagem,
-},
-      webpush: {
-        fcmOptions: {
-          link:
-            `${urlBase}/morador-v2/${encodeURIComponent(unidadeId)}` +
-            (comunicadoId
-              ? `?comunicado=${encodeURIComponent(comunicadoId)}`
-              : ""),
+    const tokensSnapshot = await db
+      .ref("configuracoes-v2/tokensMorador")
+      .get();
+
+    const tokensCadastrados =
+      (tokensSnapshot.val() as Record<string, RegistroTokenMorador> | null) ||
+      {};
+
+    let destinatarios = Object.entries(tokensCadastrados)
+      .map(([unidadeIdChave, valor]) =>
+        normalizarRegistroToken(unidadeIdChave, valor)
+      )
+      .filter((registro) => Boolean(registro.token));
+
+    if (unidadesSolicitadas.length > 0) {
+      const unidadesPermitidas = new Set(unidadesSolicitadas);
+
+      destinatarios = destinatarios.filter((registro) =>
+        unidadesPermitidas.has(registro.unidadeId)
+      );
+    } else if (condominioId) {
+      destinatarios = destinatarios.filter(
+        (registro) => registro.condominioId === condominioId
+      );
+    }
+
+    destinatarios = removerDuplicados(destinatarios);
+
+    if (destinatarios.length === 0) {
+      return NextResponse.json(
+        {
+          ok: false,
+          erro: "Nenhum token encontrado para os destinatários informados.",
+          unidadesSolicitadas,
+          condominioId,
+          chavesDisponiveis: Object.keys(tokensCadastrados),
         },
-      },
-    });
+        { status: 400 }
+      );
+    }
 
-    return NextResponse.json({
-      ok: true,
-      mensagem: "Push de comunicado de teste enviado",
-      unidadeId,
-      resposta,
-    });
+    const resultados: Array<{
+      unidadeId: string;
+      enviado: boolean;
+      resposta?: string;
+      erro?: {
+        codigo: string;
+        mensagem: string;
+      };
+    }> = [];
+
+    for (const destinatario of destinatarios) {
+      const { unidadeId: unidadeDestino, token } = destinatario;
+
+      const link =
+        `${urlBase}/morador-v2/${encodeURIComponent(unidadeDestino)}` +
+        (comunicadoId
+          ? `?comunicado=${encodeURIComponent(comunicadoId)}`
+          : "");
+
+      try {
+        const resposta = await messaging.send({
+          token,
+          data: {
+            tipo: "comunicado-v2",
+            unidadeId: unidadeDestino,
+            condominioId,
+            comunicadoId,
+            titulo: `📢 ${titulo}`,
+            mensagem:
+              mensagem.length > 120
+                ? `${mensagem.slice(0, 117)}...`
+                : mensagem,
+            url: link,
+          },
+          webpush: {
+            headers: {
+              Urgency: "high",
+              TTL: "86400",
+            },
+            fcmOptions: {
+              link,
+            },
+          },
+        });
+
+        resultados.push({
+          unidadeId: unidadeDestino,
+          enviado: true,
+          resposta,
+        });
+
+        if (condominioId && comunicadoId) {
+          await db
+            .ref(
+              `comunicados-v2/${condominioId}/${comunicadoId}/enviosPush/${unidadeDestino}`
+            )
+            .set({
+              unidadeId: unidadeDestino,
+              enviado: true,
+              enviadoEm: Date.now(),
+              resposta,
+            });
+        }
+      } catch (erro) {
+        const detalhes = detalharErroPush(erro);
+
+        resultados.push({
+          unidadeId: unidadeDestino,
+          enviado: false,
+          erro: detalhes,
+        });
+
+        if (condominioId && comunicadoId) {
+          await db
+            .ref(
+              `comunicados-v2/${condominioId}/${comunicadoId}/enviosPush/${unidadeDestino}`
+            )
+            .set({
+              unidadeId: unidadeDestino,
+              enviado: false,
+              tentativaEm: Date.now(),
+              erro: detalhes,
+            });
+        }
+      }
+    }
+
+    const enviados = resultados.filter((item) => item.enviado).length;
+    const falhas = resultados.length - enviados;
+
+    if (condominioId && comunicadoId) {
+      await db
+        .ref(`comunicados-v2/${condominioId}/${comunicadoId}`)
+        .update({
+          pushProcessado: true,
+          pushProcessadoEm: Date.now(),
+          totalPushEnviados: enviados,
+          totalPushFalhas: falhas,
+          erroPush:
+            enviados === 0
+              ? "Não foi possível enviar o push para nenhum destinatário."
+              : null,
+        });
+    }
+
+    return NextResponse.json(
+      {
+        ok: enviados > 0,
+        mensagem:
+          enviados > 0
+            ? "Push do comunicado processado."
+            : "O push falhou para todos os destinatários.",
+        totalDestinatarios: destinatarios.length,
+        enviados,
+        falhas,
+        resultados,
+      },
+      { status: enviados > 0 ? 200 : 500 }
+    );
   } catch (erro) {
-    console.error("ERRO COMUNICADO TESTE:", erro);
+    const detalhes = detalharErroPush(erro);
+
+    console.error("ERRO PUSH COMUNICADO V2:", detalhes);
 
     return NextResponse.json(
       {
         ok: false,
-        erro: erro instanceof Error ? erro.message : String(erro),
+        erro: detalhes.mensagem,
+        detalhes,
       },
       { status: 500 }
     );
