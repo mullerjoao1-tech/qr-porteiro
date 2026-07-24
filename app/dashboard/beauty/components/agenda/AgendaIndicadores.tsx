@@ -1,6 +1,11 @@
 "use client";
 
-import { IndicadorAgenda } from "./AgendaTypes";
+type IndicadorAgenda = {
+  titulo: string;
+  valor: string | number;
+  detalhe: string;
+  classes: string;
+};
 
 type AgendaIndicadoresProps = {
   indicadores: IndicadorAgenda[];
