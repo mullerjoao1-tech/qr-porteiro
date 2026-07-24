@@ -96,12 +96,11 @@ export default function AgendaCard({
 
           <div className="mt-5 flex flex-wrap gap-2">
 
-            {agendamento.filaEspera &&
-              agendamento.filaEspera > 0 && (
-                <span className="rounded-full border border-violet-700 bg-violet-950/40 px-3 py-1 text-xs font-black text-violet-300">
-                  👥 Fila ({agendamento.filaEspera})
-                </span>
-              )}
+            {agendamento.filaEspera && (
+  <span className="rounded-full border border-violet-700 bg-violet-950/40 px-3 py-1 text-xs font-black">
+    👥 Fila de espera
+  </span>
+)}
 
             {agendamento.podeAntecipar && (
               <span className="rounded-full border border-emerald-700 bg-emerald-950/40 px-3 py-1 text-xs font-black text-emerald-300">
