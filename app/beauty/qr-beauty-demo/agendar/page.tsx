@@ -121,7 +121,7 @@ export default function BeautyAgendarPage() {
       },
       (e) => {
         console.error(e);
-        setErro("NÃ£o foi possÃ­vel carregar os serviÃ§os.");
+        setErro("Não foi possível carregar os serviços.");
         servicosOk = true;
         finalizar();
       }
@@ -139,7 +139,7 @@ export default function BeautyAgendarPage() {
       },
       (e) => {
         console.error(e);
-        setErro("NÃ£o foi possÃ­vel carregar os profissionais.");
+        setErro("Não foi possível carregar os profissionais.");
         profissionaisOk = true;
         finalizar();
       }
@@ -162,7 +162,7 @@ export default function BeautyAgendarPage() {
         ),
       (e) => {
         console.error(e);
-        setErro("NÃ£o foi possÃ­vel consultar os horÃ¡rios.");
+        setErro("Não foi possível consultar os horários.");
       }
     );
   }, [dataSelecionada]);
@@ -218,17 +218,17 @@ export default function BeautyAgendarPage() {
 
   async function confirmar() {
     if (!servicoSelecionado) {
-      alert("Escolha o serviÃ§o.");
+      alert("Escolha o serviço.");
       return;
     }
 
     if (!profissionalSelecionado) {
-      alert("Escolha o profissional.");
+      alert("Escolha a profissional.");
       return;
     }
 
     if (!horario) {
-      alert("Escolha o horÃ¡rio.");
+      alert("Escolha o horário.");
       return;
     }
 
@@ -276,7 +276,7 @@ export default function BeautyAgendarPage() {
       alert(
         e instanceof Error
           ? e.message
-          : "NÃ£o foi possÃ­vel concluir o agendamento."
+          : "Não foi possível concluir o agendamento."
       );
     } finally {
       setSalvando(false);
@@ -291,20 +291,20 @@ export default function BeautyAgendarPage() {
           onClick={() => router.back()}
           className="mb-4 rounded-xl border border-slate-700 bg-slate-900 px-4 py-2 text-sm font-black text-slate-300"
         >
-          â† Voltar
+          ← Voltar
         </button>
 
         <section className="rounded-3xl border border-pink-500/30 bg-gradient-to-br from-pink-700 via-fuchsia-700 to-purple-800 p-5 shadow-xl">
           <p className="text-xs font-black uppercase tracking-[0.18em] text-pink-100">
-            ðŸ“… Agendamento online
+            AGENDAMENTO ONLINE
           </p>
 
           <h1 className="mt-2 text-3xl font-black">
-            Escolha seu horÃ¡rio
+            Escolha seu horário
           </h1>
 
           <p className="mt-2 text-sm font-semibold text-pink-100">
-            SalÃ£o de testes QR Beauty
+            Belas Unhas
           </p>
         </section>
 
@@ -316,11 +316,11 @@ export default function BeautyAgendarPage() {
 
         {carregando ? (
           <div className="mt-4 rounded-3xl border border-slate-800 bg-slate-900 p-8 text-center text-slate-400">
-            Carregando opÃ§Ãµes...
+            Carregando opções...
           </div>
         ) : (
           <div className="mt-4 space-y-4">
-            <Bloco titulo="1. Escolha o serviÃ§o">
+            <Bloco titulo="1. Escolha o serviço">
               <div className="grid gap-3">
                 {servicos.map((item) => (
                   <button
@@ -351,7 +351,7 @@ export default function BeautyAgendarPage() {
             </Bloco>
 
             {servicoSelecionado && (
-              <Bloco titulo="2. Escolha o profissional">
+              <Bloco titulo="2. Escolha a profissional">
                 <div className="grid grid-cols-2 gap-3">
                   {profissionaisDisponiveis.map((item) => (
                     <button
@@ -367,9 +367,10 @@ export default function BeautyAgendarPage() {
                           : "border-slate-700 bg-slate-800"
                       }`}
                     >
-                      <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-slate-700 text-2xl">
-                        ðŸ’‡
+                      <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-pink-600 text-lg font-black text-white">
+                        {item.nome.charAt(0).toUpperCase()}
                       </div>
+
                       <p className="mt-2 font-black">{item.nome}</p>
                     </button>
                   ))}
@@ -404,7 +405,7 @@ export default function BeautyAgendarPage() {
             )}
 
             {profissionalSelecionado && (
-              <Bloco titulo="4. Escolha o horÃ¡rio">
+              <Bloco titulo="4. Escolha o horário">
                 <div className="grid grid-cols-3 gap-2">
                   {HORARIOS.map((item) => {
                     const ocupado = horariosOcupados.has(item);
@@ -452,7 +453,7 @@ export default function BeautyAgendarPage() {
                   <textarea
                     value={observacoes}
                     onChange={(e) => setObservacoes(e.target.value)}
-                    placeholder="ObservaÃ§Ãµes (opcional)"
+                    placeholder="Observações (opcional)"
                     rows={3}
                     className="w-full resize-none rounded-xl border border-slate-700 bg-slate-800 p-3 text-white outline-none focus:border-pink-500"
                   />
@@ -496,4 +497,3 @@ function Bloco({
     </section>
   );
 }
-
