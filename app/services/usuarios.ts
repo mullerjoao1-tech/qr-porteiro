@@ -1,0 +1,61 @@
+import { get, ref, set, update } from "firebase/database";
+
+import { db } from "./firebase";
+import type {
+  AtualizacaoUsuario,
+  NovoUsuario,
+  Usuario,
+} from "../types/Usuario";
+
+function caminhoUsuario(uid: string): string {
+  return `usuarios-v2/${uid}`;
+}
+
+export async function criarUsuarioNoBanco(
+  uid: string,
+  dados: NovoUsuario
+): Promise<Usuario> {
+  const agora = Date.now();
+
+  const usuario: Usuario = {
+    ...dados,
+    uid,
+    criadoEm: agora,
+    atualizadoEm: agora,
+  };
+
+  await set(ref(db, caminhoUsuario(uid)), usuario);
+
+  return usuario;
+}
+
+export async function buscarUsuarioPorUid(
+  uid: string
+): Promise<Usuario | null> {
+  const snapshot = await get(ref(db, caminhoUsuario(uid)));
+
+  if (!snapshot.exists()) {
+    return null;
+  }
+
+  return snapshot.val() as Usuario;
+}
+
+export async function atualizarUsuarioNoBanco(
+  uid: string,
+  dados: AtualizacaoUsuario
+): Promise<void> {
+  await update(ref(db, caminhoUsuario(uid)), {
+    ...dados,
+    atualizadoEm: Date.now(),
+  });
+}
+
+export async function registrarUltimoLogin(uid: string): Promise<void> {
+  const agora = Date.now();
+
+  await update(ref(db, caminhoUsuario(uid)), {
+    ultimoLogin: agora,
+    atualizadoEm: agora,
+  });
+}

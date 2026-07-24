@@ -822,21 +822,32 @@ export default function Dashboard() {
     setModalNovoLocalAberto(false);
   }
 
+ 
   const menu: {
-  id: Tela;
+  id: Tela | "inicio";
   nome: string;
   icone: string;
 }[] = [
-    { id: "dashboard", nome: "Dashboard", icone: "🏠" },
+  { id: "inicio", nome: "Início", icone: "🏠" },
+
+  { id: "dashboard", nome: "Dashboard", icone: "📊" },
+
   { id: "sindico", nome: "Síndico", icone: "🏢" },
-    { id: "locais", nome: "Locais", icone: "🏢" },
-    { id: "unidades", nome: "Unidades", icone: "🚪" },
-    { id: "moradores", nome: "Moradores", icone: "👥" },
-    { id: "planos", nome: "Planos", icone: "💳" },
-    { id: "pendentes", nome: "Pendentes", icone: "⏳" },
-    { id: "implantacao", nome: "Implantação", icone: "🚀" },
-    { id: "contingencia", nome: "Contingência", icone: "🛟" },
-  ];
+
+  { id: "locais", nome: "Locais", icone: "🏢" },
+
+  { id: "unidades", nome: "Unidades", icone: "🚪" },
+
+  { id: "moradores", nome: "Moradores", icone: "👥" },
+
+  { id: "planos", nome: "Planos", icone: "💳" },
+
+  { id: "pendentes", nome: "Pendentes", icone: "⏳" },
+
+  { id: "implantacao", nome: "Implantação", icone: "🚀" },
+
+  { id: "contingencia", nome: "Contingência", icone: "🛟" },
+];
 
   return (
     <main className="min-h-screen bg-slate-950 text-white">
@@ -852,7 +863,19 @@ export default function Dashboard() {
           <aside className="absolute left-0 top-0 h-full w-72 bg-slate-900 p-5">
             <nav className="space-y-2">
               {menu.map((item)=>(
-                <button key={item.id} onClick={()=>{setTelaAtiva(item.id as Tela);setMenuMobileAberto(false);}} className="w-full rounded-xl bg-slate-800 px-4 py-3 text-left">
+                <button
+  key={item.id}
+  onClick={() => {
+    if (item.id === "inicio") {
+      window.location.href = "/";
+      return;
+    }
+
+    setTelaAtiva(item.id as Tela);
+    setMenuMobileAberto(false);
+  }}
+  className="w-full rounded-xl bg-slate-800 px-4 py-3 text-left"
+>
                   <span className="mr-2">{item.icone}</span>{item.nome}
                 </button>
               ))}
@@ -880,7 +903,15 @@ export default function Dashboard() {
             {menu.map((item) => (
               <button
                 key={item.id}
-                onClick={() => { setTelaAtiva(item.id as Tela); setMenuMobileAberto(false); }}
+                onClick={() => {
+  if (item.id === "inicio") {
+    window.location.href = "/";
+    return;
+  }
+
+  setTelaAtiva(item.id as Tela);
+  setMenuMobileAberto(false);
+}}
                 className={`w-full text-left px-4 py-3 rounded-xl font-bold transition-all ${
                   telaAtiva === item.id
                     ? "bg-blue-600 text-white"

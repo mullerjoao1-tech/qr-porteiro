@@ -1,4 +1,5 @@
 import { getApps, initializeApp } from "firebase/app";
+import { getAuth } from "firebase/auth";
 import { getDatabase } from "firebase/database";
 import { getMessaging, isSupported } from "firebase/messaging";
 
@@ -38,10 +39,28 @@ if (camposAusentes.length > 0) {
   );
 }
 
-const app = getApps().length > 0 ? getApps()[0] : initializeApp(firebaseConfig);
+const app =
+  getApps().length > 0 ? getApps()[0] : initializeApp(firebaseConfig);
 
+/**
+ * Firebase Realtime Database
+ */
 export const db = getDatabase(app);
 
+/**
+ * Firebase Authentication
+ *
+ * Será usado pelo login de moradores, síndicos
+ * e futuros usuários da plataforma.
+ */
+export const auth = getAuth(app);
+
+/**
+ * Firebase Cloud Messaging
+ *
+ * Mantido exatamente no mesmo formato para não
+ * interferir no funcionamento atual dos push.
+ */
 export const messagingPromise =
   typeof window !== "undefined"
     ? isSupported().then((supported) =>
