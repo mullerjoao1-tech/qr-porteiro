@@ -161,6 +161,10 @@ export default function MoradorV2() {
   function identificarCondominioPeloSlug(unidadeSlug: string) {
     const valor = unidadeSlug.toLowerCase();
 
+    if (valor.includes("residencial-costa")) {
+      return "residencial-costa";
+    }
+
     if (valor.includes("tulipas")) return "cnd-tulipas";
     if (valor.includes("flores")) return "cnd-flores";
     if (valor.includes("alfa")) return "cnd-alfa";
@@ -169,6 +173,12 @@ export default function MoradorV2() {
   }
 
   const condominioId = identificarCondominioPeloSlug(slug);
+  const ehResidencialCosta =
+    condominioId === "residencial-costa";
+  const nomeLocal = ehResidencialCosta
+    ? "Residencial Costa"
+    : "Morador V2";
+
   const caminhoComunicados = `comunicados-v2/${condominioId}`;
   const caminhoFirebase = `unidades-v2/${slug}/chamada`;
   const caminhoHistorico = `historico-v2/${slug}`;
@@ -1663,8 +1673,14 @@ Mensagem: ${mensagemErro}`
       <div className="w-full max-w-md mx-auto bg-slate-900 rounded-3xl p-5 shadow-2xl border border-slate-800">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <h1 className="text-3xl font-black">🏠 Morador V2</h1>
-            <p className="text-slate-400 text-sm mt-1">Unidade: {slug}</p>
+            <h1 className="text-3xl font-black">
+              🏠 {nomeLocal}
+            </h1>
+            <p className="text-slate-400 text-sm mt-1">
+              {ehResidencialCosta
+                ? "Casa Principal"
+                : `Unidade: ${slug}`}
+            </p>
           </div>
 
           <div
@@ -1695,6 +1711,8 @@ Mensagem: ${mensagemErro}`
                         (item) =>
                           item.visualizacoes?.[slug]?.ciente !== true
                       ).length} comunicado(s) aguardando sua ciência`
+                    : ehResidencialCosta
+                    ? "Avisos da residência"
                     : "Comunicados do condomínio"}
                 </h2>
               </div>

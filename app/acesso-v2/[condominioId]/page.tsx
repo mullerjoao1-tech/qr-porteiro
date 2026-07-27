@@ -19,6 +19,9 @@ type Unidade = {
   nome: string;
   tipo?: string;
   bloco?: string;
+  condominioId?: string;
+  localNome?: string;
+  tipoLocal?: string;
   chamada?: {
     nome?: string;
     motivo?: string;
@@ -54,6 +57,13 @@ export default function AcessoV2Condominio() {
   const params = useParams();
   const condominioId = String(params.condominioId || "condominio-teste");
 
+  const ehResidencialCosta = condominioId === "residencial-costa";
+  const nomeLocal = ehResidencialCosta
+    ? "Residencial Costa"
+    : "QR Acesso";
+  const unidadeCostaId =
+    "residencial-costa-casa-principal";
+
   const [unidades, setUnidades] = useState<Unidade[]>([]);
   const [carregando, setCarregando] = useState(true);
 
@@ -87,6 +97,35 @@ export default function AcessoV2Condominio() {
   useEffect(() => {
     const referencia = ref(db, "unidades-v2");
 
+    if (ehResidencialCosta) {
+      const referenciaCasaCosta = ref(
+        db,
+        `unidades-v2/${unidadeCostaId}`
+      );
+
+      get(referenciaCasaCosta)
+        .then((snapshot) => {
+          if (snapshot.exists()) return;
+
+          return set(referenciaCasaCosta, {
+            nome: "Casa Principal",
+            tipo: "Residência",
+            bloco: "",
+            condominioId: "residencial-costa",
+            localNome: "Residencial Costa",
+            tipoLocal: "residencia",
+            status: "ativa",
+            criadoEm: new Date().toISOString(),
+          });
+        })
+        .catch((erro) => {
+          console.error(
+            "Erro ao preparar o Residencial Costa:",
+            erro
+          );
+        });
+    }
+
     const pararDeOuvir = onValue(referencia, (snapshot) => {
       const dados = snapshot.val();
 
@@ -96,10 +135,32 @@ export default function AcessoV2Condominio() {
         return;
       }
 
-      const lista = Object.entries(dados).map(([id, valor]: any) => ({
-        id,
-        ...valor,
-      })) as Unidade[];
+      const todasAsUnidades = Object.entries(dados).map(
+        ([id, valor]: any) => ({
+          id,
+          ...valor,
+        })
+      ) as Unidade[];
+
+      const lista = todasAsUnidades.filter((unidade) => {
+        if (ehResidencialCosta) {
+          return (
+            unidade.id === unidadeCostaId ||
+            unidade.condominioId === "residencial-costa"
+          );
+        }
+
+        /*
+         * Unidades novas são filtradas pelo condominioId.
+         * Unidades antigas sem esse campo continuam visíveis,
+         * preservando o funcionamento atual do Tulipas.
+         */
+        if (unidade.condominioId) {
+          return unidade.condominioId === condominioId;
+        }
+
+        return true;
+      });
 
       lista.sort((a, b) => a.nome.localeCompare(b.nome));
       setUnidades(lista);
@@ -107,7 +168,25 @@ export default function AcessoV2Condominio() {
     });
 
     return () => pararDeOuvir();
-  }, []);
+  }, [
+    condominioId,
+    ehResidencialCosta,
+    unidadeCostaId,
+  ]);
+
+  useEffect(() => {
+    if (
+      ehResidencialCosta &&
+      unidades.length === 1 &&
+      !unidadeSelecionada
+    ) {
+      setUnidadeSelecionada(unidades[0]);
+    }
+  }, [
+    ehResidencialCosta,
+    unidadeSelecionada,
+    unidades,
+  ]);
 
   useEffect(() => {
     if (!unidadeSelecionada) return;
@@ -634,7 +713,11 @@ setBlocoSelecionado("");
   }
 }
   function limparSelecao() {
-    setUnidadeSelecionada(null);
+    setUnidadeSelecionada(
+      ehResidencialCosta && unidades.length === 1
+        ? unidades[0]
+        : null
+    );
     setNome("");
     setMotivo("");
     setOutroMotivo("");
@@ -747,10 +830,16 @@ setBlocoSelecionado("");
             QR ACESSO • V2
           </p>
 
-          <h1 className="text-3xl font-black">🏢 Chamar Unidade</h1>
+          <h1 className="text-3xl font-black">
+            {ehResidencialCosta
+              ? "🏠 Residencial Costa"
+              : "🏢 Chamar Unidade"}
+          </h1>
 
           <p className="text-slate-400 mt-2">
-            Escolha bloco, unidade e motivo da chamada.
+            {ehResidencialCosta
+              ? "Informe o motivo da visita para chamar a residência."
+              : "Escolha bloco, unidade e motivo da chamada."}
           </p>
         </section>
 
@@ -760,7 +849,10 @@ setBlocoSelecionado("");
           </section>
         )}
 
-        {!carregando && temBlocos && !blocoSelecionado && (
+        {!carregando &&
+          !ehResidencialCosta &&
+          temBlocos &&
+          !blocoSelecionado && (
           <section className="bg-slate-900 border border-slate-700 rounded-3xl p-5">
             <h2 className="text-2xl font-black mb-4">Escolha o bloco</h2>
 
@@ -779,6 +871,7 @@ setBlocoSelecionado("");
         )}
 
         {!carregando &&
+          !ehResidencialCosta &&
           (!temBlocos || blocoSelecionado) &&
           !unidadeSelecionada && (
             <section className="bg-slate-900 border border-slate-700 rounded-3xl p-5">
