@@ -6,26 +6,70 @@ import { useAuth } from "@/app/context/AuthContext";
 
 import {
   listarPermissoes,
+  listarPermissoesDoVinculo,
   listarVinculosComPermissao,
   obterVinculosAtivos,
   podeAcessar,
   podeAcessarNoVinculo,
   possuiPerfil,
+  possuiPerfilNoVinculo,
 } from "@/app/services/permissoes";
 
 export function usePermissoes() {
-  const { usuario } = useAuth();
+  const {
+    usuario,
+    vinculoSelecionadoId,
+    vinculoSelecionado,
+  } = useAuth();
 
   return useMemo(
     () => ({
       usuario,
 
+      vinculoSelecionadoId,
+      vinculoSelecionado,
+
       vinculos: obterVinculosAtivos(usuario),
 
-      permissoes: listarPermissoes(usuario),
+      /**
+       * Permissões do vínculo/local atualmente selecionado.
+       */
+      permissoes: vinculoSelecionadoId
+        ? listarPermissoesDoVinculo(
+            usuario,
+            vinculoSelecionadoId
+          )
+        : [],
 
-      podeAcessar: (permissao: string) =>
-        podeAcessar(usuario, permissao),
+      /**
+       * Verifica a permissão somente no vínculo selecionado.
+       */
+      podeAcessar: (permissao: string) => {
+        if (!vinculoSelecionadoId) {
+          return false;
+        }
+
+        return podeAcessarNoVinculo(
+          usuario,
+          vinculoSelecionadoId,
+          permissao
+        );
+      },
+
+      /**
+       * Verifica um perfil somente no vínculo selecionado.
+       */
+      possuiPerfil: (perfil: string) => {
+        if (!vinculoSelecionadoId) {
+          return false;
+        }
+
+        return possuiPerfilNoVinculo(
+          usuario,
+          vinculoSelecionadoId,
+          perfil
+        );
+      },
 
       podeAcessarNoVinculo: (
         vinculoId: string,
@@ -37,8 +81,36 @@ export function usePermissoes() {
           permissao
         ),
 
-      possuiPerfil: (perfil: string) =>
-        possuiPerfil(usuario, perfil),
+      possuiPerfilNoVinculo: (
+        vinculoId: string,
+        perfil: string
+      ) =>
+        possuiPerfilNoVinculo(
+          usuario,
+          vinculoId,
+          perfil
+        ),
+
+      /**
+       * Consultas globais preservadas para telas administrativas.
+       */
+      permissoesGlobais: listarPermissoes(usuario),
+
+      podeAcessarGlobalmente: (
+        permissao: string
+      ) =>
+        podeAcessar(
+          usuario,
+          permissao
+        ),
+
+      possuiPerfilGlobalmente: (
+        perfil: string
+      ) =>
+        possuiPerfil(
+          usuario,
+          perfil
+        ),
 
       vinculosComPermissao: (
         permissao: string
@@ -48,6 +120,10 @@ export function usePermissoes() {
           permissao
         ),
     }),
-    [usuario]
+    [
+      usuario,
+      vinculoSelecionadoId,
+      vinculoSelecionado,
+    ]
   );
 }

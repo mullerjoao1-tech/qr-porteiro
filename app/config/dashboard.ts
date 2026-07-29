@@ -49,8 +49,9 @@ export const MODULOS_DASHBOARD: ModuloDashboard[] = [
     ordem: 3,
     ativo: true,
   },
-
-  {
+{
+ 
+  
     id: "beauty",
     titulo: "QR Beauty",
     descricao: "Agenda e gestão de serviços",

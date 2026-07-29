@@ -6,6 +6,7 @@ import { FormEvent, useState } from "react";
 import CardModulo from "@/app/components/dashboard/CardModulo";
 import { useAuth } from "@/app/context/AuthContext";
 import { obterModulosDashboard } from "@/app/services/dashboard";
+
 const ferramentasStudio = [
   {
     titulo: "📷 Teste de câmera",
@@ -263,10 +264,82 @@ function TelaLogin() {
   );
 }
 
-function PaginaStudio() {
+function TelaSemVinculos() {
   const { usuario, logout } = useAuth();
-  const modulos = obterModulosDashboard(usuario);
   const [saindo, setSaindo] = useState(false);
+
+  async function sair() {
+    try {
+      setSaindo(true);
+      await logout();
+    } finally {
+      setSaindo(false);
+    }
+  }
+
+  return (
+    <main className="flex min-h-screen items-center justify-center bg-slate-950 px-4 py-8 text-white">
+      <section className="w-full max-w-lg rounded-3xl border border-amber-500/30 bg-slate-900 p-6 text-center shadow-2xl sm:p-8">
+        <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-amber-500/15 text-4xl">
+          ⚠️
+        </div>
+
+        <p className="mt-5 text-xs font-bold uppercase tracking-[0.2em] text-amber-400">
+          Acesso pendente
+        </p>
+
+        <h1 className="mt-2 text-3xl font-black">
+          Nenhum local disponível
+        </h1>
+
+        <p className="mt-3 text-sm leading-relaxed text-slate-300">
+          O usuário{" "}
+          <strong>
+            {usuario?.nome || usuario?.email || "conectado"}
+          </strong>{" "}
+          está autenticado, mas ainda não possui vínculo ativo com um
+          condomínio, estabelecimento ou outro local do ecossistema QR.
+        </p>
+
+        <button
+          type="button"
+          onClick={sair}
+          disabled={saindo}
+          className="mt-6 w-full rounded-2xl border border-red-500/30 bg-red-500/10 px-5 py-3 font-bold text-red-300 transition hover:bg-red-500/20 active:scale-[0.98] disabled:opacity-60"
+        >
+          {saindo ? "Saindo..." : "Sair da conta"}
+        </button>
+      </section>
+    </main>
+  );
+}
+
+function PaginaStudio() {
+  const {
+    usuario,
+    vinculoSelecionadoId,
+    vinculoSelecionado,
+    vinculosAtivos,
+    selecionarCarteiraGeral,
+    logout,
+  } = useAuth();
+
+  const modulos = obterModulosDashboard(
+    usuario,
+    vinculoSelecionadoId
+  );
+
+  const [saindo, setSaindo] = useState(false);
+
+  const nomeContexto =
+    vinculoSelecionado?.condominioNome ||
+    vinculoSelecionado?.condominioSlug ||
+    vinculoSelecionado?.condominioId ||
+    vinculoSelecionadoId ||
+    "Carteira Geral";
+
+  const isCarteiraGeral =
+    vinculoSelecionadoId === null;
 
   async function sair() {
     try {
@@ -305,7 +378,7 @@ function PaginaStudio() {
               </div>
             </div>
 
-            <div className="rounded-2xl border border-slate-700 bg-slate-950 p-4 text-center sm:min-w-52 sm:text-left">
+            <div className="rounded-2xl border border-slate-700 bg-slate-950 p-4 text-center sm:min-w-64 sm:text-left">
               <p className="text-xs font-bold uppercase tracking-wider text-slate-500">
                 Usuário conectado
               </p>
@@ -318,6 +391,34 @@ function PaginaStudio() {
                 <p className="mt-1 truncate text-xs text-slate-400">
                   {usuario.email}
                 </p>
+              )}
+
+              <div className="mt-3 rounded-xl border border-green-500/20 bg-green-500/10 px-3 py-2">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-green-400">
+                  Contexto atual
+                </p>
+
+                <p className="mt-1 break-words text-sm font-black text-green-100">
+                  {isCarteiraGeral ? "🌐 " : "🏢 "}
+                  {nomeContexto}
+                </p>
+
+                <p className="mt-1 text-[10px] font-semibold text-slate-400">
+                  {isCarteiraGeral
+                    ? `${vinculosAtivos.length} local(is) vinculado(s)`
+                    : "Visão específica do local"}
+                </p>
+              </div>
+
+              {!isCarteiraGeral && (
+                <button
+                  type="button"
+                  onClick={selecionarCarteiraGeral}
+                  disabled={saindo}
+                  className="mt-3 w-full rounded-xl border border-cyan-500/30 bg-cyan-500/10 px-3 py-2 text-sm font-bold text-cyan-300 transition hover:bg-cyan-500/20 active:scale-[0.98] disabled:opacity-60"
+                >
+                  Voltar para Carteira Geral
+                </button>
               )}
 
               <button
@@ -339,8 +440,9 @@ function PaginaStudio() {
             </h2>
 
             <p className="mt-1 text-sm text-slate-400">
-              Os módulos abaixo são exibidos conforme o perfil e as
-              permissões do usuário conectado.
+              {isCarteiraGeral
+                ? "A Carteira Geral considera as permissões consolidadas dos locais vinculados ao usuário."
+                : "Os módulos abaixo consideram somente as permissões do local selecionado."}
             </p>
           </div>
 
@@ -360,9 +462,8 @@ function PaginaStudio() {
               </h3>
 
               <p className="mt-2 text-sm leading-relaxed text-slate-300">
-                Este usuário está autenticado, mas ainda não possui
-                vínculo ativo ou permissão para acessar os módulos da
-                plataforma.
+                Este usuário possui vínculo ativo, mas ainda não tem
+                permissão para acessar os módulos disponíveis.
               </p>
             </div>
           )}
@@ -398,9 +499,9 @@ function PaginaStudio() {
           </h2>
 
           <p className="mt-2 text-sm leading-relaxed text-slate-300">
-            Assistente de implantação para cadastrar o condomínio,
-            gerar o slug, criar blocos e unidades, produzir um QR Code
-            único e montar automaticamente os links dos moradores.
+            Assistente de implantação para cadastrar o local, criar o
+            responsável, gerar o login, aplicar vínculos e permissões,
+            criar unidades, links e QR Codes automaticamente.
           </p>
         </section>
 
@@ -413,7 +514,11 @@ function PaginaStudio() {
 }
 
 export default function Home() {
-  const { usuario, carregando } = useAuth();
+  const {
+    usuario,
+    carregando,
+    vinculosAtivos,
+  } = useAuth();
 
   if (carregando) {
     return <TelaCarregando />;
@@ -421,6 +526,10 @@ export default function Home() {
 
   if (!usuario) {
     return <TelaLogin />;
+  }
+
+  if (vinculosAtivos.length === 0) {
+    return <TelaSemVinculos />;
   }
 
   return <PaginaStudio />;

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { onValue, push, ref, set, update } from "firebase/database";
 import { db } from "../../services/firebase";
+import { useAuth } from "@/app/context/AuthContext";
 
 type FiltroSaude = "todos" | "saudaveis" | "atencao" | "criticos";
 
@@ -83,11 +84,7 @@ type ComunicadoSalvo = {
 };
 
 
-type ContextoPainel =
-  | "carteira-geral"
-  | "cnd-tulipas"
-  | "cnd-flores"
-  | "cnd-alfa";
+type ContextoPainel = string;
 
 type CondominioSaude = {
   id: string;
@@ -145,34 +142,7 @@ type ItemFinanceiro = {
   detalhes: string;
 };
 
-const opcoesContexto: Array<{
-  id: ContextoPainel;
-  nome: string;
-  icone: string;
-}> = [
-  {
-    id: "carteira-geral",
-    nome: "Carteira Geral",
-    icone: "🌐",
-  },
-  {
-    id: "cnd-tulipas",
-    nome: "Residencial Tulipas",
-    icone: "🏢",
-  },
-  {
-    id: "cnd-flores",
-    nome: "Residencial Flores",
-    icone: "🏢",
-  },
-  {
-    id: "cnd-alfa",
-    nome: "Condomínio Alfa",
-    icone: "🏢",
-  },
-];
-
-const condominios: CondominioSaude[] = [
+const condominiosMock: CondominioSaude[] = [
   {
     id: "cnd-tulipas",
     nome: "Residencial Tulipas",
@@ -563,8 +533,16 @@ function classesStatus(status: CondominioSaude["status"]) {
 }
 
 export default function CentralSindico() {
-  const [contextoAtual, setContextoAtual] =
-    useState<ContextoPainel>("carteira-geral");
+  const {
+    usuario,
+    vinculosAtivos,
+    vinculoSelecionadoId,
+    selecionarVinculo,
+    selecionarCarteiraGeral,
+  } = useAuth();
+
+  const contextoAtual: ContextoPainel =
+    vinculoSelecionadoId ?? "carteira-geral";
   const [seletorContextoAberto, setSeletorContextoAberto] = useState(false);
   const [popupResumoAberto, setPopupResumoAberto] = useState(false);
   const [popupSaudeAberto, setPopupSaudeAberto] = useState(false);
@@ -629,6 +607,48 @@ export default function CentralSindico() {
     "moradores",
     "unidades",
   ]);
+
+  const opcoesContexto = useMemo(
+    () => [
+      {
+        id: "carteira-geral",
+        nome: "Carteira Geral",
+        icone: "🌐",
+      },
+      ...vinculosAtivos.map(([vinculoId, vinculo]) => ({
+        id: vinculoId,
+        nome:
+          vinculo.condominioNome ||
+          vinculo.condominioSlug ||
+          vinculo.condominioId ||
+          vinculoId,
+        icone: "🏢",
+      })),
+    ],
+    [vinculosAtivos]
+  );
+
+  const condominios = useMemo<CondominioSaude[]>(
+    () =>
+      vinculosAtivos.map(([vinculoId, vinculo]) => {
+        const demonstracao = condominiosMock.find(
+          (condominio) => condominio.id === vinculoId
+        );
+
+        return {
+          id: vinculoId,
+          nome:
+            vinculo.condominioNome ||
+            vinculo.condominioSlug ||
+            vinculo.condominioId ||
+            vinculoId,
+          percentual: demonstracao?.percentual ?? 100,
+          status: demonstracao?.status ?? "saudavel",
+          problemas: demonstracao?.problemas ?? [],
+        };
+      }),
+    [vinculosAtivos]
+  );
 
   const contextoSelecionado =
     opcoesContexto.find((opcao) => opcao.id === contextoAtual) ??
@@ -703,7 +723,9 @@ export default function CentralSindico() {
     : condominios.filter((condominio) => condominio.id === contextoAtual);
 
   const textoEscopo = isCarteiraGeral
-    ? "Painel consolidado dos 3 condomínios"
+    ? `Painel consolidado de ${condominios.length} ${
+        condominios.length === 1 ? "condomínio" : "condomínios"
+      }`
     : "Painel específico deste condomínio";
 
   const condominioAtual = !isCarteiraGeral
@@ -713,7 +735,9 @@ export default function CentralSindico() {
   const resumoContexto = isCarteiraGeral
     ? {
         status: "Carteira consolidada",
-        detalhe: "2 saudáveis • 1 em atenção • 0 críticos",
+        detalhe: `${condominios.length} local${
+          condominios.length === 1 ? "" : "is"
+        } vinculado${condominios.length === 1 ? "" : "s"}`,
         borda: "border-white/30",
         fundo: "bg-white/15",
         corStatus: "text-blue-100",
@@ -834,7 +858,12 @@ export default function CentralSindico() {
   ]);
 
   function trocarContexto(novoContexto: ContextoPainel) {
-    setContextoAtual(novoContexto);
+    if (novoContexto === "carteira-geral") {
+      selecionarCarteiraGeral();
+    } else {
+      selecionarVinculo(novoContexto);
+    }
+
     setSeletorContextoAberto(false);
     setCondominioSelecionado(null);
     setEventoAgendaSelecionado(null);
@@ -1198,7 +1227,7 @@ export default function CentralSindico() {
         status: agendarComunicacao ? "agendado" : "enviado",
         criadoEm: agora,
         criadoEmFormatado: new Date(agora).toLocaleString("pt-BR"),
-        enviadoPor: "João",
+        enviadoPor: usuario?.nome || usuario?.email || "Usuário",
       });
 
       const comunicadoId = referenciaNovoComunicado.key;
@@ -1237,7 +1266,7 @@ export default function CentralSindico() {
             status: "novo",
             criadoEm: agora,
             criadoEmFormatado: new Date(agora).toLocaleString("pt-BR"),
-            enviadoPor: "João",
+            enviadoPor: usuario?.nome || usuario?.email || "Usuário",
           };
         });
 
@@ -1298,7 +1327,7 @@ export default function CentralSindico() {
           enviarPush,
           criadoEm: agora,
           criadoEmFormatado: new Date(agora).toLocaleString("pt-BR"),
-          responsavel: "João",
+          responsavel: usuario?.nome || usuario?.email || "Usuário",
         });
       }
 
@@ -1578,7 +1607,7 @@ export default function CentralSindico() {
         <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
           <div>
             <h1 className="text-3xl font-black md:text-4xl">
-              👋 Bom dia, João
+              👋 Bom dia, {usuario?.nome?.split(" ")[0] || "Usuário"}
             </h1>
 
             <p className="mt-2 text-sm text-blue-100 md:text-base">
@@ -1662,7 +1691,9 @@ export default function CentralSindico() {
 
                   const statusOpcao =
                     opcao.id === "carteira-geral"
-                      ? "🌐 2 saudáveis • 1 atenção • 0 críticos"
+                      ? `🌐 ${condominios.length} condomínio${
+                          condominios.length === 1 ? "" : "s"
+                        } na carteira`
                       : condominioOpcao?.status === "saudavel"
                       ? "🟢 Saudável"
                       : condominioOpcao?.status === "atencao"
@@ -2177,7 +2208,7 @@ export default function CentralSindico() {
 
         <div className="mt-5 rounded-2xl border border-slate-700 bg-slate-900/80 p-4">
           <p className="text-sm leading-relaxed text-slate-200">
-            Bom dia, João.{" "}
+            Bom dia, {usuario?.nome?.split(" ")[0] || "Usuário"}.{" "}
             {isCarteiraGeral
               ? "Hoje existem 4 prioridades, 2 manutenções e 1 contrato vencendo amanhã. A situação financeira permanece saudável."
               : `Neste momento, ${contextoSelecionado.nome} possui ${
