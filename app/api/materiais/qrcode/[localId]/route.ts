@@ -440,7 +440,7 @@ export async function GET(
       );
 
     return new Response(
-      resultado.bytes,
+      Buffer.from(resultado.bytes),
       {
         status: 200,
 
