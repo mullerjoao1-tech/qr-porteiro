@@ -5,7 +5,7 @@ import { useParams, useSearchParams } from "next/navigation";
 import { getToken } from "firebase/messaging";
 import { ref, onValue, update, remove, push, set, get } from "firebase/database";
 import { db, messagingPromise } from "../../services/firebase";
-
+import { useLocalAtual } from "@/app/hooks/useLocalAtual";
 
 type MensagemConversa = {
   id?: string;
@@ -172,12 +172,17 @@ export default function MoradorV2() {
     return "cnd-tulipas";
   }
 
-  const condominioId = identificarCondominioPeloSlug(slug);
-  const ehResidencialCosta =
-    condominioId === "residencial-costa";
-  const nomeLocal = ehResidencialCosta
-    ? "Residencial Costa"
-    : "Morador V2";
+  const {
+  localId,
+  localNome,
+  ehResidencia,
+} = useLocalAtual(slug);
+
+const condominioId =
+  localId || identificarCondominioPeloSlug(slug);
+
+const nomeLocal =
+  localNome || "Morador V2";
 
   const caminhoComunicados = `comunicados-v2/${condominioId}`;
   const caminhoFirebase = `unidades-v2/${slug}/chamada`;
@@ -1677,7 +1682,7 @@ Mensagem: ${mensagemErro}`
               🏠 {nomeLocal}
             </h1>
             <p className="text-slate-400 text-sm mt-1">
-              {ehResidencialCosta
+              {ehResidencia
                 ? "Casa Principal"
                 : `Unidade: ${slug}`}
             </p>
@@ -1711,7 +1716,7 @@ Mensagem: ${mensagemErro}`
                         (item) =>
                           item.visualizacoes?.[slug]?.ciente !== true
                       ).length} comunicado(s) aguardando sua ciência`
-                    : ehResidencialCosta
+                    : ehResidencia
                     ? "Avisos da residência"
                     : "Comunicados do condomínio"}
                 </h2>

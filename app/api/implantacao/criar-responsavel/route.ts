@@ -11,6 +11,12 @@ import {
   type TipoLocalImplantacao,
 } from "@/app/services/implantacao/ImplantadorUniversal";
 
+import {
+  criarOuAtualizarLocalUniversal,
+  normalizarIdentidadeVisual,
+  type IdentidadeVisualLocal,
+} from "@/app/services/locais/CadastroUniversal";
+
 type CorpoCriarResponsavel = {
   nome?: unknown;
   email?: unknown;
@@ -29,6 +35,7 @@ type CorpoCriarResponsavel = {
   perfil?: unknown;
 
   configuracaoSegmento?: unknown;
+  identidadeVisual?: unknown;
 };
 
 const PERFIL_PADRAO = "sindico";
@@ -591,6 +598,12 @@ export async function POST(
         tipoLocal
       );
 
+    const identidadeVisual:
+      IdentidadeVisualLocal =
+      normalizarIdentidadeVisual(
+        corpo.identidadeVisual
+      );
+
     if (perfil !== "sindico") {
       throw new Error(
         "Nesta primeira etapa, somente o perfil de síndico está liberado."
@@ -641,133 +654,56 @@ export async function POST(
 
     const agora = Date.now();
 
-    const referenciaLocal =
-      database.ref(
-        `locais-v2/${localId}`
+    const modulosIniciais =
+      criarModulosIniciais(
+        tipoLocal,
+        agora
       );
 
-    const snapshotLocal =
-      await referenciaLocal.get();
+    const estatisticasIniciais =
+      criarEstatisticasIniciais(
+        agora
+      );
 
-    if (!snapshotLocal.exists()) {
-      localCriadoNestaOperacao = true;
+    const resultadoCadastroLocal =
+      await criarOuAtualizarLocalUniversal(
+        database,
+        {
+          localId,
 
-      await referenciaLocal.set({
-        id: localId,
+          nome:
+            localNome,
 
-        nome: localNome,
-        slug: localSlug,
-        tipo: tipoLocal,
-        status: "ativo",
+          slug:
+            localSlug,
 
-        endereco,
-        cidade,
-        estado,
-
-        modulos:
-          criarModulosIniciais(
+          tipo:
             tipoLocal,
-            agora
-          ),
 
-        estatisticas:
-          criarEstatisticasIniciais(
-            agora
-          ),
+          cidade,
+          estado,
+          endereco,
 
-        configuracao: {
-          idioma: "pt-BR",
-          fusoHorario:
-            "America/Sao_Paulo",
+          criadoPorUid:
+            administrador.uid,
 
-          primeiroAcessoConcluido:
-            false,
+          criadoEm:
+            agora,
 
-          segmento:
-            configuracaoSegmento,
-        },
+          modulos:
+            modulosIniciais,
 
-        criadoEm: agora,
-        atualizadoEm: agora,
+          estatisticas:
+            estatisticasIniciais,
 
-        criadoPorUid:
-          administrador.uid,
-
-        origem:
-          "assistente-implantacao-qr-core",
-      });
-    } else {
-      const localAtual =
-        snapshotLocal.val() as {
-          nome?: string;
-          slug?: string;
-          tipo?: string;
-          modulos?: Record<
-            string,
-            unknown
-          >;
-          estatisticas?: Record<
-            string,
-            unknown
-          >;
-        };
-
-      if (
-        localAtual.slug &&
-        localAtual.slug !== localSlug
-      ) {
-        throw new Error(
-          "Já existe um local com este ID, mas com slug diferente."
-        );
-      }
-
-      if (
-        localAtual.tipo &&
-        localAtual.tipo !== tipoLocal
-      ) {
-        throw new Error(
-          "Já existe um local com este ID, mas com tipo diferente."
-        );
-      }
-
-      await referenciaLocal.update({
-        nome:
-          localAtual.nome ||
-          localNome,
-
-        slug:
-          localAtual.slug ||
-          localSlug,
-
-        tipo:
-          localAtual.tipo ||
-          tipoLocal,
-
-        status: "ativo",
-
-        endereco,
-        cidade,
-        estado,
-
-        modulos:
-          localAtual.modulos ||
-          criarModulosIniciais(
-            tipoLocal,
-            agora
-          ),
-
-        estatisticas:
-          localAtual.estatisticas ||
-          criarEstatisticasIniciais(
-            agora
-          ),
-
-        "configuracao/segmento":
           configuracaoSegmento,
 
-        atualizadoEm: agora,
-      });
-    }
+          identidadeVisual,
+        }
+      );
+
+    localCriadoNestaOperacao =
+      resultadoCadastroLocal.criado;
 
     const usuarioAuthentication =
       await auth.createUser({
@@ -984,6 +920,8 @@ export async function POST(
 
         configuracaoSegmento,
 
+        identidadeVisual,
+
         modulosAtivos:
           Object.entries(
             criarModulosIniciais(
@@ -1044,6 +982,8 @@ export async function POST(
             ),
 
           configuracaoSegmento,
+
+          identidadeVisual,
         },
 
         usuario: {

@@ -6,14 +6,18 @@ import {
 } from "next/server";
 
 import {
-  obterFirebaseAdmin,
-} from "../../../../services/server/firebaseAdmin";
-
+  obterFirebaseAdminQr,
+} from "../../../../services/server/firebaseAdminQr";
 import {
   gerarMaterialPdf,
   type DadosMaterial,
   type SegmentoMaterial,
 } from "../../../../services/implantacao/materiais";
+export const runtime =
+  "nodejs";
+
+export const dynamic =
+  "force-dynamic";
 
 type LocalBanco = {
   id?: string;
@@ -190,7 +194,7 @@ async function buscarEmColecao(
 ): Promise<LocalEncontrado | null> {
   const {
     database,
-  } = obterFirebaseAdmin();
+  } = obterFirebaseAdminQr();
 
   const snapshotDireto =
     await database

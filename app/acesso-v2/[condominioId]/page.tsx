@@ -20,6 +20,7 @@ type Unidade = {
   tipo?: string;
   bloco?: string;
   condominioId?: string;
+  localId?: string;
   localNome?: string;
   tipoLocal?: string;
   chamada?: {
@@ -36,6 +37,20 @@ type Unidade = {
     ultimaAtividade?: number;
     audioBase64?: string;
     mensagens?: Record<string, MensagemConversa>;
+  };
+};
+
+type LocalCadastro = {
+  id: string;
+  nome: string;
+  slug?: string;
+  tipo?: string;
+  tipoLocal?: string;
+  segmento?: string;
+  status?: string;
+  configuracao?: {
+    modoAtendimento?: string;
+    [chave: string]: unknown;
   };
 };
 
@@ -57,15 +72,25 @@ export default function AcessoV2Condominio() {
   const params = useParams();
   const condominioId = String(params.condominioId || "condominio-teste");
 
-  const ehResidencialCosta = condominioId === "residencial-costa";
-  const nomeLocal = ehResidencialCosta
-    ? "Residencial Costa"
-    : "QR Acesso";
-  const unidadeCostaId =
-    "residencial-costa-casa-principal";
+  const [localCadastro, setLocalCadastro] =
+    useState<LocalCadastro | null>(null);
 
   const [unidades, setUnidades] = useState<Unidade[]>([]);
   const [carregando, setCarregando] = useState(true);
+
+  const tipoLocalNormalizado = (
+    localCadastro?.tipo ||
+    localCadastro?.tipoLocal ||
+    localCadastro?.segmento ||
+    ""
+  )
+    .trim()
+    .toLowerCase();
+
+  const localEhResidencia =
+    tipoLocalNormalizado === "residencia" ||
+    tipoLocalNormalizado === "residência" ||
+    localCadastro?.configuracao?.modoAtendimento === "residencia";
 
   const [busca, setBusca] = useState("");
   const [blocoSelecionado, setBlocoSelecionado] = useState("");
@@ -95,36 +120,84 @@ export default function AcessoV2Condominio() {
   const audioChunksRef = useRef<Blob[]>([]);
 
   useEffect(() => {
-    const referencia = ref(db, "unidades-v2");
+    let cancelado = false;
 
-    if (ehResidencialCosta) {
-      const referenciaCasaCosta = ref(
-        db,
-        `unidades-v2/${unidadeCostaId}`
-      );
+    async function carregarLocal() {
+      try {
+        const referenciaDireta = ref(
+          db,
+          `locais-v2/${condominioId}`
+        );
 
-      get(referenciaCasaCosta)
-        .then((snapshot) => {
-          if (snapshot.exists()) return;
+        const snapshotDireto =
+          await get(referenciaDireta);
 
-          return set(referenciaCasaCosta, {
-            nome: "Casa Principal",
-            tipo: "Residência",
-            bloco: "",
-            condominioId: "residencial-costa",
-            localNome: "Residencial Costa",
-            tipoLocal: "residencia",
-            status: "ativa",
-            criadoEm: new Date().toISOString(),
-          });
-        })
-        .catch((erro) => {
-          console.error(
-            "Erro ao preparar o Residencial Costa:",
-            erro
+        if (snapshotDireto.exists()) {
+          if (!cancelado) {
+            setLocalCadastro({
+              id: condominioId,
+              ...snapshotDireto.val(),
+            });
+          }
+
+          return;
+        }
+
+        const snapshotLocais =
+          await get(ref(db, "locais-v2"));
+
+        if (!snapshotLocais.exists()) {
+          if (!cancelado) {
+            setLocalCadastro(null);
+          }
+
+          return;
+        }
+
+        const locais =
+          snapshotLocais.val() as Record<
+            string,
+            Partial<LocalCadastro>
+          >;
+
+        const encontrado =
+          Object.entries(locais).find(
+            ([id, local]) =>
+              id === condominioId ||
+              local.slug === condominioId ||
+              local.id === condominioId
           );
-        });
+
+        if (!cancelado) {
+          setLocalCadastro(
+            encontrado
+              ? {
+                  ...encontrado[1],
+                  id:
+                    encontrado[1].id ||
+                    encontrado[0],
+                  nome:
+                    encontrado[1].nome ||
+                    "QR Acesso",
+                }
+              : null
+          );
+        }
+      } catch (erro) {
+        console.error(
+          "Erro ao carregar o local no Cadastro Universal:",
+          erro
+        );
+
+        if (!cancelado) {
+          setLocalCadastro(null);
+        }
+      }
     }
+
+    carregarLocal();
+
+    const referencia = ref(db, "unidades-v2");
 
     const pararDeOuvir = onValue(referencia, (snapshot) => {
       const dados = snapshot.val();
@@ -143,47 +216,45 @@ export default function AcessoV2Condominio() {
       ) as Unidade[];
 
       const lista = todasAsUnidades.filter((unidade) => {
-        if (ehResidencialCosta) {
+        if (unidade.localId || unidade.condominioId) {
           return (
-            unidade.id === unidadeCostaId ||
-            unidade.condominioId === "residencial-costa"
+            unidade.localId === condominioId ||
+            unidade.condominioId === condominioId
           );
         }
 
         /*
-         * Unidades novas são filtradas pelo condominioId.
-         * Unidades antigas sem esse campo continuam visíveis,
-         * preservando o funcionamento atual do Tulipas.
+         * As unidades antigas do Tulipas ainda não possuem
+         * localId/condominioId em todos os registros.
+         * Mantemos a compatibilidade enquanto elas são migradas.
          */
-        if (unidade.condominioId) {
-          return unidade.condominioId === condominioId;
-        }
-
         return true;
       });
 
-      lista.sort((a, b) => a.nome.localeCompare(b.nome));
+      lista.sort((a, b) =>
+        a.nome.localeCompare(b.nome)
+      );
+
       setUnidades(lista);
       setCarregando(false);
     });
 
-    return () => pararDeOuvir();
-  }, [
-    condominioId,
-    ehResidencialCosta,
-    unidadeCostaId,
-  ]);
+    return () => {
+      cancelado = true;
+      pararDeOuvir();
+    };
+  }, [condominioId]);
 
   useEffect(() => {
     if (
-      ehResidencialCosta &&
+      localEhResidencia &&
       unidades.length === 1 &&
       !unidadeSelecionada
     ) {
       setUnidadeSelecionada(unidades[0]);
     }
   }, [
-    ehResidencialCosta,
+    localEhResidencia,
     unidadeSelecionada,
     unidades,
   ]);
@@ -714,7 +785,7 @@ setBlocoSelecionado("");
 }
   function limparSelecao() {
     setUnidadeSelecionada(
-      ehResidencialCosta && unidades.length === 1
+      localEhResidencia && unidades.length === 1
         ? unidades[0]
         : null
     );
@@ -831,13 +902,12 @@ setBlocoSelecionado("");
           </p>
 
           <h1 className="text-3xl font-black">
-            {ehResidencialCosta
-              ? "🏠 Residencial Costa"
-              : "🏢 Chamar Unidade"}
+            {localEhResidencia ? "🏠" : "🏢"}{" "}
+            {localCadastro?.nome || "Chamar Unidade"}
           </h1>
 
           <p className="text-slate-400 mt-2">
-            {ehResidencialCosta
+            {localEhResidencia
               ? "Informe o motivo da visita para chamar a residência."
               : "Escolha bloco, unidade e motivo da chamada."}
           </p>
@@ -850,7 +920,7 @@ setBlocoSelecionado("");
         )}
 
         {!carregando &&
-          !ehResidencialCosta &&
+          !localEhResidencia &&
           temBlocos &&
           !blocoSelecionado && (
           <section className="bg-slate-900 border border-slate-700 rounded-3xl p-5">
@@ -871,7 +941,7 @@ setBlocoSelecionado("");
         )}
 
         {!carregando &&
-          !ehResidencialCosta &&
+          !localEhResidencia &&
           (!temBlocos || blocoSelecionado) &&
           !unidadeSelecionada && (
             <section className="bg-slate-900 border border-slate-700 rounded-3xl p-5">

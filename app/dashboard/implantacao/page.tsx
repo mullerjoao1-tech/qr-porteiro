@@ -50,7 +50,26 @@ type ResultadoImplantacao = {
   };
 };
 
-const TOTAL_PASSOS = 5;
+type TemaVisual =
+  | "clean"
+  | "institucional"
+  | "premium";
+
+type IdentidadeVisual = {
+  corPrimaria: string;
+  corSecundaria: string;
+  corTexto: string;
+  tema: TemaVisual;
+};
+
+const IDENTIDADE_VISUAL_INICIAL: IdentidadeVisual = {
+  corPrimaria: "#0F4C81",
+  corSecundaria: "#EAF4FF",
+  corTexto: "#0F172A",
+  tema: "clean",
+};
+
+const TOTAL_PASSOS = 6;
 
 const CONFIGURACAO_CONDOMINIO_INICIAL:
   ConfiguracaoCondominioDados = {
@@ -314,6 +333,13 @@ export default function ImplantacaoPage() {
     endereco,
     setEndereco,
   ] = useState("");
+
+  const [
+    identidadeVisual,
+    setIdentidadeVisual,
+  ] = useState<IdentidadeVisual>({
+    ...IDENTIDADE_VISUAL_INICIAL,
+  });
 
   const [
     responsavelNome,
@@ -606,6 +632,8 @@ export default function ImplantacaoPage() {
                 "sindico",
 
               configuracaoSegmento,
+
+              identidadeVisual,
             }),
           }
         );
@@ -659,6 +687,10 @@ export default function ImplantacaoPage() {
     setCidade("");
     setEstado("");
     setEndereco("");
+
+    setIdentidadeVisual({
+      ...IDENTIDADE_VISUAL_INICIAL,
+    });
 
     setResponsavelNome("");
     setResponsavelEmail("");
@@ -967,6 +999,209 @@ export default function ImplantacaoPage() {
               )}
 
               {passoAtual === 5 && (
+                <section>
+                  <div className="mb-6">
+                    <p className="text-xs font-black uppercase tracking-[0.2em] text-cyan-400">
+                      Identidade visual
+                    </p>
+
+                    <h2 className="mt-2 text-2xl font-black text-white">
+                      Escolha o tema e as cores do local
+                    </h2>
+
+                    <p className="mt-2 text-sm leading-relaxed text-slate-400">
+                      Essas escolhas serão usadas nos materiais, placas e futuras telas personalizadas.
+                    </p>
+                  </div>
+
+                  <div className="grid gap-4 lg:grid-cols-3">
+                    {([
+                      {
+                        id: "clean",
+                        nome: "Clean",
+                        descricao: "Visual limpo, direto e com destaque para o QR.",
+                      },
+                      {
+                        id: "institucional",
+                        nome: "Institucional",
+                        descricao: "Mais explicativo, ideal para condomínios e grande fluxo.",
+                      },
+                      {
+                        id: "premium",
+                        nome: "Premium",
+                        descricao: "Apresentação sofisticada com identidade mais marcante.",
+                      },
+                    ] as const).map((tema) => {
+                      const selecionado =
+                        identidadeVisual.tema === tema.id;
+
+                      return (
+                        <button
+                          key={tema.id}
+                          type="button"
+                          onClick={() =>
+                            setIdentidadeVisual((atual) => ({
+                              ...atual,
+                              tema: tema.id,
+                            }))
+                          }
+                          className={`rounded-2xl border p-5 text-left transition active:scale-[0.98] ${
+                            selecionado
+                              ? "border-cyan-400 bg-cyan-500/10 ring-2 ring-cyan-400/30"
+                              : "border-slate-700 bg-slate-800 hover:border-slate-500"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between gap-3">
+                            <p className="text-lg font-black text-white">
+                              {tema.nome}
+                            </p>
+
+                            <span
+                              className={`h-5 w-5 rounded-full border-2 ${
+                                selecionado
+                                  ? "border-cyan-300 bg-cyan-400"
+                                  : "border-slate-500"
+                              }`}
+                            />
+                          </div>
+
+                          <p className="mt-3 text-sm leading-relaxed text-slate-400">
+                            {tema.descricao}
+                          </p>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <div className="mt-6 grid gap-4 md:grid-cols-3">
+                    {[
+                      {
+                        campo: "corPrimaria",
+                        titulo: "Cor primária",
+                      },
+                      {
+                        campo: "corSecundaria",
+                        titulo: "Cor secundária",
+                      },
+                      {
+                        campo: "corTexto",
+                        titulo: "Cor do texto",
+                      },
+                    ].map((item) => (
+                      <label
+                        key={item.campo}
+                        className="rounded-2xl border border-slate-700 bg-slate-800 p-4"
+                      >
+                        <span className="text-sm font-black text-slate-200">
+                          {item.titulo}
+                        </span>
+
+                        <div className="mt-3 flex items-center gap-3">
+                          <input
+                            type="color"
+                            value={
+                              identidadeVisual[
+                                item.campo as keyof Pick<
+                                  IdentidadeVisual,
+                                  "corPrimaria" | "corSecundaria" | "corTexto"
+                                >
+                              ]
+                            }
+                            onChange={(evento) =>
+                              setIdentidadeVisual((atual) => ({
+                                ...atual,
+                                [item.campo]: evento.target.value.toUpperCase(),
+                              }))
+                            }
+                            className="h-12 w-16 cursor-pointer rounded-lg border border-slate-600 bg-transparent"
+                          />
+
+                          <input
+                            value={
+                              identidadeVisual[
+                                item.campo as keyof Pick<
+                                  IdentidadeVisual,
+                                  "corPrimaria" | "corSecundaria" | "corTexto"
+                                >
+                              ]
+                            }
+                            onChange={(evento) =>
+                              setIdentidadeVisual((atual) => ({
+                                ...atual,
+                                [item.campo]: evento.target.value.toUpperCase(),
+                              }))
+                            }
+                            maxLength={7}
+                            className="min-w-0 flex-1 rounded-xl border border-slate-600 bg-slate-950 px-3 py-3 font-mono text-sm text-white outline-none focus:border-cyan-400"
+                          />
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+
+                  <div className="mt-6 rounded-3xl border border-slate-700 bg-slate-950 p-5">
+                    <p className="text-xs font-black uppercase tracking-wider text-slate-400">
+                      Prévia
+                    </p>
+
+                    <div
+                      className="mt-4 overflow-hidden rounded-2xl border border-white/10 shadow-2xl"
+                      style={{
+                        backgroundColor: identidadeVisual.corSecundaria,
+                        color: identidadeVisual.corTexto,
+                      }}
+                    >
+                      <div
+                        className="px-5 py-4"
+                        style={{
+                          backgroundColor: identidadeVisual.corPrimaria,
+                        }}
+                      >
+                        <p className="text-xs font-black uppercase tracking-[0.18em] text-white/80">
+                          QR Acesso
+                        </p>
+
+                        <h3 className="mt-1 text-2xl font-black text-white">
+                          {localNome || "Nome do local"}
+                        </h3>
+                      </div>
+
+                      <div className="grid gap-5 p-5 sm:grid-cols-[1fr_150px] sm:items-center">
+                        <div>
+                          <p className="text-xs font-black uppercase opacity-60">
+                            Tema selecionado
+                          </p>
+
+                          <p className="mt-1 text-xl font-black capitalize">
+                            {identidadeVisual.tema}
+                          </p>
+
+                          <p className="mt-3 text-sm leading-relaxed opacity-75">
+                            Aponte a câmera do celular para acessar o local de forma rápida e segura.
+                          </p>
+                        </div>
+
+                        <div className="mx-auto flex h-36 w-36 items-center justify-center rounded-xl bg-white p-3 shadow-xl">
+                          <div className="grid h-full w-full grid-cols-5 gap-1">
+                            {Array.from({ length: 25 }).map((_, indice) => (
+                              <span
+                                key={indice}
+                                className={
+                                  indice % 3 === 0 || indice % 7 === 0
+                                    ? "bg-slate-950"
+                                    : "bg-white"
+                                }
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+              )}
+
+              {passoAtual === 6 && (
                 <>
                   <PassoResumo
                     tipoLocal={
@@ -1017,6 +1252,19 @@ export default function ImplantacaoPage() {
                           </p>
                         )
                       )}
+                    </div>
+                  </section>
+
+                  <section className="mt-5 rounded-2xl border border-violet-500/20 bg-violet-500/5 p-5">
+                    <p className="text-xs font-black uppercase tracking-wider text-violet-300">
+                      Identidade visual
+                    </p>
+
+                    <div className="mt-3 grid gap-2 text-sm text-slate-300 sm:grid-cols-2">
+                      <p>✅ Tema: <strong className="capitalize">{identidadeVisual.tema}</strong></p>
+                      <p>✅ Cor primária: <strong>{identidadeVisual.corPrimaria}</strong></p>
+                      <p>✅ Cor secundária: <strong>{identidadeVisual.corSecundaria}</strong></p>
+                      <p>✅ Cor do texto: <strong>{identidadeVisual.corTexto}</strong></p>
                     </div>
                   </section>
                 </>
