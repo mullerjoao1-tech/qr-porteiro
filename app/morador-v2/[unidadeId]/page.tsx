@@ -826,13 +826,32 @@ const nomeLocal =
       };
 
       recorder.onstop = () => {
-        const blob = new Blob(audioChunksMoradorRef.current, {
-          type: "audio/webm",
-        });
+        /*
+         * Usa o formato real produzido pelo navegador.
+         * Firefox normalmente pode gravar em audio/ogg,
+         * enquanto Chrome costuma usar audio/webm.
+         * Forçar audio/webm em todos os navegadores pode
+         * fazer o áudio chegar sem som no aparelho visitante.
+         */
+        const tipoAudio =
+          recorder.mimeType ||
+          audioChunksMoradorRef.current[0]?.type ||
+          "audio/webm";
+
+        const blob = new Blob(
+          audioChunksMoradorRef.current,
+          {
+            type: tipoAudio,
+          }
+        );
 
         setAudioRespostaBlob(blob);
         setGravandoAudioMorador(false);
-        stream.getTracks().forEach((track) => track.stop());
+        stream
+          .getTracks()
+          .forEach((track) =>
+            track.stop()
+          );
       };
 
       mediaRecorderMoradorRef.current = recorder;
