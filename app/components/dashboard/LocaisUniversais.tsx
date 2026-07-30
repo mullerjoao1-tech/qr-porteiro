@@ -178,14 +178,30 @@ export default function LocaisUniversais() {
     (local) => local.tipoLocal === "condominio"
   ).length;
 
-  function abrirAcesso(local: LocalUniversal) {
+function abrirAcesso(local: LocalUniversal) {
+  window.open(
+    `/acesso-v2/${local.slug}`,
+    "_blank",
+    "noopener,noreferrer"
+  );
+}
+
+function abrirPainel(local: LocalUniversal) {
+  if (local.tipoLocal === "residencia") {
     window.open(
-      `/acesso-v2/${local.slug}`,
+      `/morador-v2/${local.slug}-principal`,
       "_blank",
       "noopener,noreferrer"
     );
+    return;
   }
 
+  window.open(
+    "/dashboard",
+    "_blank",
+    "noopener,noreferrer"
+  );
+}
   async function copiarLink(local: LocalUniversal) {
     const link = `${window.location.origin}/acesso-v2/${local.slug}`;
 
@@ -357,31 +373,39 @@ export default function LocaisUniversais() {
                     )}
                   </p>
 
-                  <div className="mt-auto grid grid-cols-2 gap-2 pt-5">
-                    <button
-                      type="button"
-                      onClick={() => setLocalSelecionado(local)}
-                      className="rounded-xl bg-slate-700 px-3 py-2.5 text-sm font-black text-white transition-all hover:bg-slate-600 active:scale-95"
-                    >
-                      Ver detalhes
-                    </button>
+                 <div className="mt-auto grid grid-cols-2 gap-2 pt-5">
+  <button
+    type="button"
+    onClick={() => setLocalSelecionado(local)}
+    className="rounded-xl bg-slate-700 px-3 py-2.5 text-sm font-black text-white transition-all hover:bg-slate-600 active:scale-95"
+  >
+    Ver detalhes
+  </button>
 
-                    <button
-                      type="button"
-                      onClick={() => abrirAcesso(local)}
-                      className="rounded-xl bg-blue-600 px-3 py-2.5 text-sm font-black text-white transition-all hover:bg-blue-500 active:scale-95"
-                    >
-                      Abrir acesso
-                    </button>
+  <button
+    type="button"
+    onClick={() => abrirAcesso(local)}
+    className="rounded-xl bg-blue-600 px-3 py-2.5 text-sm font-black text-white transition-all hover:bg-blue-500 active:scale-95"
+  >
+    🌐 Visitante
+  </button>
 
-                    <button
-                      type="button"
-                      onClick={() => copiarLink(local)}
-                      className="col-span-2 rounded-xl border border-cyan-700 bg-cyan-950/30 px-3 py-2.5 text-sm font-black text-cyan-300 transition-all hover:bg-cyan-950/60 active:scale-95"
-                    >
-                      🔗 Copiar link
-                    </button>
-                  </div>
+  <button
+    type="button"
+    onClick={() => abrirPainel(local)}
+    className="rounded-xl bg-green-600 px-3 py-2.5 text-sm font-black text-white transition-all hover:bg-green-500 active:scale-95"
+  >
+    🏠 Painel
+  </button>
+
+  <button
+    type="button"
+    onClick={() => copiarLink(local)}
+    className="rounded-xl border border-cyan-700 bg-cyan-950/30 px-3 py-2.5 text-sm font-black text-cyan-300 transition-all hover:bg-cyan-950/60 active:scale-95"
+  >
+    🔗 Copiar link
+  </button>
+</div>
                 </article>
               );
             })}
@@ -447,23 +471,31 @@ export default function LocaisUniversais() {
               ))}
             </div>
 
-            <div className="mt-5 grid grid-cols-2 gap-3">
-              <button
-                type="button"
-                onClick={() => copiarLink(localSelecionado)}
-                className="rounded-xl bg-slate-700 py-3 font-black hover:bg-slate-600"
-              >
-                Copiar link
-              </button>
+           <div className="mt-5 grid grid-cols-2 gap-3">
+  <button
+    type="button"
+    onClick={() => copiarLink(localSelecionado)}
+    className="rounded-xl bg-slate-700 py-3 font-black hover:bg-slate-600"
+  >
+    🔗 Copiar link
+  </button>
 
-              <button
-                type="button"
-                onClick={() => abrirAcesso(localSelecionado)}
-                className="rounded-xl bg-blue-600 py-3 font-black hover:bg-blue-500"
-              >
-                Abrir acesso
-              </button>
-            </div>
+  <button
+    type="button"
+    onClick={() => abrirAcesso(localSelecionado)}
+    className="rounded-xl bg-blue-600 py-3 font-black hover:bg-blue-500"
+  >
+    🌐 Visitante
+  </button>
+
+  <button
+    type="button"
+    onClick={() => abrirPainel(localSelecionado)}
+    className="col-span-2 rounded-xl bg-green-600 py-3 font-black hover:bg-green-500"
+  >
+    🏠 Abrir painel do responsável
+  </button>
+</div>
           </div>
         </div>
       )}
