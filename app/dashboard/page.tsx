@@ -8,11 +8,13 @@ import Moradores from "../components/dashboard/Moradores";
 import AtualizacaoPendenteModal from "./AtualizacaoPendenteModal";
 import UnidadeImplantacaoModal from "./UnidadeImplantacaoModal";
 import CentralSindico from "./sindico/CentralSindico";
+import LocaisUniversais from "../components/dashboard/LocaisUniversais";
 
 type Tela =
   | "dashboard"
   | "sindico"
   | "locais"
+  | "locais-universais"
   | "unidades"
   | "moradores"
   | "planos"
@@ -836,6 +838,8 @@ export default function Dashboard() {
 
   { id: "locais", nome: "Locais", icone: "🏢" },
 
+  { id: "locais-universais", nome: "Cadastro Universal", icone: "🌐" },
+
   { id: "unidades", nome: "Unidades", icone: "🚪" },
 
   { id: "moradores", nome: "Moradores", icone: "👥" },
@@ -1325,6 +1329,10 @@ export default function Dashboard() {
 {telaAtiva === "sindico" && (
   <CentralSindico />
 )}
+          {telaAtiva === "locais-universais" && (
+            <LocaisUniversais />
+          )}
+
           {telaAtiva === "locais" && (
             <div className="space-y-5">
               {/* Cabeçalho */}
