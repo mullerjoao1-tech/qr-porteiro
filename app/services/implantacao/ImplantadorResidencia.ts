@@ -110,6 +110,10 @@ export async function implantarResidencia(
       "Criar estrutura da residência"
     ),
     criarEtapa(
+      "criar-unidade-principal",
+      "Criar unidade principal"
+    ),
+    criarEtapa(
       "vincular-responsavel",
       "Vincular responsável ao local"
     ),
@@ -248,8 +252,12 @@ export async function implantarResidencia(
         principal: {
           id: "principal",
           localId: local.localId,
+          condominioId: local.localId,
+          localNome: local.localNome,
           nome: "Residência principal",
           tipo: "residencia",
+          tipoLocal: "residencia",
+          bloco: "",
           status: "ativa",
           ativo: true,
           responsavelUid:
@@ -275,6 +283,43 @@ export async function implantarResidencia(
 
     etapas[3] = iniciarEtapa(
       etapas[3],
+      "Preparando a unidade principal compartilhada."
+    );
+
+    atualizacoes[
+      `unidades-v2/${local.localId}-principal`
+    ] = {
+      id: `${local.localId}-principal`,
+      codigo: `${local.localId}-principal`,
+      localId: local.localId,
+      condominioId: local.localId,
+      localNome: local.localNome,
+      nome: "Residência principal",
+      tipo: "residencia",
+      tipoLocal: "residencia",
+      bloco: "",
+      modoChamado: "familia",
+      status: "ativa",
+      ativo: true,
+      responsavelUid:
+        responsavel.uid,
+      criadoEm:
+        new Date(criadoEm).toISOString(),
+      atualizadoEm:
+        new Date(criadoEm).toISOString(),
+    };
+
+    estruturasCriadas.push(
+      `unidades-v2/${local.localId}-principal`
+    );
+
+    etapas[3] = concluirEtapa(
+      etapas[3],
+      "Unidade principal preparada em unidades-v2."
+    );
+
+    etapas[4] = iniciarEtapa(
+      etapas[4],
       "Preparando o vínculo do responsável."
     );
 
@@ -296,7 +341,8 @@ export async function implantarResidencia(
       permissoes:
         permissoesResponsavel,
       unidades: {
-        principal: true,
+        [`${local.localId}-principal`]:
+          true,
       },
       criadoEm,
       criadoPorUid,
@@ -315,7 +361,8 @@ export async function implantarResidencia(
         perfilResponsavel,
       ativo: true,
       status: "ativo",
-      unidadeId: "principal",
+      unidadeId:
+        `${local.localId}-principal`,
       permissoes:
         permissoesResponsavel,
       criadoEm,
@@ -331,13 +378,13 @@ export async function implantarResidencia(
       `vinculos-locais-v2/${local.localId}/${responsavel.uid}`
     );
 
-    etapas[3] = concluirEtapa(
-      etapas[3],
+    etapas[4] = concluirEtapa(
+      etapas[4],
       "Responsável vinculado à residência."
     );
 
-    etapas[4] = iniciarEtapa(
-      etapas[4],
+    etapas[5] = iniciarEtapa(
+      etapas[5],
       "Preparando configurações e módulos iniciais."
     );
 
@@ -383,6 +430,9 @@ export async function implantarResidencia(
           `/morador-v2/${local.localSlug}/principal`,
       },
 
+      unidadePrincipalId:
+        `${local.localId}-principal`,
+
       criadoEm,
       criadoPorUid,
       atualizadoEm: criadoEm,
@@ -392,13 +442,13 @@ export async function implantarResidencia(
       `configuracoes-locais-v2/${local.localId}`
     );
 
-    etapas[4] = concluirEtapa(
-      etapas[4],
+    etapas[5] = concluirEtapa(
+      etapas[5],
       "Configurações iniciais preparadas."
     );
 
-    etapas[5] = iniciarEtapa(
-      etapas[5],
+    etapas[6] = iniciarEtapa(
+      etapas[6],
       "Gravando todas as estruturas no Firebase."
     );
 
@@ -406,8 +456,8 @@ export async function implantarResidencia(
       .ref()
       .update(atualizacoes);
 
-    etapas[5] = concluirEtapa(
-      etapas[5],
+    etapas[6] = concluirEtapa(
+      etapas[6],
       "Implantação da residência concluída."
     );
 
@@ -424,6 +474,8 @@ export async function implantarResidencia(
         responsavelUid:
           responsavel.uid,
         unidadePrincipalCriada: true,
+        unidadePrincipalId:
+          `${local.localId}-principal`,
         totalEstruturas:
           estruturasCriadas.length,
       },
