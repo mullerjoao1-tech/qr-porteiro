@@ -152,6 +152,10 @@ export async function implantarResidencia(
     const permissoesResponsavel =
       criarPermissoesResponsavel();
 
+    const perfilResponsavel =
+      responsavel.perfil ||
+      "gestor_local";
+
     const enderecoCompleto = {
       endereco: local.endereco ?? "",
       cidade: local.cidade ?? "",
@@ -181,16 +185,36 @@ export async function implantarResidencia(
       criadoEm,
       criadoPorUid,
       atualizadoEm: criadoEm,
+
+      responsaveis: {
+        [responsavel.uid]: {
+          uid: responsavel.uid,
+          nome: responsavel.nome,
+          email: responsavel.email,
+          telefone:
+            responsavel.telefone ?? "",
+          perfil: perfilResponsavel,
+          ativo: true,
+          criadoEm,
+          atualizadoEm: criadoEm,
+        },
+      },
+
       implantacao: {
         status: "concluida",
         tipoImplantacao: "residencia",
         implantadoEm: criadoEm,
-        implantadoPorUid: criadoPorUid,
+        implantadoPorUid:
+          criadoPorUid,
       },
     };
 
     estruturasCriadas.push(
       `locais-v2/${local.localId}`
+    );
+
+    estruturasCriadas.push(
+      `locais-v2/${local.localId}/responsaveis/${responsavel.uid}`
     );
 
     etapas[1] = concluirEtapa(
@@ -219,21 +243,21 @@ export async function implantarResidencia(
       criadoEm,
       criadoPorUid,
       atualizadoEm: criadoEm,
-    };
 
-    atualizacoes[
-      `residencias-v2/${local.localId}/unidades/principal`
-    ] = {
-      id: "principal",
-      localId: local.localId,
-      nome: "Residência principal",
-      tipo: "residencia",
-      status: "ativa",
-      ativo: true,
-      responsavelUid:
-        responsavel.uid,
-      criadoEm,
-      atualizadoEm: criadoEm,
+      unidades: {
+        principal: {
+          id: "principal",
+          localId: local.localId,
+          nome: "Residência principal",
+          tipo: "residencia",
+          status: "ativa",
+          ativo: true,
+          responsavelUid:
+            responsavel.uid,
+          criadoEm,
+          atualizadoEm: criadoEm,
+        },
+      },
     };
 
     estruturasCriadas.push(
@@ -265,13 +289,9 @@ export async function implantarResidencia(
       ativo: true,
       status: "ativo",
       perfilPrincipal:
-        responsavel.perfil ||
-        "gestor_local",
+        perfilResponsavel,
       perfis: {
-        [
-          responsavel.perfil ||
-            "gestor_local"
-        ]: true,
+        [perfilResponsavel]: true,
       },
       permissoes:
         permissoesResponsavel,
@@ -292,8 +312,7 @@ export async function implantarResidencia(
       telefone:
         responsavel.telefone ?? "",
       perfil:
-        responsavel.perfil ||
-        "gestor_local",
+        perfilResponsavel,
       ativo: true,
       status: "ativo",
       unidadeId: "principal",
@@ -304,8 +323,6 @@ export async function implantarResidencia(
       atualizadoEm: criadoEm,
     };
 
-    
-
     estruturasCriadas.push(
       `usuarios-v2/${responsavel.uid}/vinculos/${local.localId}`
     );
@@ -314,7 +331,6 @@ export async function implantarResidencia(
       `vinculos-locais-v2/${local.localId}/${responsavel.uid}`
     );
 
-   
     etapas[3] = concluirEtapa(
       etapas[3],
       "Responsável vinculado à residência."
@@ -332,6 +348,7 @@ export async function implantarResidencia(
       tipoLocal: "residencia",
       configuracaoSegmento:
         configuracao,
+
       modulos: {
         dashboard: true,
         moradores: true,
@@ -356,12 +373,16 @@ export async function implantarResidencia(
         historico: true,
         configuracoes: true,
       },
+
       urls: {
-        painel: `/dashboard/${local.localSlug}`,
-        acesso: `/acesso-v2/${local.localSlug}`,
+        painel:
+          `/dashboard/${local.localSlug}`,
+        acesso:
+          `/acesso-v2/${local.localSlug}`,
         unidadePrincipal:
           `/morador-v2/${local.localSlug}/principal`,
       },
+
       criadoEm,
       criadoPorUid,
       atualizadoEm: criadoEm,
