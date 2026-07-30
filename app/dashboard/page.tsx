@@ -871,12 +871,17 @@ export default function Dashboard() {
   key={item.id}
   onClick={() => {
     if (item.id === "inicio") {
-      window.location.href = "/";
-      return;
-    }
+  window.location.href = "/";
+  return;
+}
 
-    setTelaAtiva(item.id as Tela);
-    setMenuMobileAberto(false);
+if (item.id === "implantacao") {
+  window.location.href = "/dashboard/implantacao";
+  return;
+}
+
+setTelaAtiva(item.id as Tela);
+setMenuMobileAberto(false);
   }}
   className="w-full rounded-xl bg-slate-800 px-4 py-3 text-left"
 >
@@ -909,12 +914,17 @@ export default function Dashboard() {
                 key={item.id}
                 onClick={() => {
   if (item.id === "inicio") {
-    window.location.href = "/";
-    return;
-  }
+  window.location.href = "/";
+  return;
+}
 
-  setTelaAtiva(item.id as Tela);
-  setMenuMobileAberto(false);
+if (item.id === "implantacao") {
+  window.location.href = "/dashboard/implantacao";
+  return;
+}
+
+setTelaAtiva(item.id as Tela);
+setMenuMobileAberto(false);
 }}
                 className={`w-full text-left px-4 py-3 rounded-xl font-bold transition-all ${
                   telaAtiva === item.id
@@ -968,7 +978,9 @@ export default function Dashboard() {
 
                       <button
                         type="button"
-                        onClick={() => setTelaAtiva("implantacao")}
+                        onClick={() => {
+  window.location.href = "/dashboard/implantacao";
+}}
                         className="rounded-xl border border-white/30 bg-white/10 px-4 py-2.5 text-sm font-black text-white backdrop-blur transition-all hover:bg-white/20 active:scale-95"
                       >
                         Ver implantação
