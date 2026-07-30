@@ -104,7 +104,7 @@ export default function LocaisUniversais() {
   const [filtroTipo, setFiltroTipo] = useState("todos");
   const [localSelecionado, setLocalSelecionado] =
     useState<LocalUniversal | null>(null);
-
+const [selecionados, setSelecionados] = useState<string[]>([]);
   useEffect(() => {
     const locaisRef = ref(db, "locais-v2");
 
@@ -213,7 +213,22 @@ function abrirPainel(local: LocalUniversal) {
       alert("Não foi possível copiar o link.");
     }
   }
+function alternarSelecao(id: string) {
+  setSelecionados((atual) =>
+    atual.includes(id)
+      ? atual.filter((item) => item !== id)
+      : [...atual, id]
+  );
+}
 
+function selecionarTodos() {
+  if (selecionados.length === locaisFiltrados.length) {
+    setSelecionados([]);
+    return;
+  }
+
+  setSelecionados(locaisFiltrados.map((l) => l.id));
+}
   return (
     <div className="space-y-5">
       <section className="rounded-3xl bg-gradient-to-r from-indigo-700 via-blue-700 to-cyan-600 p-5 text-white md:p-7">
@@ -294,7 +309,37 @@ function abrirPainel(local: LocalUniversal) {
       <section className="rounded-2xl border border-slate-800 bg-slate-900 p-4 md:p-5">
         <p className="text-xs font-black text-blue-300">LOCAIS IMPLANTADOS</p>
         <h3 className="mt-1 text-2xl font-black">Ecossistema QR</h3>
+<div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-700 bg-slate-800 p-4">
+  <label className="flex cursor-pointer items-center gap-3">
+    <input
+      type="checkbox"
+      checked={
+        locaisFiltrados.length > 0 &&
+        selecionados.length === locaisFiltrados.length
+      }
+      onChange={selecionarTodos}
+      className="h-5 w-5 cursor-pointer"
+    />
 
+    <span className="font-black text-slate-200">
+      Selecionar todos
+    </span>
+  </label>
+
+  <div className="flex flex-wrap items-center gap-3">
+    <span className="text-sm font-bold text-slate-400">
+      {selecionados.length} selecionado(s)
+    </span>
+
+    <button
+      type="button"
+      disabled={selecionados.length === 0}
+      className="rounded-xl bg-red-600 px-4 py-2.5 font-black text-white transition hover:bg-red-500 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
+    >
+      🗑 Excluir selecionados
+    </button>
+  </div>
+</div>
         {carregando ? (
           <div className="mt-5 rounded-2xl border border-slate-700 bg-slate-800 p-8 text-center">
             <p className="font-black text-slate-300">Carregando locais...</p>
@@ -322,6 +367,15 @@ function abrirPainel(local: LocalUniversal) {
                   key={local.id}
                   className="flex h-full flex-col rounded-2xl border border-slate-700 bg-slate-800 p-4 transition-all hover:border-blue-500"
                 >
+                  <div className="mb-3 flex justify-end">
+  <input
+    type="checkbox"
+    checked={selecionados.includes(local.id)}
+    onChange={() => alternarSelecao(local.id)}
+    className="h-5 w-5 cursor-pointer"
+    aria-label={`Selecionar ${local.nome}`}
+  />
+</div>
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-900 text-3xl">
                       {iconeTipo(local.tipoLocal)}
