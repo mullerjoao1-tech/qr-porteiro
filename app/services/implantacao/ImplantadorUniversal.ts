@@ -11,6 +11,9 @@ import {
 import {
   implantarBeauty,
 } from "./ImplantadorBeauty";
+import {
+  implantarResidencia,
+} from "./ImplantadorResidencia";
 
 export type TipoLocalImplantacao =
   | "condominio"
@@ -289,9 +292,9 @@ export async function executarImplantacao(
       );
 
     case "residencia":
-      throw new Error(
-        "Implantador de Residência ainda não implementado."
-      );
+  return implantarResidencia(
+    contexto
+  );
 
     case "restaurante":
       throw new Error(
