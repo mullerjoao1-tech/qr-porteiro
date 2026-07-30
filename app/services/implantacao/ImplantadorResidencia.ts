@@ -389,6 +389,154 @@ export async function implantarResidencia(
     );
 
     atualizacoes[
+      `configuracoes-chamadas-v2/${local.localId}`
+    ] = {
+      localId: local.localId,
+      unidadePrincipalId:
+        `${local.localId}-principal`,
+
+      tiposAtendimento: {
+        visitante: {
+          id: "visitante",
+          titulo: "Visitante",
+          icone: "👤",
+          ativo: true,
+          ordem: 1,
+        },
+
+        entrega: {
+          id: "entrega",
+          titulo: "Entrega / encomenda",
+          icone: "📦",
+          ativo: true,
+          ordem: 2,
+        },
+
+        comida: {
+          id: "comida",
+          titulo: "Entrega de comida",
+          icone: "🍔",
+          ativo: true,
+          ordem: 3,
+        },
+
+        servico: {
+          id: "servico",
+          titulo: "Serviço",
+          icone: "🛠️",
+          ativo: true,
+          ordem: 4,
+        },
+
+        motorista: {
+          id: "motorista",
+          titulo: "Motorista / aplicativo",
+          icone: "🚗",
+          ativo: true,
+          ordem: 5,
+        },
+
+        outros: {
+          id: "outros",
+          titulo: "Outros",
+          icone: "✍️",
+          ativo: true,
+          ordem: 6,
+          exigeDescricao: true,
+        },
+      },
+
+      mensagensRapidasMorador: {
+        aguarde: {
+          id: "aguarde",
+          texto: "Aguarde um momento.",
+          ativo: true,
+          ordem: 1,
+        },
+
+        identificacao: {
+          id: "identificacao",
+          texto: "Por favor, informe seu nome e o motivo da visita.",
+          ativo: true,
+          ordem: 2,
+        },
+
+        descendo: {
+          id: "descendo",
+          texto: "Já estou indo atender.",
+          ativo: true,
+          ordem: 3,
+        },
+
+        deixarPorta: {
+          id: "deixar-porta",
+          texto: "Pode deixar a entrega na porta.",
+          ativo: true,
+          ordem: 4,
+        },
+
+        naoAutorizado: {
+          id: "nao-autorizado",
+          texto: "Não autorizei esta visita.",
+          ativo: true,
+          ordem: 5,
+        },
+      },
+
+      mensagensRapidasVisitante: {
+        aguardando: {
+          id: "aguardando",
+          texto: "Estou aguardando.",
+          ativo: true,
+          ordem: 1,
+        },
+
+        entrega: {
+          id: "entrega",
+          texto: "Tenho uma entrega para este endereço.",
+          ativo: true,
+          ordem: 2,
+        },
+
+        retorno: {
+          id: "retorno",
+          texto: "Posso retornar mais tarde.",
+          ativo: true,
+          ordem: 3,
+        },
+      },
+
+      notificacoes: {
+        pushChamadas: true,
+        somChamadas: true,
+        vibracao: true,
+        repetirEnquantoAguardando: true,
+        intervaloRepeticaoSegundos: 30,
+      },
+
+      atendimento: {
+        permitirTexto: true,
+        permitirAudio: true,
+        permitirFoto: false,
+        permitirVideo: false,
+        permitirAbrirPortao:
+          configuracao.possuiAberturaRemota ===
+          true,
+        tempoMaximoAguardandoMinutos: 5,
+        tempoMaximoAtendimentoMinutos: 3,
+        encerrarAutomaticamente: true,
+      },
+
+      criadoEm,
+      criadoPorUid,
+      atualizadoEm: criadoEm,
+    };
+
+    estruturasCriadas.push(
+      `configuracoes-chamadas-v2/${local.localId}`
+    );
+
+    atualizacoes[
       `configuracoes-locais-v2/${local.localId}`
     ] = {
       localId: local.localId,
@@ -423,11 +571,23 @@ export async function implantarResidencia(
 
       urls: {
         painel:
-          `/dashboard/${local.localSlug}`,
+          `/morador-v2/${local.localId}-principal`,
         acesso:
           `/acesso-v2/${local.localSlug}`,
         unidadePrincipal:
-          `/morador-v2/${local.localSlug}/principal`,
+          `/morador-v2/${local.localId}-principal`,
+        cadastroUniversal:
+          "/dashboard",
+      },
+
+      recursosIniciais: {
+        qrVisitante: true,
+        painelResponsavel: true,
+        placaA4: true,
+        mensagensTexto: true,
+        mensagensAudio: true,
+        notificacoesPush: true,
+        historicoChamadas: true,
       },
 
       unidadePrincipalId:
@@ -476,6 +636,12 @@ export async function implantarResidencia(
         unidadePrincipalCriada: true,
         unidadePrincipalId:
           `${local.localId}-principal`,
+        configuracoesChamadasCriadas:
+          true,
+        painelResponsavel:
+          `/morador-v2/${local.localId}-principal`,
+        acessoVisitante:
+          `/acesso-v2/${local.localSlug}`,
         totalEstruturas:
           estruturasCriadas.length,
       },
