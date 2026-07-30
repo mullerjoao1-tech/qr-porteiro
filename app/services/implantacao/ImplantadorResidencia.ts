@@ -304,21 +304,7 @@ export async function implantarResidencia(
       atualizadoEm: criadoEm,
     };
 
-    atualizacoes[
-      `locais-v2/${local.localId}/responsaveis/${responsavel.uid}`
-    ] = {
-      uid: responsavel.uid,
-      nome: responsavel.nome,
-      email: responsavel.email,
-      telefone:
-        responsavel.telefone ?? "",
-      perfil:
-        responsavel.perfil ||
-        "gestor_local",
-      ativo: true,
-      criadoEm,
-      atualizadoEm: criadoEm,
-    };
+    
 
     estruturasCriadas.push(
       `usuarios-v2/${responsavel.uid}/vinculos/${local.localId}`
@@ -328,10 +314,7 @@ export async function implantarResidencia(
       `vinculos-locais-v2/${local.localId}/${responsavel.uid}`
     );
 
-    estruturasCriadas.push(
-      `locais-v2/${local.localId}/responsaveis/${responsavel.uid}`
-    );
-
+   
     etapas[3] = concluirEtapa(
       etapas[3],
       "Responsável vinculado à residência."
