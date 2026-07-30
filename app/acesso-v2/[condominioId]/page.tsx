@@ -215,21 +215,42 @@ export default function AcessoV2Condominio() {
         })
       ) as Unidade[];
 
-      const lista = todasAsUnidades.filter((unidade) => {
-        if (unidade.localId || unidade.condominioId) {
-          return (
-            unidade.localId === condominioId ||
-            unidade.condominioId === condominioId
-          );
-        }
+      /*
+       * Primeiro procuramos somente as unidades vinculadas
+       * diretamente ao local aberto pela URL.
+       *
+       * Isso é essencial para residências, pois elas possuem
+       * apenas uma unidade principal e devem abrir o formulário
+       * automaticamente.
+       */
+      const unidadesVinculadas =
+        todasAsUnidades.filter(
+          (unidade) =>
+            unidade.localId ===
+              condominioId ||
+            unidade.condominioId ===
+              condominioId
+        );
 
-        /*
-         * As unidades antigas do Tulipas ainda não possuem
-         * localId/condominioId em todos os registros.
-         * Mantemos a compatibilidade enquanto elas são migradas.
-         */
-        return true;
-      });
+      /*
+       * Compatibilidade temporária com unidades antigas do
+       * Tulipas que ainda não possuem localId/condominioId.
+       *
+       * O fallback só é usado quando nenhuma unidade moderna
+       * vinculada ao local foi encontrada. Assim, unidades
+       * antigas não se misturam com uma residência nova.
+       */
+      const unidadesSemVinculo =
+        todasAsUnidades.filter(
+          (unidade) =>
+            !unidade.localId &&
+            !unidade.condominioId
+        );
+
+      const lista =
+        unidadesVinculadas.length > 0
+          ? unidadesVinculadas
+          : unidadesSemVinculo;
 
       lista.sort((a, b) =>
         a.nome.localeCompare(b.nome)
