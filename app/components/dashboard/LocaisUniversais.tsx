@@ -105,6 +105,7 @@ export default function LocaisUniversais() {
   const [localSelecionado, setLocalSelecionado] =
     useState<LocalUniversal | null>(null);
 const [selecionados, setSelecionados] = useState<string[]>([]);
+const [modoSelecao, setModoSelecao] = useState(false);
   useEffect(() => {
     const locaisRef = ref(db, "locais-v2");
 
@@ -306,9 +307,29 @@ function selecionarTodos() {
         </p>
       </section>
 
-      <section className="rounded-2xl border border-slate-800 bg-slate-900 p-4 md:p-5">
-        <p className="text-xs font-black text-blue-300">LOCAIS IMPLANTADOS</p>
-        <h3 className="mt-1 text-2xl font-black">Ecossistema QR</h3>
+      {modoSelecao && (
+<section className="rounded-2xl border border-slate-800 bg-slate-900 p-4 md:p-5">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+  <div>
+    <p className="text-xs font-black text-blue-300">
+      LOCAIS IMPLANTADOS
+    </p>
+
+    <h3 className="mt-1 text-2xl font-black">
+      Ecossistema QR
+    </h3>
+  </div>
+
+  {!modoSelecao && (
+    <button
+      type="button"
+      onClick={() => setModoSelecao(true)}
+      className="rounded-xl bg-blue-600 px-4 py-2.5 font-black text-white transition hover:bg-blue-500 active:scale-95"
+    >
+      Selecionar
+    </button>
+  )}
+</div>
 <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-700 bg-slate-800 p-4">
   <label className="flex cursor-pointer items-center gap-3">
     <input
@@ -330,7 +351,16 @@ function selecionarTodos() {
     <span className="text-sm font-bold text-slate-400">
       {selecionados.length} selecionado(s)
     </span>
-
+<button
+  type="button"
+  onClick={() => {
+    setModoSelecao(false);
+    setSelecionados([]);
+  }}
+  className="rounded-xl bg-slate-700 px-4 py-2.5 font-black text-white transition hover:bg-slate-600 active:scale-95"
+>
+  Cancelar
+</button>
     <button
       type="button"
       disabled={selecionados.length === 0}
@@ -367,15 +397,17 @@ function selecionarTodos() {
                   key={local.id}
                   className="flex h-full flex-col rounded-2xl border border-slate-700 bg-slate-800 p-4 transition-all hover:border-blue-500"
                 >
-                  <div className="mb-3 flex justify-end">
-  <input
-    type="checkbox"
-    checked={selecionados.includes(local.id)}
-    onChange={() => alternarSelecao(local.id)}
-    className="h-5 w-5 cursor-pointer"
-    aria-label={`Selecionar ${local.nome}`}
-  />
-</div>
+                 {modoSelecao && (
+  <div className="mb-3 flex justify-end">
+    <input
+      type="checkbox"
+      checked={selecionados.includes(local.id)}
+      onChange={() => alternarSelecao(local.id)}
+      className="h-5 w-5 cursor-pointer"
+      aria-label={`Selecionar ${local.nome}`}
+    />
+  </div>
+)}
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-900 text-3xl">
                       {iconeTipo(local.tipoLocal)}
@@ -466,6 +498,7 @@ function selecionarTodos() {
           </div>
         )}
       </section>
+)}
 
       {localSelecionado && (
         <div className="fixed inset-0 z-[150] flex items-center justify-center bg-black/75 p-3 md:p-6">
