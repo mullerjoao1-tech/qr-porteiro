@@ -15,6 +15,10 @@ const template: TemplateMaterial = {
     return ResidenciaA4.gerar({
       ...dados,
 
+      tema:
+        dados.tema ||
+        "institucional",
+
       subtitulo:
         dados.subtitulo ||
         "Escaneie o QR Code para chamar a portaria.",

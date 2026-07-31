@@ -772,8 +772,7 @@ export default function ImplantacaoPage() {
     const janela =
       window.open(
         "",
-        "_blank",
-        "noopener,noreferrer"
+        "_blank"
       );
 
     if (!janela) {

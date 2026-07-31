@@ -116,13 +116,30 @@ export function gerarQr(
       contexto
     );
 
-  /*
-   * O QR precisa codificar a URL direta.
-   * Assim, a câmera do celular abre imediatamente
-   * o acesso do visitante ao escanear a placa.
-   */
   const valor =
-    url;
+    JSON.stringify({
+      versao: 1,
+
+      tipo:
+        "principal",
+
+      localId:
+        contexto.local.id,
+
+      localNome:
+        contexto.local.nome,
+
+      localSlug:
+        contexto.local.slug,
+
+      tipoLocal:
+        contexto.local.tipo,
+
+      url,
+
+      geradoEm:
+        agora,
+    });
 
   const qrPrincipal:
     QrLocalGerado = {

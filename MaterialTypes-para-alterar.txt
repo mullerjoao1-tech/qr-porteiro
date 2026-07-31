@@ -18,11 +18,6 @@ export type SegmentoMaterial =
   | "pet"
   | "restaurante";
 
-export type TemaMaterial =
-  | "clean"
-  | "institucional"
-  | "premium";
-
 export interface DadosMaterial {
   localId: string;
   slug: string;
@@ -31,8 +26,6 @@ export interface DadosMaterial {
   subtitulo?: string;
 
   segmento: SegmentoMaterial;
-
-  tema?: TemaMaterial;
 
   cidade?: string;
   estado?: string;
