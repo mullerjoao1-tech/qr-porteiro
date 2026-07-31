@@ -126,13 +126,106 @@ function obterBaseUrl(
   );
 }
 
+async function resolverLocal(
+  identificador: string
+): Promise<{
+  localId: string;
+  local: LocalBanco;
+} | null> {
+  const {
+    database,
+  } = obterFirebaseAdmin();
+
+  const snapshotDireto =
+    await database
+      .ref(
+        `locais-v2/${identificador}`
+      )
+      .get();
+
+  if (
+    snapshotDireto.exists()
+  ) {
+    return {
+      localId:
+        identificador,
+
+      local:
+        snapshotDireto.val() as
+          LocalBanco,
+    };
+  }
+
+  const snapshotLocais =
+    await database
+      .ref(
+        "locais-v2"
+      )
+      .get();
+
+  if (
+    !snapshotLocais.exists()
+  ) {
+    return null;
+  }
+
+  const locais =
+    snapshotLocais.val() as
+      Record<
+        string,
+        LocalBanco
+      >;
+
+  const encontrado =
+    Object.entries(
+      locais
+    ).find(
+      ([
+        chave,
+        local,
+      ]) =>
+        chave ===
+          identificador ||
+        local.id ===
+          identificador ||
+        local.slug ===
+          identificador
+    );
+
+  if (!encontrado) {
+    return null;
+  }
+
+  return {
+    localId:
+      encontrado[0],
+
+    local:
+      encontrado[1],
+  };
+}
+
 async function buscarQrPrincipal(
-  localId: string,
+  identificador: string,
   request: NextRequest
 ): Promise<QrPrincipalBanco | null> {
   const {
     database,
   } = obterFirebaseAdmin();
+
+  const resolvido =
+    await resolverLocal(
+      identificador
+    );
+
+  if (!resolvido) {
+    return null;
+  }
+
+  const {
+    localId,
+    local,
+  } = resolvido;
 
   const snapshotQr =
     await database
@@ -171,27 +264,10 @@ async function buscarQrPrincipal(
     }
   }
 
-  const snapshotLocal =
-    await database
-      .ref(
-        `locais-v2/${localId}`
-      )
-      .get();
-
-  if (
-    !snapshotLocal.exists()
-  ) {
-    return null;
-  }
-
-  const local =
-    snapshotLocal.val() as
-      LocalBanco;
-
   const slug =
     local.slug?.trim() ||
     local.id?.trim() ||
-    localId;
+    identificador;
 
   const nome =
     local.nome?.trim() ||
@@ -254,12 +330,12 @@ export async function GET(
       localId: localIdRecebido,
     } = await contexto.params;
 
-    const localId =
+    const identificador =
       decodeURIComponent(
         localIdRecebido
       ).trim();
 
-    if (!localId) {
+    if (!identificador) {
       return NextResponse.json(
         {
           sucesso: false,
@@ -275,7 +351,7 @@ export async function GET(
 
     const qr =
       await buscarQrPrincipal(
-        localId,
+        identificador,
         request
       );
 
@@ -365,7 +441,7 @@ export async function GET(
       normalizarNomeArquivo(
         qr.localSlug ||
           qr.localNome ||
-          localId
+          identificador
       );
 
     const nomeArquivo =
@@ -374,7 +450,7 @@ export async function GET(
     const cabecalhosBase:
       Record<string, string> = {
       "Cache-Control":
-        "public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800",
+        "no-store",
 
       "Content-Disposition":
         `${
@@ -384,7 +460,8 @@ export async function GET(
         }; filename="${nomeArquivo}"`,
 
       "X-QR-Local-Id":
-        localId,
+        qr.localId ||
+        identificador,
 
       "X-QR-Destino":
         urlDestino,
