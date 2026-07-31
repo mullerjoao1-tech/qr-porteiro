@@ -743,19 +743,20 @@ async function excluirLocaisDefinitivamente() {
   >
     🔗 Copiar link
   </button>
+  
   <button
-  type="button"
-  onClick={() =>
-    window.open(
-  `/dashboard/implantacao?local=${local.slug}`,
-      "_blank",
-      "noopener,noreferrer"
-    )
-  }
-  className="col-span-2 rounded-xl bg-fuchsia-600 px-3 py-2.5 text-sm font-black text-white transition-all hover:bg-fuchsia-500 active:scale-95"
->
-  🖨️ Imprimir placa A4
-</button>
+    type="button"
+    onClick={() =>
+      window.open(
+        `/api/materiais/qrcode/${encodeURIComponent(local.slug)}`,
+        "_blank",
+        "noopener,noreferrer"
+      )
+    }
+    className="col-span-2 rounded-xl bg-fuchsia-600 px-3 py-2.5 text-sm font-black text-white transition-all hover:bg-fuchsia-500 active:scale-95"
+  >
+    🖨️ Visualizar / imprimir placa A4
+  </button>
 </div>
                 </article>
               );

@@ -452,8 +452,8 @@ export async function GET(
           "Content-Type":
             resultado.mimeType,
 
-          "Content-Disposition":
-            `attachment; filename="${resultado.nomeArquivo}"`,
+         "Content-Disposition":
+  `inline; filename="${resultado.nomeArquivo}"`,
 
           "Content-Length":
             String(
