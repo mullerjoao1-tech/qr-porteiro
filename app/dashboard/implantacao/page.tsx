@@ -721,9 +721,8 @@ export default function ImplantacaoPage() {
       return "";
     }
 
-    const identificador =
-      resultado.local.id ||
-      resultado.local.slug;
+   const identificador =
+  resultado.local.slug;
 
     if (!identificador) {
       return "";
@@ -751,8 +750,7 @@ export default function ImplantacaoPage() {
     }
 
     const identificador =
-      resultado.local.id ||
-      resultado.local.slug;
+  resultado.local.slug;
 
     const linkAcesso =
       obterLinkAcesso();
@@ -1130,7 +1128,7 @@ export default function ImplantacaoPage() {
 
                 <div className="mt-5 flex justify-center">
                   <img
-                    src={`/api/qrcode/${resultado.local?.id || resultado.local?.slug}`}
+                    src={`/api/qrcode/${resultado.local?.slug}`}
                     alt={`QR Code principal de ${resultado.local?.nome || "local"}`}
                     className="w-72 rounded-2xl border border-slate-700 bg-white p-4 shadow-xl"
                   />
@@ -1145,7 +1143,7 @@ export default function ImplantacaoPage() {
 
                 <div className="mt-6 grid gap-3 sm:grid-cols-2">
                   <a
-                    href={`/api/qrcode/${resultado.local?.id || resultado.local?.slug}`}
+                   href={`/api/qrcode/${resultado.local?.slug}`}
                     target="_blank"
                     rel="noreferrer"
                     className="rounded-xl bg-cyan-600 px-5 py-3 text-center font-black text-white transition hover:bg-cyan-500 active:scale-[0.98]"
@@ -1154,14 +1152,14 @@ export default function ImplantacaoPage() {
                   </a>
 
                   <a
-                    href={`/api/qrcode/${resultado.local?.id || resultado.local?.slug}?download=1`}
+                    href={`/api/qrcode/${resultado.local?.slug}?download=1`}
                     className="rounded-xl bg-green-600 px-5 py-3 text-center font-black text-white transition hover:bg-green-500 active:scale-[0.98]"
                   >
                     ⬇ Baixar PNG
                   </a>
 
                   <a
-                    href={`/api/qrcode/${resultado.local?.id || resultado.local?.slug}?formato=svg&download=1`}
+                    href={`/api/qrcode/${resultado.local?.slug}?formato=svg&download=1`}
                     className="rounded-xl bg-indigo-600 px-5 py-3 text-center font-black text-white transition hover:bg-indigo-500 active:scale-[0.98]"
                   >
                     ⬇ Baixar SVG
