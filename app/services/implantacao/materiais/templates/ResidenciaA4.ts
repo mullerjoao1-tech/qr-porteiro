@@ -18,13 +18,83 @@ import {
   criarMaterialPdf,
 } from "../MaterialBuilder";
 
-const CAMINHO_PLACA_PADRAO =
-  join(
-    process.cwd(),
-    "public",
-    "materiais",
-    "placa-residencia-padrao.png"
+function obterBaseUrl(): string | null {
+  const configurada =
+    process.env.NEXT_PUBLIC_APP_URL ||
+    process.env.VERCEL_URL;
+
+  if (!configurada) {
+    return null;
+  }
+
+  if (
+    configurada.startsWith(
+      "http://"
+    ) ||
+    configurada.startsWith(
+      "https://"
+    )
+  ) {
+    return configurada.replace(
+      /\/+$/g,
+      ""
+    );
+  }
+
+  return `https://${configurada}`.replace(
+    /\/+$/g,
+    ""
   );
+}
+
+async function carregarPlacaPadrao(): Promise<Uint8Array> {
+  const baseUrl =
+    obterBaseUrl();
+
+  /*
+   * Em produção na Vercel, arquivos de /public podem não estar
+   * disponíveis diretamente pelo sistema de arquivos da função.
+   * Por isso, primeiro tenta buscar pela URL pública.
+   */
+  if (baseUrl) {
+    const resposta =
+      await fetch(
+        `${baseUrl}/materiais/placa-residencia-padrao.png`,
+        {
+          cache:
+            "no-store",
+        }
+      );
+
+    if (
+      resposta.ok
+    ) {
+      return new Uint8Array(
+        await resposta.arrayBuffer()
+      );
+    }
+  }
+
+  /*
+   * Fallback local para npm run dev e build local.
+   */
+  const caminhoLocal =
+    join(
+      process.cwd(),
+      "public",
+      "materiais",
+      "placa-residencia-padrao.png"
+    );
+
+  const bytes =
+    await readFile(
+      caminhoLocal
+    );
+
+  return new Uint8Array(
+    bytes
+  );
+}
 
 const template:
   TemplateMaterial = {
@@ -48,27 +118,17 @@ const template:
             configuracao,
             pdf,
             qrPng,
+            cores,
           } = contexto;
 
-          /*
-           * Carrega a arte padrão aprovada da residência.
-           * O arquivo deve existir em:
-           * public/materiais/placa-residencia-padrao.png
-           */
           const bytesPlaca =
-            await readFile(
-              CAMINHO_PLACA_PADRAO
-            );
+            await carregarPlacaPadrao();
 
           const imagemPlaca =
             await pdf.embedPng(
               bytesPlaca
             );
 
-          /*
-           * Mantém a proporção original da placa e centraliza
-           * dentro da página A4.
-           */
           const larguraPagina =
             configuracao.largura;
 
@@ -117,9 +177,9 @@ const template:
           );
 
           /*
-           * Posição do espaço do QR dentro da arte padrão.
-           * Os valores são proporcionais ao recorte da placa,
-           * para continuar correto mesmo com redimensionamento.
+           * Área do QR dentro da arte padrão.
+           * Primeiro cobre o QR demonstrativo e depois coloca
+           * o QR real do local.
            */
           const xQr =
             xPlaca +
@@ -139,25 +199,21 @@ const template:
             alturaPlaca *
             0.342;
 
-          /*
-           * Apaga somente o QR de demonstração da arte,
-           * preservando a moldura azul já aprovada.
-           */
           pagina.drawRectangle({
             x:
-              xQr - 3,
+              xQr - 4,
 
             y:
-              yQr - 3,
+              yQr - 4,
 
             width:
-              larguraQr + 6,
+              larguraQr + 8,
 
             height:
-              alturaQr + 6,
+              alturaQr + 8,
 
             color:
-              contexto.cores.branco,
+              cores.branco,
           });
 
           const imagemQr =
