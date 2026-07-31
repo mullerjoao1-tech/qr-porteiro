@@ -106,6 +106,8 @@ export default function LocaisUniversais() {
     useState<LocalUniversal | null>(null);
 const [selecionados, setSelecionados] = useState<string[]>([]);
 const [modoSelecao, setModoSelecao] = useState(false);
+const [modalExclusaoAberto, setModalExclusaoAberto] =
+  useState(false);
   useEffect(() => {
     const locaisRef = ref(db, "locais-v2");
 
@@ -166,7 +168,13 @@ const [modoSelecao, setModoSelecao] = useState(false);
       return passaBusca && passaTipo;
     });
   }, [locais, busca, filtroTipo]);
-
+const locaisSelecionados = useMemo(
+  () =>
+    locais.filter((local) =>
+      selecionados.includes(local.id)
+    ),
+  [locais, selecionados]
+);
   const totalAtivos = locais.filter(
     (local) => local.ativo !== false && local.status !== "inativo"
   ).length;
@@ -228,7 +236,19 @@ function selecionarTodos() {
     return;
   }
 
-  setSelecionados(locaisFiltrados.map((l) => l.id));
+  setSelecionados(locaisFiltrados.map((local) => local.id));
+}
+
+function abrirModalExclusao() {
+  if (selecionados.length === 0) {
+    return;
+  }
+
+  setModalExclusaoAberto(true);
+}
+
+function fecharModalExclusao() {
+  setModalExclusaoAberto(false);
 }
   return (
     <div className="space-y-5">
@@ -364,6 +384,7 @@ function selecionarTodos() {
 </button>
     <button
       type="button"
+      onClick={abrirModalExclusao}
       disabled={selecionados.length === 0}
       className="rounded-xl bg-red-600 px-4 py-2.5 font-black text-white transition hover:bg-red-500 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
     >
@@ -501,7 +522,104 @@ function selecionarTodos() {
         )}
       </section>
 
+{modalExclusaoAberto && (
+  <div className="fixed inset-0 z-[180] flex items-center justify-center bg-black/80 p-3 md:p-6">
+    <div className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-3xl border border-red-800 bg-slate-900 p-5 shadow-2xl md:p-7">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <p className="text-sm font-black text-red-400">
+            ⚠️ AÇÃO IRREVERSÍVEL
+          </p>
 
+          <h3 className="mt-2 text-2xl font-black text-white">
+            Excluir locais
+          </h3>
+
+          <p className="mt-2 text-sm leading-relaxed text-slate-400">
+            Você está prestes a excluir{" "}
+            <strong className="text-white">
+              {locaisSelecionados.length} local
+              {locaisSelecionados.length === 1 ? "" : "is"}
+            </strong>
+            .
+          </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={fecharModalExclusao}
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-800 text-xl font-black text-white transition hover:bg-slate-700 active:scale-95"
+        >
+          ✕
+        </button>
+      </div>
+
+      <div className="mt-5 max-h-60 space-y-2 overflow-y-auto rounded-2xl border border-slate-700 bg-slate-950 p-3">
+        {locaisSelecionados.map((local) => (
+          <div
+            key={local.id}
+            className="flex items-center gap-3 rounded-xl border border-slate-800 bg-slate-900 p-3"
+          >
+            <span className="text-2xl">
+              {iconeTipo(local.tipoLocal)}
+            </span>
+
+            <div className="min-w-0">
+              <p className="truncate font-black text-white">
+                {local.nome}
+              </p>
+
+              <p className="truncate text-xs text-slate-500">
+                {nomeTipo(local.tipoLocal)} • {local.slug}
+              </p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-5 rounded-2xl border border-red-900 bg-red-950/30 p-4">
+        <p className="font-black text-red-300">
+          Esta ação também removerá:
+        </p>
+
+        <div className="mt-3 grid gap-2 text-sm text-slate-300 sm:grid-cols-2">
+          <p>✓ Cadastro do local</p>
+          <p>✓ Unidade principal</p>
+          <p>✓ Responsáveis e vínculos</p>
+          <p>✓ Configurações do local</p>
+          <p>✓ Configurações de chamadas</p>
+          <p>✓ Estrutura de implantação</p>
+        </div>
+
+        <p className="mt-4 text-sm font-bold text-red-300">
+          Depois de confirmada, a exclusão não poderá ser desfeita.
+        </p>
+      </div>
+
+      <div className="mt-6 grid gap-3 sm:grid-cols-2">
+        <button
+          type="button"
+          onClick={fecharModalExclusao}
+          className="rounded-xl bg-slate-700 px-5 py-3 font-black text-white transition hover:bg-slate-600 active:scale-95"
+        >
+          Cancelar
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            alert(
+              "O modal está funcionando. A exclusão real será conectada ao Firebase no próximo passo."
+            );
+          }}
+          className="rounded-xl bg-red-600 px-5 py-3 font-black text-white transition hover:bg-red-500 active:scale-95"
+        >
+          🗑 Excluir definitivamente
+        </button>
+      </div>
+    </div>
+  </div>
+)}
       {localSelecionado && (
         <div className="fixed inset-0 z-[150] flex items-center justify-center bg-black/75 p-3 md:p-6">
           <div className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-3xl border border-slate-700 bg-slate-900 p-5 shadow-2xl md:p-6">
