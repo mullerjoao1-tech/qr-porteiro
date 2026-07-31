@@ -307,7 +307,7 @@ function selecionarTodos() {
         </p>
       </section>
 
-      {modoSelecao && (
+      
 <section className="rounded-2xl border border-slate-800 bg-slate-900 p-4 md:p-5">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
   <div>
@@ -330,6 +330,7 @@ function selecionarTodos() {
     </button>
   )}
 </div>
+{modoSelecao && (
 <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-700 bg-slate-800 p-4">
   <label className="flex cursor-pointer items-center gap-3">
     <input
@@ -370,6 +371,7 @@ function selecionarTodos() {
     </button>
   </div>
 </div>
+)}
         {carregando ? (
           <div className="mt-5 rounded-2xl border border-slate-700 bg-slate-800 p-8 text-center">
             <p className="font-black text-slate-300">Carregando locais...</p>
@@ -498,7 +500,7 @@ function selecionarTodos() {
           </div>
         )}
       </section>
-)}
+
 
       {localSelecionado && (
         <div className="fixed inset-0 z-[150] flex items-center justify-center bg-black/75 p-3 md:p-6">
