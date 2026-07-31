@@ -721,8 +721,9 @@ export default function ImplantacaoPage() {
       return "";
     }
 
-   const identificador =
-  resultado.local.slug;
+    const identificador =
+      resultado.local.id ||
+      resultado.local.slug;
 
     if (!identificador) {
       return "";
@@ -744,20 +745,23 @@ export default function ImplantacaoPage() {
     if (
       typeof window ===
         "undefined" ||
-      !resultado?.local
+      !resultado?.local?.slug
     ) {
+      setErro(
+        "Não foi possível identificar o local para gerar a placa."
+      );
       return;
     }
 
     const identificador =
-  resultado.local.slug;
+      resultado.local.slug;
 
     const linkAcesso =
       obterLinkAcesso();
 
     const qrUrl =
       `${window.location.origin}` +
-      `/api/qrcode/${identificador}`;
+      `/api/qrcode/${encodeURIComponent(identificador)}`;
 
     const nomeLocal =
       resultado.local.nome ||
@@ -766,19 +770,6 @@ export default function ImplantacaoPage() {
     const tipoLocal =
       resultado.local.tipo ||
       "local";
-
-    const janela =
-      window.open(
-        "",
-        "_blank"
-      );
-
-    if (!janela) {
-      setErro(
-        "O navegador bloqueou a abertura da placa. Permita pop-ups e tente novamente."
-      );
-      return;
-    }
 
     const documento = `
       <!doctype html>
@@ -790,9 +781,15 @@ export default function ImplantacaoPage() {
             content="width=device-width, initial-scale=1"
           />
           <title>Placa QR Acesso - ${nomeLocal}</title>
+
           <style>
             * {
               box-sizing: border-box;
+            }
+
+            html,
+            body {
+              min-height: 100%;
             }
 
             body {
@@ -986,11 +983,53 @@ export default function ImplantacaoPage() {
       </html>
     `;
 
-    janela.document.open();
-    janela.document.write(
-      documento
+    /*
+     * Usa Blob em vez de document.write.
+     * Isso evita a aba branca causada pelas políticas do navegador
+     * ao tentar escrever diretamente em uma nova aba.
+     */
+    const blob =
+      new Blob(
+        [documento],
+        {
+          type:
+            "text/html;charset=utf-8",
+        }
+      );
+
+    const urlTemporaria =
+      URL.createObjectURL(
+        blob
+      );
+
+    const janela =
+      window.open(
+        urlTemporaria,
+        "_blank"
+      );
+
+    if (!janela) {
+      URL.revokeObjectURL(
+        urlTemporaria
+      );
+
+      setErro(
+        "O navegador bloqueou a abertura da placa. Permita pop-ups e tente novamente."
+      );
+
+      return;
+    }
+
+    janela.focus();
+
+    window.setTimeout(
+      () => {
+        URL.revokeObjectURL(
+          urlTemporaria
+        );
+      },
+      60000
     );
-    janela.document.close();
   }
 
   return (
@@ -1143,7 +1182,7 @@ export default function ImplantacaoPage() {
 
                 <div className="mt-6 grid gap-3 sm:grid-cols-2">
                   <a
-                   href={`/api/qrcode/${resultado.local?.slug}`}
+                    href={`/api/qrcode/${resultado.local?.slug}`}
                     target="_blank"
                     rel="noreferrer"
                     className="rounded-xl bg-cyan-600 px-5 py-3 text-center font-black text-white transition hover:bg-cyan-500 active:scale-[0.98]"
