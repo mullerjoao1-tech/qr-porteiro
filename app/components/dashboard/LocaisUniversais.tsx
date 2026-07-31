@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { onValue, ref } from "firebase/database";
+import { get, onValue, ref, update } from "firebase/database";
 import { db } from "../../services/firebase";
 
 type TipoLocalUniversal =
@@ -108,6 +108,7 @@ const [selecionados, setSelecionados] = useState<string[]>([]);
 const [modoSelecao, setModoSelecao] = useState(false);
 const [modalExclusaoAberto, setModalExclusaoAberto] =
   useState(false);
+const [excluindo, setExcluindo] = useState(false);
   useEffect(() => {
     const locaisRef = ref(db, "locais-v2");
 
@@ -248,7 +249,235 @@ function abrirModalExclusao() {
 }
 
 function fecharModalExclusao() {
+  if (excluindo) {
+    return;
+  }
+
   setModalExclusaoAberto(false);
+}
+
+async function excluirLocaisDefinitivamente() {
+  if (
+    excluindo ||
+    locaisSelecionados.length === 0
+  ) {
+    return;
+  }
+
+  try {
+    setExcluindo(true);
+
+    const atualizacoes: Record<
+      string,
+      null
+    > = {};
+
+    /*
+     * Carrega as unidades uma única vez para identificar
+     * todas as unidades pertencentes aos locais selecionados.
+     */
+    const unidadesSnapshot =
+      await get(
+        ref(db, "unidades-v2")
+      );
+
+    const unidades =
+      unidadesSnapshot.val() as
+        | Record<
+            string,
+            {
+              localId?: string;
+              condominioId?: string;
+            }
+          >
+        | null;
+
+    for (
+      const local of
+      locaisSelecionados
+    ) {
+      const localId =
+        local.id;
+
+      /*
+       * Estruturas principais do Cadastro Universal.
+       * Caminhos inexistentes são ignorados pelo Firebase.
+       */
+      atualizacoes[
+        `locais-v2/${localId}`
+      ] = null;
+
+      atualizacoes[
+        `residencias-v2/${localId}`
+      ] = null;
+
+      atualizacoes[
+        `configuracoes-locais-v2/${localId}`
+      ] = null;
+
+      atualizacoes[
+        `configuracoes-chamadas-v2/${localId}`
+      ] = null;
+
+      atualizacoes[
+        `vinculos-locais-v2/${localId}`
+      ] = null;
+
+      atualizacoes[
+        `implantacoes-v2/${localId}`
+      ] = null;
+
+      atualizacoes[
+        `historico-implantacoes-v2/${localId}`
+      ] = null;
+
+      atualizacoes[
+        `qr-codes-v2/${localId}`
+      ] = null;
+
+      /*
+       * Compatibilidade com a unidade principal criada
+       * automaticamente para residências.
+       */
+      atualizacoes[
+        `unidades-v2/${localId}-principal`
+      ] = null;
+
+      /*
+       * Remove todas as unidades vinculadas ao local,
+       * inclusive condomínios com várias unidades.
+       */
+      if (unidades) {
+        Object.entries(
+          unidades
+        ).forEach(
+          ([
+            unidadeId,
+            unidade,
+          ]) => {
+            if (
+              unidade.localId ===
+                localId ||
+              unidade.condominioId ===
+                localId
+            ) {
+              atualizacoes[
+                `unidades-v2/${unidadeId}`
+              ] = null;
+            }
+          }
+        );
+      }
+
+      /*
+       * Remove os vínculos do local dentro dos usuários.
+       * Não exclui a conta do Firebase Authentication nem
+       * o cadastro-base do usuário, pois ele pode possuir
+       * vínculos com outros locais do ecossistema.
+       */
+      const uidsResponsaveis =
+        new Set<string>();
+
+      Object.values(
+        local.responsaveis ||
+          {}
+      ).forEach(
+        (responsavel) => {
+          if (
+            responsavel.uid
+          ) {
+            uidsResponsaveis.add(
+              responsavel.uid
+            );
+          }
+        }
+      );
+
+      const vinculosSnapshot =
+        await get(
+          ref(
+            db,
+            `vinculos-locais-v2/${localId}`
+          )
+        );
+
+      const vinculos =
+        vinculosSnapshot.val() as
+          | Record<
+              string,
+              {
+                uid?: string;
+              }
+            >
+          | null;
+
+      if (vinculos) {
+        Object.entries(
+          vinculos
+        ).forEach(
+          ([
+            chaveUid,
+            vinculo,
+          ]) => {
+            const uid =
+              vinculo.uid ||
+              chaveUid;
+
+            if (uid) {
+              uidsResponsaveis.add(
+                uid
+              );
+            }
+          }
+        );
+      }
+
+      uidsResponsaveis.forEach(
+        (uid) => {
+          atualizacoes[
+            `usuarios-v2/${uid}/vinculos/${localId}`
+          ] = null;
+        }
+      );
+    }
+
+    await update(
+      ref(db),
+      atualizacoes
+    );
+
+    const quantidade =
+      locaisSelecionados.length;
+
+    setModalExclusaoAberto(
+      false
+    );
+    setModoSelecao(false);
+    setSelecionados([]);
+
+    alert(
+      `${quantidade} local${
+        quantidade === 1
+          ? ""
+          : "is"
+      } excluído${
+        quantidade === 1
+          ? ""
+          : "s"
+      } com sucesso.`
+    );
+  } catch (erroExclusao) {
+    console.error(
+      "Erro ao excluir locais:",
+      erroExclusao
+    );
+
+    alert(
+      "Não foi possível concluir a exclusão. Nenhuma nova tentativa será feita automaticamente."
+    );
+  } finally {
+    setExcluindo(false);
+  }
 }
   return (
     <div className="space-y-5">
@@ -548,7 +777,8 @@ function fecharModalExclusao() {
         <button
           type="button"
           onClick={fecharModalExclusao}
-          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-800 text-xl font-black text-white transition hover:bg-slate-700 active:scale-95"
+          disabled={excluindo}
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-800 text-xl font-black text-white transition hover:bg-slate-700 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
         >
           ✕
         </button>
@@ -592,7 +822,7 @@ function fecharModalExclusao() {
         </div>
 
         <p className="mt-4 text-sm font-bold text-red-300">
-          Depois de confirmada, a exclusão não poderá ser desfeita.
+          A conta de autenticação do responsável não será apagada. Depois de confirmada, a exclusão dos vínculos e dados do local não poderá ser desfeita.
         </p>
       </div>
 
@@ -600,21 +830,27 @@ function fecharModalExclusao() {
         <button
           type="button"
           onClick={fecharModalExclusao}
-          className="rounded-xl bg-slate-700 px-5 py-3 font-black text-white transition hover:bg-slate-600 active:scale-95"
+          disabled={excluindo}
+          className="rounded-xl bg-slate-700 px-5 py-3 font-black text-white transition hover:bg-slate-600 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
         >
           Cancelar
         </button>
 
         <button
           type="button"
-          onClick={() => {
-            alert(
-              "O modal está funcionando. A exclusão real será conectada ao Firebase no próximo passo."
-            );
-          }}
-          className="rounded-xl bg-red-600 px-5 py-3 font-black text-white transition hover:bg-red-500 active:scale-95"
+          onClick={
+            excluirLocaisDefinitivamente
+          }
+          disabled={
+            excluindo ||
+            locaisSelecionados.length ===
+              0
+          }
+          className="rounded-xl bg-red-600 px-5 py-3 font-black text-white transition hover:bg-red-500 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          🗑 Excluir definitivamente
+          {excluindo
+            ? "Excluindo..."
+            : "🗑 Excluir definitivamente"}
         </button>
       </div>
     </div>
