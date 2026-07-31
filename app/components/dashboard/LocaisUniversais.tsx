@@ -198,11 +198,17 @@ function abrirAcesso(local: LocalUniversal) {
 
 function abrirPainel(local: LocalUniversal) {
   if (local.tipoLocal === "residencia") {
+    const unidadePrincipal =
+      local.slug === "residencial-costa"
+        ? "residencial-costa-casa-principal"
+        : `${local.slug}-principal`;
+
     window.open(
-      `/morador-v2/${local.slug}-principal`,
+      `/morador-v2/${unidadePrincipal}`,
       "_blank",
       "noopener,noreferrer"
     );
+
     return;
   }
 
