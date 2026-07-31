@@ -51,15 +51,10 @@ async function carregarPlacaPadrao(): Promise<Uint8Array> {
   const baseUrl =
     obterBaseUrl();
 
-  /*
-   * Em produção na Vercel, arquivos de /public podem não estar
-   * disponíveis diretamente pelo sistema de arquivos da função.
-   * Por isso, primeiro tenta buscar pela URL pública.
-   */
   if (baseUrl) {
     const resposta =
       await fetch(
-        `${baseUrl}/materiais/placa-residencia-padrao.png`,
+        `${baseUrl}/materiais/placa-residencia-padrao.jpg`,
         {
           cache:
             "no-store",
@@ -75,15 +70,12 @@ async function carregarPlacaPadrao(): Promise<Uint8Array> {
     }
   }
 
-  /*
-   * Fallback local para npm run dev e build local.
-   */
   const caminhoLocal =
     join(
       process.cwd(),
       "public",
       "materiais",
-      "placa-residencia-padrao.png"
+      "placa-residencia-padrao.jpg"
     );
 
   const bytes =
@@ -125,7 +117,7 @@ const template:
             await carregarPlacaPadrao();
 
           const imagemPlaca =
-            await pdf.embedPng(
+            await pdf.embedJpg(
               bytesPlaca
             );
 
@@ -176,11 +168,6 @@ const template:
             }
           );
 
-          /*
-           * Área do QR dentro da arte padrão.
-           * Primeiro cobre o QR demonstrativo e depois coloca
-           * o QR real do local.
-           */
           const xQr =
             xPlaca +
             larguraPlaca *
@@ -193,11 +180,11 @@ const template:
 
           const larguraQr =
             larguraPlaca *
-            0.55;
+              0.55;
 
           const alturaQr =
             alturaPlaca *
-            0.342;
+              0.342;
 
           pagina.drawRectangle({
             x:
