@@ -1,23 +1,30 @@
 import "server-only";
 
+import {
+  readFile,
+} from "node:fs/promises";
+
+import {
+  join,
+} from "node:path";
+
 import type {
   DadosMaterial,
   ResultadoMaterial,
   TemplateMaterial,
-  TemaMaterial,
 } from "../MaterialTypes";
 
 import {
-  centralizarTexto,
   criarMaterialPdf,
-  limitarTexto,
 } from "../MaterialBuilder";
 
-function obterTema(
-  dados: DadosMaterial
-): TemaMaterial {
-  return dados.tema || "clean";
-}
+const CAMINHO_PLACA_PADRAO =
+  join(
+    process.cwd(),
+    "public",
+    "materiais",
+    "placa-residencia-padrao.png"
+  );
 
 const template:
   TemplateMaterial = {
@@ -31,465 +38,147 @@ const template:
           "a4-retrato",
 
         nomeArquivo:
-          `placa-${dados.segmento}-${dados.slug}`,
+          `placa-residencia-${dados.slug}`,
 
         async desenhar(
-          contexto,
-          dadosMaterial
+          contexto
         ) {
           const {
             pagina,
             configuracao,
-            fontes,
-            cores,
             pdf,
             qrPng,
           } = contexto;
 
+          /*
+           * Carrega a arte padrão aprovada da residência.
+           * O arquivo deve existir em:
+           * public/materiais/placa-residencia-padrao.png
+           */
+          const bytesPlaca =
+            await readFile(
+              CAMINHO_PLACA_PADRAO
+            );
+
+          const imagemPlaca =
+            await pdf.embedPng(
+              bytesPlaca
+            );
+
+          /*
+           * Mantém a proporção original da placa e centraliza
+           * dentro da página A4.
+           */
           const larguraPagina =
             configuracao.largura;
 
           const alturaPagina =
             configuracao.altura;
 
-          const tema =
-            obterTema(
-              dadosMaterial
-            );
+          const proporcaoPlaca =
+            imagemPlaca.width /
+            imagemPlaca.height;
 
-          const institucional =
-            tema ===
-            "institucional";
+          const alturaPlaca =
+            alturaPagina -
+            10;
 
-          const premium =
-            tema ===
-            "premium";
+          const larguraPlaca =
+            alturaPlaca *
+            proporcaoPlaca;
 
-          /*
-           * Fundo principal.
-           * As cores já são recebidas da identidade visual
-           * escolhida durante a implantação.
-           */
-          pagina.drawRectangle({
-            x: 0,
-            y: 0,
-            width:
-              larguraPagina,
-            height:
-              alturaPagina,
-            color:
-              premium
-                ? cores.primaria
-                : cores.fundo,
-          });
+          const xPlaca =
+            (
+              larguraPagina -
+              larguraPlaca
+            ) / 2;
 
-          /*
-           * Moldura do tema premium.
-           */
-          if (premium) {
-            pagina.drawRectangle({
-              x: 18,
-              y: 18,
+          const yPlaca =
+            (
+              alturaPagina -
+              alturaPlaca
+            ) / 2;
+
+          pagina.drawImage(
+            imagemPlaca,
+            {
+              x:
+                xPlaca,
+
+              y:
+                yPlaca,
+
               width:
-                larguraPagina -
-                36,
+                larguraPlaca,
+
               height:
-                alturaPagina -
-                36,
-              borderColor:
-                cores.secundaria,
-              borderWidth: 2,
-            });
-          }
+                alturaPlaca,
+            }
+          );
 
           /*
-           * Faixa superior.
+           * Posição do espaço do QR dentro da arte padrão.
+           * Os valores são proporcionais ao recorte da placa,
+           * para continuar correto mesmo com redimensionamento.
+           */
+          const xQr =
+            xPlaca +
+            larguraPlaca *
+              0.225;
+
+          const yQr =
+            yPlaca +
+            alturaPlaca *
+              0.292;
+
+          const larguraQr =
+            larguraPlaca *
+            0.55;
+
+          const alturaQr =
+            alturaPlaca *
+            0.342;
+
+          /*
+           * Apaga somente o QR de demonstração da arte,
+           * preservando a moldura azul já aprovada.
            */
           pagina.drawRectangle({
             x:
-              premium
-                ? 28
-                : 0,
+              xQr - 3,
+
             y:
-              premium
-                ? alturaPagina -
-                  188
-                : alturaPagina -
-                  180,
+              yQr - 3,
+
             width:
-              premium
-                ? larguraPagina -
-                  56
-                : larguraPagina,
+              larguraQr + 6,
+
             height:
-              premium
-                ? 150
-                : 180,
+              alturaQr + 6,
+
             color:
-              premium
-                ? cores.secundaria
-                : cores.primaria,
+              contexto.cores.branco,
           });
 
-          const marca =
-            "QR ACESSO";
-
-          pagina.drawText(
-            marca,
-            {
-              x:
-                centralizarTexto(
-                  larguraPagina,
-                  fontes.negrito
-                    .widthOfTextAtSize(
-                      marca,
-                      17
-                    )
-                ),
-              y:
-                premium
-                  ? 786
-                  : 790,
-              size: 17,
-              font:
-                fontes.negrito,
-              color:
-                premium
-                  ? cores.primaria
-                  : cores.secundaria,
-            }
-          );
-
-          const titulo =
-            institucional
-              ? "ACESSO RÁPIDO E SEGURO"
-              : premium
-                ? "ACESSO EXCLUSIVO"
-                : "ACESSO DE VISITANTES";
-
-          pagina.drawText(
-            titulo,
-            {
-              x:
-                centralizarTexto(
-                  larguraPagina,
-                  fontes.negrito
-                    .widthOfTextAtSize(
-                      titulo,
-                      18
-                    )
-                ),
-              y:
-                745,
-              size: 18,
-              font:
-                fontes.negrito,
-              color:
-                premium
-                  ? cores.secundaria
-                  : cores.primaria,
-            }
-          );
-
-          const nomeLocal =
-            limitarTexto(
-              dadosMaterial.nome
-                .toUpperCase(),
-              32
-            );
-
-          const tamanhoNome =
-            nomeLocal.length >
-            24
-              ? 27
-              : 36;
-
-          pagina.drawText(
-            nomeLocal,
-            {
-              x:
-                centralizarTexto(
-                  larguraPagina,
-                  fontes.negrito
-                    .widthOfTextAtSize(
-                      nomeLocal,
-                      tamanhoNome
-                    )
-                ),
-              y:
-                685,
-              size:
-                tamanhoNome,
-              font:
-                fontes.negrito,
-              color:
-                premium
-                  ? cores.secundaria
-                  : cores.primaria,
-            }
-          );
-
-          const subtituloPadrao =
-            institucional
-              ? "Escaneie o QR Code, selecione o destino e aguarde o atendimento."
-              : premium
-                ? "Escaneie o QR Code para iniciar seu atendimento."
-                : "Escaneie o QR Code para chamar a residência";
-
-          const subtitulo =
-            limitarTexto(
-              dadosMaterial.subtitulo?.trim() ||
-                subtituloPadrao,
-              78
-            );
-
-          pagina.drawText(
-            subtitulo,
-            {
-              x:
-                centralizarTexto(
-                  larguraPagina,
-                  fontes.normal
-                    .widthOfTextAtSize(
-                      subtitulo,
-                      14
-                    )
-                ),
-              y:
-                645,
-              size:
-                14,
-              font:
-                fontes.normal,
-              color:
-                premium
-                  ? cores.secundaria
-                  : cores.cinza,
-            }
-          );
-
-          /*
-           * No institucional, adiciona uma linha de apoio.
-           */
-          if (institucional) {
-            const apoio =
-              "Não é necessário instalar aplicativo.";
-
-            pagina.drawText(
-              apoio,
-              {
-                x:
-                  centralizarTexto(
-                    larguraPagina,
-                    fontes.negrito
-                      .widthOfTextAtSize(
-                        apoio,
-                        11
-                      )
-                  ),
-                y: 620,
-                size: 11,
-                font:
-                  fontes.negrito,
-                color:
-                  cores.primaria,
-              }
-            );
-          }
-
-          const qrImagem =
+          const imagemQr =
             await pdf.embedPng(
               qrPng
             );
 
-          const tamanhoQr =
-            premium
-              ? 330
-              : 350;
-
-          const xQr =
-            (
-              larguraPagina -
-              tamanhoQr
-            ) / 2;
-
-          const yMoldura =
-            premium
-              ? 270
-              : 250;
-
-          pagina.drawRectangle({
-            x:
-              xQr - 13,
-            y:
-              yMoldura,
-            width:
-              tamanhoQr + 26,
-            height:
-              tamanhoQr + 26,
-            borderColor:
-              premium
-                ? cores.secundaria
-                : cores.primaria,
-            borderWidth:
-              premium
-                ? 3
-                : 2,
-            color:
-              cores.branco,
-          });
-
           pagina.drawImage(
-            qrImagem,
+            imagemQr,
             {
               x:
                 xQr,
+
               y:
-                yMoldura +
-                13,
+                yQr,
+
               width:
-                tamanhoQr,
+                larguraQr,
+
               height:
-                tamanhoQr,
-            }
-          );
-
-          const instrucao =
-            institucional
-              ? "APONTE A CÂMERA E SIGA AS INSTRUÇÕES"
-              : "APONTE A CÂMERA PARA O QR CODE";
-
-          pagina.drawText(
-            instrucao,
-            {
-              x:
-                centralizarTexto(
-                  larguraPagina,
-                  fontes.negrito
-                    .widthOfTextAtSize(
-                      instrucao,
-                      16
-                    )
-                ),
-              y:
-                premium
-                  ? 230
-                  : 215,
-              size:
-                16,
-              font:
-                fontes.negrito,
-              color:
-                premium
-                  ? cores.secundaria
-                  : cores.primaria,
-            }
-          );
-
-          /*
-           * Faixa inferior.
-           */
-          if (!premium) {
-            pagina.drawRectangle({
-              x: 0,
-              y: 0,
-              width:
-                larguraPagina,
-              height:
-                180,
-              color:
-                cores.primaria,
-            });
-          }
-
-          const rodapePrincipal =
-            premium
-              ? "Tecnologia, segurança e praticidade"
-              : "Sua segurança e praticidade na palma da mão";
-
-          pagina.drawText(
-            rodapePrincipal,
-            {
-              x:
-                centralizarTexto(
-                  larguraPagina,
-                  fontes.negrito
-                    .widthOfTextAtSize(
-                      rodapePrincipal,
-                      15
-                    )
-                ),
-              y:
-                125,
-              size:
-                15,
-              font:
-                fontes.negrito,
-              color:
-                premium
-                  ? cores.secundaria
-                  : cores.branco,
-            }
-          );
-
-          pagina.drawText(
-            limitarTexto(
-              dadosMaterial.urlQr,
-              90
-            ),
-            {
-              x:
-                centralizarTexto(
-                  larguraPagina,
-                  fontes.normal
-                    .widthOfTextAtSize(
-                      limitarTexto(
-                        dadosMaterial.urlQr,
-                        90
-                      ),
-                      9
-                    )
-                ),
-              y:
-                92,
-              size:
-                9,
-              font:
-                fontes.normal,
-              color:
-                premium
-                  ? cores.secundaria
-                  : cores.branco,
-            }
-          );
-
-          const rodape =
-            institucional
-              ? "QR ACESSO • IDENTIFICAÇÃO • COMUNICAÇÃO • SEGURANÇA"
-              : "QR ACESSO • CONECTA • SEGURANÇA • FACILIDADE";
-
-          pagina.drawText(
-            rodape,
-            {
-              x:
-                centralizarTexto(
-                  larguraPagina,
-                  fontes.negrito
-                    .widthOfTextAtSize(
-                      rodape,
-                      10
-                    )
-                ),
-              y:
-                50,
-              size:
-                10,
-              font:
-                fontes.negrito,
-              color:
-                premium
-                  ? cores.secundaria
-                  : cores.branco,
+                alturaQr,
             }
           );
         },
