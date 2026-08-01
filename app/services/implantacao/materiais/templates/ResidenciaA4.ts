@@ -258,42 +258,40 @@ const template: TemplateMaterial = {
           borderWidth: 1,
         });
 
-        pagina.drawSvgPath(
-          `M ${xPlaca} ${yPlaca}
-           L ${xPlaca + larguraPlaca} ${yPlaca}
-           L ${xPlaca + larguraPlaca} ${yPlaca + 278}
-           C ${xPlaca + larguraPlaca * 0.84} ${yPlaca + 215},
-             ${xPlaca + larguraPlaca * 0.68} ${yPlaca + 208},
-             ${xPlaca + larguraPlaca * 0.53} ${yPlaca + 190}
-           C ${xPlaca + larguraPlaca * 0.35} ${yPlaca + 170},
-             ${xPlaca + larguraPlaca * 0.18} ${yPlaca + 196},
-             ${xPlaca} ${yPlaca + 235}
-           Z`,
-          {
-            color: azulEscuro,
-          }
-        );
+        /*
+         * Faixa inferior azul.
+         * Esta versão evita drawSvgPath, que estava causando
+         * erro em tempo de execução no pdf-lib.
+         */
+        pagina.drawRectangle({
+          x: xPlaca,
+          y: yPlaca,
+          width: larguraPlaca,
+          height: 252,
+          color: azulEscuro,
+        });
 
-        pagina.drawSvgPath(
-          `M ${xPlaca} ${yPlaca + 235}
-           C ${xPlaca + larguraPlaca * 0.18} ${yPlaca + 196},
-             ${xPlaca + larguraPlaca * 0.35} ${yPlaca + 170},
-             ${xPlaca + larguraPlaca * 0.53} ${yPlaca + 190}
-           C ${xPlaca + larguraPlaca * 0.68} ${yPlaca + 208},
-             ${xPlaca + larguraPlaca * 0.84} ${yPlaca + 215},
-             ${xPlaca + larguraPlaca} ${yPlaca + 278}
-           L ${xPlaca + larguraPlaca} ${yPlaca + 288}
-           C ${xPlaca + larguraPlaca * 0.82} ${yPlaca + 225},
-             ${xPlaca + larguraPlaca * 0.67} ${yPlaca + 219},
-             ${xPlaca + larguraPlaca * 0.52} ${yPlaca + 201}
-           C ${xPlaca + larguraPlaca * 0.34} ${yPlaca + 180},
-             ${xPlaca + larguraPlaca * 0.17} ${yPlaca + 208},
-             ${xPlaca} ${yPlaca + 246}
-           Z`,
-          {
-            color: rgb(0.02, 0.08, 0.18),
-          }
-        );
+        /*
+         * Faixa inclinada de transição para manter o visual
+         * moderno da placa sem depender de curvas SVG.
+         */
+        pagina.drawRectangle({
+          x: xPlaca,
+          y: yPlaca + 222,
+          width: larguraPlaca * 0.62,
+          height: 52,
+          color: rgb(0.02, 0.08, 0.18),
+          rotate: degrees(-6),
+        });
+
+        pagina.drawRectangle({
+          x: xPlaca + larguraPlaca * 0.52,
+          y: yPlaca + 214,
+          width: larguraPlaca * 0.5,
+          height: 72,
+          color: azulEscuro,
+          rotate: degrees(8),
+        });
 
         const {
           cabecalho,
