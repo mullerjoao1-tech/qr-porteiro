@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { getToken } from "firebase/messaging";
 import { ref, onValue, update, remove, push, set, get } from "firebase/database";
 import { db, messagingPromise } from "../../services/firebase";
-
+import { useLocalAtual } from "@/app/hooks/useLocalAtual";
 
 type MensagemConversa = {
   id?: string;
@@ -14,6 +14,52 @@ type MensagemConversa = {
   texto?: string;
   audioBase64?: string;
   criadoEm: number;
+};
+
+type ComunicadoMorador = {
+  id: string;
+  condominioId: string;
+  condominioNome: string;
+  tipo: "comunicado" | "assembleia" | "manutencao" | "emergencia";
+  destinatario?:
+    | "unidade"
+    | "bloco"
+    | "moradores"
+    | "proprietarios"
+    | "inquilinos"
+    | "conselho"
+    | "administradora"
+    | "zeladoria"
+    | "portaria";
+  unidadeId?: string;
+  blocoSelecionado?: string;
+  unidadesDestinatarias?: string[];
+  titulo: string;
+  mensagem: string;
+  detalhesModelo?: {
+    dataEvento?: string;
+    horarioEvento?: string;
+    localEvento?: string;
+    pauta?: string;
+    empresaResponsavel?: string;
+    impactoPrevisto?: string;
+    tipoEmergencia?: string;
+    orientacaoImediata?: string;
+  };
+  exigeCiencia?: boolean;
+  exigirCiencia?: boolean;
+  status: "enviado" | "agendado";
+  criadoEm: number;
+  criadoEmFormatado: string;
+  visualizacoes?: Record<
+    string,
+    {
+      unidadeId: string;
+      visualizadoEm?: number;
+      ciente?: boolean;
+      cienteEm?: number;
+    }
+  >;
 };
 
 function blobParaBase64(blob: Blob): Promise<string> {
@@ -33,8 +79,34 @@ function ordenarMensagens(mensagens?: Record<string, MensagemConversa>) {
     .sort((a, b) => (a.criadoEm || 0) - (b.criadoEm || 0));
 }
 
+function formatarDataComunicado(data?: string) {
+  if (!data) return "";
+
+  const [ano, mes, dia] = data.split("-");
+  if (!ano || !mes || !dia) return data;
+
+  return `${dia}/${mes}/${ano}`;
+}
+
+function iconeTipoComunicado(tipo: ComunicadoMorador["tipo"]) {
+  if (tipo === "assembleia") return "👥";
+  if (tipo === "manutencao") return "🛠️";
+  if (tipo === "emergencia") return "🚨";
+  return "📢";
+}
+
+function textoTipoComunicado(tipo: ComunicadoMorador["tipo"]) {
+  if (tipo === "assembleia") return "ASSEMBLEIA";
+  if (tipo === "manutencao") return "MANUTENÇÃO";
+  if (tipo === "emergencia") return "EMERGÊNCIA";
+  return "COMUNICADO";
+}
+
 export default function MoradorV2() {
   const params = useParams();
+  const searchParams = useSearchParams();
+  const comunicadoIdPeloLink = searchParams.get("comunicado") || "";
+
   const slug = String(
     params?.unidadeId ||
       params?.slug ||
@@ -69,17 +141,50 @@ export default function MoradorV2() {
   const [audioPopup, setAudioPopup] = useState<{ titulo: string; audio: string } | null>(null);
   const [installPrompt, setInstallPrompt] = useState<any>(null);
   const [appInstalavel, setAppInstalavel] = useState(false);
+  const [comunicados, setComunicados] = useState<ComunicadoMorador[]>([]);
+  const [comunicadoAberto, setComunicadoAberto] =
+    useState<ComunicadoMorador | null>(null);
+  const [salvandoCiencia, setSalvandoCiencia] = useState(false);
 
   const intervaloSomRef = useRef<NodeJS.Timeout | null>(null);
   const finalizacaoAutoRef = useRef<NodeJS.Timeout | null>(null);
   const ultimaCapturaCameraRef = useRef("");
   const ultimoAudioPopupRef = useRef("");
+  const toqueSilenciadoPorAudioRef = useRef(false);
+  const idChamadaAtualRef = useRef("");
   const audioContextRef = useRef<AudioContext | null>(null);
   const ultimaChamadaAtivaRef = useRef(false);
   const ultimaChamadaDadosRef = useRef<any>(null);
   const mediaRecorderMoradorRef = useRef<MediaRecorder | null>(null);
   const audioChunksMoradorRef = useRef<Blob[]>([]);
 
+  function identificarCondominioPeloSlug(unidadeSlug: string) {
+    const valor = unidadeSlug.toLowerCase();
+
+    if (valor.includes("residencial-costa")) {
+      return "residencial-costa";
+    }
+
+    if (valor.includes("tulipas")) return "cnd-tulipas";
+    if (valor.includes("flores")) return "cnd-flores";
+    if (valor.includes("alfa")) return "cnd-alfa";
+
+    return "cnd-tulipas";
+  }
+
+  const {
+  localId,
+  localNome,
+  ehResidencia,
+} = useLocalAtual(slug);
+
+const condominioId =
+  localId || identificarCondominioPeloSlug(slug);
+
+const nomeLocal =
+  localNome || "Morador V2";
+
+  const caminhoComunicados = `comunicados-v2/${condominioId}`;
   const caminhoFirebase = `unidades-v2/${slug}/chamada`;
   const caminhoHistorico = `historico-v2/${slug}`;
   const caminhoStatus = `status-v2/${slug}`;
@@ -139,6 +244,131 @@ export default function MoradorV2() {
       await update(referencia, dados);
     } catch (erro) {
       console.error("Erro analytics:", erro);
+    }
+  }
+
+  useEffect(() => {
+    const referenciaComunicados = ref(db, caminhoComunicados);
+
+    const pararDeOuvirComunicados = onValue(
+      referenciaComunicados,
+      (snapshot) => {
+        const dados = snapshot.val();
+
+        if (!dados) {
+          setComunicados([]);
+          return;
+        }
+
+        const agora = Date.now();
+
+        const lista = Object.entries(dados)
+          .map(([id, valor]) => ({
+            id,
+            ...(valor as Omit<ComunicadoMorador, "id">),
+          }))
+          .filter((comunicado) => {
+            const estaDisponivel =
+              comunicado.status === "enviado" ||
+              (comunicado.status === "agendado" &&
+                comunicado.criadoEm <= agora);
+
+            if (!estaDisponivel) return false;
+
+            // Compatibilidade com comunicados antigos, criados antes da
+            // separação por público: continuam aparecendo para os moradores.
+            if (!comunicado.destinatario) return true;
+
+            if (comunicado.destinatario === "moradores") return true;
+
+            if (comunicado.destinatario === "unidade") {
+              return (
+                comunicado.unidadeId === slug ||
+                comunicado.unidadesDestinatarias?.includes(slug) === true
+              );
+            }
+
+            if (comunicado.destinatario === "bloco") {
+              return comunicado.unidadesDestinatarias?.includes(slug) === true;
+            }
+
+            // Públicos próprios não devem aparecer no painel comum do morador.
+            return false;
+          })
+          .sort((a, b) => (b.criadoEm || 0) - (a.criadoEm || 0));
+
+        setComunicados(lista);
+      }
+    );
+
+    return () => pararDeOuvirComunicados();
+  }, [caminhoComunicados]);
+
+  useEffect(() => {
+    if (!comunicadoIdPeloLink || comunicados.length === 0) return;
+
+    const comunicadoDoLink = comunicados.find(
+      (item) => item.id === comunicadoIdPeloLink
+    );
+
+    if (!comunicadoDoLink) return;
+
+    abrirComunicado(comunicadoDoLink);
+  }, [comunicadoIdPeloLink, comunicados]);
+
+  async function abrirComunicado(comunicado: ComunicadoMorador) {
+    setComunicadoAberto(comunicado);
+
+    const visualizacaoAtual =
+      comunicado.visualizacoes?.[slug]?.visualizadoEm;
+
+    if (visualizacaoAtual) return;
+
+    try {
+      await update(
+        ref(
+          db,
+          `${caminhoComunicados}/${comunicado.id}/visualizacoes/${slug}`
+        ),
+        {
+          unidadeId: slug,
+          visualizadoEm: Date.now(),
+          ciente: comunicado.visualizacoes?.[slug]?.ciente === true,
+        }
+      );
+    } catch (erro) {
+      console.error("Erro ao registrar visualização:", erro);
+    }
+  }
+
+  async function confirmarCiencia() {
+    if (!comunicadoAberto || salvandoCiencia) return;
+
+    try {
+      setSalvandoCiencia(true);
+
+      await update(
+        ref(
+          db,
+          `${caminhoComunicados}/${comunicadoAberto.id}/visualizacoes/${slug}`
+        ),
+        {
+          unidadeId: slug,
+          visualizadoEm:
+            comunicadoAberto.visualizacoes?.[slug]?.visualizadoEm ||
+            Date.now(),
+          ciente: true,
+          cienteEm: Date.now(),
+        }
+      );
+
+      setComunicadoAberto(null);
+      alert("Sua ciência foi registrada com sucesso.");
+    } catch (erro) {
+      console.error("Erro ao registrar ciência:", erro);
+      alert("Não foi possível registrar sua ciência.");
+    } finally {
+      setSalvandoCiencia(false);
     }
   }
 
@@ -220,6 +450,8 @@ export default function MoradorV2() {
         setAudioRespostaBlob(null);
         setAvisoAuto("");
         setPopupAtendimentoAberto(false);
+        toqueSilenciadoPorAudioRef.current = false;
+        idChamadaAtualRef.current = "";
         pararToqueContinuo();
         return;
       }
@@ -235,6 +467,18 @@ export default function MoradorV2() {
       );
       setModo(dados.modo || "");
       setMensagemResponsavel(dados.mensagemResponsavel || "");
+
+      const idChamadaAtual =
+        String(dados.criadoEm || "") ||
+        `${dados.nome || ""}-${dados.motivo || ""}`;
+
+      if (
+        idChamadaAtual &&
+        idChamadaAtualRef.current !== idChamadaAtual
+      ) {
+        idChamadaAtualRef.current = idChamadaAtual;
+        toqueSilenciadoPorAudioRef.current = false;
+      }
       setVisitanteVisualizou(
         dados.visitanteVisualizou === true ||
           dados.mensagemVisualizada === true ||
@@ -276,7 +520,9 @@ export default function MoradorV2() {
       }
 
       const deveTocar =
-        dados.notificar === true && dados.status === "Aguardando atendimento";
+        dados.notificar === true &&
+        dados.status === "Aguardando atendimento" &&
+        !toqueSilenciadoPorAudioRef.current;
 
       if (deveTocar) {
         iniciarToqueContinuo();
@@ -421,28 +667,44 @@ export default function MoradorV2() {
     pararToqueContinuo();
     limparFinalizacaoAutomatica();
 
+    const timeoutAguardando = status === "Aguardando atendimento";
+
     ultimaChamadaAtivaRef.current = false;
     setPopupAtendimentoAberto(false);
+    setStatus("Encerrado");
+    setAvisoAuto("Atendimento encerrado. Limpando em instantes.");
 
-    await registrarAnalytics("timeout");
-    await registrarLog("timeout_atendimento", "Chamada finalizada automaticamente");
-
-    await salvarHistorico("Automática");
-
-    await update(ref(db, caminhoFirebase), {
-      status: "Encerrado",
-      mensagemResponsavel: "ATENDIMENTO_ENCERRADO",
-      notificar: false,
-      encerradoEm: new Date().toISOString(),
-    });
+    try {
+      await update(ref(db, caminhoFirebase), {
+        status: "Encerrado",
+        mensagemResponsavel: timeoutAguardando
+          ? "Tempo de espera esgotado."
+          : "ATENDIMENTO_ENCERRADO",
+        notificar: false,
+        encerradoEm: new Date().toISOString(),
+      });
+    } catch (erro) {
+      console.error("Erro ao encerrar chamada automaticamente:", erro);
+    }
 
     ultimaChamadaDadosRef.current = null;
     setAudioVisitante("");
     setMensagensConversa([]);
     setAudioRespostaBlob(null);
 
-    setTimeout(async () => {
-      await remove(ref(db, caminhoFirebase));
+    void Promise.allSettled([
+      registrarAnalytics("timeout"),
+      registrarLog(
+        "timeout_atendimento",
+        "Chamada finalizada automaticamente"
+      ),
+      salvarHistorico(timeoutAguardando ? "Não atendida" : "Automática"),
+    ]);
+
+    setTimeout(() => {
+      void remove(ref(db, caminhoFirebase)).catch((erro) => {
+        console.error("Erro ao limpar chamada encerrada:", erro);
+      });
     }, 5000);
   }
 
@@ -464,17 +726,26 @@ export default function MoradorV2() {
       return;
     }
 
-    await registrarAnalytics("atendida");
-    await registrarLog("chamada_atendida", "Chamada atendida pelo painel");
-
-    await update(ref(db, caminhoFirebase), {
-      status: "Em atendimento",
-      notificar: false,
-      atendidoEm: new Date().toISOString(),
-    });
-
+    setStatus("Em atendimento");
     setPopupAtendimentoAberto(false);
     pararToqueContinuo();
+
+    try {
+      await update(ref(db, caminhoFirebase), {
+        status: "Em atendimento",
+        notificar: false,
+        atendidoEm: new Date().toISOString(),
+      });
+    } catch (erro) {
+      console.error("Erro ao atender chamada:", erro);
+      alert("Não foi possível confirmar o atendimento.");
+      return;
+    }
+
+    void Promise.allSettled([
+      registrarAnalytics("atendida"),
+      registrarLog("chamada_atendida", "Chamada atendida pelo painel"),
+    ]);
   }
 
   async function enviarMensagemRapida(mensagem: string) {
@@ -555,13 +826,32 @@ export default function MoradorV2() {
       };
 
       recorder.onstop = () => {
-        const blob = new Blob(audioChunksMoradorRef.current, {
-          type: "audio/webm",
-        });
+        /*
+         * Usa o formato real produzido pelo navegador.
+         * Firefox normalmente pode gravar em audio/ogg,
+         * enquanto Chrome costuma usar audio/webm.
+         * Forçar audio/webm em todos os navegadores pode
+         * fazer o áudio chegar sem som no aparelho visitante.
+         */
+        const tipoAudio =
+          recorder.mimeType ||
+          audioChunksMoradorRef.current[0]?.type ||
+          "audio/webm";
+
+        const blob = new Blob(
+          audioChunksMoradorRef.current,
+          {
+            type: tipoAudio,
+          }
+        );
 
         setAudioRespostaBlob(blob);
         setGravandoAudioMorador(false);
-        stream.getTracks().forEach((track) => track.stop());
+        stream
+          .getTracks()
+          .forEach((track) =>
+            track.stop()
+          );
       };
 
       mediaRecorderMoradorRef.current = recorder;
@@ -661,30 +951,43 @@ export default function MoradorV2() {
       return;
     }
 
+    limparFinalizacaoAutomatica();
+    pararToqueContinuo();
+
     ultimaChamadaAtivaRef.current = false;
     setPopupAtendimentoAberto(false);
+    setStatus("Encerrado");
+    setAvisoAuto("Atendimento encerrado. Limpando em instantes.");
 
-    await registrarAnalytics("finalizada");
-    await registrarLog("chamada_finalizada", "Chamada finalizada manualmente");
-
-    await salvarHistorico("Manual");
-
-    limparFinalizacaoAutomatica();
-
-    await update(ref(db, caminhoFirebase), {
-      status: "Encerrado",
-      mensagemResponsavel: "ATENDIMENTO_ENCERRADO",
-      notificar: false,
-      encerradoEm: new Date().toISOString(),
-    });
+    try {
+      await update(ref(db, caminhoFirebase), {
+        status: "Encerrado",
+        mensagemResponsavel: "ATENDIMENTO_ENCERRADO",
+        notificar: false,
+        encerradoEm: new Date().toISOString(),
+      });
+    } catch (erro) {
+      console.error("Erro ao finalizar chamada:", erro);
+      alert("Não foi possível finalizar o atendimento.");
+      return;
+    }
 
     ultimaChamadaDadosRef.current = null;
 
-    setTimeout(async () => {
-      await remove(ref(db, caminhoFirebase));
-    }, 5000);
+    void Promise.allSettled([
+      registrarAnalytics("finalizada"),
+      registrarLog(
+        "chamada_finalizada",
+        "Chamada finalizada manualmente"
+      ),
+      salvarHistorico("Manual"),
+    ]);
 
-    pararToqueContinuo();
+    setTimeout(() => {
+      void remove(ref(db, caminhoFirebase)).catch((erro) => {
+        console.error("Erro ao limpar chamada encerrada:", erro);
+      });
+    }, 5000);
   }
 
   function tocarBip() {
@@ -849,19 +1152,20 @@ export default function MoradorV2() {
       await navigator.serviceWorker.ready;
 
       const token = await getToken(messaging, {
-        vapidKey:
-          "BIEIQutWLbP05G1xFN1Zvg_hMnc4OGOkHRf6yI1bT8Igfmm1G8vRjYQhZyDGc5M3X6yhHkoWdJj4a_atPGqX7sk",
-        serviceWorkerRegistration: registroServiceWorker,
-      });
-
+  vapidKey: process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY!,
+  serviceWorkerRegistration: registroServiceWorker,
+});
       if (!token) {
         throw new Error(
           "O Firebase não retornou um token de notificação."
         );
       }
-
-      await update(ref(db, "configuracoes-v2"), {
-        [`tokensMorador/${slug}`]: token,
+const condominioId = identificarCondominioPeloSlug(slug);
+      await set(ref(db, `configuracoes-v2/tokensMorador/${slug}`), {
+        token,
+        unidadeId: slug,
+        condominioId,
+        atualizadoEm: Date.now(),
       });
 
       await registrarLog(
@@ -944,10 +1248,15 @@ Mensagem: ${mensagemErro}`
     }
   }
 
+  function silenciarToqueAoOuvirAudio() {
+    toqueSilenciadoPorAudioRef.current = true;
+    pararToqueContinuo();
+  }
+
   function abrirAudioVisitanteGrande() {
     if (!audioVisitante) return;
 
-    pararToqueContinuo();
+    silenciarToqueAoOuvirAudio();
     setAudioPopup({
       titulo: "🎙️ Áudio do visitante",
       audio: audioVisitante,
@@ -984,6 +1293,201 @@ Mensagem: ${mensagemErro}`
 
   return (
     <main className="min-h-screen bg-slate-950 text-white p-4 relative">
+      {comunicadoAberto && (() => {
+        const precisaConfirmarCiencia =
+          comunicadoAberto.exigeCiencia !== false &&
+          comunicadoAberto.exigirCiencia !== false;
+
+        const detalhes = comunicadoAberto.detalhesModelo || {};
+        const temInformacoesRapidas =
+          Boolean(detalhes.dataEvento) ||
+          Boolean(detalhes.horarioEvento) ||
+          Boolean(detalhes.localEvento) ||
+          Boolean(detalhes.empresaResponsavel);
+
+        const ehEmergencia = comunicadoAberto.tipo === "emergencia";
+
+        return (
+          <div className="fixed inset-0 z-[1200] flex items-center justify-center overflow-y-auto bg-black/90 p-4">
+            <div
+              className={`my-4 w-full max-w-md overflow-hidden rounded-3xl border-2 bg-slate-900 shadow-2xl ${
+                ehEmergencia ? "border-red-500" : "border-blue-500"
+              }`}
+            >
+              <div
+                className={`p-5 ${
+                  ehEmergencia
+                    ? "bg-gradient-to-r from-red-950 to-slate-900"
+                    : "bg-gradient-to-r from-blue-950 to-slate-900"
+                }`}
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p
+                      className={`text-xs font-black ${
+                        ehEmergencia ? "text-red-300" : "text-blue-300"
+                      }`}
+                    >
+                      {iconeTipoComunicado(comunicadoAberto.tipo)}{" "}
+                      {textoTipoComunicado(comunicadoAberto.tipo)}
+                    </p>
+
+                    <h2 className="mt-2 text-2xl font-black leading-tight text-white">
+                      {comunicadoAberto.titulo}
+                    </h2>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setComunicadoAberto(null)}
+                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-800/90 text-xl font-black"
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
+
+              <div className="p-5">
+                {temInformacoesRapidas && (
+                  <div className="grid grid-cols-2 gap-3">
+                    {detalhes.dataEvento && (
+                      <div className="rounded-2xl border border-slate-700 bg-slate-800 p-3">
+                        <p className="text-[10px] font-black text-slate-400">
+                          📅 DATA
+                        </p>
+                        <p className="mt-1 text-sm font-black text-white">
+                          {formatarDataComunicado(detalhes.dataEvento)}
+                        </p>
+                      </div>
+                    )}
+
+                    {detalhes.horarioEvento && (
+                      <div className="rounded-2xl border border-slate-700 bg-slate-800 p-3">
+                        <p className="text-[10px] font-black text-slate-400">
+                          🕗 HORÁRIO
+                        </p>
+                        <p className="mt-1 text-sm font-black text-white">
+                          {detalhes.horarioEvento}
+                        </p>
+                      </div>
+                    )}
+
+                    {detalhes.localEvento && (
+                      <div className="rounded-2xl border border-slate-700 bg-slate-800 p-3">
+                        <p className="text-[10px] font-black text-slate-400">
+                          📍 LOCAL
+                        </p>
+                        <p className="mt-1 text-sm font-black text-white">
+                          {detalhes.localEvento}
+                        </p>
+                      </div>
+                    )}
+
+                    {detalhes.empresaResponsavel && (
+                      <div className="rounded-2xl border border-slate-700 bg-slate-800 p-3">
+                        <p className="text-[10px] font-black text-slate-400">
+                          👷 RESPONSÁVEL
+                        </p>
+                        <p className="mt-1 text-sm font-black text-white">
+                          {detalhes.empresaResponsavel}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {detalhes.pauta && (
+                  <div className="mt-4 rounded-2xl border border-violet-800 bg-violet-950/25 p-4">
+                    <p className="text-xs font-black text-violet-300">
+                      📋 PAUTA
+                    </p>
+                    <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-slate-200">
+                      {detalhes.pauta}
+                    </p>
+                  </div>
+                )}
+
+                {detalhes.impactoPrevisto && (
+                  <div className="mt-4 rounded-2xl border border-orange-800 bg-orange-950/25 p-4">
+                    <p className="text-xs font-black text-orange-300">
+                      ⚠️ IMPACTO PREVISTO
+                    </p>
+                    <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-slate-200">
+                      {detalhes.impactoPrevisto}
+                    </p>
+                  </div>
+                )}
+
+                {detalhes.tipoEmergencia && (
+                  <div className="mt-4 rounded-2xl border border-red-800 bg-red-950/30 p-4">
+                    <p className="text-xs font-black text-red-300">
+                      🚨 TIPO DA EMERGÊNCIA
+                    </p>
+                    <p className="mt-2 text-base font-black text-white">
+                      {detalhes.tipoEmergencia}
+                    </p>
+                  </div>
+                )}
+
+                {detalhes.orientacaoImediata && (
+                  <div className="mt-4 rounded-2xl border border-red-700 bg-red-950/40 p-4">
+                    <p className="text-xs font-black text-red-300">
+                      ⚡ ORIENTAÇÃO IMEDIATA
+                    </p>
+                    <p className="mt-2 whitespace-pre-wrap text-sm font-bold leading-relaxed text-white">
+                      {detalhes.orientacaoImediata}
+                    </p>
+                  </div>
+                )}
+
+                <div className="mt-4 rounded-2xl border border-slate-700 bg-slate-950/70 p-4">
+                  <p className="whitespace-pre-wrap text-sm leading-relaxed text-slate-200">
+                    {comunicadoAberto.mensagem}
+                  </p>
+                </div>
+
+                <p className="mt-4 text-xs text-slate-500">
+                  Enviado em {comunicadoAberto.criadoEmFormatado}
+                </p>
+
+                {precisaConfirmarCiencia ? (
+                  comunicadoAberto.visualizacoes?.[slug]?.ciente === true ? (
+                    <div className="mt-5 rounded-xl border border-green-700 bg-green-950/30 p-4 text-center font-black text-green-300">
+                      ✅ Ciente registrado
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={confirmarCiencia}
+                      disabled={salvandoCiencia}
+                      className={`mt-5 w-full rounded-2xl py-4 text-lg font-black text-white disabled:bg-slate-600 ${
+                        ehEmergencia
+                          ? "bg-red-600 hover:bg-red-500"
+                          : "bg-green-600 hover:bg-green-500"
+                      }`}
+                    >
+                      {salvandoCiencia
+                        ? "Registrando..."
+                        : ehEmergencia
+                        ? "🚨 Confirmo que li e estou ciente"
+                        : "✅ Li e estou ciente"}
+                    </button>
+                  )
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setComunicadoAberto(null)}
+                    className="mt-5 w-full rounded-2xl bg-blue-600 py-4 font-black text-white"
+                  >
+                    Fechar
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
       {mostrarPopupChamada && (
         <div className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center p-4 overflow-y-auto">
           <div className="w-full max-w-md bg-slate-900 border-4 border-green-400 rounded-3xl p-5 text-center shadow-2xl my-4">
@@ -1007,7 +1511,11 @@ Mensagem: ${mensagemErro}`
                     controls
                     className="w-full"
                     src={audioVisitante}
-                    onPlay={pararToqueContinuo}
+                    onPointerDown={silenciarToqueAoOuvirAudio}
+                    onTouchStart={silenciarToqueAoOuvirAudio}
+                    onClick={silenciarToqueAoOuvirAudio}
+                    onPlay={silenciarToqueAoOuvirAudio}
+                    onPlaying={silenciarToqueAoOuvirAudio}
                   />
                 </div>
               )}
@@ -1067,14 +1575,17 @@ Mensagem: ${mensagemErro}`
                 controls
                 className="w-full"
                 src={audioPopup.audio}
-                onPlay={pararToqueContinuo}
-                onPlaying={pararToqueContinuo}
+                onPointerDown={silenciarToqueAoOuvirAudio}
+                onTouchStart={silenciarToqueAoOuvirAudio}
+                onClick={silenciarToqueAoOuvirAudio}
+                onPlay={silenciarToqueAoOuvirAudio}
+                onPlaying={silenciarToqueAoOuvirAudio}
               />
             </div>
 
             <button
               onClick={() => {
-                pararToqueContinuo();
+                silenciarToqueAoOuvirAudio();
                 setAudioPopup(null);
               }}
               className="w-full mt-5 bg-blue-600 hover:bg-blue-500 text-white font-black py-4 rounded-2xl"
@@ -1186,8 +1697,14 @@ Mensagem: ${mensagemErro}`
       <div className="w-full max-w-md mx-auto bg-slate-900 rounded-3xl p-5 shadow-2xl border border-slate-800">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <h1 className="text-3xl font-black">🏠 Morador V2</h1>
-            <p className="text-slate-400 text-sm mt-1">Unidade: {slug}</p>
+            <h1 className="text-3xl font-black">
+              🏠 {nomeLocal}
+            </h1>
+            <p className="text-slate-400 text-sm mt-1">
+              {ehResidencia
+                ? "Casa Principal"
+                : `Unidade: ${slug}`}
+            </p>
           </div>
 
           <div
@@ -1200,6 +1717,79 @@ Mensagem: ${mensagemErro}`
             {online ? "🟢 Disponível" : "🔴 Ausente"}
           </div>
         </div>
+
+        {comunicados.length > 0 && (
+          <div className="mt-5 rounded-2xl border border-blue-500/50 bg-blue-950/30 p-4">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-xs font-black text-blue-300">
+                  📢 COMUNICADOS
+                </p>
+
+                <h2 className="mt-1 text-lg font-black text-white">
+                  {comunicados.filter(
+                    (item) =>
+                      item.visualizacoes?.[slug]?.ciente !== true
+                  ).length > 0
+                    ? `${comunicados.filter(
+                        (item) =>
+                          item.visualizacoes?.[slug]?.ciente !== true
+                      ).length} comunicado(s) aguardando sua ciência`
+                    : ehResidencia
+                    ? "Avisos da residência"
+                    : "Comunicados do condomínio"}
+                </h2>
+              </div>
+
+              <span className="rounded-full bg-blue-600 px-3 py-1 text-xs font-black text-white">
+                {comunicados.length}
+              </span>
+            </div>
+
+            <div className="mt-4 space-y-2">
+              {comunicados.slice(0, 3).map((comunicado) => {
+                const ciente =
+                  comunicado.visualizacoes?.[slug]?.ciente === true;
+
+                return (
+                  <button
+                    key={comunicado.id}
+                    type="button"
+                    onClick={() => abrirComunicado(comunicado)}
+                    className="flex w-full items-center justify-between gap-3 rounded-xl bg-slate-900 p-3 text-left transition-all hover:bg-slate-800 active:scale-[0.98]"
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-black text-white">
+                        {comunicado.tipo === "assembleia"
+                          ? "👥"
+                          : comunicado.tipo === "manutencao"
+                          ? "🛠️"
+                          : comunicado.tipo === "emergencia"
+                          ? "🚨"
+                          : "📢"}{" "}
+                        {comunicado.titulo}
+                      </p>
+
+                      <p className="mt-1 truncate text-xs text-slate-400">
+                        {comunicado.mensagem}
+                      </p>
+                    </div>
+
+                    <span
+                      className={`shrink-0 rounded-full px-3 py-1 text-[10px] font-black ${
+                        ciente
+                          ? "bg-green-950 text-green-300"
+                          : "bg-orange-950 text-orange-300"
+                      }`}
+                    >
+                      {ciente ? "CIENTE" : "LER"}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-2 gap-3 mt-5">
           <button
@@ -1289,15 +1879,6 @@ Mensagem: ${mensagemErro}`
           <h2 className="font-black text-green-400 text-xl">🔔 {nome}</h2>
 
           <p className="text-sm text-slate-300 mt-3">Motivo: {motivo}</p>
-
-          {audioVisitante && (
-            <button
-              onClick={abrirAudioVisitanteGrande}
-              className="w-full mt-4 bg-blue-600 hover:bg-blue-500 text-white font-black py-3 rounded-2xl"
-            >
-              🎙️ Ouvir áudio do visitante
-            </button>
-          )}
 
           <p className="text-sm text-cyan-400 mt-2">
             Modo: {modo === "porteiro" ? "Portaria" : "Direto para morador"}
@@ -1392,7 +1973,9 @@ Mensagem: ${mensagemErro}`
                     {item.tipo === "audio" && item.audioBase64 && (
                       <button
                         onClick={() => {
-                          if (item.autor === "visitante") pararToqueContinuo();
+                          if (item.autor === "visitante") {
+                            silenciarToqueAoOuvirAudio();
+                          }
 
                           setAudioPopup({
                             titulo:

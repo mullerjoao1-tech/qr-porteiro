@@ -1,1 +1,0 @@
-node scripts/migrar-unidades-v2.js

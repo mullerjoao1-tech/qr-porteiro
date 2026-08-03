@@ -1,40 +1,69 @@
-import { NextResponse } from "next/server";
-import { exec } from "child_process";
+import { NextRequest, NextResponse } from "next/server";
 
-export async function GET(): Promise<Response> {
-  const agora = Date.now();
-  const nomeArquivo = `camera-qr1-${agora}.jpg`;
-  const caminhoArquivo = `public/${nomeArquivo}`;
-  const caminhoPublico = `/${nomeArquivo}`;
+import { capturarSnapshotCamera } from "../../modules/camera/services/cameraService";
+import type { ConfiguracaoCamera } from "../../modules/camera/types/camera";
 
-  const comando = `ffmpeg -y -rtsp_transport udp -i "rtsp://admin:teste123@192.168.15.16:554/onvif1" -frames:v 1 -q:v 2 "${caminhoArquivo}"`;
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
-  return new Promise<Response>((resolve) => {
-    exec(comando, { timeout: 15000 }, (erro) => {
-      if (erro) {
-        console.error("Erro ao capturar imagem:", erro);
+export async function GET(
+  request: NextRequest
+): Promise<Response> {
+  const cameraSelecionada =
+    request.nextUrl.searchParams.get("camera") ?? "yoosee";
 
-        resolve(
-          NextResponse.json(
-            {
-              sucesso: false,
-              erro: "A imagem não foi criada.",
-            },
-            { status: 500 }
-          )
-        );
+  let camera: ConfiguracaoCamera;
 
-        return;
-      }
+  switch (cameraSelecionada) {
+    case "jortan":
+      camera = {
+        id: "jortan",
+        nome: "Câmera Jortan 3 em 1",
+        protocolo: "rtsp",
+        ativa: true,
+        rtspUrl:
+          process.env.CAMERA_JORTAN_RTSP_URL ||
+          "rtsp://admin:qr123456789@192.168.15.20:554/onvif1",
+        timeoutMs: 15000,
+      };
+      break;
 
-      resolve(
-        NextResponse.json({
-          sucesso: true,
-          mensagem: "Foto capturada com sucesso.",
-          imagem: caminhoPublico,
-          atualizadoEm: new Date().toISOString(),
-        })
-      );
-    });
+    case "yoosee":
+    default:
+      camera = {
+        id: "portao-principal",
+        nome: "Câmera do portão principal",
+        protocolo: "rtsp",
+        ativa: true,
+        rtspUrl:
+          process.env.CAMERA_PORTAO_RTSP_URL ||
+          "rtsp://admin:qr12345678@192.168.15.9:554/onvif1",
+        timeoutMs: 15000,
+      };
+      break;
+  }
+
+  const resultado = await capturarSnapshotCamera(camera);
+
+  if (!resultado.sucesso) {
+    return NextResponse.json(
+      {
+        sucesso: false,
+        erro:
+          resultado.erro ??
+          "A imagem não foi criada.",
+      },
+      { status: 500 }
+    );
+  }
+
+  return NextResponse.json({
+    sucesso: true,
+    camera: cameraSelecionada,
+    mensagem: "Foto capturada com sucesso.",
+    imagem: resultado.imagem,
+    atualizadoEm:
+      resultado.atualizadoEm ??
+      new Date().toISOString(),
   });
 }

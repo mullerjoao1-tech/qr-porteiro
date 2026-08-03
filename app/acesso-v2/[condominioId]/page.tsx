@@ -2,23 +2,11 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "next/navigation";
-import {
-  ref,
-  onValue,
-  update,
-  remove,
-  set,
-} from "firebase/database";
+import { ref, onValue, update, remove, set, get } from "firebase/database";
 import { db } from "../../services/firebase";
-
-import { useGravadorAudio } from "../../components/acesso-v2/hooks/useGravadorAudio";
-
-import Conversa from "../../components/acesso-v2/components/Conversa";
-import GravadorAudio from "../../components/acesso-v2/components/GravadorAudio";
 
 
 type MensagemConversa = {
-  id?: string;
   autor: "visitante" | "morador";
   tipo: "texto" | "audio";
   texto?: string;
@@ -26,143 +14,87 @@ type MensagemConversa = {
   criadoEm: number;
 };
 
-type Chamada = {
-  nome?: string;
-  motivo?: string;
-  status?: string;
-  criadoEm?: string | number;
-  atendidoEm?: string | number;
-  ultimaAtividade?: number;
-  notificar?: boolean;
-  mensagemResponsavel?: string;
-  mensagemRapida?: string;
-  respostaRapida?: string;
-  resposta?: string;
-  mensagemMorador?: string;
-  enviadoEm?: number;
-  visualizadoPeloVisitante?: boolean;
-  mensagens?: Record<string, MensagemConversa>;
-  audioBase64?: string;
-};
-
-type UnidadeTulipas = {
+type Unidade = {
   id: string;
   nome: string;
-  tipo: string;
-  bloco: "Bloco 1" | "Bloco 2";
-  chamada?: Chamada | null;
+  tipo?: string;
+  bloco?: string;
+  condominioId?: string;
+  localId?: string;
+  localNome?: string;
+  tipoLocal?: string;
+  chamada?: {
+    nome?: string;
+    motivo?: string;
+    status?: string;
+    criadoEm?: string;
+    mensagemRapida?: string;
+    respostaRapida?: string;
+    resposta?: string;
+    mensagemMorador?: string;
+    mensagemResponsavel?: string;
+    enviadoEm?: number;
+    ultimaAtividade?: number;
+    audioBase64?: string;
+    mensagens?: Record<string, MensagemConversa>;
+  };
 };
 
-const APARTAMENTOS_TULIPAS = [
-  "11", "12", "13", "14",
-  "21", "22", "23", "24",
-  "31", "32", "33", "34",
-  "41", "42", "43", "44",
-];
+type LocalCadastro = {
+  id: string;
+  nome: string;
+  slug?: string;
+  tipo?: string;
+  tipoLocal?: string;
+  segmento?: string;
+  status?: string;
+  configuracao?: {
+    modoAtendimento?: string;
+    [chave: string]: unknown;
+  };
+};
 
-const UNIDADES_TULIPAS: UnidadeTulipas[] = [
-  ...APARTAMENTOS_TULIPAS.map((apartamento) => ({
-    id: `bloco-1-ap-${apartamento}`,
-    nome: `Apto ${apartamento}`,
-    tipo: "Apartamento",
-    bloco: "Bloco 1" as const,
-  })),
-  ...APARTAMENTOS_TULIPAS.map((apartamento) => ({
-    id: `bloco-2-ap-${apartamento}`,
-    nome: `Apto ${apartamento}`,
-    tipo: "Apartamento",
-    bloco: "Bloco 2" as const,
-  })),
-];
-
-const TEMPO_AGUARDANDO_MS = 5 * 60 * 1000;
-const TEMPO_EM_ATENDIMENTO_MS = 3 * 60 * 1000;
-
-function chamadaEstaAtiva(chamada?: Chamada | null) {
-  return (
-    chamada?.status === "Aguardando atendimento" ||
-    chamada?.status === "Em atendimento"
-  );
-}
-
-function textoStatusChamada(chamada?: Chamada | null) {
-  if (!chamadaEstaAtiva(chamada)) return "Disponível";
-  return chamada?.status === "Em atendimento"
-    ? "Em atendimento"
-    : "Chamando";
-}
-
-function pegarTempoBase(chamada: Chamada) {
-  const valor =
-    chamada.status === "Em atendimento"
-      ? chamada.atendidoEm || chamada.criadoEm
-      : chamada.criadoEm;
-
-  if (!valor) return Date.now();
-  if (typeof valor === "number") return valor;
-
-  const convertido = new Date(valor).getTime();
-  return Number.isNaN(convertido) ? Date.now() : convertido;
-}
-
-function ordenarMensagens(
-  mensagens?: Record<string, MensagemConversa>
-): MensagemConversa[] {
-  if (!mensagens) return [];
-
-  return Object.entries(mensagens)
-    .map(([id, mensagem]) => ({ id, ...mensagem }))
-    .sort((a, b) => (a.criadoEm || 0) - (b.criadoEm || 0));
-}
 
 function blobParaBase64(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
-    const leitor = new FileReader();
-    leitor.onloadend = () => resolve(leitor.result as string);
-    leitor.onerror = reject;
-    leitor.readAsDataURL(blob);
+    const reader = new FileReader();
+
+    reader.onloadend = () => {
+      resolve(reader.result as string);
+    };
+
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
   });
 }
 
 export default function AcessoV2Condominio() {
   const params = useParams();
-  const condominioId = String(
-    params?.condominioId || params?.condominio || "cnd-tulipas"
-  );
+  const condominioId = String(params.condominioId || "condominio-teste");
 
-  const [blocoSelecionado, setBlocoSelecionado] = useState("");
-  const [unidadeSelecionada, setUnidadeSelecionada] =
-    useState<UnidadeTulipas | null>(null);
-  const [chamadaAtual, setChamadaAtual] = useState<Chamada | null>(null);
+  const [localCadastro, setLocalCadastro] =
+    useState<LocalCadastro | null>(null);
+
+  const [unidades, setUnidades] = useState<Unidade[]>([]);
+  const [carregando, setCarregando] = useState(true);
+
+  const tipoLocalNormalizado = (
+    localCadastro?.tipo ||
+    localCadastro?.tipoLocal ||
+    localCadastro?.segmento ||
+    ""
+  )
+    .trim()
+    .toLowerCase();
+
+  const localEhResidencia =
+    tipoLocalNormalizado === "residencia" ||
+    tipoLocalNormalizado === "residência" ||
+    localCadastro?.configuracao?.modoAtendimento === "residencia";
+
   const [busca, setBusca] = useState("");
-
-  const carregando = false;
-  const blocos = ["Bloco 1", "Bloco 2"];
-  const temBlocos = true;
-
-  const unidadesFiltradas = useMemo(() => {
-    const texto = busca.trim().toLowerCase();
-
-    return UNIDADES_TULIPAS.filter(
-      (unidade) =>
-        unidade.bloco === blocoSelecionado &&
-        (!texto ||
-          `${unidade.nome} ${unidade.tipo} ${unidade.id}`
-            .toLowerCase()
-            .includes(texto))
-    );
-  }, [blocoSelecionado, busca]);
-
-  const unidadeAtualSelecionada = unidadeSelecionada
-    ? { ...unidadeSelecionada, chamada: chamadaAtual }
-    : null;
-
-  function voltarBlocoBase() {
-    setBlocoSelecionado("");
-    setBusca("");
-    setUnidadeSelecionada(null);
-    setChamadaAtual(null);
-  }
+  const [blocoSelecionado, setBlocoSelecionado] = useState("");
+  const [unidadeSelecionada, setUnidadeSelecionada] = useState<Unidade | null>(null);
 
   const [nome, setNome] = useState("");
   const [motivo, setMotivo] = useState("");
@@ -170,287 +102,380 @@ export default function AcessoV2Condominio() {
 
   const [enviando, setEnviando] = useState(false);
   const [mensagem, setMensagem] = useState("");
+  const [diagnostico, setDiagnostico] = useState("");
 
- const [popupTexto, setPopupTexto] = useState("");
-const [popupTipo, setPopupTipo] = useState<"mensagem" | "encerrado" | "audio">(
-  "mensagem"
-);
-const [popupAudioBase64, setPopupAudioBase64] = useState("");
+  const [gravandoAudio, setGravandoAudio] = useState(false);
+  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
+  const [enviandoAudio, setEnviandoAudio] = useState(false);
+
+  const [popupTexto, setPopupTexto] = useState("");
+  const [popupAudioBase64, setPopupAudioBase64] = useState("");
+  const [popupTipo, setPopupTipo] = useState<"mensagem" | "audio" | "encerrado">("mensagem");
 
   const chamadaAtivaRef = useRef(false);
   const chamadaFoiEnviadaRef = useRef(false);
-  const ultimaMensagemPopupRef = useRef("");
-  const timerAutomaticoRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const {
-    gravandoAudio,
-    audioBlob,
-    setAudioBlob,
-    iniciarGravacao,
-    pararGravacao,
-  } = useGravadorAudio({
-    podeGravar: !!(unidadeAtualSelecionada || unidadeSelecionada),
-    aoIniciarGravacao: () => {
-      setMensagem("");
-    },
-  });
+  const ultimoPopupRef = useRef("");
+
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+
+  useEffect(() => {
+    let cancelado = false;
+
+    async function carregarLocal() {
+      try {
+        const referenciaDireta = ref(
+          db,
+          `locais-v2/${condominioId}`
+        );
+
+        const snapshotDireto =
+          await get(referenciaDireta);
+
+        if (snapshotDireto.exists()) {
+          if (!cancelado) {
+            setLocalCadastro({
+              id: condominioId,
+              ...snapshotDireto.val(),
+            });
+          }
+
+          return;
+        }
+
+        const snapshotLocais =
+          await get(ref(db, "locais-v2"));
+
+        if (!snapshotLocais.exists()) {
+          if (!cancelado) {
+            setLocalCadastro(null);
+          }
+
+          return;
+        }
+
+        const locais =
+          snapshotLocais.val() as Record<
+            string,
+            Partial<LocalCadastro>
+          >;
+
+        const encontrado =
+          Object.entries(locais).find(
+            ([id, local]) =>
+              id === condominioId ||
+              local.slug === condominioId ||
+              local.id === condominioId
+          );
+
+        if (!cancelado) {
+          setLocalCadastro(
+            encontrado
+              ? {
+                  ...encontrado[1],
+                  id:
+                    encontrado[1].id ||
+                    encontrado[0],
+                  nome:
+                    encontrado[1].nome ||
+                    "QR Acesso",
+                }
+              : null
+          );
+        }
+      } catch (erro) {
+        console.error(
+          "Erro ao carregar o local no Cadastro Universal:",
+          erro
+        );
+
+        if (!cancelado) {
+          setLocalCadastro(null);
+        }
+      }
+    }
+
+    carregarLocal();
+
+    const referencia = ref(db, "unidades-v2");
+
+    const pararDeOuvir = onValue(referencia, (snapshot) => {
+      const dados = snapshot.val();
+
+      if (!dados) {
+        setUnidades([]);
+        setCarregando(false);
+        return;
+      }
+
+      const todasAsUnidades = Object.entries(dados).map(
+        ([id, valor]: any) => ({
+          id,
+          ...valor,
+        })
+      ) as Unidade[];
+
+      /*
+       * Primeiro procuramos somente as unidades vinculadas
+       * diretamente ao local aberto pela URL.
+       *
+       * Isso é essencial para residências, pois elas possuem
+       * apenas uma unidade principal e devem abrir o formulário
+       * automaticamente.
+       */
+      const unidadesVinculadas =
+        todasAsUnidades.filter(
+          (unidade) =>
+            unidade.localId ===
+              condominioId ||
+            unidade.condominioId ===
+              condominioId
+        );
+
+      /*
+       * Compatibilidade temporária com unidades antigas do
+       * Tulipas que ainda não possuem localId/condominioId.
+       *
+       * O fallback só é usado quando nenhuma unidade moderna
+       * vinculada ao local foi encontrada. Assim, unidades
+       * antigas não se misturam com uma residência nova.
+       */
+      const unidadesSemVinculo =
+        todasAsUnidades.filter(
+          (unidade) =>
+            !unidade.localId &&
+            !unidade.condominioId
+        );
+
+      const lista =
+        unidadesVinculadas.length > 0
+          ? unidadesVinculadas
+          : unidadesSemVinculo;
+
+      lista.sort((a, b) =>
+        a.nome.localeCompare(b.nome)
+      );
+
+      setUnidades(lista);
+      setCarregando(false);
+    });
+
+    return () => {
+      cancelado = true;
+      pararDeOuvir();
+    };
+  }, [condominioId]);
+
+  useEffect(() => {
+    if (
+      localEhResidencia &&
+      unidades.length === 1 &&
+      !unidadeSelecionada
+    ) {
+      setUnidadeSelecionada(unidades[0]);
+    }
+  }, [
+    localEhResidencia,
+    unidadeSelecionada,
+    unidades,
+  ]);
 
   useEffect(() => {
     if (!unidadeSelecionada) return;
 
     const referencia = ref(db, `unidades-v2/${unidadeSelecionada.id}/chamada`);
 
-    const limparTimerAutomatico = () => {
-      if (timerAutomaticoRef.current) {
-        clearTimeout(timerAutomaticoRef.current);
-        timerAutomaticoRef.current = null;
-      }
-    };
-
-    const pararDeOuvir = onValue(
-      referencia,
-      (snapshot) => {
-      const chamada = snapshot.val() as Chamada | null;
-
-      setChamadaAtual(chamada);
-      limparTimerAutomatico();
+    const pararDeOuvir = onValue(referencia, (snapshot) => {
+      const chamada = snapshot.val();
 
       if (!chamada) {
         if (chamadaAtivaRef.current && chamadaFoiEnviadaRef.current) {
           setPopupTipo("encerrado");
+          setPopupAudioBase64("");
           setPopupTexto("Atendimento encerrado pelo responsável.");
+
+          setUnidadeSelecionada(null);
+          setNome("");
+          setMotivo("");
+          setOutroMotivo("");
+          setMensagem("");
+          setAudioBlob(null);
+          setGravandoAudio(false);
+          setEnviandoAudio(false);
+          setBusca("");
+          setBlocoSelecionado("");
         }
 
         chamadaAtivaRef.current = false;
         chamadaFoiEnviadaRef.current = false;
-        ultimaMensagemPopupRef.current = "";
-        setMensagem("");
+        ultimoPopupRef.current = "";
         return;
       }
 
-      if (!chamadaFoiEnviadaRef.current) return;
+      if (!chamadaFoiEnviadaRef.current) {
+        return;
+      }
 
       chamadaAtivaRef.current = true;
 
-      if (chamada.status === "Aguardando atendimento") {
-        const tempoBase = pegarTempoBase(chamada);
-        const tempoRestante = Math.max(
-          TEMPO_AGUARDANDO_MS - (Date.now() - tempoBase),
-          1000
-        );
+      const mensagens = chamada.mensagens
+        ? (Object.entries(chamada.mensagens) as Array<
+            [string, MensagemConversa]
+          >)
+            .filter(([, item]) => item?.autor === "morador")
+            .sort(
+              ([idA, itemA], [idB, itemB]) =>
+                Number(itemA?.criadoEm || idA) - Number(itemB?.criadoEm || idB)
+            )
+        : [];
 
-        timerAutomaticoRef.current = setTimeout(async () => {
-          await update(ref(db, `unidades-v2/${unidadeSelecionada.id}/chamada`), {
-            status: "Cancelado automaticamente",
-            notificar: false,
-            canceladoEm: Date.now(),
-            motivoCancelamento: "Expirado sem atendimento",
-          });
+      const ultimaMensagemMorador =
+        mensagens.length > 0 ? mensagens[mensagens.length - 1] : null;
 
-          await remove(ref(db, `unidades-v2/${unidadeSelecionada.id}/chamada`));
-        }, tempoRestante);
+      if (ultimaMensagemMorador) {
+        const [idMensagemBanco, item] = ultimaMensagemMorador;
+        const idMensagem = `${idMensagemBanco}-${item.criadoEm || ""}`;
+
+        if (idMensagem !== ultimoPopupRef.current) {
+          ultimoPopupRef.current = idMensagem;
+
+          if (item.tipo === "audio" && item.audioBase64) {
+            setPopupTipo("audio");
+            setPopupTexto("Você recebeu um áudio do morador.");
+            setPopupAudioBase64(item.audioBase64);
+            return;
+          }
+
+          if (item.tipo === "texto" && item.texto) {
+            setPopupTipo("mensagem");
+            setPopupAudioBase64("");
+            setPopupTexto(item.texto);
+            return;
+          }
+        }
       }
 
-      if (chamada.status === "Em atendimento") {
-        const tempoBase = pegarTempoBase(chamada);
-        const tempoRestante = Math.max(
-          TEMPO_EM_ATENDIMENTO_MS - (Date.now() - tempoBase),
-          1000
-        );
+      const textoResposta =
+        chamada.mensagemRapida ||
+        chamada.respostaRapida ||
+        chamada.mensagemResponsavel ||
+        chamada.resposta ||
+        chamada.mensagemMorador ||
+        "";
 
-        timerAutomaticoRef.current = setTimeout(async () => {
-          await update(ref(db, `unidades-v2/${unidadeSelecionada.id}/chamada`), {
-            status: "Finalizado automaticamente",
-            notificar: false,
-            finalizadoEm: Date.now(),
-            motivoFinalizacao: "Finalização automática por tempo",
-          });
+      const idMensagemAntiga = `${textoResposta}-${chamada.enviadoEm || ""}`;
 
-          await remove(ref(db, `unidades-v2/${unidadeSelecionada.id}/chamada`));
-        }, tempoRestante);
+      if (
+        textoResposta &&
+        idMensagemAntiga !== ultimoPopupRef.current &&
+        textoResposta !== "ATENDIMENTO_ENCERRADO"
+      ) {
+        ultimoPopupRef.current = idMensagemAntiga;
+        setPopupTipo("mensagem");
+        setPopupAudioBase64("");
+        setPopupTexto(textoResposta);
       }
+    });
 
-      },
-      (erro) => {
-        console.error("Erro ao acompanhar chamada:", erro);
-      }
-    );
-
-    return () => {
-      limparTimerAutomatico();
-      pararDeOuvir();
-    };
+    return () => pararDeOuvir();
   }, [unidadeSelecionada]);
 
-  const chamadaSelecionadaAtiva = chamadaEstaAtiva(chamadaAtual);
+  const blocos = useMemo(() => {
+    const lista = unidades
+      .map((unidade) => unidade.bloco || "Único")
+      .filter((valor, index, array) => array.indexOf(valor) === index);
 
-  const mensagensConversa = useMemo(() => {
-    return ordenarMensagens(chamadaAtual?.mensagens);
-  }, [chamadaAtual?.mensagens]);
-useEffect(() => {
-  if (!chamadaFoiEnviadaRef.current) return;
-  if (!mensagensConversa || mensagensConversa.length === 0) return;
+    return lista.sort();
+  }, [unidades]);
 
-  const ultimaMensagemMorador = [...mensagensConversa]
-    .reverse()
-    .find((mensagem) => mensagem.autor === "morador");
+  const temBlocos = blocos.length > 1 || blocos[0] !== "Único";
 
-  if (!ultimaMensagemMorador) return;
+  const unidadesDoBloco = useMemo(() => {
+    if (!temBlocos) return unidades;
 
-  const idMensagem = `${ultimaMensagemMorador.id || ""}-${ultimaMensagemMorador.criadoEm || ""}`;
+    return unidades.filter(
+      (unidade) => (unidade.bloco || "Único") === blocoSelecionado
+    );
+  }, [unidades, blocoSelecionado, temBlocos]);
 
-  if (idMensagem === ultimaMensagemPopupRef.current) return;
+  const unidadesFiltradas = useMemo(() => {
+    const texto = busca.toLowerCase().trim();
 
-  ultimaMensagemPopupRef.current = idMensagem;
+    if (!texto) return unidadesDoBloco;
 
-  if (
-    ultimaMensagemMorador.tipo === "audio" &&
-    ultimaMensagemMorador.audioBase64
-  ) {
-    setPopupTipo("audio");
-    setPopupTexto("O responsável enviou uma mensagem de voz.");
-    setPopupAudioBase64(ultimaMensagemMorador.audioBase64);
-    return;
-  }
+    return unidadesDoBloco.filter((unidade) =>
+      `${unidade.nome} ${unidade.tipo || ""} ${unidade.id}`
+        .toLowerCase()
+        .includes(texto)
+    );
+  }, [busca, unidadesDoBloco]);
 
-  if (
-    ultimaMensagemMorador.tipo === "texto" &&
-    ultimaMensagemMorador.texto
-  ) {
-    setPopupTipo("mensagem");
-    setPopupTexto(ultimaMensagemMorador.texto);
-    setPopupAudioBase64("");
-  }
-}, [mensagensConversa]);
   const precisaNome = motivo === "Visitante";
   const precisaDescricao = motivo === "Outros";
 
-  async function enviarAudioNaConversa(blob: Blob) {
-    const unidadeAtual = unidadeAtualSelecionada || unidadeSelecionada;
-
-    if (!unidadeAtual) {
-      alert("Selecione uma unidade.");
-      return;
-    }
-
-    if (!chamadaEstaAtiva(unidadeAtual.chamada)) {
-      await chamarUnidade(blob);
-      return;
-    }
-
-    try {
-      setEnviando(true);
-
-      const audioBase64 = await blobParaBase64(blob);
-
-      const idMensagem = String(Date.now());
-
-      await set(
-        ref(
-          db,
-          `unidades-v2/${unidadeAtual.id}/chamada/mensagens/${idMensagem}`
-        ),
-        {
-          autor: "visitante",
-          tipo: "audio",
-          audioBase64,
-          criadoEm: Date.now(),
-        }
-      );
-
-      await update(ref(db, `unidades-v2/${unidadeAtual.id}/chamada`), {
-        ultimaAtividade: Date.now(),
-        enviadoEm: Date.now(),
-      });
-
-      setAudioBlob(null);
-      setMensagem("✅ Áudio enviado na conversa.");
-    } catch (erro) {
-      console.error("Erro ao enviar áudio na conversa:", erro);
-      alert("Erro ao enviar áudio. Tente novamente.");
-    } finally {
-      setEnviando(false);
-    }
+  
+  async function chamarUnidade() {
+  if (!unidadeSelecionada) {
+    alert("Selecione uma unidade.");
+    return;
   }
 
-  async function chamarUnidade(audioParaEnviar?: Blob) {
-    const unidadeAtual = unidadeAtualSelecionada || unidadeSelecionada;
-    const blobFinal = audioParaEnviar || audioBlob;
+  if (!motivo) {
+    alert("Escolha o motivo da chamada.");
+    return;
+  }
 
-    if (!unidadeAtual) {
-      alert("Selecione uma unidade.");
-      return;
-    }
+  if (precisaNome && !nome.trim()) {
+    alert("Digite seu nome.");
+    return;
+  }
 
-    if (chamadaEstaAtiva(unidadeAtual.chamada)) {
-      if (blobFinal) {
-        await enviarAudioNaConversa(blobFinal);
-        return;
-      }
+  if (precisaDescricao && !outroMotivo.trim()) {
+    alert("Descreva o motivo.");
+    return;
+  }
 
-      setMensagem(
-        "⚠️ Já existe uma chamada ativa para essa unidade. Você ainda pode gravar e enviar áudio na conversa."
-      );
-      return;
-    }
+  const motivoFinal =
+    motivo === "Outros" ? outroMotivo.trim() : motivo;
 
-    if (!motivo && !blobFinal) {
-      alert("Escolha o motivo da chamada ou grave um áudio.");
-      return;
-    }
+  let nomeFinal = nome.trim();
 
-    if (precisaNome && !nome.trim()) {
-      alert("Digite seu nome.");
-      return;
-    }
+  if (motivo === "Entrega") {
+    nomeFinal = "Entrega";
+  }
 
-    if (precisaDescricao && !outroMotivo.trim()) {
-      alert("Descreva o motivo.");
-      return;
-    }
+  if (motivo === "Entrega de comida") {
+    nomeFinal = "Entrega de comida";
+  }
 
-    const motivoFinal = motivo
-      ? motivo === "Outros"
-        ? outroMotivo.trim()
-        : motivo
-      : "Áudio do visitante";
+  if (motivo === "Outros" && !nomeFinal) {
+    nomeFinal = "Outro chamado";
+  }
 
-    let audioBase64 = null;
+  const unidadeIdAtual = unidadeSelecionada.id;
+  const unidadeNomeAtual = unidadeSelecionada.nome;
 
-    if (blobFinal) audioBase64 = await blobParaBase64(blobFinal);
+  try {
+    setDiagnostico("");
+    setMensagem("");
+    setEnviando(true);
 
-    let nomeFinal = nome.trim();
+    setPopupTexto("");
+    setPopupAudioBase64("");
 
-    if (!motivo && blobFinal) nomeFinal = "Áudio do visitante";
-    if (motivo === "Entrega") nomeFinal = "Entrega";
-    if (motivo === "Entrega de comida") nomeFinal = "Entrega de comida";
-    if (motivo === "Outros" && !nomeFinal) nomeFinal = "Outro chamado";
+    ultimoPopupRef.current = "";
+    chamadaFoiEnviadaRef.current = true;
+    chamadaAtivaRef.current = true;
 
-    try {
-      setEnviando(true);
-      setMensagem("");
-      setPopupTexto("");
-      setPopupAudioBase64("");
-      ultimaMensagemPopupRef.current = "";
-      chamadaFoiEnviadaRef.current = true;
-      chamadaAtivaRef.current = true;
+    setDiagnostico("Gravando chamada...");
 
-      await set(ref(db, `unidades-v2/${unidadeAtual.id}/chamada`), {
+    await update(
+      ref(db, `unidades-v2/${unidadeIdAtual}/chamada`),
+      {
         nome: nomeFinal,
         motivo: motivoFinal,
-        audioBase64,
-        mensagens: audioBase64
-          ? {
-              [Date.now()]: {
-                autor: "visitante",
-                tipo: "audio",
-                audioBase64,
-                criadoEm: Date.now(),
-              },
-            }
-          : null,
         status: "Aguardando atendimento",
         criadoEm: new Date().toISOString(),
-        ultimaAtividade: Date.now(),
         notificar: true,
         condominioId,
         origem: "acesso-v2",
@@ -461,205 +486,429 @@ useEffect(() => {
         resposta: null,
         mensagemMorador: null,
         enviadoEm: null,
-        visualizadoPeloVisitante: false,
-      });
+      }
+    );
 
-      try {
-        const respostaPush = await fetch("/api/enviar-notificacao-v2", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            unidadeId: unidadeAtual.id,
-          }),
-        });
+    /*
+     * A chamada já está gravada neste ponto.
+     * O morador recebe o evento pelo Realtime Database.
+     * Portanto, liberamos imediatamente a tela do visitante.
+     */
+    setEnviando(false);
+    setDiagnostico("✅ Chamada enviada.");
 
-        const dadosPush = await respostaPush.json().catch(() => null);
+    setMensagem(
+      `✅ Chamada enviada para ${unidadeNomeAtual}. Aguarde o atendimento.`
+    );
 
-        console.log("RESPOSTA PUSH V2:", {
-          status: respostaPush.status,
-          dados: dadosPush,
-        });
-      } catch (erroPush) {
-        console.error(
-          "A chamada foi criada, mas o push falhou:",
+    /*
+     * O push é enviado separadamente.
+     * Ele não deixa mais o botão preso em "Enviando...".
+     */
+    fetch("/api/enviar-notificacao-v2", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        unidadeId: unidadeIdAtual,
+      }),
+    })
+      .then(async (respostaPush) => {
+        const textoResposta = await respostaPush.text();
+
+        let dadosPush: any = null;
+
+        try {
+          dadosPush = textoResposta
+            ? JSON.parse(textoResposta)
+            : null;
+        } catch {
+          dadosPush = textoResposta;
+        }
+
+        console.log("RESPOSTA PUSH V2:", dadosPush);
+
+        if (!respostaPush.ok) {
+          console.warn(
+            "A chamada foi gravada, mas o push não foi confirmado:",
+            dadosPush
+          );
+        }
+      })
+      .catch((erroPush) => {
+        console.warn(
+          "A chamada foi gravada, mas ocorreu falha no push:",
           erroPush
         );
-      }
+      });
+  } catch (erro: any) {
+    console.error("Falha ao gravar a chamada:", erro);
+
+    const detalhe =
+      erro?.message ||
+      erro?.code ||
+      String(erro) ||
+      "Erro desconhecido";
+
+    setDiagnostico(`❌ ERRO: ${detalhe}`);
+    setMensagem("");
+
+    chamadaAtivaRef.current = false;
+    chamadaFoiEnviadaRef.current = false;
+
+    setEnviando(false);
+  }
+}
+
+  async function iniciarGravacao() {
+    if (!unidadeSelecionada) {
+      alert("Selecione uma unidade antes de gravar.");
+      return;
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: true,
+      });
+
+      const recorder = new MediaRecorder(stream);
+      audioChunksRef.current = [];
+
+      recorder.ondataavailable = (evento) => {
+        if (evento.data.size > 0) {
+          audioChunksRef.current.push(evento.data);
+        }
+      };
+
+      recorder.onstop = () => {
+        const blob = new Blob(audioChunksRef.current, {
+          type: "audio/webm",
+        });
+
+        setAudioBlob(blob);
+        setGravandoAudio(false);
+        stream.getTracks().forEach((track) => track.stop());
+      };
+
+      mediaRecorderRef.current = recorder;
+      recorder.start();
 
       setAudioBlob(null);
+      setGravandoAudio(true);
 
-      setMensagem(
-        audioBase64
-          ? `✅ Áudio enviado e chamada feita para ${unidadeAtual.nome}. Aguarde o atendimento.`
-          : `✅ Chamada enviada para ${unidadeAtual.nome}. Aguarde o atendimento.`
-      );
-    } catch (erro: any) {
-      console.error("Erro completo ao chamar unidade:", erro);
-
-      const codigo = erro?.code || erro?.name || "erro-desconhecido";
-      const texto = erro?.message || String(erro);
-
-      alert(
-        `Erro ao enviar chamada.\n\nCódigo: ${codigo}\nMensagem: ${texto}`
-      );
-
-      chamadaAtivaRef.current = false;
-      chamadaFoiEnviadaRef.current = false;
-    } finally {
-      setEnviando(false);
+      setTimeout(() => {
+        if (recorder.state === "recording") {
+          recorder.stop();
+        }
+      }, 15000);
+    } catch (erro) {
+      console.error("Erro ao acessar o microfone:", erro);
+      alert("Não foi possível acessar o microfone.");
+      setGravandoAudio(false);
     }
   }
 
-  async function enviarAudioEChamar() {
-    if (!audioBlob) {
+  function pararGravacao() {
+    if (
+      mediaRecorderRef.current &&
+      mediaRecorderRef.current.state === "recording"
+    ) {
+      mediaRecorderRef.current.stop();
+      return;
+    }
+
+    setGravandoAudio(false);
+  }
+
+  async function enviarAudioVisitante() {
+    if (!unidadeSelecionada || !audioBlob) {
       alert("Grave um áudio antes de enviar.");
       return;
     }
 
-    if (chamadaSelecionadaAtiva) {
-      await enviarAudioNaConversa(audioBlob);
-      return;
-    }
+    const referenciaChamada = ref(
+      db,
+      `unidades-v2/${unidadeSelecionada.id}/chamada`
+    );
 
-    await chamarUnidade(audioBlob);
+    try {
+      setEnviandoAudio(true);
+
+      const snapshotChamada = await get(referenciaChamada);
+      const chamadaAtual = snapshotChamada.val() || {};
+      const statusAtual = chamadaAtual.status || "";
+
+      const chamadaJaAtiva =
+        statusAtual &&
+        statusAtual !== "Encerrado" &&
+        statusAtual !== "Finalizado" &&
+        statusAtual !== "Cancelado pelo visitante" &&
+        statusAtual !== "Cancelada pelo visitante" &&
+        statusAtual !== "Atendimento encerrado";
+
+      if (!chamadaJaAtiva) {
+        if (!motivo) {
+          alert("Escolha o motivo da chamada antes de enviar o áudio.");
+          return;
+        }
+
+        if (precisaNome && !nome.trim()) {
+          alert("Digite seu nome antes de enviar o áudio.");
+          return;
+        }
+
+        if (precisaDescricao && !outroMotivo.trim()) {
+          alert("Descreva o motivo antes de enviar o áudio.");
+          return;
+        }
+      }
+
+      const audioBase64 = await blobParaBase64(audioBlob);
+      const criadoEmMensagem = Date.now();
+      const idMensagem = String(criadoEmMensagem);
+
+      if (!chamadaJaAtiva) {
+        const motivoFinal =
+          motivo === "Outros" ? outroMotivo.trim() : motivo;
+
+        let nomeFinal = nome.trim();
+
+        if (motivo === "Entrega") nomeFinal = "Entrega";
+        if (motivo === "Entrega de comida") {
+          nomeFinal = "Entrega de comida";
+        }
+        if (motivo === "Outros" && !nomeFinal) {
+          nomeFinal = "Outro chamado";
+        }
+
+        chamadaFoiEnviadaRef.current = true;
+        chamadaAtivaRef.current = true;
+        ultimoPopupRef.current = "";
+
+        await update(referenciaChamada, {
+          nome: nomeFinal,
+          motivo: motivoFinal,
+          status: "Aguardando atendimento",
+          criadoEm: new Date().toISOString(),
+          notificar: true,
+          condominioId,
+          origem: "acesso-v2",
+          mensagemRapida: null,
+          respostaRapida: null,
+          mensagemResponsavel: null,
+          resposta: null,
+          mensagemMorador: null,
+          visualizadoPeloVisitante: false,
+        });
+      }
+
+      await set(
+        ref(
+          db,
+          `unidades-v2/${unidadeSelecionada.id}/chamada/mensagens/${idMensagem}`
+        ),
+        {
+          autor: "visitante",
+          tipo: "audio",
+          audioBase64,
+          criadoEm: criadoEmMensagem,
+        }
+      );
+
+      await update(referenciaChamada, {
+        audioBase64,
+        ultimaAtividade: criadoEmMensagem,
+        enviadoEm: criadoEmMensagem,
+        ...(chamadaJaAtiva
+          ? {}
+          : {
+              status: "Aguardando atendimento",
+              notificar: true,
+            }),
+      });
+
+      if (!chamadaJaAtiva) {
+        try {
+          const respostaPush = await fetch(
+            "/api/enviar-notificacao-v2",
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                unidadeId: unidadeSelecionada.id,
+              }),
+            }
+          );
+
+          const dadosPush = await respostaPush.json();
+          console.log("RESPOSTA PUSH V2 - ÁUDIO:", dadosPush);
+        } catch (erroPush) {
+          console.error(
+            "Erro ao enviar push da chamada por áudio:",
+            erroPush
+          );
+        }
+      }
+
+      setAudioBlob(null);
+      setMensagem(
+        chamadaJaAtiva
+          ? "✅ Áudio enviado para o responsável."
+          : `✅ Chamada com áudio enviada para ${unidadeSelecionada.nome}. Aguarde o atendimento.`
+      );
+    } catch (erro) {
+      console.error("Erro ao enviar áudio:", erro);
+      alert("Erro ao enviar áudio. Tente novamente.");
+    } finally {
+      setEnviandoAudio(false);
+    }
   }
 
   async function cancelarChamada() {
-    const unidadeAtual = unidadeAtualSelecionada || unidadeSelecionada;
+  if (!unidadeSelecionada) return;
 
-    if (!unidadeAtual) return;
-
-    try {
-      await update(ref(db, `unidades-v2/${unidadeAtual.id}/chamada`), {
+  try {
+    await update(
+      ref(db, `unidades-v2/${unidadeSelecionada.id}/chamada`),
+      {
         status: "Cancelado pelo visitante",
         notificar: false,
         canceladoEm: Date.now(),
-      });
+      }
+    );
 
-      await remove(ref(db, `unidades-v2/${unidadeAtual.id}/chamada`));
-      voltarBlocoBase();
-      setMensagem("");
-      setPopupTexto("");
-      setPopupAudioBase64("");
-      setNome("");
-      setMotivo("");
-      setOutroMotivo("");
-      setAudioBlob(null);
+    await remove(ref(db, `unidades-v2/${unidadeSelecionada.id}/chamada`));
+setEnviando(false);
+setEnviandoAudio(false);
 
-      chamadaAtivaRef.current = false;
-      chamadaFoiEnviadaRef.current = false;
-      ultimaMensagemPopupRef.current = "";
-    } catch (erro) {
-      console.error("Erro ao cancelar:", erro);
-    }
+setDiagnostico("");
+setBusca("");
+setBlocoSelecionado("");
+    setMensagem("");
+    setPopupTexto("");
+    setPopupAudioBase64("");
+    setUnidadeSelecionada(null);
+    setNome("");
+    setMotivo("");
+    setOutroMotivo("");
+    setAudioBlob(null);
+    setGravandoAudio(false);
+
+    chamadaAtivaRef.current = false;
+    chamadaFoiEnviadaRef.current = false;
+    ultimoPopupRef.current = "";
+  } catch (erro) {
+    console.error("Erro ao cancelar:", erro);
+  }
+}
+  function limparSelecao() {
+    setUnidadeSelecionada(
+      localEhResidencia && unidades.length === 1
+        ? unidades[0]
+        : null
+    );
+    setNome("");
+    setMotivo("");
+    setOutroMotivo("");
+    setMensagem("");
+    setDiagnostico("");
+    setPopupTexto("");
+    setPopupAudioBase64("");
+    setAudioBlob(null);
+    setGravandoAudio(false);
+    chamadaAtivaRef.current = false;
+    chamadaFoiEnviadaRef.current = false;
+    ultimoPopupRef.current = "";
   }
 
-  function limparSelecao() {
+  function voltarBloco() {
+    setBlocoSelecionado("");
+    setBusca("");
     setUnidadeSelecionada(null);
     setNome("");
     setMotivo("");
     setOutroMotivo("");
     setMensagem("");
+    setDiagnostico("");
     setPopupTexto("");
     setPopupAudioBase64("");
     setAudioBlob(null);
-    ultimaMensagemPopupRef.current = "";
-  }
-
-  function voltarBloco() {
-    voltarBlocoBase();
-    setNome("");
-    setMotivo("");
-    setOutroMotivo("");
-    setMensagem("");
-    setPopupTexto("");
-    setPopupAudioBase64("");
-    setAudioBlob(null);
+    setGravandoAudio(false);
     chamadaAtivaRef.current = false;
     chamadaFoiEnviadaRef.current = false;
-    ultimaMensagemPopupRef.current = "";
+    ultimoPopupRef.current = "";
   }
 
   return (
     <main className="min-h-screen bg-slate-950 text-white p-4 flex justify-center">
       {popupTexto && (
-        <div className="fixed inset-0 z-[999] flex items-center justify-center bg-black/90 p-4">
+        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-5">
           <div
-            className={`w-full max-w-md rounded-3xl border-4 bg-slate-900 p-5 text-center shadow-2xl ${
+            className={
               popupTipo === "encerrado"
-                ? "border-red-500"
-                : popupTipo === "audio"
-                ? "border-blue-400"
-                : "border-green-400"
-            }`}
+                ? "w-full max-w-xl bg-green-600 border-4 border-green-300 rounded-3xl p-8 text-center shadow-2xl"
+                : "w-full max-w-xl bg-blue-600 border-4 border-blue-300 rounded-3xl p-8 text-center shadow-2xl"
+            }
           >
-            <p className="mb-3 text-6xl">
+            <p className="text-5xl mb-4">
               {popupTipo === "encerrado"
                 ? "✅"
                 : popupTipo === "audio"
-                ? "🎙️"
+                ? "🎧"
                 : "💬"}
             </p>
 
-            <h2
-              className={`text-2xl font-black ${
-                popupTipo === "encerrado"
-                  ? "text-red-300"
-                  : popupTipo === "audio"
-                  ? "text-blue-300"
-                  : "text-green-300"
-              }`}
-            >
+            <h2 className="text-2xl font-black mb-3">
               {popupTipo === "encerrado"
                 ? "ATENDIMENTO ENCERRADO"
                 : popupTipo === "audio"
-                ? "NOVA MENSAGEM DE VOZ"
-                : "MENSAGEM DO RESPONSÁVEL"}
+                ? "NOVO ÁUDIO"
+                : "NOVA MENSAGEM"}
             </h2>
 
-            <p className="mt-4 text-lg font-bold text-white">
+            <p className="text-3xl font-black leading-relaxed py-6">
               {popupTexto}
             </p>
 
             {popupTipo === "audio" && popupAudioBase64 && (
-              <div className="mt-5 rounded-2xl border border-blue-500/40 bg-slate-800 p-4">
+              <div className="bg-white/15 border border-white/30 rounded-2xl p-4 mb-4">
                 <audio
                   controls
                   className="w-full"
                   src={popupAudioBase64}
+                  onPlay={async () => {
+                    if (!unidadeSelecionada) return;
+
+                    await update(
+                      ref(db, `unidades-v2/${unidadeSelecionada.id}/chamada`),
+                      {
+                        visualizadoPeloVisitante: true,
+                        mensagemVisualizada: true,
+                      }
+                    );
+                  }}
                 />
               </div>
             )}
 
             <button
-              type="button"
               onClick={async () => {
-                const atendimentoFoiEncerrado = popupTipo === "encerrado";
+  if (unidadeSelecionada) {
+    await update(
+      ref(db, `unidades-v2/${unidadeSelecionada.id}/chamada`),
+      {
+        visualizadoPeloVisitante: true,
+      }
+    );
+  }
 
-                if (unidadeSelecionada && chamadaAtual) {
-                  await update(
-                    ref(
-                      db,
-                      `unidades-v2/${unidadeSelecionada.id}/chamada`
-                    ),
-                    {
-                      visualizadoPeloVisitante: true,
-                      visitanteVisualizou: true,
-                      mensagemVisualizada: true,
-                    }
-                  );
-                }
-
-                setPopupTexto("");
-                setPopupAudioBase64("");
-
-                if (atendimentoFoiEncerrado) {
-                  voltarBloco();
-                }
-              }}
-              className="mt-5 w-full rounded-2xl bg-blue-600 py-4 font-black text-white hover:bg-blue-500"
+  setPopupTexto("");
+  setPopupAudioBase64("");
+}}
+              className="mt-7 w-full bg-white text-black text-2xl font-black py-5 rounded-2xl"
             >
               ENTENDI
             </button>
@@ -673,10 +922,15 @@ useEffect(() => {
             QR ACESSO • V2
           </p>
 
-          <h1 className="text-3xl font-black">🏢 Chamar Unidade</h1>
+          <h1 className="text-3xl font-black">
+            {localEhResidencia ? "🏠" : "🏢"}{" "}
+            {localCadastro?.nome || "Chamar Unidade"}
+          </h1>
 
           <p className="text-slate-400 mt-2">
-            Escolha bloco, unidade e motivo da chamada.
+            {localEhResidencia
+              ? "Informe o motivo da visita para chamar a residência."
+              : "Escolha bloco, unidade e motivo da chamada."}
           </p>
         </section>
 
@@ -686,7 +940,10 @@ useEffect(() => {
           </section>
         )}
 
-        {!carregando && temBlocos && !blocoSelecionado && (
+        {!carregando &&
+          !localEhResidencia &&
+          temBlocos &&
+          !blocoSelecionado && (
           <section className="bg-slate-900 border border-slate-700 rounded-3xl p-5">
             <h2 className="text-2xl font-black mb-4">Escolha o bloco</h2>
 
@@ -705,6 +962,7 @@ useEffect(() => {
         )}
 
         {!carregando &&
+          !localEhResidencia &&
           (!temBlocos || blocoSelecionado) &&
           !unidadeSelecionada && (
             <section className="bg-slate-900 border border-slate-700 rounded-3xl p-5">
@@ -733,16 +991,30 @@ useEffect(() => {
               {unidadesFiltradas.length > 0 ? (
                 <div className="space-y-3">
                   {unidadesFiltradas.map((unidade) => {
-                    const ocupada = chamadaEstaAtiva(unidade.chamada);
-                    const statusTexto = textoStatusChamada(unidade.chamada);
+                    
+
+const statusChamada = unidade.chamada?.status || "";
+const temNome = unidade.chamada?.nome || "";
+const temMotivo = unidade.chamada?.motivo || "";
+
+const ocupada =
+  !!unidade.chamada &&
+  !!temNome &&
+  !!temMotivo &&
+  statusChamada !== "Encerrado" &&
+  statusChamada !== "Finalizado" &&
+  statusChamada !== "Cancelado pelo visitante" &&
+  statusChamada !== "Cancelada pelo visitante" &&
+  statusChamada !== "Atendimento encerrado";
 
                     return (
                       <button
                         key={unidade.id}
                         onClick={() => {
+                          if (ocupada) return;
                           setUnidadeSelecionada(unidade);
                         }}
-                        disabled={false}
+                        disabled={ocupada}
                         className={
                           ocupada
                             ? "w-full bg-slate-900 border border-yellow-500/40 rounded-2xl p-4 text-left opacity-70"
@@ -766,7 +1038,7 @@ useEffect(() => {
                                 : "text-green-400 text-sm font-bold"
                             }
                           >
-                            {ocupada ? statusTexto : "Disponível"}
+                            {ocupada ? "Em atendimento" : "Disponível"}
                           </span>
                         </div>
                       </button>
@@ -782,13 +1054,7 @@ useEffect(() => {
           )}
 
         {unidadeSelecionada && (
-          <section
-            className={
-              chamadaSelecionadaAtiva
-                ? "bg-slate-900 border border-yellow-500 rounded-3xl p-5"
-                : "bg-slate-900 border border-green-500 rounded-3xl p-5"
-            }
-          >
+          <section className="bg-slate-900 border border-green-500 rounded-3xl p-5">
             <button
               onClick={limparSelecao}
               className="mb-4 text-sm text-slate-300 underline"
@@ -799,56 +1065,37 @@ useEffect(() => {
             <div className="bg-slate-800 rounded-2xl p-4 mb-5">
               <p className="text-sm text-slate-400">Unidade selecionada</p>
               <h2 className="text-2xl font-black text-green-400">
-                🏠 {unidadeAtualSelecionada?.nome || unidadeSelecionada.nome}
+                🏠 {unidadeSelecionada.nome}
               </h2>
               <p className="text-slate-400">
-                {unidadeAtualSelecionada?.tipo ||
-                  unidadeSelecionada.tipo ||
-                  "Unidade"}
+                {unidadeSelecionada.tipo || "Unidade"}
               </p>
-
-              <p className="mt-2 text-xs font-bold text-slate-500">
-                ID: {unidadeSelecionada.id}
-              </p>
-
-              {chamadaSelecionadaAtiva && (
-                <div className="mt-4 bg-yellow-500/15 border border-yellow-500 rounded-2xl p-3 text-yellow-300 font-bold text-center">
-                  ⚠️ Já existe uma chamada ativa para esta unidade.
-                </div>
-              )}
             </div>
-
-            {chamadaSelecionadaAtiva && (
-              <Conversa mensagens={mensagensConversa} />
-            )}
 
             <p className="text-sm text-slate-300 font-bold mb-3">
               O que você precisa?
             </p>
 
             <div className="grid grid-cols-1 gap-3 mb-5">
-              {["Visitante", "Entrega", "Entrega de comida", "Outros"].map(
-                (item) => (
-                  <button
-                    key={item}
-                    onClick={() => {
-                      setMotivo(item);
-                      setMensagem("");
-                    }}
-                    disabled={chamadaSelecionadaAtiva || gravandoAudio}
-                    className={
-                      motivo === item
-                        ? "bg-green-500 text-black font-black py-4 rounded-2xl disabled:bg-gray-500"
-                        : "bg-slate-800 text-white font-bold py-4 rounded-2xl border border-slate-600 disabled:opacity-50"
-                    }
-                  >
-                    {item === "Visitante" && "👤 Visitante"}
-                    {item === "Entrega" && "📦 Entrega / encomenda"}
-                    {item === "Entrega de comida" && "🍔 Entrega de comida"}
-                    {item === "Outros" && "✍️ Outros"}
-                  </button>
-                )
-              )}
+              {["Visitante", "Entrega", "Entrega de comida", "Outros"].map((item) => (
+                <button
+                  key={item}
+                  onClick={() => {
+                    setMotivo(item);
+                    setMensagem("");
+                  }}
+                  className={
+                    motivo === item
+                      ? "bg-green-500 text-black font-black py-4 rounded-2xl"
+                      : "bg-slate-800 text-white font-bold py-4 rounded-2xl border border-slate-600"
+                  }
+                >
+                  {item === "Visitante" && "👤 Visitante"}
+                  {item === "Entrega" && "📦 Entrega / encomenda"}
+                  {item === "Entrega de comida" && "🍔 Entrega de comida"}
+                  {item === "Outros" && "✍️ Outros"}
+                </button>
+              ))}
             </div>
 
             {motivo === "Visitante" && (
@@ -859,9 +1106,8 @@ useEffect(() => {
                 <input
                   value={nome}
                   onChange={(evento) => setNome(evento.target.value)}
-                  disabled={chamadaSelecionadaAtiva || gravandoAudio}
                   placeholder="Digite seu nome"
-                  className="w-full mt-2 mb-5 bg-slate-950 border border-slate-600 rounded-2xl px-4 py-4 text-white outline-none focus:border-green-400 disabled:opacity-50"
+                  className="w-full mt-2 mb-5 bg-slate-950 border border-slate-600 rounded-2xl px-4 py-4 text-white outline-none focus:border-green-400"
                 />
               </>
             )}
@@ -874,65 +1120,94 @@ useEffect(() => {
                 <input
                   value={outroMotivo}
                   onChange={(evento) => setOutroMotivo(evento.target.value)}
-                  disabled={chamadaSelecionadaAtiva || gravandoAudio}
                   placeholder="Ex: reunião, manutenção, serviço..."
-                  className="w-full mt-2 mb-5 bg-slate-950 border border-slate-600 rounded-2xl px-4 py-4 text-white outline-none focus:border-green-400 disabled:opacity-50"
+                  className="w-full mt-2 mb-5 bg-slate-950 border border-slate-600 rounded-2xl px-4 py-4 text-white outline-none focus:border-green-400"
                 />
               </>
             )}
 
-            {(motivo === "Entrega" || motivo === "Entrega de comida") &&
-              !chamadaSelecionadaAtiva && (
-                <div className="mb-5 bg-blue-500/10 border border-blue-500/40 rounded-2xl p-4 text-blue-300 text-sm font-bold text-center">
-                  Para esse tipo de chamada, não precisa informar nome.
-                </div>
-              )}
+            {(motivo === "Entrega" || motivo === "Entrega de comida") && (
+              <div className="mb-5 bg-blue-500/10 border border-blue-500/40 rounded-2xl p-4 text-blue-300 text-sm font-bold text-center">
+                Para esse tipo de chamada, não precisa informar nome.
+              </div>
+            )}
 
-            <button
-              onClick={() => chamarUnidade()}
-              disabled={
-                enviando || !motivo || chamadaSelecionadaAtiva || gravandoAudio
-              }
-              className="w-full bg-green-500 hover:bg-green-400 disabled:bg-gray-500 text-black text-xl font-black py-4 rounded-2xl"
+                       <button
+              onClick={chamarUnidade}
+              disabled={enviando || !motivo}
+              className="w-full sticky bottom-4 z-40 bg-green-500 hover:bg-green-400 disabled:bg-gray-500 text-black text-xl font-black py-4 rounded-2xl shadow-2xl"
             >
-              {chamadaSelecionadaAtiva
-                ? "⚠️ CHAMADA JÁ ATIVA"
-                : enviando
-                ? "Enviando..."
-                : "🔔 CHAMAR"}
+              {enviando ? "Enviando..." : "🔔 CHAMAR"}
             </button>
 
-            <GravadorAudio
-              gravando={gravandoAudio}
-              enviando={enviando}
-              audioBlob={audioBlob}
-              onGravar={iniciarGravacao}
-              onParar={pararGravacao}
-              onEnviar={enviarAudioEChamar}
-            />
+                        {diagnostico && (
+              <div
+                className={
+                  diagnostico.startsWith("❌")
+                    ? "mt-5 bg-red-500/15 border border-red-500 rounded-2xl p-4 text-red-300 font-bold text-center break-words"
+                    : diagnostico.startsWith("3/3")
+                    ? "mt-5 bg-green-500/15 border border-green-500 rounded-2xl p-4 text-green-300 font-bold text-center"
+                    : "mt-5 bg-yellow-500/15 border border-yellow-500 rounded-2xl p-4 text-yellow-200 font-bold text-center"
+                }
+              >
+                {diagnostico}
+              </div>
+            )}
 
             {mensagem && (
               <div className="mt-5 space-y-4">
-                <div
-                  className={
-                    mensagem.startsWith("⚠️")
-                      ? "bg-yellow-500/15 border border-yellow-500 rounded-2xl p-4 text-yellow-300 font-bold text-center"
-                      : "bg-green-500/15 border border-green-500 rounded-2xl p-4 text-green-300 font-bold text-center"
-                  }
-                >
+                <div className="bg-green-500/15 border border-green-500 rounded-2xl p-4 text-green-300 font-bold text-center">
                   {mensagem}
                 </div>
 
-                {chamadaAtivaRef.current && (
-                  <button
-                    onClick={cancelarChamada}
-                    className="w-full bg-red-600 hover:bg-red-500 text-white text-xl font-black py-4 rounded-2xl"
-                  >
-                    ❌ CANCELAR CHAMADA
-                  </button>
-                )}
+                <button
+                  onClick={cancelarChamada}
+                  className="w-full bg-red-600 hover:bg-red-500 text-white text-xl font-black py-4 rounded-2xl"
+                >
+                  ❌ CANCELAR CHAMADA
+                </button>
               </div>
             )}
+
+            <div className="mt-4 space-y-3">
+              <button
+                onClick={gravandoAudio ? pararGravacao : iniciarGravacao}
+                disabled={enviandoAudio}
+                className={
+                  gravandoAudio
+                    ? "w-full bg-red-600 text-white text-xl font-black py-4 rounded-2xl animate-pulse"
+                    : "w-full bg-blue-600 hover:bg-blue-500 disabled:bg-gray-500 text-white text-xl font-black py-4 rounded-2xl"
+                }
+              >
+                {gravandoAudio
+                  ? "⏹️ PARAR GRAVAÇÃO"
+                  : "🎙️ GRAVAR ÁUDIO"}
+              </button>
+
+              {audioBlob && (
+                <div className="bg-slate-800 border border-blue-500/40 rounded-2xl p-4 space-y-3">
+                  <p className="text-blue-300 text-sm font-bold text-center">
+                    Áudio gravado. Confira e envie.
+                  </p>
+
+                  <audio
+                    controls
+                    className="w-full"
+                    src={URL.createObjectURL(audioBlob)}
+                  />
+
+                  <button
+                    onClick={enviarAudioVisitante}
+                    disabled={enviandoAudio}
+                    className="w-full bg-blue-500 hover:bg-blue-400 disabled:bg-gray-500 text-white text-xl font-black py-4 rounded-2xl"
+                  >
+                    {enviandoAudio
+                      ? "Enviando..."
+                      : "📤 ENVIAR ÁUDIO"}
+                  </button>
+                </div>
+              )}
+            </div>
           </section>
         )}
       </div>

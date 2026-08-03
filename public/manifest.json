@@ -1,8 +1,9 @@
 {
-  "name": "QR Acesso",
+  "name": "QR Acesso Studio",
   "short_name": "QR Acesso",
-  "description": "Controle inteligente de acesso",
-  "start_url": "/",
+  "description": "Plataforma QR Acesso para moradores e condomínios",
+  "start_url": "/morador-v2/bloco-1-ap-11",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#020617",
   "theme_color": "#020617",

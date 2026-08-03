@@ -1,773 +1,741 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ref, remove, update } from "firebase/database";
-import { db } from "../../services/firebase";
 
-type UnidadeCadastrada = {
+type Unidade = {
   id: string;
   codigo: string;
-  localId: string;
   localNome: string;
-  tipoLocal: string;
   bloco: string;
   nome: string;
-  tipo: string;
   modoChamado?: string;
-  status: string;
-  possuiResponsavel?: boolean;
-  responsavelAdministrativo?: any;
-  criadoEm: string;
-  atualizadoEm?: string;
 };
 
-type MoradorCadastrado = {
+type Morador = {
   id: string;
   codigo: string;
   nome: string;
   telefone: string;
-  email?: string;
   unidadeId: string;
   unidadeNome: string;
   prioridade: number;
   podeAbrirPortao: boolean;
-  recebeChamadas?: boolean;
-  perfil?: string;
   status: string;
-  criadoEm: string;
+};
+
+type AbaMorador =
+  | "geral"
+  | "acessos"
+  | "historico"
+  | "documentos"
+  | "dependentes"
+  | "veiculos"
+  | "pets";
+
+type FiltroHistorico =
+  | "todos"
+  | "entregas"
+  | "visitantes"
+  | "acessos"
+  | "solicitacoes"
+  | "comunicados";
+
+type EventoMorador = {
+  id: string;
+  tipo: Exclude<FiltroHistorico, "todos">;
+  grupo: "hoje" | "ontem" | "semana";
+  icone: string;
+  titulo: string;
+  descricao: string;
+  data: string;
+  horario: string;
+  status: string;
+  destaque: "azul" | "verde" | "laranja" | "vermelho" | "violeta";
+  protocolo: string;
+  detalhes: string[];
 };
 
 type Props = {
-  unidades: UnidadeCadastrada[];
-  moradores: MoradorCadastrado[];
-
+  unidades: Unidade[];
+  moradores: Morador[];
   unidadeMoradorId: string;
   setUnidadeMoradorId: (valor: string) => void;
-
   nomeMorador: string;
   setNomeMorador: (valor: string) => void;
-
   telefoneMorador: string;
   setTelefoneMorador: (valor: string) => void;
-
   prioridadeMorador: string;
   setPrioridadeMorador: (valor: string) => void;
-
   podeAbrirPortao: boolean;
   setPodeAbrirPortao: (valor: boolean) => void;
-
   cadastrarMorador: () => void;
   salvandoMorador: boolean;
-
-  onAbrirUnidade?: (unidadeId: string) => void;
 };
+
+
+const eventosDemonstracao: EventoMorador[] = [
+  {
+    id: "evt-001",
+    tipo: "entregas",
+    grupo: "hoje",
+    icone: "📦",
+    titulo: "Entrega recebida",
+    descricao: "Mercado Livre • pacote médio",
+    data: "Hoje",
+    horario: "10:42",
+    status: "Aguardando retirada",
+    destaque: "laranja",
+    protocolo: "EVT-20260716-001",
+    detalhes: [
+      "Recebida pela portaria.",
+      "Morador notificado automaticamente.",
+      "Foto da entrega disponível quando houver integração.",
+    ],
+  },
+  {
+    id: "evt-002",
+    tipo: "visitantes",
+    grupo: "ontem",
+    icone: "🚶",
+    titulo: "Visitante autorizado",
+    descricao: "Carlos Roberto • visita pessoal",
+    data: "Ontem",
+    horario: "19:18",
+    status: "Finalizado",
+    destaque: "verde",
+    protocolo: "EVT-20260715-014",
+    detalhes: [
+      "Entrada autorizada pelo morador.",
+      "Entrada registrada às 19:18.",
+      "Saída registrada às 20:07.",
+    ],
+  },
+  {
+    id: "evt-003",
+    tipo: "acessos",
+    grupo: "ontem",
+    icone: "🚪",
+    titulo: "Abertura de portão",
+    descricao: "Portão social • aplicativo",
+    data: "Ontem",
+    horario: "08:31",
+    status: "Concluído",
+    destaque: "azul",
+    protocolo: "EVT-20260715-006",
+    detalhes: [
+      "Abertura solicitada pelo aplicativo.",
+      "Comando confirmado pelo equipamento.",
+      "Tempo de resposta: 1,4 segundo.",
+    ],
+  },
+  {
+    id: "evt-004",
+    tipo: "solicitacoes",
+    grupo: "semana",
+    icone: "🛠",
+    titulo: "Solicitação de manutenção",
+    descricao: "Vazamento na área comum próxima à unidade",
+    data: "14/07/2026",
+    horario: "16:05",
+    status: "Em atendimento",
+    destaque: "vermelho",
+    protocolo: "SOL-20260714-008",
+    detalhes: [
+      "Solicitação registrada pelo morador.",
+      "Encaminhada para a zeladoria.",
+      "Prazo de atendimento acompanhado pelo motor de SLA.",
+    ],
+  },
+  {
+    id: "evt-005",
+    tipo: "comunicados",
+    grupo: "semana",
+    icone: "📢",
+    titulo: "Comunicado visualizado",
+    descricao: "Manutenção preventiva do portão",
+    data: "13/07/2026",
+    horario: "21:12",
+    status: "Visualizado",
+    destaque: "violeta",
+    protocolo: "COM-20260713-003",
+    detalhes: [
+      "Comunicado enviado para todos os moradores.",
+      "Visualização confirmada pelo dispositivo cadastrado.",
+    ],
+  },
+];
 
 export default function Moradores({
   unidades,
   moradores,
-  onAbrirUnidade,
+  unidadeMoradorId,
+  setUnidadeMoradorId,
+  nomeMorador,
+  setNomeMorador,
+  telefoneMorador,
+  setTelefoneMorador,
+  prioridadeMorador,
+  setPrioridadeMorador,
+  podeAbrirPortao,
+  setPodeAbrirPortao,
+  cadastrarMorador,
+  salvandoMorador,
 }: Props) {
   const [busca, setBusca] = useState("");
-  const [filtroRapido, setFiltroRapido] = useState("todos");
+  const [localFiltro, setLocalFiltro] = useState("todos");
+  const [statusFiltro, setStatusFiltro] = useState("todos");
+  const [modalCadastroAberto, setModalCadastroAberto] = useState(false);
   const [moradorSelecionado, setMoradorSelecionado] =
-    useState<MoradorCadastrado | null>(null);
+    useState<Morador | null>(null);
+  const [abaAtiva, setAbaAtiva] = useState<AbaMorador>("geral");
+  const [filtroHistorico, setFiltroHistorico] =
+    useState<FiltroHistorico>("todos");
+  const [eventoSelecionado, setEventoSelecionado] =
+    useState<EventoMorador | null>(null);
 
-  const [alterandoStatus, setAlterandoStatus] = useState(false);
-  const [excluindoMorador, setExcluindoMorador] = useState(false);
-  const [editandoMorador, setEditandoMorador] =
-    useState<MoradorCadastrado | null>(null);
-  const [salvandoEdicao, setSalvandoEdicao] = useState(false);
-
-  const [editNome, setEditNome] = useState("");
-  const [editTelefone, setEditTelefone] = useState("");
-  const [editEmail, setEditEmail] = useState("");
-  const [editPrioridade, setEditPrioridade] = useState("1");
-  const [editPerfil, setEditPerfil] = useState("morador");
-  const [editStatus, setEditStatus] = useState("ativo");
-  const [editRecebeChamadas, setEditRecebeChamadas] = useState(true);
-  const [editPodeAbrirPortao, setEditPodeAbrirPortao] = useState(false);
-
-  function textoPerfil(perfil?: string) {
-    if (perfil === "familiar") return "Familiar";
-    if (perfil === "inquilino") return "Inquilino";
-    if (perfil === "proprietario") return "Proprietário";
-    if (perfil === "funcionario") return "Funcionário";
-    if (perfil === "outro") return "Outro";
-    return "Morador";
-  }
-
-  function unidadeDoMorador(morador: MoradorCadastrado) {
-    return unidades.find((unidade) => unidade.id === morador.unidadeId);
-  }
-
-  function textoUnidadeCurta(unidade?: UnidadeCadastrada) {
-    if (!unidade) return "Unidade não localizada";
-    return unidade.bloco ? `${unidade.bloco} / ${unidade.nome}` : unidade.nome;
-  }
-
-  function formatarNome(texto: string) {
-    return texto
-      .trim()
-      .toLowerCase()
-      .split(" ")
-      .filter(Boolean)
-      .map((palavra) => palavra.charAt(0).toUpperCase() + palavra.slice(1))
-      .join(" ");
-  }
+  const locais = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          unidades
+            .map((unidade) => unidade.localNome)
+            .filter((nome) => Boolean(nome))
+        )
+      ).sort((a, b) => a.localeCompare(b, "pt-BR")),
+    [unidades]
+  );
 
   const moradoresFiltrados = useMemo(() => {
     const termo = busca.trim().toLowerCase();
 
-    return moradores.filter((morador) => {
-      const unidade = unidades.find((item) => item.id === morador.unidadeId);
+    return moradores
+      .filter((morador) => {
+        const unidade = unidades.find(
+          (item) => item.id === morador.unidadeId
+        );
 
-      const textoBusca = [
-        morador.nome,
-        morador.telefone,
-        morador.email || "",
-        morador.unidadeNome,
-        unidade?.localNome || "",
-        unidade?.bloco || "",
-        unidade?.nome || "",
-        morador.codigo,
-        morador.perfil || "",
-      ]
-        .join(" ")
-        .toLowerCase();
+        const localDoMorador =
+          unidade?.localNome ||
+          morador.unidadeNome.split("•")[0]?.trim() ||
+          "";
 
-      const passaBusca = !termo || textoBusca.includes(termo);
+        const passaLocal =
+          localFiltro === "todos" || localDoMorador === localFiltro;
 
-      const passaFiltro =
-        filtroRapido === "todos" ||
-        (filtroRapido === "ativos" && morador.status === "ativo") ||
-        (filtroRapido === "inativos" && morador.status !== "ativo") ||
-        (filtroRapido === "proprietarios" &&
-          (morador.perfil || "morador") === "proprietario") ||
-        (filtroRapido === "inquilinos" &&
-          (morador.perfil || "morador") === "inquilino") ||
-        (filtroRapido === "familiares" &&
-          (morador.perfil || "morador") === "familiar") ||
-        (filtroRapido === "funcionarios" &&
-          (morador.perfil || "morador") === "funcionario") ||
-        (filtroRapido === "recebeChamadas" &&
-          morador.recebeChamadas !== false) ||
-        (filtroRapido === "abrePortao" && morador.podeAbrirPortao) ||
-        (filtroRapido === "semTelefone" && !morador.telefone);
+        const passaStatus =
+          statusFiltro === "todos" || morador.status === statusFiltro;
 
-      return passaBusca && passaFiltro;
-    });
-  }, [busca, filtroRapido, moradores, unidades]);
+        const textoPesquisa = [
+          morador.nome,
+          morador.codigo,
+          morador.telefone,
+          morador.unidadeNome,
+          unidade?.codigo,
+          unidade?.bloco,
+          unidade?.nome,
+          localDoMorador,
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+
+        const passaBusca = !termo || textoPesquisa.includes(termo);
+
+        return passaLocal && passaStatus && passaBusca;
+      })
+      .sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
+  }, [busca, localFiltro, moradores, statusFiltro, unidades]);
 
   const totalAtivos = moradores.filter(
     (morador) => morador.status === "ativo"
   ).length;
 
-  const totalInativos = moradores.filter(
-    (morador) => morador.status !== "ativo"
-  ).length;
-
-  const totalRecebeChamadas = moradores.filter(
-    (morador) => morador.recebeChamadas !== false
-  ).length;
-
-  const totalAbrePortao = moradores.filter(
+  const totalComPortao = moradores.filter(
     (morador) => morador.podeAbrirPortao
   ).length;
 
-  const filtros = [
-    { id: "todos", nome: "Todos" },
-    { id: "ativos", nome: "🟢 Ativos" },
-    { id: "inativos", nome: "🔴 Inativos" },
-    { id: "proprietarios", nome: "Proprietários" },
-    { id: "inquilinos", nome: "Inquilinos" },
-    { id: "familiares", nome: "Familiares" },
-    { id: "funcionarios", nome: "Funcionários" },
-    { id: "recebeChamadas", nome: "🔔 Recebem chamadas" },
-    { id: "abrePortao", nome: "🚪 Abrem portão" },
-    { id: "semTelefone", nome: "⚠️ Sem telefone" },
+  const totalSemPermissao = moradores.length - totalComPortao;
+
+  function nomeUnidade(unidade: Unidade) {
+    return unidade.bloco
+      ? `${unidade.localNome} • ${unidade.bloco}/${unidade.nome}`
+      : `${unidade.localNome} • ${unidade.nome}`;
+  }
+
+  function obterUnidade(morador: Morador) {
+    return unidades.find((unidade) => unidade.id === morador.unidadeId);
+  }
+
+  function obterLocalMorador(morador: Morador) {
+    const unidade = obterUnidade(morador);
+
+    return (
+      unidade?.localNome ||
+      morador.unidadeNome.split("•")[0]?.trim() ||
+      "Local não informado"
+    );
+  }
+
+  function obterBlocoUnidade(morador: Morador) {
+    const unidade = obterUnidade(morador);
+
+    if (!unidade) return morador.unidadeNome;
+
+    return unidade.bloco
+      ? `${unidade.bloco} / ${unidade.nome}`
+      : unidade.nome;
+  }
+
+  function abrirMorador(morador: Morador) {
+    setMoradorSelecionado(morador);
+    setAbaAtiva("geral");
+  }
+
+  function fecharMorador() {
+    setMoradorSelecionado(null);
+    setAbaAtiva("geral");
+    setFiltroHistorico("todos");
+    setEventoSelecionado(null);
+  }
+
+  function fecharCadastro() {
+    if (salvandoMorador) return;
+    setModalCadastroAberto(false);
+  }
+
+  async function salvarNovoMorador() {
+    await Promise.resolve(cadastrarMorador());
+  }
+
+  const historicoFiltrado =
+    filtroHistorico === "todos"
+      ? eventosDemonstracao
+      : eventosDemonstracao.filter(
+          (evento) => evento.tipo === filtroHistorico
+        );
+
+  const gruposHistorico = [
+    {
+      id: "hoje",
+      titulo: "Hoje",
+      eventos: historicoFiltrado.filter(
+        (evento) => evento.grupo === "hoje"
+      ),
+    },
+    {
+      id: "ontem",
+      titulo: "Ontem",
+      eventos: historicoFiltrado.filter(
+        (evento) => evento.grupo === "ontem"
+      ),
+    },
+    {
+      id: "semana",
+      titulo: "Esta semana",
+      eventos: historicoFiltrado.filter(
+        (evento) => evento.grupo === "semana"
+      ),
+    },
+  ].filter((grupo) => grupo.eventos.length > 0);
+
+  function classesEvento(destaque: EventoMorador["destaque"]) {
+    if (destaque === "verde") {
+      return "border-green-800 bg-green-950/20";
+    }
+
+    if (destaque === "laranja") {
+      return "border-orange-800 bg-orange-950/20";
+    }
+
+    if (destaque === "vermelho") {
+      return "border-red-800 bg-red-950/20";
+    }
+
+    if (destaque === "violeta") {
+      return "border-violet-800 bg-violet-950/20";
+    }
+
+    return "border-blue-800 bg-blue-950/20";
+  }
+
+  const abas: Array<{
+    id: AbaMorador;
+    nome: string;
+    icone: string;
+  }> = [
+    { id: "geral", nome: "Geral", icone: "👤" },
+    { id: "acessos", nome: "Acessos", icone: "🚪" },
+    { id: "historico", nome: "Histórico", icone: "🕘" },
+    { id: "documentos", nome: "Documentos", icone: "📄" },
+    { id: "dependentes", nome: "Dependentes", icone: "👨‍👩‍👧" },
+    { id: "veiculos", nome: "Veículos", icone: "🚗" },
+    { id: "pets", nome: "Pets", icone: "🐾" },
   ];
 
-  const unidadeSelecionada = moradorSelecionado
-    ? unidadeDoMorador(moradorSelecionado)
-    : null;
-
-  function abrirEdicaoMorador(morador: MoradorCadastrado) {
-    setEditandoMorador(morador);
-    setEditNome(morador.nome || "");
-    setEditTelefone(morador.telefone || "");
-    setEditEmail(morador.email || "");
-    setEditPrioridade(String(morador.prioridade || 1));
-    setEditPerfil(morador.perfil || "morador");
-    setEditStatus(morador.status || "ativo");
-    setEditRecebeChamadas(morador.recebeChamadas !== false);
-    setEditPodeAbrirPortao(!!morador.podeAbrirPortao);
-  }
-
-  async function salvarEdicaoMorador() {
-    if (!editandoMorador) return;
-
-    if (!editNome.trim()) {
-      alert("Digite o nome do morador.");
-      return;
-    }
-
-    if (!editTelefone.trim()) {
-      alert("Digite o telefone/WhatsApp do morador.");
-      return;
-    }
-
-    setSalvandoEdicao(true);
-
-    try {
-      const dadosAtualizados = {
-        nome: formatarNome(editNome),
-        telefone: editTelefone.trim(),
-        email: editEmail.trim(),
-        prioridade: Number(editPrioridade),
-        perfil: editPerfil,
-        status: editStatus,
-        recebeChamadas: editRecebeChamadas,
-        podeAbrirPortao: editPodeAbrirPortao,
-        atualizadoEm: new Date().toISOString(),
-      };
-
-      await update(
-        ref(db, `qrCentral/moradores/${editandoMorador.id}`),
-        dadosAtualizados
-      );
-
-      const moradorAtualizado: MoradorCadastrado = {
-        ...editandoMorador,
-        ...dadosAtualizados,
-      };
-
-      setEditandoMorador(null);
-      setMoradorSelecionado(moradorAtualizado);
-      alert("Morador atualizado com sucesso.");
-    } catch (erro) {
-      console.error(erro);
-      alert("Erro ao atualizar morador.");
-    } finally {
-      setSalvandoEdicao(false);
-    }
-  }
-
-  async function excluirMorador(morador: MoradorCadastrado) {
-    const confirmar = confirm(
-      `Excluir definitivamente ${morador.nome}?\n\nEsta ação não poderá ser desfeita.`
-    );
-
-    if (!confirmar) return;
-
-    setExcluindoMorador(true);
-
-    try {
-      await remove(ref(db, `qrCentral/moradores/${morador.id}`));
-
-      setMoradorSelecionado(null);
-      alert("Morador excluído com sucesso.");
-    } catch (erro) {
-      console.error(erro);
-      alert("Erro ao excluir morador.");
-    } finally {
-      setExcluindoMorador(false);
-    }
-  }
-
-  async function alternarStatusMorador(morador: MoradorCadastrado) {
-    const novoStatus = morador.status === "ativo" ? "inativo" : "ativo";
-
-    const confirmar = confirm(
-      novoStatus === "inativo"
-        ? `Desativar ${morador.nome}?\n\nEle continuará cadastrado, mas não ficará ativo para atendimento.`
-        : `Reativar ${morador.nome}?`
-    );
-
-    if (!confirmar) return;
-
-    setAlterandoStatus(true);
-
-    try {
-      await update(ref(db, `qrCentral/moradores/${morador.id}`), {
-        status: novoStatus,
-        atualizadoEm: new Date().toISOString(),
-      });
-
-      setMoradorSelecionado({
-        ...morador,
-        status: novoStatus,
-      });
-    } catch (erro) {
-      console.error(erro);
-      alert("Erro ao alterar status do morador.");
-    } finally {
-      setAlterandoStatus(false);
-    }
-  }
-
-  function abrirUnidadeDoMorador(morador: MoradorCadastrado) {
-    const unidade = unidadeDoMorador(morador);
-
-    if (!unidade) {
-      alert("Unidade não localizada para este morador.");
-      return;
-    }
-
-    if (!onAbrirUnidade) {
-      alert("Navegação para unidade ainda não conectada.");
-      return;
-    }
-
-    setMoradorSelecionado(null);
-    onAbrirUnidade(unidade.id);
-  }
-
   return (
-    <div>
-      <h2 className="text-3xl font-black text-blue-300 mb-2">Moradores</h2>
+    <div className="space-y-5">
+      {/* Cabeçalho */}
 
-      <p className="text-slate-400 mb-6">
-        Consulte, filtre e gerencie todos os moradores cadastrados no QR Central.
-      </p>
-
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4">
-          <p className="text-xs text-slate-400 font-bold">Total</p>
-          <p className="text-2xl font-black mt-1">{moradores.length}</p>
-        </div>
-
-        <div className="bg-green-950/40 border border-green-800 rounded-2xl p-4">
-          <p className="text-xs text-green-300 font-bold">🟢 Ativos</p>
-          <p className="text-2xl font-black mt-1">{totalAtivos}</p>
-        </div>
-
-        <div className="bg-red-950/40 border border-red-800 rounded-2xl p-4">
-          <p className="text-xs text-red-300 font-bold">🔴 Inativos</p>
-          <p className="text-2xl font-black mt-1">{totalInativos}</p>
-        </div>
-
-        <div className="bg-blue-950/40 border border-blue-800 rounded-2xl p-4">
-          <p className="text-xs text-blue-300 font-bold">🔔 Recebem chamadas</p>
-          <p className="text-2xl font-black mt-1">{totalRecebeChamadas}</p>
-        </div>
-      </div>
-
-      <div className="bg-slate-900 rounded-2xl p-6 border border-slate-800 mb-6">
-        <h3 className="text-2xl font-bold mb-4">Pesquisar moradores</h3>
-
-        <input
-          value={busca}
-          onChange={(e) => setBusca(e.target.value)}
-          placeholder="Buscar por nome, telefone, unidade, condomínio, código..."
-          className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 mb-4"
-        />
-
-        <div className="flex flex-wrap gap-2">
-          {filtros.map((filtro) => (
-            <button
-              key={filtro.id}
-              onClick={() => setFiltroRapido(filtro.id)}
-              className={`px-4 py-2 rounded-full text-xs font-black border transition-all ${
-                filtroRapido === filtro.id
-                  ? "bg-blue-600 border-blue-500 text-white"
-                  : "bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700"
-              }`}
-            >
-              {filtro.nome}
-            </button>
-          ))}
-        </div>
-
-        <p className="text-sm text-slate-400 mt-4">
-          Exibindo{" "}
-          <strong className="text-blue-300">{moradoresFiltrados.length}</strong>{" "}
-          de <strong className="text-blue-300">{moradores.length}</strong>{" "}
-          morador(es).
-        </p>
-      </div>
-
-      <div className="bg-slate-900 rounded-2xl p-6 border border-slate-800">
-        <div className="flex items-center justify-between gap-3 mb-5">
+      <section className="rounded-3xl bg-gradient-to-r from-blue-700 to-cyan-600 p-5 text-white md:p-7">
+        <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
           <div>
-            <h3 className="text-2xl font-bold">Moradores cadastrados</h3>
-            <p className="text-sm text-slate-400 mt-1">
-              Clique em um card para abrir a ficha completa do morador.
+            <p className="text-sm font-bold text-blue-100">
+              👥 MÓDULO DE MORADORES
+            </p>
+
+            <h2 className="mt-1 text-3xl font-black md:text-4xl">
+              Moradores
+            </h2>
+
+            <p className="mt-2 text-sm text-blue-100 md:text-base">
+              Pesquise, consulte e acompanhe tudo relacionado a cada morador.
             </p>
           </div>
+
+          <button
+            type="button"
+            onClick={() => setModalCadastroAberto(true)}
+            className="rounded-2xl bg-white px-5 py-3 font-black text-blue-700 shadow-lg transition-all hover:bg-blue-50 active:scale-95"
+          >
+            ＋ Novo morador
+          </button>
+        </div>
+      </section>
+
+      {/* Resumo */}
+
+      <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <div className="rounded-2xl border border-slate-700 bg-slate-900 p-4">
+          <p className="text-xs font-bold text-slate-400">
+            TOTAL CADASTRADO
+          </p>
+          <p className="mt-2 text-3xl font-black text-white">
+            {moradores.length}
+          </p>
         </div>
 
-        <div className="space-y-3 max-h-[620px] overflow-y-auto pr-1">
-          {moradoresFiltrados.map((morador) => {
-            const unidade = unidadeDoMorador(morador);
+        <div className="rounded-2xl border border-green-800 bg-green-950/25 p-4">
+          <p className="text-xs font-bold text-green-300">
+            ATIVOS
+          </p>
+          <p className="mt-2 text-3xl font-black text-white">
+            {totalAtivos}
+          </p>
+        </div>
 
-            return (
-              <button
-                key={morador.id}
-                onClick={() => setMoradorSelecionado(morador)}
-                className="w-full text-left bg-slate-800 hover:bg-slate-750 rounded-xl p-4 border border-slate-700 hover:border-blue-500 transition-all"
-              >
-                <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
-                  <div>
-                    <p className="text-xs text-blue-300 font-bold">
-                      {morador.codigo}
-                    </p>
+        <div className="rounded-2xl border border-blue-800 bg-blue-950/25 p-4">
+          <p className="text-xs font-bold text-blue-300">
+            ABREM PORTÃO
+          </p>
+          <p className="mt-2 text-3xl font-black text-white">
+            {totalComPortao}
+          </p>
+        </div>
 
-                    <h4 className="text-xl font-black">{morador.nome}</h4>
+        <div className="rounded-2xl border border-orange-800 bg-orange-950/25 p-4">
+          <p className="text-xs font-bold text-orange-300">
+            SEM PERMISSÃO
+          </p>
+          <p className="mt-2 text-3xl font-black text-white">
+            {totalSemPermissao}
+          </p>
+        </div>
+      </section>
 
-                    <p className="text-sm text-slate-400 mt-1">
-                      📱 {morador.telefone || "Sem telefone"}
-                    </p>
+      {/* Pesquisa e filtros */}
 
-                    {morador.email && (
-                      <p className="text-sm text-slate-400">
-                        ✉️ {morador.email}
-                      </p>
-                    )}
+      <section className="rounded-2xl border border-slate-800 bg-slate-900 p-4 md:p-5">
+        <div className="grid gap-3 lg:grid-cols-[1fr_260px_190px]">
+          <div className="relative">
+            <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-lg">
+              🔍
+            </span>
 
-                    <p className="text-sm text-slate-300 mt-2">
-                      🏢 {unidade?.localNome || morador.unidadeNome}
-                    </p>
+            <input
+              value={busca}
+              onChange={(event) => setBusca(event.target.value)}
+              placeholder="Pesquisar por nome, telefone, bloco ou unidade..."
+              className="w-full rounded-xl border border-slate-700 bg-slate-800 py-3 pl-12 pr-4 text-white outline-none transition-all placeholder:text-slate-500 focus:border-blue-500"
+            />
+          </div>
 
-                    {unidade && (
-                      <p className="text-sm text-slate-300">
-                        🏠 {textoUnidadeCurta(unidade)}
-                      </p>
-                    )}
+          <select
+            value={localFiltro}
+            onChange={(event) => setLocalFiltro(event.target.value)}
+            className="w-full rounded-xl border border-slate-700 bg-slate-800 p-3 text-white outline-none focus:border-blue-500"
+          >
+            <option value="todos">🌐 Todos os locais</option>
 
-                    <div className="flex flex-wrap gap-2 mt-3">
-                      <span className="text-xs bg-slate-900 border border-slate-700 px-3 py-1 rounded-full text-blue-300 font-bold">
-                        Prioridade {morador.prioridade}
-                      </span>
+            {locais.map((local) => (
+              <option key={local} value={local}>
+                🏢 {local}
+              </option>
+            ))}
+          </select>
 
-                      <span className="text-xs bg-slate-900 border border-slate-700 px-3 py-1 rounded-full text-slate-300 font-bold">
-                        {textoPerfil(morador.perfil)}
-                      </span>
+          <select
+            value={statusFiltro}
+            onChange={(event) => setStatusFiltro(event.target.value)}
+            className="w-full rounded-xl border border-slate-700 bg-slate-800 p-3 text-white outline-none focus:border-blue-500"
+          >
+            <option value="todos">Todos os status</option>
+            <option value="ativo">🟢 Ativos</option>
+            <option value="inativo">⚪ Inativos</option>
+            <option value="pendente">🟠 Pendentes</option>
+          </select>
+        </div>
 
-                      <span className="text-xs bg-slate-900 border border-slate-700 px-3 py-1 rounded-full text-green-300 font-bold">
-                        {morador.status === "ativo" ? "🟢 Ativo" : "🔴 Inativo"}
-                      </span>
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+          <p className="text-sm text-slate-400">
+            {moradoresFiltrados.length} morador
+            {moradoresFiltrados.length === 1 ? "" : "es"} encontrado
+            {moradoresFiltrados.length === 1 ? "" : "s"}.
+          </p>
 
-                      {morador.recebeChamadas !== false && (
-                        <span className="text-xs bg-slate-900 border border-slate-700 px-3 py-1 rounded-full text-cyan-300 font-bold">
-                          🔔 Recebe chamadas
-                        </span>
-                      )}
-
-                      {morador.podeAbrirPortao && (
-                        <span className="text-xs bg-slate-900 border border-slate-700 px-3 py-1 rounded-full text-yellow-300 font-bold">
-                          🚪 Abre portão
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="text-xs text-slate-500 font-bold">
-                    Clique para ficha
-                  </div>
-                </div>
-              </button>
-            );
-          })}
-
-          {moradoresFiltrados.length === 0 && (
-            <div className="bg-slate-800 rounded-xl p-5 text-slate-400 text-center">
-              Nenhum morador encontrado com os filtros atuais.
-            </div>
+          {(busca || localFiltro !== "todos" || statusFiltro !== "todos") && (
+            <button
+              type="button"
+              onClick={() => {
+                setBusca("");
+                setLocalFiltro("todos");
+                setStatusFiltro("todos");
+              }}
+              className="rounded-xl bg-slate-800 px-4 py-2 text-sm font-black text-slate-300 transition-all hover:bg-slate-700 active:scale-95"
+            >
+              Limpar filtros
+            </button>
           )}
         </div>
-      </div>
+      </section>
 
-      {moradorSelecionado && (
-        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-700 rounded-3xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
-            <div className="flex items-start justify-between gap-4 mb-5">
-              <div>
-                <h3 className="text-3xl font-black text-blue-300">
-                  👤 {moradorSelecionado.nome}
-                </h3>
+      {/* Lista */}
 
-                <p className="text-slate-400 mt-1">
-                  {textoPerfil(moradorSelecionado.perfil)} •{" "}
-                  {moradorSelecionado.status === "ativo"
-                    ? "🟢 Ativo"
-                    : "🔴 Inativo"}
-                </p>
-              </div>
+      <section className="rounded-2xl border border-slate-800 bg-slate-900 p-4 md:p-5">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <p className="text-xs font-bold text-blue-300">
+              LISTA DE MORADORES
+            </p>
 
-              <button
-                onClick={() => setMoradorSelecionado(null)}
-                className="bg-slate-800 hover:bg-slate-700 px-4 py-2 rounded-xl font-black"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="bg-slate-800 border border-slate-700 rounded-2xl p-4 mb-4">
-              <h4 className="text-lg font-black text-white mb-3">
-                Dados principais
-              </h4>
-
-              <div className="grid md:grid-cols-2 gap-3 text-sm">
-                <div className="bg-slate-900 border border-slate-700 rounded-xl p-3">
-                  <p className="text-xs text-slate-500 font-bold">Telefone</p>
-                  <p className="font-bold mt-1">
-                    📱 {moradorSelecionado.telefone || "Sem telefone"}
-                  </p>
-                </div>
-
-                <div className="bg-slate-900 border border-slate-700 rounded-xl p-3">
-                  <p className="text-xs text-slate-500 font-bold">E-mail</p>
-                  <p className="font-bold mt-1">
-                    ✉️ {moradorSelecionado.email || "Sem e-mail"}
-                  </p>
-                </div>
-
-                <div className="bg-slate-900 border border-slate-700 rounded-xl p-3">
-                  <p className="text-xs text-slate-500 font-bold">Condomínio</p>
-                  <p className="font-bold mt-1">
-                    🏢 {unidadeSelecionada?.localNome || "Não localizado"}
-                  </p>
-                </div>
-
-                <div className="bg-slate-900 border border-slate-700 rounded-xl p-3">
-                  <p className="text-xs text-slate-500 font-bold">Unidade</p>
-                  <p className="font-bold mt-1">
-                    🏠 {textoUnidadeCurta(unidadeSelecionada || undefined)}
-                  </p>
-                </div>
-
-                <div className="bg-slate-900 border border-slate-700 rounded-xl p-3">
-                  <p className="text-xs text-slate-500 font-bold">Prioridade</p>
-                  <p className="font-bold mt-1">
-                    🔢 Prioridade {moradorSelecionado.prioridade}
-                  </p>
-                </div>
-
-                <div className="bg-slate-900 border border-slate-700 rounded-xl p-3">
-                  <p className="text-xs text-slate-500 font-bold">Código</p>
-                  <p className="font-bold mt-1">{moradorSelecionado.codigo}</p>
-                </div>
-              </div>
-
-              <div className="flex flex-wrap gap-2 mt-4">
-                {moradorSelecionado.recebeChamadas !== false && (
-                  <span className="text-xs bg-slate-900 border border-slate-700 px-3 py-1 rounded-full text-cyan-300 font-bold">
-                    🔔 Recebe chamadas
-                  </span>
-                )}
-
-                {moradorSelecionado.podeAbrirPortao && (
-                  <span className="text-xs bg-slate-900 border border-slate-700 px-3 py-1 rounded-full text-yellow-300 font-bold">
-                    🚪 Pode abrir portão
-                  </span>
-                )}
-
-                <span className="text-xs bg-slate-900 border border-slate-700 px-3 py-1 rounded-full text-slate-300 font-bold">
-                  {textoPerfil(moradorSelecionado.perfil)}
-                </span>
-              </div>
-            </div>
-
-            <div className="grid md:grid-cols-2 gap-3 mb-4">
-              <button
-                onClick={() => abrirEdicaoMorador(moradorSelecionado)}
-                className="w-full bg-blue-600 hover:bg-blue-500 text-white font-black py-3 rounded-xl"
-              >
-                ✏️ Editar morador
-              </button>
-
-              <button
-                onClick={() => abrirUnidadeDoMorador(moradorSelecionado)}
-                className="w-full bg-slate-700 hover:bg-slate-600 text-white font-black py-3 rounded-xl"
-              >
-                🏢 Abrir unidade
-              </button>
-
-              <button
-                onClick={() => alternarStatusMorador(moradorSelecionado)}
-                disabled={alterandoStatus}
-                className={`w-full disabled:bg-slate-600 text-white font-black py-3 rounded-xl ${
-                  moradorSelecionado.status === "ativo"
-                    ? "bg-orange-600 hover:bg-orange-500"
-                    : "bg-green-600 hover:bg-green-500"
-                }`}
-              >
-                {alterandoStatus
-                  ? "Atualizando..."
-                  : moradorSelecionado.status === "ativo"
-                  ? "🚫 Desativar"
-                  : "🟢 Reativar"}
-              </button>
-
-              <button
-                onClick={() => excluirMorador(moradorSelecionado)}
-                disabled={excluindoMorador}
-                className="w-full bg-red-700 hover:bg-red-600 disabled:bg-slate-600 text-white font-black py-3 rounded-xl"
-              >
-                {excluindoMorador ? "Excluindo..." : "🗑 Excluir"}
-              </button>
-            </div>
-
-            <div className="bg-slate-800 border border-slate-700 rounded-2xl p-4">
-              <p className="text-xs text-slate-500 font-black mb-3">
-                Próximos módulos vinculados ao morador
-              </p>
-
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                <button className="bg-slate-900 border border-slate-700 text-slate-400 font-black py-3 rounded-xl cursor-not-allowed">
-                  🚗 Veículos
-                </button>
-
-                <button className="bg-slate-900 border border-slate-700 text-slate-400 font-black py-3 rounded-xl cursor-not-allowed">
-                  🐶 Pets
-                </button>
-
-                <button className="bg-slate-900 border border-slate-700 text-slate-400 font-black py-3 rounded-xl cursor-not-allowed">
-                  👨‍👩‍👧 Família
-                </button>
-
-                <button className="bg-slate-900 border border-slate-700 text-slate-400 font-black py-3 rounded-xl cursor-not-allowed">
-                  📜 Histórico
-                </button>
-              </div>
-            </div>
-
-            <button
-              onClick={() => setMoradorSelecionado(null)}
-              className="w-full bg-slate-800 hover:bg-slate-700 text-white font-black py-3 rounded-xl mt-5"
-            >
-              Fechar
-            </button>
+            <h3 className="mt-1 text-2xl font-black text-white">
+              Selecione um morador
+            </h3>
           </div>
         </div>
-      )}
-      {editandoMorador && (
-        <div className="fixed inset-0 bg-black/80 z-[60] flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-700 rounded-3xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
-            <div className="flex items-start justify-between mb-6">
-              <div>
-                <h2 className="text-2xl font-black text-white">
-                  ✏️ Editar morador
-                </h2>
 
-                <p className="text-slate-400 mt-2">
-                  Atualize os dados de {editandoMorador.nome}.
+        {moradoresFiltrados.length === 0 ? (
+          <div className="mt-5 rounded-2xl border border-slate-700 bg-slate-800 p-8 text-center">
+            <div className="text-4xl">👥</div>
+            <p className="mt-3 font-black text-slate-300">
+              Nenhum morador encontrado
+            </p>
+            <p className="mt-2 text-sm text-slate-500">
+              Ajuste os filtros ou cadastre um novo morador.
+            </p>
+          </div>
+        ) : (
+          <div className="mt-5 grid gap-3 lg:grid-cols-2">
+            {moradoresFiltrados.map((morador) => {
+              const unidade = obterUnidade(morador);
+              const ativo = morador.status === "ativo";
+
+              return (
+                <button
+                  key={morador.id}
+                  type="button"
+                  onClick={() => abrirMorador(morador)}
+                  className="rounded-2xl border border-slate-700 bg-slate-800 p-4 text-left transition-all hover:border-blue-500 hover:bg-slate-700 active:scale-[0.98]"
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex min-w-0 items-start gap-3">
+                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-blue-950 text-2xl">
+                        👤
+                      </div>
+
+                      <div className="min-w-0">
+                        <p className="text-xs font-black text-blue-300">
+                          {morador.codigo}
+                        </p>
+
+                        <h4 className="mt-1 truncate text-lg font-black text-white">
+                          {morador.nome}
+                        </h4>
+
+                        <p className="mt-1 text-sm text-slate-300">
+                          🏢 {obterLocalMorador(morador)}
+                        </p>
+
+                        <p className="mt-1 text-sm text-slate-400">
+                          🏠 {obterBlocoUnidade(morador)}
+                        </p>
+
+                        {unidade?.modoChamado && (
+                          <p className="mt-1 text-xs text-slate-500">
+                            Modo de chamada: {unidade.modoChamado}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="shrink-0 text-right">
+                      <span
+                        className={`inline-flex rounded-full px-3 py-1 text-[10px] font-black ${
+                          ativo
+                            ? "bg-green-950 text-green-300"
+                            : "bg-slate-900 text-slate-400"
+                        }`}
+                      >
+                        {ativo ? "🟢 Ativo" : "⚪ Inativo"}
+                      </span>
+
+                      <p className="mt-3 text-xs font-bold text-slate-400">
+                        Prioridade {morador.prioridade}
+                      </p>
+
+                      <p
+                        className={`mt-1 text-xs font-bold ${
+                          morador.podeAbrirPortao
+                            ? "text-green-300"
+                            : "text-orange-300"
+                        }`}
+                      >
+                        {morador.podeAbrirPortao
+                          ? "🚪 Abre portão"
+                          : "🔒 Sem permissão"}
+                      </p>
+
+                      <p className="mt-3 text-xs font-black text-blue-300">
+                        Abrir perfil →
+                      </p>
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </section>
+
+      {/* Modal de cadastro */}
+
+      {modalCadastroAberto && (
+        <div className="fixed inset-0 z-[130] flex items-center justify-center bg-black/75 p-3 md:p-6">
+          <div className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-3xl border border-slate-700 bg-slate-900 p-4 shadow-2xl md:p-6">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-sm font-bold text-blue-300">
+                  ＋ NOVO MORADOR
+                </p>
+
+                <h3 className="mt-1 text-2xl font-black text-white">
+                  Cadastro de morador
+                </h3>
+
+                <p className="mt-2 text-sm text-slate-400">
+                  Preencha os dados básicos e defina as permissões iniciais.
                 </p>
               </div>
 
               <button
-                onClick={() => setEditandoMorador(null)}
-                className="bg-slate-800 hover:bg-slate-700 rounded-xl px-3 py-2 text-white font-black"
+                type="button"
+                onClick={fecharCadastro}
+                disabled={salvandoMorador}
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-800 text-xl font-black transition-all hover:bg-slate-700 active:scale-95 disabled:opacity-50"
               >
                 ✕
               </button>
             </div>
 
-            <div className="space-y-4">
+            <div className="mt-5 space-y-4">
+              <select
+                value={unidadeMoradorId}
+                onChange={(event) =>
+                  setUnidadeMoradorId(event.target.value)
+                }
+                className="w-full rounded-xl border border-slate-700 bg-slate-800 p-3 text-white outline-none focus:border-blue-500"
+              >
+                <option value="">Selecione a unidade</option>
+
+                {unidades.map((unidade) => (
+                  <option key={unidade.id} value={unidade.id}>
+                    {nomeUnidade(unidade)}
+                  </option>
+                ))}
+              </select>
+
               <input
-                value={editNome}
-                onChange={(e) => setEditNome(e.target.value)}
-                placeholder="Nome completo"
-                className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3"
+                value={nomeMorador}
+                onChange={(event) => setNomeMorador(event.target.value)}
+                placeholder="Nome completo do morador"
+                className="w-full rounded-xl border border-slate-700 bg-slate-800 p-3 text-white outline-none placeholder:text-slate-500 focus:border-blue-500"
               />
 
               <input
-                value={editTelefone}
-                onChange={(e) => setEditTelefone(e.target.value)}
+                value={telefoneMorador}
+                onChange={(event) =>
+                  setTelefoneMorador(event.target.value)
+                }
                 placeholder="Telefone / WhatsApp"
-                className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3"
+                className="w-full rounded-xl border border-slate-700 bg-slate-800 p-3 text-white outline-none placeholder:text-slate-500 focus:border-blue-500"
               />
 
-              <input
-                value={editEmail}
-                onChange={(e) => setEditEmail(e.target.value)}
-                placeholder="E-mail (opcional)"
-                className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3"
-              />
+              <select
+                value={prioridadeMorador}
+                onChange={(event) =>
+                  setPrioridadeMorador(event.target.value)
+                }
+                className="w-full rounded-xl border border-slate-700 bg-slate-800 p-3 text-white outline-none focus:border-blue-500"
+              >
+                <option value="1">Prioridade 1</option>
+                <option value="2">Prioridade 2</option>
+                <option value="3">Prioridade 3</option>
+                <option value="4">Prioridade 4</option>
+                <option value="5">Prioridade 5</option>
+              </select>
 
-              <div className="grid md:grid-cols-3 gap-3">
-                <select
-                  value={editPrioridade}
-                  onChange={(e) => setEditPrioridade(e.target.value)}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3"
-                >
-                  <option value="1">Prioridade 1</option>
-                  <option value="2">Prioridade 2</option>
-                  <option value="3">Prioridade 3</option>
-                  <option value="4">Prioridade 4</option>
-                  <option value="5">Prioridade 5</option>
-                </select>
+              <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-slate-700 bg-slate-800 p-4">
+                <input
+                  type="checkbox"
+                  checked={podeAbrirPortao}
+                  onChange={(event) =>
+                    setPodeAbrirPortao(event.target.checked)
+                  }
+                  className="h-5 w-5"
+                />
 
-                <select
-                  value={editPerfil}
-                  onChange={(e) => setEditPerfil(e.target.value)}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3"
-                >
-                  <option value="morador">Morador</option>
-                  <option value="familiar">Familiar</option>
-                  <option value="inquilino">Inquilino</option>
-                  <option value="proprietario">Proprietário</option>
-                  <option value="funcionario">Funcionário</option>
-                  <option value="outro">Outro</option>
-                </select>
+                <div>
+                  <p className="font-black text-white">
+                    Pode abrir portão remotamente
+                  </p>
 
-                <select
-                  value={editStatus}
-                  onChange={(e) => setEditStatus(e.target.value)}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3"
-                >
-                  <option value="ativo">🟢 Ativo</option>
-                  <option value="inativo">🔴 Inativo</option>
-                </select>
+                  <p className="mt-1 text-xs text-slate-400">
+                    Esta permissão poderá ser alterada depois no perfil.
+                  </p>
+                </div>
+              </label>
+
+              <div className="rounded-xl border border-blue-900 bg-blue-950/25 p-4 text-sm text-blue-200">
+                O modo de chamada continua sendo configurado na unidade:
+                Família ou Prioridade.
               </div>
 
-              <label className="flex items-start gap-3 bg-slate-800 border border-slate-700 rounded-xl p-4 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={editRecebeChamadas}
-                  onChange={(e) => setEditRecebeChamadas(e.target.checked)}
-                  className="mt-1"
-                />
-
-                <div>
-                  <p className="font-bold text-white">Recebe chamadas</p>
-                  <p className="text-xs text-slate-400 mt-1">
-                    Este morador será chamado quando o visitante selecionar esta unidade.
-                  </p>
-                </div>
-              </label>
-
-              <label className="flex items-start gap-3 bg-slate-800 border border-slate-700 rounded-xl p-4 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={editPodeAbrirPortao}
-                  onChange={(e) => setEditPodeAbrirPortao(e.target.checked)}
-                  className="mt-1"
-                />
-
-                <div>
-                  <p className="font-bold text-white">Pode abrir portão</p>
-                  <p className="text-xs text-slate-400 mt-1">
-                    Permite que este morador use o botão de abertura quando a automação estiver ativa.
-                  </p>
-                </div>
-              </label>
-
-              <div className="grid md:grid-cols-2 gap-3 pt-2">
+              <div className="grid grid-cols-2 gap-3">
                 <button
-                  onClick={() => setEditandoMorador(null)}
-                  disabled={salvandoEdicao}
-                  className="w-full bg-slate-700 hover:bg-slate-600 disabled:bg-slate-800 text-white font-black py-3 rounded-xl"
+                  type="button"
+                  onClick={fecharCadastro}
+                  disabled={salvandoMorador}
+                  className="rounded-xl bg-slate-700 py-3 font-black text-white transition-all hover:bg-slate-600 active:scale-95 disabled:opacity-50"
                 >
                   Cancelar
                 </button>
 
                 <button
-                  onClick={salvarEdicaoMorador}
-                  disabled={salvandoEdicao}
-                  className="w-full bg-blue-600 hover:bg-blue-500 disabled:bg-slate-600 text-white font-black py-3 rounded-xl"
+                  type="button"
+                  onClick={salvarNovoMorador}
+                  disabled={salvandoMorador}
+                  className="rounded-xl bg-blue-600 py-3 font-black text-white transition-all hover:bg-blue-500 active:scale-95 disabled:bg-slate-600"
                 >
-                  {salvandoEdicao ? "Salvando..." : "Salvar alterações"}
+                  {salvandoMorador ? "Salvando..." : "Cadastrar morador"}
                 </button>
               </div>
             </div>
@@ -775,6 +743,602 @@ export default function Moradores({
         </div>
       )}
 
+      {/* Perfil do morador */}
+
+      {moradorSelecionado && (
+        <div className="fixed inset-0 z-[125] flex items-center justify-center bg-black/75 p-3 md:p-6">
+          <div className="max-h-[94vh] w-full max-w-5xl overflow-y-auto rounded-3xl border border-slate-700 bg-slate-900 p-4 shadow-2xl md:p-6">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex min-w-0 items-start gap-4">
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-blue-950 text-3xl">
+                  👤
+                </div>
+
+                <div className="min-w-0">
+                  <p className="text-xs font-black text-blue-300">
+                    {moradorSelecionado.codigo}
+                  </p>
+
+                  <h3 className="mt-1 truncate text-2xl font-black text-white md:text-3xl">
+                    {moradorSelecionado.nome}
+                  </h3>
+
+                  <p className="mt-1 text-sm text-slate-400">
+                    🏢 {obterLocalMorador(moradorSelecionado)} • 🏠{" "}
+                    {obterBlocoUnidade(moradorSelecionado)}
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={fecharMorador}
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-800 text-xl font-black transition-all hover:bg-slate-700 active:scale-95"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Abas no celular: todas visíveis */}
+
+            <div className="mt-5 grid grid-cols-2 gap-2 md:hidden">
+              {abas.map((aba) => (
+                <button
+                  key={aba.id}
+                  type="button"
+                  onClick={() => setAbaAtiva(aba.id)}
+                  className={`min-h-[48px] rounded-xl px-3 py-3 text-left text-xs font-black transition-all active:scale-95 ${
+                    abaAtiva === aba.id
+                      ? "bg-blue-600 text-white"
+                      : "bg-slate-800 text-slate-300 hover:bg-slate-700"
+                  }`}
+                >
+                  <span className="mr-2">{aba.icone}</span>
+                  {aba.nome}
+                </button>
+              ))}
+            </div>
+
+            {/* Abas no computador */}
+
+            <div className="mt-5 hidden gap-2 overflow-x-auto pb-2 md:flex">
+              {abas.map((aba) => (
+                <button
+                  key={aba.id}
+                  type="button"
+                  onClick={() => setAbaAtiva(aba.id)}
+                  className={`shrink-0 rounded-xl px-4 py-3 text-sm font-black transition-all active:scale-95 ${
+                    abaAtiva === aba.id
+                      ? "bg-blue-600 text-white"
+                      : "bg-slate-800 text-slate-300 hover:bg-slate-700"
+                  }`}
+                >
+                  {aba.icone} {aba.nome}
+                </button>
+              ))}
+            </div>
+
+            {abaAtiva === "geral" && (
+              <div className="mt-5 space-y-4">
+                <div className="grid gap-4 lg:grid-cols-3">
+                  <div className="rounded-2xl border border-slate-700 bg-slate-800 p-4 lg:col-span-2">
+                    <p className="text-xs font-bold text-slate-400">
+                      DADOS PRINCIPAIS
+                    </p>
+
+                    <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                      <div>
+                        <p className="text-xs text-slate-500">Nome</p>
+                        <p className="mt-1 font-black text-white">
+                          {moradorSelecionado.nome}
+                        </p>
+                      </div>
+
+                      <div>
+                        <p className="text-xs text-slate-500">
+                          Telefone / WhatsApp
+                        </p>
+                        <p className="mt-1 font-black text-white">
+                          {moradorSelecionado.telefone || "Não informado"}
+                        </p>
+                      </div>
+
+                      <div>
+                        <p className="text-xs text-slate-500">Local</p>
+                        <p className="mt-1 font-black text-white">
+                          {obterLocalMorador(moradorSelecionado)}
+                        </p>
+                      </div>
+
+                      <div>
+                        <p className="text-xs text-slate-500">Unidade</p>
+                        <p className="mt-1 font-black text-white">
+                          {obterBlocoUnidade(moradorSelecionado)}
+                        </p>
+                      </div>
+
+                      <div>
+                        <p className="text-xs text-slate-500">Status</p>
+                        <p className="mt-1 font-black text-green-300">
+                          {moradorSelecionado.status === "ativo"
+                            ? "🟢 Ativo"
+                            : moradorSelecionado.status}
+                        </p>
+                      </div>
+
+                      <div>
+                        <p className="text-xs text-slate-500">
+                          Prioridade de chamada
+                        </p>
+                        <p className="mt-1 font-black text-blue-300">
+                          Prioridade {moradorSelecionado.prioridade}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="rounded-2xl border border-cyan-800 bg-cyan-950/25 p-4">
+                    <p className="text-xs font-bold text-cyan-300">
+                      🤖 RESUMO
+                    </p>
+
+                    <p className="mt-3 text-sm leading-relaxed text-slate-200">
+                      Morador ativo e vinculado à unidade{" "}
+                      {obterBlocoUnidade(moradorSelecionado)}.{" "}
+                      {moradorSelecionado.podeAbrirPortao
+                        ? "Possui permissão para abertura remota do portão."
+                        : "Não possui permissão para abertura remota do portão."}
+                    </p>
+
+                    <div className="mt-4 rounded-xl bg-slate-900 p-3">
+                      <p className="text-xs text-slate-500">
+                        Última atividade
+                      </p>
+                      <p className="mt-1 font-black text-white">
+                        Hoje às 10:42
+                      </p>
+                      <p className="mt-1 text-xs text-slate-400">
+                        Entrega recebida pela portaria
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+                  <button
+                    type="button"
+                    onClick={() => setAbaAtiva("historico")}
+                    className="rounded-2xl border border-orange-800 bg-orange-950/20 p-4 text-left transition-all hover:bg-orange-950/35 active:scale-95"
+                  >
+                    <div className="text-2xl">📦</div>
+                    <p className="mt-2 font-black text-white">
+                      Registrar entrega
+                    </p>
+                    <p className="mt-1 text-xs text-slate-400">
+                      Novo evento no histórico
+                    </p>
+                  </button>
+
+                  <button
+                    type="button"
+                    className="rounded-2xl border border-blue-800 bg-blue-950/20 p-4 text-left transition-all hover:bg-blue-950/35 active:scale-95"
+                  >
+                    <div className="text-2xl">📞</div>
+                    <p className="mt-2 font-black text-white">
+                      Entrar em contato
+                    </p>
+                    <p className="mt-1 text-xs text-slate-400">
+                      Telefone ou WhatsApp
+                    </p>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setAbaAtiva("acessos")}
+                    className="rounded-2xl border border-green-800 bg-green-950/20 p-4 text-left transition-all hover:bg-green-950/35 active:scale-95"
+                  >
+                    <div className="text-2xl">🚪</div>
+                    <p className="mt-2 font-black text-white">
+                      Ver permissões
+                    </p>
+                    <p className="mt-1 text-xs text-slate-400">
+                      Acessos e dispositivos
+                    </p>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setAbaAtiva("documentos")}
+                    className="rounded-2xl border border-violet-800 bg-violet-950/20 p-4 text-left transition-all hover:bg-violet-950/35 active:scale-95"
+                  >
+                    <div className="text-2xl">📄</div>
+                    <p className="mt-2 font-black text-white">
+                      Solicitar documento
+                    </p>
+                    <p className="mt-1 text-xs text-slate-400">
+                      Acompanhar prazo e SLA
+                    </p>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {abaAtiva === "acessos" && (
+              <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="rounded-2xl border border-slate-700 bg-slate-800 p-4">
+                  <p className="text-xs font-bold text-slate-400">
+                    ABERTURA DE PORTÃO
+                  </p>
+                  <p
+                    className={`mt-2 text-lg font-black ${
+                      moradorSelecionado.podeAbrirPortao
+                        ? "text-green-300"
+                        : "text-orange-300"
+                    }`}
+                  >
+                    {moradorSelecionado.podeAbrirPortao
+                      ? "✅ Permitida"
+                      : "🔒 Não permitida"}
+                  </p>
+                </div>
+
+                <div className="rounded-2xl border border-slate-700 bg-slate-800 p-4">
+                  <p className="text-xs font-bold text-slate-400">
+                    RECEBE CHAMADAS
+                  </p>
+                  <p className="mt-2 text-lg font-black text-blue-300">
+                    Configurado pela unidade
+                  </p>
+                </div>
+
+                <div className="rounded-2xl border border-slate-700 bg-slate-800 p-4">
+                  <p className="text-xs font-bold text-slate-400">
+                    PRIORIDADE
+                  </p>
+                  <p className="mt-2 text-lg font-black text-white">
+                    {moradorSelecionado.prioridade}
+                  </p>
+                </div>
+
+                <div className="rounded-2xl border border-slate-700 bg-slate-800 p-4">
+                  <p className="text-xs font-bold text-slate-400">NFC</p>
+                  <p className="mt-2 font-black text-slate-400">
+                    Ainda não configurado
+                  </p>
+                </div>
+
+                <div className="rounded-2xl border border-slate-700 bg-slate-800 p-4">
+                  <p className="text-xs font-bold text-slate-400">BLE</p>
+                  <p className="mt-2 font-black text-slate-400">
+                    Ainda não configurado
+                  </p>
+                </div>
+
+                <div className="rounded-2xl border border-slate-700 bg-slate-800 p-4">
+                  <p className="text-xs font-bold text-slate-400">
+                    DISPOSITIVOS
+                  </p>
+                  <p className="mt-2 font-black text-slate-400">
+                    Nenhum dispositivo vinculado
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {abaAtiva === "historico" && (
+              <div className="mt-5">
+                <div className="rounded-2xl border border-blue-800 bg-blue-950/25 p-4">
+                  <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                    <div>
+                      <p className="font-black text-blue-300">
+                        🕘 Linha do tempo unificada
+                      </p>
+
+                      <p className="mt-2 text-sm text-slate-300">
+                        Entregas, visitantes, chamadas, acessos, solicitações,
+                        documentos e demais eventos ligados ao morador.
+                      </p>
+
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        <span className="rounded-full bg-slate-900 px-3 py-1 text-[10px] font-black text-slate-300">
+                          {eventosDemonstracao.length} eventos
+                        </span>
+
+                        <span className="rounded-full bg-orange-950 px-3 py-1 text-[10px] font-black text-orange-300">
+                          1 aguardando retirada
+                        </span>
+
+                        <span className="rounded-full bg-red-950 px-3 py-1 text-[10px] font-black text-red-300">
+                          1 em atendimento
+                        </span>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      className="shrink-0 rounded-xl bg-blue-600 px-4 py-3 text-sm font-black text-white transition-all hover:bg-blue-500 active:scale-95"
+                    >
+                      ＋ Registrar evento
+                    </button>
+                  </div>
+                </div>
+
+                <div className="mt-4 flex gap-2 overflow-x-auto pb-2">
+                  {[
+                    { id: "todos", nome: "Todos", icone: "🕘" },
+                    { id: "entregas", nome: "Entregas", icone: "📦" },
+                    { id: "visitantes", nome: "Visitantes", icone: "🚶" },
+                    { id: "acessos", nome: "Acessos", icone: "🚪" },
+                    { id: "solicitacoes", nome: "Solicitações", icone: "🛠" },
+                    { id: "comunicados", nome: "Comunicados", icone: "📢" },
+                  ].map((filtro) => (
+                    <button
+                      key={filtro.id}
+                      type="button"
+                      onClick={() =>
+                        setFiltroHistorico(
+                          filtro.id as FiltroHistorico
+                        )
+                      }
+                      className={`shrink-0 rounded-xl px-4 py-2 text-sm font-black transition-all active:scale-95 ${
+                        filtroHistorico === filtro.id
+                          ? "bg-blue-600 text-white"
+                          : "bg-slate-800 text-slate-300 hover:bg-slate-700"
+                      }`}
+                    >
+                      {filtro.icone} {filtro.nome}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="mt-4 space-y-6">
+                  {gruposHistorico.map((grupo) => (
+                    <div key={grupo.id}>
+                      <div className="mb-3 flex items-center gap-3">
+                        <p className="text-sm font-black text-slate-300">
+                          {grupo.titulo}
+                        </p>
+
+                        <div className="h-px flex-1 bg-slate-800" />
+
+                        <span className="rounded-full bg-slate-800 px-3 py-1 text-[10px] font-black text-slate-400">
+                          {grupo.eventos.length}
+                        </span>
+                      </div>
+
+                      <div className="space-y-3">
+                        {grupo.eventos.map((evento) => (
+                          <button
+                            key={evento.id}
+                            type="button"
+                            onClick={() => setEventoSelecionado(evento)}
+                            className={`relative w-full rounded-2xl border p-4 text-left transition-all hover:brightness-110 active:scale-[0.98] ${classesEvento(
+                              evento.destaque
+                            )}`}
+                          >
+                            <div className="absolute bottom-4 left-[29px] top-14 w-px bg-slate-700/80" />
+
+                            <div className="flex items-start justify-between gap-4">
+                              <div className="flex min-w-0 items-start gap-3">
+                                <div className="relative z-10 flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-slate-700 bg-slate-950 text-2xl">
+                                  {evento.icone}
+                                </div>
+
+                                <div className="min-w-0">
+                                  <p className="font-black text-white">
+                                    {evento.titulo}
+                                  </p>
+
+                                  <p className="mt-1 text-sm text-slate-300">
+                                    {evento.descricao}
+                                  </p>
+
+                                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                                    <span className="rounded-full bg-slate-950/60 px-3 py-1 text-[10px] font-black text-slate-300">
+                                      {evento.status}
+                                    </span>
+
+                                    <span className="text-[10px] font-bold text-slate-500">
+                                      {evento.protocolo}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className="shrink-0 text-right">
+                                <p className="text-xs font-black text-slate-300">
+                                  {evento.horario}
+                                </p>
+
+                                <p className="mt-2 text-xs font-black text-blue-300">
+                                  Detalhes →
+                                </p>
+                              </div>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+
+                  {historicoFiltrado.length === 0 && (
+                    <div className="rounded-2xl border border-slate-700 bg-slate-800 p-6 text-center">
+                      <p className="font-black text-slate-300">
+                        Nenhum evento neste filtro
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="mt-4 rounded-2xl border border-cyan-800 bg-cyan-950/20 p-4">
+                  <p className="text-xs font-bold text-cyan-300">
+                    🤖 RESUMO DO HISTÓRICO
+                  </p>
+
+                  <p className="mt-2 text-sm leading-relaxed text-slate-300">
+                    O morador possui uma entrega aguardando retirada, teve um
+                    visitante autorizado ontem e mantém uma solicitação de
+                    manutenção em atendimento.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {abaAtiva === "documentos" && (
+              <div className="mt-5 rounded-2xl border border-slate-700 bg-slate-800 p-6 text-center">
+                <div className="text-4xl">📄</div>
+                <p className="mt-3 font-black text-white">
+                  Documentos do morador
+                </p>
+                <p className="mt-2 text-sm text-slate-400">
+                  Cadastro, autorizações, termos e documentos ficarão
+                  organizados aqui.
+                </p>
+              </div>
+            )}
+
+            {abaAtiva === "dependentes" && (
+              <div className="mt-5 rounded-2xl border border-slate-700 bg-slate-800 p-6 text-center">
+                <div className="text-4xl">👨‍👩‍👧</div>
+                <p className="mt-3 font-black text-white">
+                  Dependentes e pessoas vinculadas
+                </p>
+                <p className="mt-2 text-sm text-slate-400">
+                  Familiares, funcionários, babás e demais vínculos aparecerão
+                  aqui.
+                </p>
+              </div>
+            )}
+
+            {abaAtiva === "veiculos" && (
+              <div className="mt-5 rounded-2xl border border-slate-700 bg-slate-800 p-6 text-center">
+                <div className="text-4xl">🚗</div>
+                <p className="mt-3 font-black text-white">
+                  Veículos vinculados
+                </p>
+                <p className="mt-2 text-sm text-slate-400">
+                  Carros, motos, placas, vagas e permissões serão organizados
+                  aqui.
+                </p>
+              </div>
+            )}
+
+            {abaAtiva === "pets" && (
+              <div className="mt-5 rounded-2xl border border-slate-700 bg-slate-800 p-6 text-center">
+                <div className="text-4xl">🐾</div>
+                <p className="mt-3 font-black text-white">
+                  Pets da unidade
+                </p>
+                <p className="mt-2 text-sm text-slate-400">
+                  Nome, espécie, observações e informações relevantes ficarão
+                  disponíveis aqui.
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Detalhes do evento */}
+
+      {eventoSelecionado && (
+        <div className="fixed inset-0 z-[140] flex items-center justify-center bg-black/80 p-3 md:p-6">
+          <div className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-3xl border border-slate-700 bg-slate-900 p-4 shadow-2xl md:p-6">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-start gap-3">
+                <div className="text-4xl">{eventoSelecionado.icone}</div>
+
+                <div>
+                  <p className="text-xs font-black text-blue-300">
+                    {eventoSelecionado.protocolo}
+                  </p>
+
+                  <h3 className="mt-1 text-2xl font-black text-white">
+                    {eventoSelecionado.titulo}
+                  </h3>
+
+                  <p className="mt-1 text-sm text-slate-400">
+                    {eventoSelecionado.data} • {eventoSelecionado.horario}
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setEventoSelecionado(null)}
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-800 text-xl font-black transition-all hover:bg-slate-700 active:scale-95"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div
+              className={`mt-5 rounded-2xl border p-4 ${classesEvento(
+                eventoSelecionado.destaque
+              )}`}
+            >
+              <p className="text-xs font-bold text-slate-400">
+                STATUS ATUAL
+              </p>
+
+              <p className="mt-2 text-xl font-black text-white">
+                {eventoSelecionado.status}
+              </p>
+
+              <p className="mt-2 text-sm text-slate-300">
+                {eventoSelecionado.descricao}
+              </p>
+            </div>
+
+            <div className="mt-4 rounded-2xl border border-slate-700 bg-slate-800 p-4">
+              <p className="font-black text-white">
+                Linha do tempo do evento
+              </p>
+
+              <div className="mt-4 space-y-3">
+                {eventoSelecionado.detalhes.map((detalhe, indice) => (
+                  <div
+                    key={`${eventoSelecionado.id}-${indice}`}
+                    className="flex items-start gap-3"
+                  >
+                    <div className="mt-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-600 text-xs font-black">
+                      {indice + 1}
+                    </div>
+
+                    <p className="text-sm leading-relaxed text-slate-300">
+                      {detalhe}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-4 rounded-2xl border border-slate-700 bg-slate-800 p-4">
+              <p className="text-xs font-bold text-slate-400">
+                MORADOR VINCULADO
+              </p>
+
+              <p className="mt-2 font-black text-white">
+                {moradorSelecionado?.nome || "Morador"}
+              </p>
+
+              <p className="mt-1 text-sm text-slate-400">
+                {moradorSelecionado
+                  ? obterLocalMorador(moradorSelecionado)
+                  : ""}
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setEventoSelecionado(null)}
+              className="mt-5 w-full rounded-xl bg-blue-600 py-3 font-black text-white transition-all hover:bg-blue-500 active:scale-95"
+            >
+              Voltar ao histórico
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
