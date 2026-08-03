@@ -5,12 +5,6 @@ import {
   NextResponse,
 } from "next/server";
 
-import type {
-  DataSnapshot,
-  Query,
-  Reference,
-} from "firebase-admin/database";
-
 import {
   obterFirebaseAdminQr,
 } from "../../../../services/server/firebaseAdminQr";
@@ -59,25 +53,30 @@ function comTimeout<T>(
   milissegundos: number,
   descricao: string
 ): Promise<T> {
-  return Promise.race([
-    promessa,
-    new Promise<T>((_, rejeitar) => {
-      const temporizador = setTimeout(() => {
-        rejeitar(
-          new Error(
-            `Tempo limite excedido durante: ${descricao}.`
-          )
-        );
-      }, milissegundos);
+  return new Promise<T>((resolver, rejeitar) => {
+    const temporizador = setTimeout(() => {
+      rejeitar(
+        new Error(
+          `Tempo limite excedido durante: ${descricao}.`
+        )
+      );
+    }, milissegundos);
 
-      promessa.finally(() => {
+    promessa
+      .then((resultado) => {
         clearTimeout(temporizador);
+        resolver(resultado);
+      })
+      .catch((erro) => {
+        clearTimeout(temporizador);
+        rejeitar(erro);
       });
-    }),
-  ]);
+  });
 }
 
-function obterBaseUrl(request: NextRequest): string {
+function obterBaseUrl(
+  request: NextRequest
+): string {
   const configurada =
     process.env.NEXT_PUBLIC_APP_URL?.trim() ||
     process.env.VERCEL_PROJECT_PRODUCTION_URL?.trim() ||
@@ -91,20 +90,29 @@ function obterBaseUrl(request: NextRequest): string {
       return configurada.replace(/\/+$/g, "");
     }
 
-    return `https://${configurada}`.replace(/\/+$/g, "");
+    return `https://${configurada}`.replace(
+      /\/+$/g,
+      ""
+    );
   }
 
-  return request.nextUrl.origin.replace(/\/+$/g, "");
+  return request.nextUrl.origin.replace(
+    /\/+$/g,
+    ""
+  );
 }
 
-function normalizarTipo(valor?: string): string {
+function normalizarTipo(
+  valor?: string
+): string {
   return (
     valor
       ?.trim()
       .toLowerCase()
       .normalize("NFD")
       .replace(/[\u0300-\u036f]/g, "")
-      .replace(/[^a-z0-9-_]/g, "-") || ""
+      .replace(/[^a-z0-9-_]/g, "-") ||
+    ""
   );
 }
 
@@ -173,79 +181,17 @@ function obterSegmentoMaterial(
   return "condominio";
 }
 
-async function executarSnapshot(
-  referencia: Reference | Query,
-  descricao: string
-): Promise<DataSnapshot> {
-  return comTimeout(
-    referencia.get(),
-    8_000,
-    descricao
-  );
-}
-
-function converterPrimeiroRegistro(
-  snapshot: DataSnapshot,
-  colecao: string
-): LocalEncontrado | null {
-  if (!snapshot.exists()) {
-    return null;
-  }
-
-  const valor = snapshot.val();
-
-  if (!valor || typeof valor !== "object") {
-    return null;
-  }
-
-  const registros = valor as Record<string, LocalBanco>;
-  const primeiro = Object.entries(registros)[0];
-
-  if (!primeiro) {
-    return null;
-  }
-
-  const [localId, dados] = primeiro;
-
-  return {
-    localId,
-    dados,
-    colecao,
-  };
-}
-
-async function buscarPorCampo(
-  colecao: string,
-  campo: "slug" | "id" | "codigo",
-  identificador: string
-): Promise<LocalEncontrado | null> {
-  const { database } = obterFirebaseAdminQr();
-
-  const consulta = database
-    .ref(colecao)
-    .orderByChild(campo)
-    .equalTo(identificador)
-    .limitToFirst(1);
-
-  const snapshot = await executarSnapshot(
-    consulta,
-    `consulta ${colecao} pelo campo ${campo}`
-  );
-
-  return converterPrimeiroRegistro(
-    snapshot,
-    colecao
-  );
-}
-
 async function buscarEmColecao(
   colecao: string,
   identificador: string
 ): Promise<LocalEncontrado | null> {
   const { database } = obterFirebaseAdminQr();
 
-  const snapshotDireto = await executarSnapshot(
-    database.ref(`${colecao}/${identificador}`),
+  const snapshotDireto = await comTimeout(
+    database
+      .ref(`${colecao}/${identificador}`)
+      .get(),
+    8_000,
     `consulta direta em ${colecao}`
   );
 
@@ -257,21 +203,50 @@ async function buscarEmColecao(
     };
   }
 
-  const campos: Array<"slug" | "id" | "codigo"> = [
-    "slug",
-    "id",
-    "codigo",
-  ];
+  const snapshotColecao = await comTimeout(
+    database
+      .ref(colecao)
+      .get(),
+    8_000,
+    `leitura da coleção ${colecao}`
+  );
 
-  for (const campo of campos) {
-    const encontrado = await buscarPorCampo(
-      colecao,
-      campo,
-      identificador
-    );
+  if (!snapshotColecao.exists()) {
+    return null;
+  }
 
-    if (encontrado) {
-      return encontrado;
+  const valor = snapshotColecao.val();
+
+  if (
+    !valor ||
+    typeof valor !== "object"
+  ) {
+    return null;
+  }
+
+  const registros = valor as Record<
+    string,
+    LocalBanco
+  >;
+
+  for (
+    const [chave, dados]
+    of Object.entries(registros)
+  ) {
+    const slug = dados.slug?.trim();
+    const id = dados.id?.trim();
+    const codigo = dados.codigo?.trim();
+
+    if (
+      slug === identificador ||
+      id === identificador ||
+      codigo === identificador
+    ) {
+      return {
+        localId: chave,
+        dados,
+        colecao,
+      };
     }
   }
 
@@ -281,10 +256,6 @@ async function buscarEmColecao(
 async function buscarLocal(
   identificador: string
 ): Promise<LocalEncontrado | null> {
-  /*
-   * A ordem é importante.
-   * Os locais universais atuais estão primeiro em "locais".
-   */
   const colecoes = [
     "locais",
     "qrCentral/locais",
@@ -296,10 +267,11 @@ async function buscarLocal(
   ];
 
   for (const colecao of colecoes) {
-    const encontrado = await buscarEmColecao(
-      colecao,
-      identificador
-    );
+    const encontrado =
+      await buscarEmColecao(
+        colecao,
+        identificador
+      );
 
     if (encontrado) {
       return encontrado;
@@ -318,18 +290,21 @@ export async function GET(
   }
 ): Promise<Response> {
   try {
-    const { localId: localIdRecebido } =
-      await contexto.params;
+    const {
+      localId: localIdRecebido,
+    } = await contexto.params;
 
-    const identificador = decodeURIComponent(
-      localIdRecebido
-    ).trim();
+    const identificador =
+      decodeURIComponent(
+        localIdRecebido
+      ).trim();
 
     if (!identificador) {
       return NextResponse.json(
         {
           sucesso: false,
-          mensagem: "O local não foi informado.",
+          mensagem:
+            "O local não foi informado.",
         },
         {
           status: 400,
@@ -337,11 +312,12 @@ export async function GET(
       );
     }
 
-    const encontrado = await comTimeout(
-      buscarLocal(identificador),
-      30_000,
-      "busca do local no Firebase"
-    );
+    const encontrado =
+      await comTimeout(
+        buscarLocal(identificador),
+        30_000,
+        "busca do local no Firebase"
+      );
 
     if (!encontrado) {
       return NextResponse.json(
@@ -360,13 +336,15 @@ export async function GET(
     const local = encontrado.dados;
 
     if (
-      local.status?.trim().toLowerCase() ===
-      "inativo"
+      local.status
+        ?.trim()
+        .toLowerCase() === "inativo"
     ) {
       return NextResponse.json(
         {
           sucesso: false,
-          mensagem: "O local está inativo.",
+          mensagem:
+            "O local está inativo.",
         },
         {
           status: 410,
@@ -392,48 +370,62 @@ export async function GET(
     const urlQr =
       `${baseUrl}/acesso-v2/${encodeURIComponent(slug)}`;
 
-    const dadosMaterial: DadosMaterial = {
-      localId: encontrado.localId,
-      slug,
-      nome,
-      segmento,
-      cidade: local.cidade,
-      estado: local.estado,
-      telefone: local.telefone,
-      whatsapp: local.whatsapp,
-      email: local.email,
-      site: local.site,
-      instagram: local.instagram,
-      facebook: local.facebook,
-      logo: local.logo,
-      urlQr,
-      corPrimaria: local.corPrimaria,
-      corSecundaria: local.corSecundaria,
-      corTexto: local.corTexto,
-    };
+    const dadosMaterial:
+      DadosMaterial = {
+        localId:
+          encontrado.localId,
+        slug,
+        nome,
+        segmento,
+        cidade: local.cidade,
+        estado: local.estado,
+        telefone: local.telefone,
+        whatsapp: local.whatsapp,
+        email: local.email,
+        site: local.site,
+        instagram: local.instagram,
+        facebook: local.facebook,
+        logo: local.logo,
+        urlQr,
+        corPrimaria:
+          local.corPrimaria,
+        corSecundaria:
+          local.corSecundaria,
+        corTexto:
+          local.corTexto,
+      };
 
-    const resultado = await comTimeout(
-      gerarMaterialPdf(dadosMaterial),
-      25_000,
-      "geração do PDF"
-    );
+    const resultado =
+      await comTimeout(
+        gerarMaterialPdf(
+          dadosMaterial
+        ),
+        25_000,
+        "geração do PDF"
+      );
 
     return new Response(
-      Buffer.from(resultado.bytes),
+      Buffer.from(
+        resultado.bytes
+      ),
       {
         status: 200,
         headers: {
-          "Content-Type": resultado.mimeType,
+          "Content-Type":
+            resultado.mimeType,
           "Content-Disposition":
             `inline; filename="${resultado.nomeArquivo}"`,
-          "Content-Length": String(
-            resultado.bytes.byteLength
-          ),
+          "Content-Length":
+            String(
+              resultado.bytes
+                .byteLength
+            ),
           "Cache-Control":
             "no-store, max-age=0",
           "X-Local-Id":
             encontrado.localId,
-          "X-Local-Slug": slug,
+          "X-Local-Slug":
+            slug,
           "X-Local-Colecao":
             encontrado.colecao,
           "X-Material-Segmento":
