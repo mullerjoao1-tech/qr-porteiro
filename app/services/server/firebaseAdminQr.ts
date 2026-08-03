@@ -28,11 +28,16 @@ type ChaveGoogle = {
   privateKey?: string;
 };
 
+type CredenciaisNormalizadas = {
+  serviceAccount: ServiceAccount;
+  projectId: string;
+};
+
 const NOME_APP = "qr-materiais-admin";
 
 let cache: FirebaseAdminQr | null = null;
 
-function obterChaveServico(): ServiceAccount {
+function obterCredenciais(): CredenciaisNormalizadas {
   const chaveTexto =
     process.env.FIREBASE_SERVICE_ACCOUNT_KEY?.trim();
 
@@ -76,8 +81,11 @@ function obterChaveServico(): ServiceAccount {
 
     return {
       projectId,
-      clientEmail,
-      privateKey,
+      serviceAccount: {
+        projectId,
+        clientEmail,
+        privateKey,
+      },
     };
   } catch (erro) {
     const mensagem =
@@ -91,18 +99,20 @@ function obterChaveServico(): ServiceAccount {
   }
 }
 
-function obterDatabaseUrl(): string {
-  const databaseUrl =
-    process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL?.trim() ||
+function obterDatabaseUrl(projectId: string): string {
+  /*
+   * Não usamos NEXT_PUBLIC_FIREBASE_DATABASE_URL aqui.
+   * A Preview recebeu temporariamente variáveis do Studio,
+   * enquanto a conta de serviço pertence à produção.
+   */
+  const configurada =
     process.env.FIREBASE_DATABASE_URL?.trim();
 
-  if (!databaseUrl) {
-    throw new Error(
-      "A URL do Realtime Database não foi encontrada."
-    );
+  if (configurada) {
+    return configurada.replace(/\/+$/g, "");
   }
 
-  return databaseUrl.replace(/\/+$/g, "");
+  return `https://${projectId}-default-rtdb.firebaseio.com`;
 }
 
 export function obterFirebaseAdminQr(): FirebaseAdminQr {
@@ -110,8 +120,12 @@ export function obterFirebaseAdminQr(): FirebaseAdminQr {
     return cache;
   }
 
+  const credenciais =
+    obterCredenciais();
+
   const existente = getApps().find(
-    (appAtual) => appAtual.name === NOME_APP
+    (appAtual) =>
+      appAtual.name === NOME_APP
   );
 
   const app =
@@ -119,9 +133,13 @@ export function obterFirebaseAdminQr(): FirebaseAdminQr {
     initializeApp(
       {
         credential: cert(
-          obterChaveServico()
+          credenciais.serviceAccount
         ),
-        databaseURL: obterDatabaseUrl(),
+
+        databaseURL:
+          obterDatabaseUrl(
+            credenciais.projectId
+          ),
       },
       NOME_APP
     );
