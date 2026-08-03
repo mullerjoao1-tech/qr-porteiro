@@ -18,6 +18,16 @@ type FirebaseAdminQr = {
   database: Database;
 };
 
+type ChaveGoogle = {
+  project_id?: string;
+  client_email?: string;
+  private_key?: string;
+
+  projectId?: string;
+  clientEmail?: string;
+  privateKey?: string;
+};
+
 const NOME_APP = "qr-materiais-admin";
 
 let cache: FirebaseAdminQr | null = null;
@@ -33,28 +43,42 @@ function obterChaveServico(): ServiceAccount {
   }
 
   try {
-    const chave = JSON.parse(
+    const chaveOriginal = JSON.parse(
       chaveTexto
-    ) as ServiceAccount;
+    ) as ChaveGoogle;
 
-    if (typeof chave.privateKey === "string") {
-      chave.privateKey = chave.privateKey.replace(
-        /\\n/g,
-        "\n"
-      );
-    }
+    const projectId =
+      chaveOriginal.project_id ||
+      chaveOriginal.projectId;
+
+    const clientEmail =
+      chaveOriginal.client_email ||
+      chaveOriginal.clientEmail;
+
+    const privateKeyOriginal =
+      chaveOriginal.private_key ||
+      chaveOriginal.privateKey;
+
+    const privateKey =
+      typeof privateKeyOriginal === "string"
+        ? privateKeyOriginal.replace(/\\n/g, "\n")
+        : undefined;
 
     if (
-      !chave.projectId ||
-      !chave.clientEmail ||
-      !chave.privateKey
+      !projectId ||
+      !clientEmail ||
+      !privateKey
     ) {
       throw new Error(
-        "O JSON da conta de serviço não possui projectId, clientEmail ou privateKey."
+        "O JSON da conta de serviço não possui project_id, client_email ou private_key."
       );
     }
 
-    return chave;
+    return {
+      projectId,
+      clientEmail,
+      privateKey,
+    };
   } catch (erro) {
     const mensagem =
       erro instanceof Error
