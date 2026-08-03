@@ -5,132 +5,117 @@ import {
   NextResponse,
 } from "next/server";
 
+import type {
+  DataSnapshot,
+  Query,
+  Reference,
+} from "firebase-admin/database";
+
 import {
   obterFirebaseAdminQr,
 } from "../../../../services/server/firebaseAdminQr";
+
 import {
   gerarMaterialPdf,
   type DadosMaterial,
   type SegmentoMaterial,
 } from "../../../../services/implantacao/materiais";
-export const runtime =
-  "nodejs";
 
-export const dynamic =
-  "force-dynamic";
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+export const maxDuration = 60;
 
 type LocalBanco = {
   id?: string;
-
+  codigo?: string;
   nome?: string;
-
   slug?: string;
-
   tipo?: string;
-
   tipoLocal?: string;
-
   segmento?: string;
-
   status?: string;
-
   cidade?: string;
-
   estado?: string;
-
   telefone?: string;
-
   whatsapp?: string;
-
   email?: string;
-
   site?: string;
-
   instagram?: string;
-
   facebook?: string;
-
   logo?: string;
-
   corPrimaria?: string;
-
   corSecundaria?: string;
-
   corTexto?: string;
 };
 
 type LocalEncontrado = {
   localId: string;
-
-  dados:
-    LocalBanco;
+  dados: LocalBanco;
+  colecao: string;
 };
 
-function obterBaseUrl(
-  request: NextRequest
-): string {
+function comTimeout<T>(
+  promessa: Promise<T>,
+  milissegundos: number,
+  descricao: string
+): Promise<T> {
+  return Promise.race([
+    promessa,
+    new Promise<T>((_, rejeitar) => {
+      const temporizador = setTimeout(() => {
+        rejeitar(
+          new Error(
+            `Tempo limite excedido durante: ${descricao}.`
+          )
+        );
+      }, milissegundos);
+
+      promessa.finally(() => {
+        clearTimeout(temporizador);
+      });
+    }),
+  ]);
+}
+
+function obterBaseUrl(request: NextRequest): string {
   const configurada =
-    process.env.NEXT_PUBLIC_APP_URL ||
-    process.env.VERCEL_URL;
+    process.env.NEXT_PUBLIC_APP_URL?.trim() ||
+    process.env.VERCEL_PROJECT_PRODUCTION_URL?.trim() ||
+    process.env.VERCEL_URL?.trim();
 
   if (configurada) {
     if (
-      configurada.startsWith(
-        "http://"
-      ) ||
-      configurada.startsWith(
-        "https://"
-      )
+      configurada.startsWith("http://") ||
+      configurada.startsWith("https://")
     ) {
-      return configurada.replace(
-        /\/+$/g,
-        ""
-      );
+      return configurada.replace(/\/+$/g, "");
     }
 
-    return `https://${configurada}`.replace(
-      /\/+$/g,
-      ""
-    );
+    return `https://${configurada}`.replace(/\/+$/g, "");
   }
 
-  return request.nextUrl.origin.replace(
-    /\/+$/g,
-    ""
-  );
+  return request.nextUrl.origin.replace(/\/+$/g, "");
 }
 
-function normalizarTipo(
-  valor:
-    string | undefined
-): string {
+function normalizarTipo(valor?: string): string {
   return (
     valor
       ?.trim()
       .toLowerCase()
       .normalize("NFD")
-      .replace(
-        /[\u0300-\u036f]/g,
-        ""
-      )
-      .replace(
-        /[^a-z0-9-_]/g,
-        "-"
-      ) ||
-    ""
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9-_]/g, "-") || ""
   );
 }
 
 function obterSegmentoMaterial(
-  local:
-    LocalBanco
+  local: LocalBanco
 ): SegmentoMaterial {
-  const tipo =
-    normalizarTipo(
-      local.segmento ||
+  const tipo = normalizarTipo(
+    local.segmento ||
       local.tipoLocal ||
       local.tipo
-    );
+  );
 
   if (
     tipo === "residencia" ||
@@ -188,76 +173,105 @@ function obterSegmentoMaterial(
   return "condominio";
 }
 
+async function executarSnapshot(
+  referencia: Reference | Query,
+  descricao: string
+): Promise<DataSnapshot> {
+  return comTimeout(
+    referencia.get(),
+    8_000,
+    descricao
+  );
+}
+
+function converterPrimeiroRegistro(
+  snapshot: DataSnapshot,
+  colecao: string
+): LocalEncontrado | null {
+  if (!snapshot.exists()) {
+    return null;
+  }
+
+  const valor = snapshot.val();
+
+  if (!valor || typeof valor !== "object") {
+    return null;
+  }
+
+  const registros = valor as Record<string, LocalBanco>;
+  const primeiro = Object.entries(registros)[0];
+
+  if (!primeiro) {
+    return null;
+  }
+
+  const [localId, dados] = primeiro;
+
+  return {
+    localId,
+    dados,
+    colecao,
+  };
+}
+
+async function buscarPorCampo(
+  colecao: string,
+  campo: "slug" | "id" | "codigo",
+  identificador: string
+): Promise<LocalEncontrado | null> {
+  const { database } = obterFirebaseAdminQr();
+
+  const consulta = database
+    .ref(colecao)
+    .orderByChild(campo)
+    .equalTo(identificador)
+    .limitToFirst(1);
+
+  const snapshot = await executarSnapshot(
+    consulta,
+    `consulta ${colecao} pelo campo ${campo}`
+  );
+
+  return converterPrimeiroRegistro(
+    snapshot,
+    colecao
+  );
+}
+
 async function buscarEmColecao(
   colecao: string,
   identificador: string
 ): Promise<LocalEncontrado | null> {
-  const {
-    database,
-  } = obterFirebaseAdminQr();
+  const { database } = obterFirebaseAdminQr();
 
-  const snapshotDireto =
-    await database
-      .ref(
-        `${colecao}/${identificador}`
-      )
-      .get();
+  const snapshotDireto = await executarSnapshot(
+    database.ref(`${colecao}/${identificador}`),
+    `consulta direta em ${colecao}`
+  );
 
-  if (
-    snapshotDireto.exists()
-  ) {
+  if (snapshotDireto.exists()) {
     return {
-      localId:
-        identificador,
-
-      dados:
-        snapshotDireto.val() as
-          LocalBanco,
+      localId: identificador,
+      dados: snapshotDireto.val() as LocalBanco,
+      colecao,
     };
   }
 
-  const snapshotColecao =
-    await database
-      .ref(colecao)
-      .get();
+  const campos: Array<"slug" | "id" | "codigo"> = [
+    "slug",
+    "id",
+    "codigo",
+  ];
 
-  if (
-    !snapshotColecao.exists()
-  ) {
-    return null;
-  }
+  for (const campo of campos) {
+    const encontrado = await buscarPorCampo(
+      colecao,
+      campo,
+      identificador
+    );
 
-  const registros =
-    snapshotColecao.val() as
-      Record<
-        string,
-        LocalBanco
-      >;
-
-  for (
-    const [
-      chave,
-      dados,
-    ] of Object.entries(
-      registros
-    )
-  ) {
-    const slug =
-      dados.slug?.trim();
-
-    const id =
-      dados.id?.trim();
-
-    if (
-      slug === identificador ||
-      id === identificador
-    ) {
-      return {
-        localId:
-          chave,
-
-        dados,
-      };
+    if (encontrado) {
+      return encontrado;
     }
   }
 
@@ -267,23 +281,25 @@ async function buscarEmColecao(
 async function buscarLocal(
   identificador: string
 ): Promise<LocalEncontrado | null> {
+  /*
+   * A ordem é importante.
+   * Os locais universais atuais estão primeiro em "locais".
+   */
   const colecoes = [
+    "locais",
+    "qrCentral/locais",
     "locais-v2",
     "condominios-v2",
-    "estabelecimentos-v2",
     "residencias-v2",
     "empresas-v2",
+    "estabelecimentos-v2",
   ];
 
-  for (
-    const colecao of
-      colecoes
-  ) {
-    const encontrado =
-      await buscarEmColecao(
-        colecao,
-        identificador
-      );
+  for (const colecao of colecoes) {
+    const encontrado = await buscarEmColecao(
+      colecao,
+      identificador
+    );
 
     if (encontrado) {
       return encontrado;
@@ -296,30 +312,24 @@ async function buscarLocal(
 export async function GET(
   request: NextRequest,
   contexto: {
-    params:
-      Promise<{
-        localId: string;
-      }>;
+    params: Promise<{
+      localId: string;
+    }>;
   }
 ): Promise<Response> {
   try {
-    const {
-      localId:
-        localIdRecebido,
-    } = await contexto.params;
+    const { localId: localIdRecebido } =
+      await contexto.params;
 
-    const identificador =
-      decodeURIComponent(
-        localIdRecebido
-      ).trim();
+    const identificador = decodeURIComponent(
+      localIdRecebido
+    ).trim();
 
     if (!identificador) {
       return NextResponse.json(
         {
           sucesso: false,
-
-          mensagem:
-            "O local não foi informado.",
+          mensagem: "O local não foi informado.",
         },
         {
           status: 400,
@@ -327,18 +337,19 @@ export async function GET(
       );
     }
 
-    const encontrado =
-      await buscarLocal(
-        identificador
-      );
+    const encontrado = await comTimeout(
+      buscarLocal(identificador),
+      30_000,
+      "busca do local no Firebase"
+    );
 
     if (!encontrado) {
       return NextResponse.json(
         {
           sucesso: false,
-
           mensagem:
-            "Local não encontrado pelo ID nem pelo slug.",
+            "Local não encontrado pelo ID, slug ou código.",
+          identificador,
         },
         {
           status: 404,
@@ -346,19 +357,16 @@ export async function GET(
       );
     }
 
-    const local =
-      encontrado.dados;
+    const local = encontrado.dados;
 
     if (
-      local.status ===
+      local.status?.trim().toLowerCase() ===
       "inativo"
     ) {
       return NextResponse.json(
         {
           sucesso: false,
-
-          mensagem:
-            "O local está inativo.",
+          mensagem: "O local está inativo.",
         },
         {
           status: 410,
@@ -376,100 +384,58 @@ export async function GET(
       identificador;
 
     const segmento =
-      obterSegmentoMaterial(
-        local
-      );
+      obterSegmentoMaterial(local);
 
     const baseUrl =
-      obterBaseUrl(
-        request
-      );
+      obterBaseUrl(request);
 
     const urlQr =
-      `${baseUrl}/acesso-v2/${slug}`;
+      `${baseUrl}/acesso-v2/${encodeURIComponent(slug)}`;
 
-    const dadosMaterial:
-      DadosMaterial = {
-        localId:
-          encontrado.localId,
+    const dadosMaterial: DadosMaterial = {
+      localId: encontrado.localId,
+      slug,
+      nome,
+      segmento,
+      cidade: local.cidade,
+      estado: local.estado,
+      telefone: local.telefone,
+      whatsapp: local.whatsapp,
+      email: local.email,
+      site: local.site,
+      instagram: local.instagram,
+      facebook: local.facebook,
+      logo: local.logo,
+      urlQr,
+      corPrimaria: local.corPrimaria,
+      corSecundaria: local.corSecundaria,
+      corTexto: local.corTexto,
+    };
 
-        slug,
-
-        nome,
-
-        segmento,
-
-        cidade:
-          local.cidade,
-
-        estado:
-          local.estado,
-
-        telefone:
-          local.telefone,
-
-        whatsapp:
-          local.whatsapp,
-
-        email:
-          local.email,
-
-        site:
-          local.site,
-
-        instagram:
-          local.instagram,
-
-        facebook:
-          local.facebook,
-
-        logo:
-          local.logo,
-
-        urlQr,
-
-        corPrimaria:
-          local.corPrimaria,
-
-        corSecundaria:
-          local.corSecundaria,
-
-        corTexto:
-          local.corTexto,
-      };
-
-    const resultado =
-      await gerarMaterialPdf(
-        dadosMaterial
-      );
+    const resultado = await comTimeout(
+      gerarMaterialPdf(dadosMaterial),
+      25_000,
+      "geração do PDF"
+    );
 
     return new Response(
       Buffer.from(resultado.bytes),
       {
         status: 200,
-
         headers: {
-          "Content-Type":
-            resultado.mimeType,
-
-         "Content-Disposition":
-  `inline; filename="${resultado.nomeArquivo}"`,
-
-          "Content-Length":
-            String(
-              resultado.bytes
-                .byteLength
-            ),
-
+          "Content-Type": resultado.mimeType,
+          "Content-Disposition":
+            `inline; filename="${resultado.nomeArquivo}"`,
+          "Content-Length": String(
+            resultado.bytes.byteLength
+          ),
           "Cache-Control":
-            "no-store",
-
+            "no-store, max-age=0",
           "X-Local-Id":
             encontrado.localId,
-
-          "X-Local-Slug":
-            slug,
-
+          "X-Local-Slug": slug,
+          "X-Local-Colecao":
+            encontrado.colecao,
           "X-Material-Segmento":
             segmento,
         },
@@ -486,14 +452,21 @@ export async function GET(
       erro
     );
 
+    const tempoExcedido =
+      mensagem
+        .toLowerCase()
+        .includes("tempo limite");
+
     return NextResponse.json(
       {
         sucesso: false,
-
         mensagem,
       },
       {
-        status: 500,
+        status:
+          tempoExcedido
+            ? 504
+            : 500,
       }
     );
   }

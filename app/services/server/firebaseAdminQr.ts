@@ -2,10 +2,10 @@ import "server-only";
 
 import {
   cert,
-  getApp,
   getApps,
   initializeApp,
   type App,
+  type ServiceAccount,
 } from "firebase-admin/app";
 
 import {
@@ -15,17 +15,16 @@ import {
 
 type FirebaseAdminQr = {
   app: App;
-
   database: Database;
 };
 
-let cache:
-  | FirebaseAdminQr
-  | null = null;
+const NOME_APP = "qr-materiais-admin";
 
-function obterChaveServico() {
+let cache: FirebaseAdminQr | null = null;
+
+function obterChaveServico(): ServiceAccount {
   const chaveTexto =
-    process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
+    process.env.FIREBASE_SERVICE_ACCOUNT_KEY?.trim();
 
   if (!chaveTexto) {
     throw new Error(
@@ -34,40 +33,78 @@ function obterChaveServico() {
   }
 
   try {
-    return JSON.parse(
+    const chave = JSON.parse(
       chaveTexto
-    );
-  } catch {
+    ) as ServiceAccount;
+
+    if (typeof chave.privateKey === "string") {
+      chave.privateKey = chave.privateKey.replace(
+        /\\n/g,
+        "\n"
+      );
+    }
+
+    if (
+      !chave.projectId ||
+      !chave.clientEmail ||
+      !chave.privateKey
+    ) {
+      throw new Error(
+        "O JSON da conta de serviço não possui projectId, clientEmail ou privateKey."
+      );
+    }
+
+    return chave;
+  } catch (erro) {
+    const mensagem =
+      erro instanceof Error
+        ? erro.message
+        : "JSON inválido.";
+
     throw new Error(
-      "A variável FIREBASE_SERVICE_ACCOUNT_KEY possui um JSON inválido."
+      `A variável FIREBASE_SERVICE_ACCOUNT_KEY possui um JSON inválido: ${mensagem}`
     );
   }
 }
 
-export function obterFirebaseAdminQr():
-  FirebaseAdminQr {
+function obterDatabaseUrl(): string {
+  const databaseUrl =
+    process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL?.trim() ||
+    process.env.FIREBASE_DATABASE_URL?.trim();
+
+  if (!databaseUrl) {
+    throw new Error(
+      "A URL do Realtime Database não foi encontrada."
+    );
+  }
+
+  return databaseUrl.replace(/\/+$/g, "");
+}
+
+export function obterFirebaseAdminQr(): FirebaseAdminQr {
   if (cache) {
     return cache;
   }
 
-  const app =
-    getApps().length > 0
-      ? getApp()
-      : initializeApp({
-          credential:
-            cert(
-              obterChaveServico()
-            ),
+  const existente = getApps().find(
+    (appAtual) => appAtual.name === NOME_APP
+  );
 
-          databaseURL:
-            "https://qr-acesso-studio-default-rtdb.firebaseio.com",
-        });
+  const app =
+    existente ??
+    initializeApp(
+      {
+        credential: cert(
+          obterChaveServico()
+        ),
+        databaseURL: obterDatabaseUrl(),
+      },
+      NOME_APP
+    );
 
   cache = {
     app,
-
-    database:
-      getDatabase(app),
+    database: getDatabase(app),
   };
 
   return cache;
