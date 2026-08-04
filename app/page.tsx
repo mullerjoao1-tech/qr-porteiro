@@ -1,59 +1,232 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useState } from "react";
+import { useRouter } from "next/navigation";
+
+import {
+  type FormEvent,
+  useMemo,
+  useState,
+} from "react";
 
 import CardModulo from "@/app/components/dashboard/CardModulo";
-import { useAuth } from "@/app/context/AuthContext";
-import { obterModulosDashboard } from "@/app/services/dashboard";
+
+import {
+  useAuth,
+} from "@/app/context/AuthContext";
+
+import {
+  obterModulosDashboard,
+} from "@/app/services/dashboard";
+
+import type {
+  VinculoComPermissoes,
+} from "@/app/services/permissoes";
 
 const ferramentasStudio = [
   {
-    titulo: "📷 Teste de câmera",
-    link: "/teste-camera",
+    titulo:
+      "📷 Teste de câmera",
+
+    link:
+      "/teste-camera",
   },
   {
-    titulo: "🔵 Teste BLE",
-    link: "/teste-ble",
+    titulo:
+      "🔵 Teste BLE",
+
+    link:
+      "/teste-ble",
   },
   {
-    titulo: "🔐 Teste de acesso",
-    link: "/teste-access",
+    titulo:
+      "🔐 Teste de acesso",
+
+    link:
+      "/teste-access",
   },
 ];
 
-function obterMensagemErro(erro: unknown): string {
-  if (!(erro instanceof Error)) {
+function obterMensagemErro(
+  erro:
+    unknown
+): string {
+  if (
+    !(erro instanceof Error)
+  ) {
     return "Não foi possível entrar. Tente novamente.";
   }
 
-  const mensagem = erro.message.toLowerCase();
+  const mensagem =
+    erro.message.toLowerCase();
 
   if (
-    mensagem.includes("invalid-credential") ||
-    mensagem.includes("wrong-password") ||
-    mensagem.includes("user-not-found")
+    mensagem.includes(
+      "invalid-credential"
+    ) ||
+    mensagem.includes(
+      "wrong-password"
+    ) ||
+    mensagem.includes(
+      "user-not-found"
+    )
   ) {
     return "E-mail ou senha incorretos.";
   }
 
-  if (mensagem.includes("invalid-email")) {
+  if (
+    mensagem.includes(
+      "invalid-email"
+    )
+  ) {
     return "Digite um e-mail válido.";
   }
 
-  if (mensagem.includes("too-many-requests")) {
+  if (
+    mensagem.includes(
+      "too-many-requests"
+    )
+  ) {
     return "Muitas tentativas. Aguarde alguns minutos e tente novamente.";
   }
 
-  if (mensagem.includes("network-request-failed")) {
+  if (
+    mensagem.includes(
+      "network-request-failed"
+    )
+  ) {
     return "Falha de conexão. Verifique sua internet.";
   }
 
-  if (mensagem.includes("user-disabled")) {
+  if (
+    mensagem.includes(
+      "user-disabled"
+    )
+  ) {
     return "Este usuário está desativado.";
   }
 
-  return erro.message || "Não foi possível entrar. Tente novamente.";
+  return (
+    erro.message ||
+    "Não foi possível entrar. Tente novamente."
+  );
+}
+
+function obterTipoLocal(
+  vinculo:
+    VinculoComPermissoes
+): string {
+  return (
+    vinculo.tipoLocal
+      ?.trim()
+      .toLowerCase() ||
+    "local"
+  );
+}
+
+function obterIconeLocal(
+  vinculo:
+    VinculoComPermissoes
+): string {
+  const tipo =
+    obterTipoLocal(
+      vinculo
+    );
+
+  switch (tipo) {
+    case "condominio":
+      return "🏢";
+
+    case "residencia":
+      return "🏠";
+
+    case "beauty":
+      return "💅";
+
+    case "barbearia":
+      return "💈";
+
+    case "clinica":
+      return "🏥";
+
+    case "empresa":
+      return "🏭";
+
+    case "restaurante":
+      return "🍽️";
+
+    case "pet":
+      return "🐾";
+
+    default:
+      return "📍";
+  }
+}
+
+function obterNomeLocal(
+  vinculoId:
+    string,
+  vinculo:
+    VinculoComPermissoes
+): string {
+  return (
+    vinculo.localNome ||
+    vinculo.condominioNome ||
+    vinculo.localSlug ||
+    vinculo.condominioSlug ||
+    vinculo.localId ||
+    vinculo.condominioId ||
+    vinculoId
+  );
+}
+
+function obterSlugLocal(
+  vinculo:
+    VinculoComPermissoes
+): string {
+  return (
+    vinculo.localSlug ||
+    vinculo.condominioSlug ||
+    ""
+  );
+}
+
+function obterPerfilLocal(
+  vinculo:
+    VinculoComPermissoes
+): string {
+  const perfil =
+    vinculo.perfilPrincipal ||
+    Object.entries(
+      vinculo.perfis ??
+      {}
+    ).find(
+      (
+        [
+          ,
+          ativo,
+        ]
+      ) =>
+        ativo === true
+    )?.[0] ||
+    "usuário";
+
+  return perfil
+    .replaceAll(
+      "_",
+      " "
+    )
+    .replaceAll(
+      "-",
+      " "
+    )
+    .replace(
+      /\b\w/g,
+      (
+        letra
+      ) =>
+        letra.toUpperCase()
+    );
 }
 
 function TelaCarregando() {
@@ -71,70 +244,173 @@ function TelaCarregando() {
 }
 
 function TelaLogin() {
-  const { login, recuperarSenha } = useAuth();
+  const {
+    login,
+    recuperarSenha,
+  } =
+    useAuth();
 
-  const [email, setEmail] = useState("");
-  const [senha, setSenha] = useState("");
-  const [mostrarSenha, setMostrarSenha] = useState(false);
-  const [enviando, setEnviando] = useState(false);
-  const [recuperando, setRecuperando] = useState(false);
-  const [erro, setErro] = useState("");
-  const [mensagem, setMensagem] = useState("");
+  const [
+    email,
+    setEmail,
+  ] =
+    useState(
+      ""
+    );
 
-  async function entrar(evento: FormEvent<HTMLFormElement>) {
+  const [
+    senha,
+    setSenha,
+  ] =
+    useState(
+      ""
+    );
+
+  const [
+    mostrarSenha,
+    setMostrarSenha,
+  ] =
+    useState(
+      false
+    );
+
+  const [
+    enviando,
+    setEnviando,
+  ] =
+    useState(
+      false
+    );
+
+  const [
+    recuperando,
+    setRecuperando,
+  ] =
+    useState(
+      false
+    );
+
+  const [
+    erro,
+    setErro,
+  ] =
+    useState(
+      ""
+    );
+
+  const [
+    mensagem,
+    setMensagem,
+  ] =
+    useState(
+      ""
+    );
+
+  async function entrar(
+    evento:
+      FormEvent<HTMLFormElement>
+  ) {
     evento.preventDefault();
 
-    const emailLimpo = email.trim().toLowerCase();
+    const emailLimpo =
+      email
+        .trim()
+        .toLowerCase();
 
-    setErro("");
-    setMensagem("");
+    setErro(
+      ""
+    );
+
+    setMensagem(
+      ""
+    );
 
     if (!emailLimpo) {
-      setErro("Digite seu e-mail.");
+      setErro(
+        "Digite seu e-mail."
+      );
+
       return;
     }
 
     if (!senha) {
-      setErro("Digite sua senha.");
+      setErro(
+        "Digite sua senha."
+      );
+
       return;
     }
 
     try {
-      setEnviando(true);
+      setEnviando(
+        true
+      );
 
-      await login(emailLimpo, senha);
-    } catch (erroLogin) {
-      setErro(obterMensagemErro(erroLogin));
+      await login(
+        emailLimpo,
+        senha
+      );
+    } catch (
+      erroLogin
+    ) {
+      setErro(
+        obterMensagemErro(
+          erroLogin
+        )
+      );
     } finally {
-      setEnviando(false);
+      setEnviando(
+        false
+      );
     }
   }
 
   async function solicitarRecuperacao() {
-    const emailLimpo = email.trim().toLowerCase();
+    const emailLimpo =
+      email
+        .trim()
+        .toLowerCase();
 
-    setErro("");
-    setMensagem("");
+    setErro(
+      ""
+    );
+
+    setMensagem(
+      ""
+    );
 
     if (!emailLimpo) {
       setErro(
         "Digite seu e-mail acima para receber o link de recuperação."
       );
+
       return;
     }
 
     try {
-      setRecuperando(true);
+      setRecuperando(
+        true
+      );
 
-      await recuperarSenha(emailLimpo);
+      await recuperarSenha(
+        emailLimpo
+      );
 
       setMensagem(
         "Enviamos um link de recuperação para o seu e-mail."
       );
-    } catch (erroRecuperacao) {
-      setErro(obterMensagemErro(erroRecuperacao));
+    } catch (
+      erroRecuperacao
+    ) {
+      setErro(
+        obterMensagemErro(
+          erroRecuperacao
+        )
+      );
     } finally {
-      setRecuperando(false);
+      setRecuperando(
+        false
+      );
     }
   }
 
@@ -163,7 +439,9 @@ function TelaLogin() {
           </div>
 
           <form
-            onSubmit={entrar}
+            onSubmit={
+              entrar
+            }
             className="mt-8 space-y-5"
           >
             <div>
@@ -177,14 +455,23 @@ function TelaLogin() {
               <input
                 id="email"
                 type="email"
-                value={email}
-                onChange={(evento) =>
-                  setEmail(evento.target.value)
+                value={
+                  email
+                }
+                onChange={
+                  (
+                    evento
+                  ) =>
+                    setEmail(
+                      evento.target.value
+                    )
                 }
                 autoComplete="email"
                 inputMode="email"
                 placeholder="seuemail@exemplo.com"
-                disabled={enviando}
+                disabled={
+                  enviando
+                }
                 className="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-4 text-base text-white outline-none transition placeholder:text-slate-600 focus:border-green-500 disabled:cursor-not-allowed disabled:opacity-60"
               />
             </div>
@@ -200,25 +487,46 @@ function TelaLogin() {
               <div className="relative">
                 <input
                   id="senha"
-                  type={mostrarSenha ? "text" : "password"}
-                  value={senha}
-                  onChange={(evento) =>
-                    setSenha(evento.target.value)
+                  type={
+                    mostrarSenha
+                      ? "text"
+                      : "password"
+                  }
+                  value={
+                    senha
+                  }
+                  onChange={
+                    (
+                      evento
+                    ) =>
+                      setSenha(
+                        evento.target.value
+                      )
                   }
                   autoComplete="current-password"
                   placeholder="Digite sua senha"
-                  disabled={enviando}
+                  disabled={
+                    enviando
+                  }
                   className="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-4 pr-20 text-base text-white outline-none transition placeholder:text-slate-600 focus:border-green-500 disabled:cursor-not-allowed disabled:opacity-60"
                 />
 
                 <button
                   type="button"
-                  onClick={() =>
-                    setMostrarSenha((estadoAtual) => !estadoAtual)
+                  onClick={
+                    () =>
+                      setMostrarSenha(
+                        (
+                          estadoAtual
+                        ) =>
+                          !estadoAtual
+                      )
                   }
                   className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-bold text-green-400"
                 >
-                  {mostrarSenha ? "Ocultar" : "Mostrar"}
+                  {mostrarSenha
+                    ? "Ocultar"
+                    : "Mostrar"}
                 </button>
               </div>
             </div>
@@ -237,16 +545,25 @@ function TelaLogin() {
 
             <button
               type="submit"
-              disabled={enviando}
+              disabled={
+                enviando
+              }
               className="w-full rounded-2xl bg-green-500 px-5 py-4 text-base font-black text-slate-950 transition hover:bg-green-400 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {enviando ? "Entrando..." : "Entrar no QR Acesso"}
+              {enviando
+                ? "Entrando..."
+                : "Entrar no QR Acesso"}
             </button>
 
             <button
               type="button"
-              onClick={solicitarRecuperacao}
-              disabled={enviando || recuperando}
+              onClick={
+                solicitarRecuperacao
+              }
+              disabled={
+                enviando ||
+                recuperando
+              }
               className="w-full rounded-2xl border border-slate-700 bg-slate-800 px-5 py-3 text-sm font-bold text-slate-200 transition hover:border-slate-600 hover:bg-slate-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
             >
               {recuperando
@@ -265,15 +582,31 @@ function TelaLogin() {
 }
 
 function TelaSemVinculos() {
-  const { usuario, logout } = useAuth();
-  const [saindo, setSaindo] = useState(false);
+  const {
+    usuario,
+    logout,
+  } =
+    useAuth();
+
+  const [
+    saindo,
+    setSaindo,
+  ] =
+    useState(
+      false
+    );
 
   async function sair() {
     try {
-      setSaindo(true);
+      setSaindo(
+        true
+      );
+
       await logout();
     } finally {
-      setSaindo(false);
+      setSaindo(
+        false
+      );
     }
   }
 
@@ -295,7 +628,9 @@ function TelaSemVinculos() {
         <p className="mt-3 text-sm leading-relaxed text-slate-300">
           O usuário{" "}
           <strong>
-            {usuario?.nome || usuario?.email || "conectado"}
+            {usuario?.nome ||
+              usuario?.email ||
+              "conectado"}
           </strong>{" "}
           está autenticado, mas ainda não possui vínculo ativo com um
           condomínio, estabelecimento ou outro local do ecossistema QR.
@@ -303,51 +638,284 @@ function TelaSemVinculos() {
 
         <button
           type="button"
-          onClick={sair}
-          disabled={saindo}
+          onClick={
+            sair
+          }
+          disabled={
+            saindo
+          }
           className="mt-6 w-full rounded-2xl border border-red-500/30 bg-red-500/10 px-5 py-3 font-bold text-red-300 transition hover:bg-red-500/20 active:scale-[0.98] disabled:opacity-60"
         >
-          {saindo ? "Saindo..." : "Sair da conta"}
+          {saindo
+            ? "Saindo..."
+            : "Sair da conta"}
         </button>
       </section>
     </main>
   );
 }
 
+function CardLocal({
+  vinculoId,
+  vinculo,
+  selecionado,
+  aoSelecionar,
+}: {
+  vinculoId:
+    string;
+
+  vinculo:
+    VinculoComPermissoes;
+
+  selecionado:
+    boolean;
+
+  aoSelecionar:
+    (
+      vinculoId:
+        string
+    ) => void;
+}) {
+  const nome =
+    obterNomeLocal(
+      vinculoId,
+      vinculo
+    );
+
+  const slug =
+    obterSlugLocal(
+      vinculo
+    );
+
+  const tipo =
+    obterTipoLocal(
+      vinculo
+    );
+
+  const perfil =
+    obterPerfilLocal(
+      vinculo
+    );
+
+  const icone =
+    obterIconeLocal(
+      vinculo
+    );
+
+  return (
+    <article
+      className={[
+        "rounded-3xl border p-5 transition",
+        selecionado
+          ? "border-green-500 bg-green-500/10"
+          : "border-slate-800 bg-slate-900 hover:border-slate-700",
+      ].join(
+        " "
+      )}
+    >
+      <div className="flex items-start gap-4">
+        <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-slate-950 text-3xl">
+          {icone}
+        </div>
+
+        <div className="min-w-0 flex-1">
+          <p className="text-xs font-bold uppercase tracking-wider text-green-400">
+            {tipo}
+          </p>
+
+          <h3 className="mt-1 break-words text-lg font-black text-white">
+            {nome}
+          </h3>
+
+          <p className="mt-1 text-sm font-semibold text-slate-300">
+            {perfil}
+          </p>
+
+          {slug && (
+            <p className="mt-1 break-all text-xs text-slate-500">
+              {slug}
+            </p>
+          )}
+        </div>
+      </div>
+
+      <button
+        type="button"
+        onClick={
+          () =>
+            aoSelecionar(
+              vinculoId
+            )
+        }
+        className={[
+          "mt-5 w-full rounded-2xl px-4 py-3 text-sm font-black transition active:scale-[0.98]",
+          selecionado
+            ? "bg-green-500 text-slate-950 hover:bg-green-400"
+            : "border border-slate-700 bg-slate-800 text-white hover:border-green-500 hover:bg-slate-700",
+        ].join(
+          " "
+        )}
+      >
+        {selecionado
+          ? "Local selecionado"
+          : "Entrar neste local"}
+      </button>
+    </article>
+  );
+}
+
 function PaginaStudio() {
+  const router =
+    useRouter();
+
   const {
     usuario,
     vinculoSelecionadoId,
     vinculoSelecionado,
     vinculosAtivos,
+    selecionarVinculo,
     selecionarCarteiraGeral,
     logout,
-  } = useAuth();
+  } =
+    useAuth();
 
-  const modulos = obterModulosDashboard(
-    usuario,
-    vinculoSelecionadoId
-  );
+  const modulos =
+    obterModulosDashboard(
+      usuario,
+      vinculoSelecionadoId
+    );
 
-  const [saindo, setSaindo] = useState(false);
+  const [
+    saindo,
+    setSaindo,
+  ] =
+    useState(
+      false
+    );
+
+  const [
+    erroSelecao,
+    setErroSelecao,
+  ] =
+    useState(
+      ""
+    );
 
   const nomeContexto =
-    vinculoSelecionado?.condominioNome ||
-    vinculoSelecionado?.condominioSlug ||
-    vinculoSelecionado?.condominioId ||
-    vinculoSelecionadoId ||
-    "Carteira Geral";
+    vinculoSelecionado
+      ? obterNomeLocal(
+          vinculoSelecionadoId ||
+            "",
+          vinculoSelecionado
+        )
+      : "Carteira Geral";
 
   const isCarteiraGeral =
-    vinculoSelecionadoId === null;
+    vinculoSelecionadoId ===
+    null;
+
+  const locaisOrdenados =
+    useMemo(
+      () =>
+        [
+          ...vinculosAtivos,
+        ].sort(
+          (
+            [
+              idA,
+              vinculoA,
+            ],
+            [
+              idB,
+              vinculoB,
+            ]
+          ) =>
+            obterNomeLocal(
+              idA,
+              vinculoA
+            ).localeCompare(
+              obterNomeLocal(
+                idB,
+                vinculoB
+              ),
+              "pt-BR"
+            )
+        ),
+      [
+        vinculosAtivos,
+      ]
+    );
 
   async function sair() {
     try {
-      setSaindo(true);
+      setSaindo(
+        true
+      );
+
       await logout();
     } finally {
-      setSaindo(false);
+      setSaindo(
+        false
+      );
     }
+  }
+
+  function entrarNoLocal(
+    vinculoId:
+      string
+  ) {
+    try {
+      setErroSelecao(
+        ""
+      );
+
+      const modulosPermitidos =
+        obterModulosDashboard(
+          usuario,
+          vinculoId
+        );
+
+      const primeiroModulo =
+        modulosPermitidos[0];
+
+      if (!primeiroModulo) {
+        throw new Error(
+          "Este local não possui nenhum módulo liberado para o usuário."
+        );
+      }
+
+      selecionarVinculo(
+        vinculoId
+      );
+
+      router.push(
+        primeiroModulo.rota
+      );
+    } catch (
+      erro
+    ) {
+      setErroSelecao(
+        erro instanceof Error
+          ? erro.message
+          : "Não foi possível selecionar este local."
+      );
+    }
+  }
+
+  function abrirCarteiraGeral() {
+    setErroSelecao(
+      ""
+    );
+
+    selecionarCarteiraGeral();
+
+    window.scrollTo({
+      top:
+        0,
+
+      behavior:
+        "smooth",
+    });
   }
 
   return (
@@ -384,14 +952,17 @@ function PaginaStudio() {
               </p>
 
               <p className="mt-1 truncate font-black text-white">
-                {usuario?.nome || usuario?.email || "Usuário"}
+                {usuario?.nome ||
+                  usuario?.email ||
+                  "Usuário"}
               </p>
 
-              {usuario?.nome && usuario?.email && (
-                <p className="mt-1 truncate text-xs text-slate-400">
-                  {usuario.email}
-                </p>
-              )}
+              {usuario?.nome &&
+                usuario?.email && (
+                  <p className="mt-1 truncate text-xs text-slate-400">
+                    {usuario.email}
+                  </p>
+                )}
 
               <div className="mt-3 rounded-xl border border-green-500/20 bg-green-500/10 px-3 py-2">
                 <p className="text-[10px] font-bold uppercase tracking-wider text-green-400">
@@ -399,7 +970,12 @@ function PaginaStudio() {
                 </p>
 
                 <p className="mt-1 break-words text-sm font-black text-green-100">
-                  {isCarteiraGeral ? "🌐 " : "🏢 "}
+                  {isCarteiraGeral
+                    ? "🌐 "
+                    : `${obterIconeLocal(
+                        vinculoSelecionado as
+                          VinculoComPermissoes
+                      )} `}
                   {nomeContexto}
                 </p>
 
@@ -413,8 +989,12 @@ function PaginaStudio() {
               {!isCarteiraGeral && (
                 <button
                   type="button"
-                  onClick={selecionarCarteiraGeral}
-                  disabled={saindo}
+                  onClick={
+                    abrirCarteiraGeral
+                  }
+                  disabled={
+                    saindo
+                  }
                   className="mt-3 w-full rounded-xl border border-cyan-500/30 bg-cyan-500/10 px-3 py-2 text-sm font-bold text-cyan-300 transition hover:bg-cyan-500/20 active:scale-[0.98] disabled:opacity-60"
                 >
                   Voltar para Carteira Geral
@@ -423,15 +1003,94 @@ function PaginaStudio() {
 
               <button
                 type="button"
-                onClick={sair}
-                disabled={saindo}
+                onClick={
+                  sair
+                }
+                disabled={
+                  saindo
+                }
                 className="mt-3 w-full rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm font-bold text-red-300 transition hover:bg-red-500/20 active:scale-[0.98] disabled:opacity-60"
               >
-                {saindo ? "Saindo..." : "Sair"}
+                {saindo
+                  ? "Saindo..."
+                  : "Sair"}
               </button>
             </div>
           </div>
         </header>
+
+        <section className="mb-8 rounded-3xl border border-cyan-500/20 bg-cyan-500/5 p-5 sm:p-6">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-cyan-400">
+                Login Único QR Core
+              </p>
+
+              <h2 className="mt-2 text-2xl font-black">
+                Escolha onde deseja entrar
+              </h2>
+
+              <p className="mt-2 max-w-3xl text-sm leading-relaxed text-slate-300">
+                Use a Carteira Geral para uma visão consolidada ou selecione
+                um local para carregar somente os perfis, permissões e
+                módulos daquele contexto.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={
+                abrirCarteiraGeral
+              }
+              className={[
+                "rounded-2xl px-5 py-3 text-sm font-black transition active:scale-[0.98]",
+                isCarteiraGeral
+                  ? "bg-cyan-400 text-slate-950 hover:bg-cyan-300"
+                  : "border border-cyan-500/30 bg-cyan-500/10 text-cyan-300 hover:bg-cyan-500/20",
+              ].join(
+                " "
+              )}
+            >
+              🌐 Abrir Carteira Geral
+            </button>
+          </div>
+
+          {erroSelecao && (
+            <div className="mt-5 rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm font-semibold text-red-300">
+              {erroSelecao}
+            </div>
+          )}
+
+          <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {locaisOrdenados.map(
+              (
+                [
+                  vinculoId,
+                  vinculo,
+                ]
+              ) => (
+                <CardLocal
+                  key={
+                    vinculoId
+                  }
+                  vinculoId={
+                    vinculoId
+                  }
+                  vinculo={
+                    vinculo
+                  }
+                  selecionado={
+                    vinculoSelecionadoId ===
+                    vinculoId
+                  }
+                  aoSelecionar={
+                    entrarNoLocal
+                  }
+                />
+              )
+            )}
+          </div>
+        </section>
 
         <section>
           <div className="mb-4">
@@ -446,14 +1105,23 @@ function PaginaStudio() {
             </p>
           </div>
 
-          {modulos.length > 0 ? (
+          {modulos.length >
+          0 ? (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {modulos.map((modulo) => (
-                <CardModulo
-                  key={modulo.id}
-                  modulo={modulo}
-                />
-              ))}
+              {modulos.map(
+                (
+                  modulo
+                ) => (
+                  <CardModulo
+                    key={
+                      modulo.id
+                    }
+                    modulo={
+                      modulo
+                    }
+                  />
+                )
+              )}
             </div>
           ) : (
             <div className="rounded-3xl border border-amber-500/30 bg-amber-500/10 p-5">
@@ -481,27 +1149,35 @@ function PaginaStudio() {
           </div>
 
           <div className="grid gap-3 sm:grid-cols-3">
-            {ferramentasStudio.map((ferramenta) => (
-              <Link
-                key={ferramenta.link}
-                href={ferramenta.link}
-                className="rounded-2xl border border-slate-700 bg-slate-800 px-4 py-4 text-center font-bold transition-all hover:border-cyan-500 hover:bg-slate-700 active:scale-[0.98]"
-              >
-                {ferramenta.titulo}
-              </Link>
-            ))}
+            {ferramentasStudio.map(
+              (
+                ferramenta
+              ) => (
+                <Link
+                  key={
+                    ferramenta.link
+                  }
+                  href={
+                    ferramenta.link
+                  }
+                  className="rounded-2xl border border-slate-700 bg-slate-800 px-4 py-4 text-center font-bold transition-all hover:border-cyan-500 hover:bg-slate-700 active:scale-[0.98]"
+                >
+                  {ferramenta.titulo}
+                </Link>
+              )
+            )}
           </div>
         </section>
 
         <section className="mt-8 rounded-3xl border border-green-500/20 bg-green-500/5 p-5">
           <h2 className="text-xl font-black text-green-400">
-            🚀 Próxima evolução
+            🚀 Implantação Universal
           </h2>
 
           <p className="mt-2 text-sm leading-relaxed text-slate-300">
-            Assistente de implantação para cadastrar o local, criar o
+            O Studio já possui a base para cadastrar o local, criar o
             responsável, gerar o login, aplicar vínculos e permissões,
-            criar unidades, links e QR Codes automaticamente.
+            criar estruturas, URLs, QR Code e material A4 automaticamente.
           </p>
         </section>
 
@@ -518,19 +1194,33 @@ export default function Home() {
     usuario,
     carregando,
     vinculosAtivos,
-  } = useAuth();
+  } =
+    useAuth();
 
-  if (carregando) {
-    return <TelaCarregando />;
+  if (
+    carregando
+  ) {
+    return (
+      <TelaCarregando />
+    );
   }
 
   if (!usuario) {
-    return <TelaLogin />;
+    return (
+      <TelaLogin />
+    );
   }
 
-  if (vinculosAtivos.length === 0) {
-    return <TelaSemVinculos />;
+  if (
+    vinculosAtivos.length ===
+    0
+  ) {
+    return (
+      <TelaSemVinculos />
+    );
   }
 
-  return <PaginaStudio />;
+  return (
+    <PaginaStudio />
+  );
 }
