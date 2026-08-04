@@ -15,6 +15,9 @@ import {
 import {
   implantarResidencia,
 } from "./ImplantadorResidencia";
+import {
+  criarOuAtualizarLocalUniversal,
+} from "../locais/CadastroUniversal";
 
 export type TipoLocalImplantacao =
   | "condominio"
@@ -341,6 +344,61 @@ export async function executarImplantacao(
   contexto: ContextoImplantacao
 ): Promise<ResultadoImplantadorSegmento> {
   validarContexto(contexto);
+
+await criarOuAtualizarLocalUniversal(
+  contexto.database,
+  {
+    localId: contexto.local.localId,
+
+    nome: contexto.local.localNome,
+
+    slug: contexto.local.localSlug,
+
+    tipo: contexto.local.tipoLocal,
+
+    cidade: contexto.local.cidade ?? "",
+
+    estado: contexto.local.estado ?? "",
+
+    endereco: contexto.local.endereco ?? "",
+
+    criadoPorUid: contexto.criadoPorUid,
+
+    criadoEm: contexto.criadoEm,
+
+    modulos: {},
+
+    estatisticas: {
+      totalUsuarios: 0,
+      totalUnidades: 0,
+      totalMoradores: 0,
+      totalFuncionarios: 0,
+      totalPrestadores: 0,
+      totalVisitantes: 0,
+      totalClientes: 0,
+      totalProfissionais: 0,
+      atualizadoEm: contexto.criadoEm,
+    },
+
+    configuracaoSegmento:
+      contexto.configuracaoSegmento,
+
+    identidadeVisual: {
+      tema: "clean",
+
+      corPrimaria: "#0F3D91",
+
+      corSecundaria: "#FFFFFF",
+
+      corTexto: "#111827",
+
+      logoUrl: "",
+
+      bannerUrl: "",
+    },
+  }
+);
+
 
   await validarIdentidadeUnica(
     contexto
