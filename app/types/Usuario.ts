@@ -22,69 +22,194 @@ export type PermissoesUsuario = {
   receberChamadas?: boolean;
   atenderChamadas?: boolean;
   abrirPortao?: boolean;
+
   visualizarComunicados?: boolean;
   enviarComunicados?: boolean;
+
   gerenciarMoradores?: boolean;
   gerenciarUnidades?: boolean;
   gerenciarUsuarios?: boolean;
+
   visualizarFinanceiro?: boolean;
   gerenciarFinanceiro?: boolean;
+
   visualizarReservas?: boolean;
   gerenciarReservas?: boolean;
+
   visualizarPrestadores?: boolean;
   gerenciarPrestadores?: boolean;
+
   visualizarContratos?: boolean;
   gerenciarContratos?: boolean;
+
   visualizarRelatorios?: boolean;
   gerenciarConfiguracoes?: boolean;
-  [permissao: string]: boolean | undefined;
+
+  [permissao: string]:
+    boolean | undefined;
 };
 
-export type VinculoCondominioUsuario = {
-  condominioId: string;
-  condominioNome?: string;
-  condominioSlug?: string;
+export type VinculoLocalUsuario = {
+  localId: string;
+  localNome?: string;
+  localSlug?: string;
+  tipoLocal?: string;
 
-  perfis: Partial<Record<TipoPerfil, boolean>>;
+  perfilPrincipal?: TipoPerfil;
 
-  unidades?: Record<string, boolean>;
+  perfis:
+    Partial<
+      Record<
+        TipoPerfil,
+        boolean
+      >
+    >;
 
-  permissoes?: PermissoesUsuario;
+  unidades?:
+    Record<
+      string,
+      boolean
+    >;
 
-  ativo: boolean;
+  permissoes?:
+    PermissoesUsuario;
 
-  criadoEm?: number;
-  atualizadoEm?: number;
+  ativo:
+    boolean;
+
+  criadoEm?:
+    number;
+
+  atualizadoEm?:
+    number;
 };
+
+/**
+ * Compatibilidade temporária com a estrutura antiga.
+ * Novos fluxos devem usar VinculoLocalUsuario e usuarios-v2/{uid}/locais.
+ */
+export type VinculoCondominioUsuario =
+  VinculoLocalUsuario & {
+    condominioId:
+      string;
+
+    condominioNome?:
+      string;
+
+    condominioSlug?:
+      string;
+  };
 
 export type Usuario = {
-  uid: string;
+  uid:
+    string;
 
-  nome: string;
-  email: string;
-  telefone?: string;
-  fotoUrl?: string;
+  nome:
+    string;
 
-  status: StatusUsuario;
+  email:
+    string;
 
-  condominios?: Record<string, VinculoCondominioUsuario>;
+  telefone?:
+    string;
 
-  criadoEm: number;
-  atualizadoEm?: number;
-  ultimoLogin?: number;
+  fotoUrl?:
+    string;
 
-  primeiroAcesso?: boolean;
-  precisaTrocarSenha?: boolean;
+  status:
+    StatusUsuario;
 
-  origem?: string;
-  observacoes?: string;
+  /**
+   * Estrutura universal oficial.
+   */
+  locais?:
+    Record<
+      string,
+      VinculoLocalUsuario
+    >;
+
+  /**
+   * Compatibilidade com fluxos antigos de condomínio.
+   */
+  condominios?:
+    Record<
+      string,
+      VinculoCondominioUsuario
+    >;
+
+  criadoEm:
+    number;
+
+  atualizadoEm?:
+    number;
+
+  ultimoLogin?:
+    number;
+
+  primeiroAcesso?:
+    boolean;
+
+  precisaTrocarSenha?:
+    boolean;
+
+  origem?:
+    string;
+
+  observacoes?:
+    string;
 };
 
-export type NovoUsuario = Omit<
-  Usuario,
-  "uid" | "criadoEm" | "atualizadoEm" | "ultimoLogin"
->;
+export type NovoUsuario =
+  Omit<
+    Usuario,
+    | "uid"
+    | "criadoEm"
+    | "atualizadoEm"
+    | "ultimoLogin"
+  >;
 
-export type AtualizacaoUsuario = Partial<
-  Omit<Usuario, "uid" | "criadoEm">
->;
+export type AtualizacaoUsuario =
+  Partial<
+    Omit<
+      Usuario,
+      | "uid"
+      | "criadoEm"
+    >
+  >;
+
+export type DadosVincularUsuarioLocal = {
+  localId:
+    string;
+
+  localNome?:
+    string;
+
+  localSlug?:
+    string;
+
+  tipoLocal?:
+    string;
+
+  perfilPrincipal:
+    TipoPerfil;
+
+  perfis?:
+    Partial<
+      Record<
+        TipoPerfil,
+        boolean
+      >
+    >;
+
+  unidades?:
+    Record<
+      string,
+      boolean
+    >;
+
+  permissoes?:
+    PermissoesUsuario;
+
+  ativo?:
+    boolean;
+};
