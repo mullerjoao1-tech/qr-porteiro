@@ -518,7 +518,13 @@ export async function POST(
     database,
   } = obterFirebaseAdmin();
 
-  let uidCriado: string | null = null;
+  let uidResponsavel: string | null = null;
+
+  let usuarioCriadoNoAuthentication = false;
+
+  let usuarioBancoExistiaAntes = false;
+
+  let vinculosUsuarioGravados = false;
 
   let localCriadoNestaOperacao = false;
 
@@ -550,8 +556,8 @@ export async function POST(
     const telefone =
       textoOpcional(corpo.telefone);
 
-    const senhaProvisoria =
-      validarSenha(
+    const senhaProvisoriaInformada =
+      textoOpcional(
         corpo.senhaProvisoria
       );
 
@@ -610,26 +616,18 @@ export async function POST(
       );
     }
 
+    let usuarioAuthenticationExistente:
+      Awaited<
+        ReturnType<
+          typeof auth.getUserByEmail
+        >
+      > | null = null;
+
     try {
-      const usuarioExistente =
+      usuarioAuthenticationExistente =
         await auth.getUserByEmail(
           email
         );
-
-      return NextResponse.json(
-        {
-          sucesso: false,
-
-          erro:
-            "Este e-mail já está cadastrado no Firebase Authentication.",
-
-          uidExistente:
-            usuarioExistente.uid,
-        },
-        {
-          status: 409,
-        }
-      );
     } catch (erroBusca) {
       const codigo =
         typeof erroBusca === "object" &&
@@ -705,16 +703,40 @@ export async function POST(
     localCriadoNestaOperacao =
       resultadoCadastroLocal.criado;
 
-    const usuarioAuthentication =
-      await auth.createUser({
-        email,
-        password: senhaProvisoria,
-        displayName: nome,
-        disabled: false,
-      });
+    if (
+      usuarioAuthenticationExistente
+    ) {
+      uidResponsavel =
+        usuarioAuthenticationExistente.uid;
+    } else {
+      const senhaProvisoria =
+        validarSenha(
+          senhaProvisoriaInformada
+        );
 
-    uidCriado =
-      usuarioAuthentication.uid;
+      const usuarioAuthentication =
+        await auth.createUser({
+          email,
+          password:
+            senhaProvisoria,
+          displayName:
+            nome,
+          disabled:
+            false,
+        });
+
+      uidResponsavel =
+        usuarioAuthentication.uid;
+
+      usuarioCriadoNoAuthentication =
+        true;
+    }
+
+    if (!uidResponsavel) {
+      throw new Error(
+        "Não foi possível determinar o UID do responsável."
+      );
+    }
 
     const vinculoUniversal = {
       localId,
@@ -744,44 +766,81 @@ export async function POST(
       atualizadoEm: agora,
     };
 
-    const usuarioBanco = {
-      uid: uidCriado,
+    const referenciaUsuarioBanco =
+      database.ref(
+        `usuarios-v2/${uidResponsavel}`
+      );
+
+    const snapshotUsuarioBanco =
+      await referenciaUsuarioBanco.get();
+
+    usuarioBancoExistiaAntes =
+      snapshotUsuarioBanco.exists();
+
+    const usuarioBancoExistente =
+      snapshotUsuarioBanco.exists()
+        ? (
+            snapshotUsuarioBanco.val() as {
+              criadoEm?: number;
+              ultimoLogin?: number;
+              primeiroAcesso?: boolean;
+              precisaTrocarSenha?: boolean;
+              origem?: string;
+            }
+          )
+        : null;
+
+    await referenciaUsuarioBanco.update({
+      uid:
+        uidResponsavel,
 
       nome,
       email,
       telefone,
 
-      status: "ativo",
+      status:
+        "ativo",
 
-      criadoEm: agora,
-      atualizadoEm: agora,
-      ultimoLogin: 0,
+      criadoEm:
+        usuarioBancoExistente
+          ?.criadoEm ??
+        agora,
 
-      primeiroAcesso: true,
-      precisaTrocarSenha: true,
+      atualizadoEm:
+        agora,
+
+      ultimoLogin:
+        usuarioBancoExistente
+          ?.ultimoLogin ??
+        0,
+
+      primeiroAcesso:
+        usuarioBancoExistente
+          ?.primeiroAcesso ??
+        usuarioCriadoNoAuthentication,
+
+      precisaTrocarSenha:
+        usuarioBancoExistente
+          ?.precisaTrocarSenha ??
+        usuarioCriadoNoAuthentication,
 
       origem:
+        usuarioBancoExistente
+          ?.origem ??
         "assistente-implantacao-qr-core",
 
-      locais: {
-        [localId]:
-          vinculoUniversal,
-      },
+      [`locais/${localId}`]:
+        vinculoUniversal,
 
-      condominios: {
-        [localId]:
-          vinculoUniversal,
-      },
-    };
+      [`condominios/${localId}`]:
+        vinculoUniversal,
+    });
 
-    await database
-      .ref(
-        `usuarios-v2/${uidCriado}`
-      )
-      .set(usuarioBanco);
+    vinculosUsuarioGravados =
+      true;
 
     const referenciaUsuarioLocal = {
-      uid: uidCriado,
+      uid: uidResponsavel,
       nome,
       email,
       telefone,
@@ -800,7 +859,7 @@ export async function POST(
 
     await database
       .ref(
-        `locais-v2/${localId}/usuarios/${uidCriado}`
+        `locais-v2/${localId}/usuarios/${uidResponsavel}`
       )
       .set(
         referenciaUsuarioLocal
@@ -808,10 +867,10 @@ export async function POST(
 
     await database
       .ref(
-        `locais-v2/${localId}/responsaveis/${uidCriado}`
+        `locais-v2/${localId}/responsaveis/${uidResponsavel}`
       )
       .set({
-        uid: uidCriado,
+        uid: uidResponsavel,
         nome,
         email,
         telefone,
@@ -853,7 +912,7 @@ export async function POST(
         },
 
         responsavel: {
-          uid: uidCriado,
+          uid: uidResponsavel,
           nome,
           email,
           telefone,
@@ -908,13 +967,16 @@ export async function POST(
         tipoLocal,
 
         usuarioUid:
-          uidCriado,
+          uidResponsavel,
 
         usuarioNome:
           nome,
 
         usuarioEmail:
           email,
+
+        usuarioReutilizado:
+          !usuarioCriadoNoAuthentication,
 
         perfil,
 
@@ -962,7 +1024,9 @@ export async function POST(
         sucesso: true,
 
         mensagem:
-          "Local, responsável, módulos e estrutura do segmento implantados com sucesso.",
+          usuarioCriadoNoAuthentication
+            ? "Local, novo responsável, módulos e estrutura do segmento implantados com sucesso."
+            : "Local implantado e vinculado ao responsável já existente com sucesso.",
 
         local: {
           id: localId,
@@ -987,14 +1051,20 @@ export async function POST(
         },
 
         usuario: {
-          uid: uidCriado,
+          uid: uidResponsavel,
           nome,
           email,
           telefone,
           status: "ativo",
 
-          primeiroAcesso: true,
-          precisaTrocarSenha: true,
+          primeiroAcesso:
+            usuarioCriadoNoAuthentication,
+
+          precisaTrocarSenha:
+            usuarioCriadoNoAuthentication,
+
+          usuarioReutilizado:
+            !usuarioCriadoNoAuthentication,
         },
 
         vinculo: {
@@ -1050,43 +1120,69 @@ export async function POST(
       );
     }
 
-    if (uidCriado) {
+    if (
+      uidResponsavel &&
+      localIdProcessado
+    ) {
       try {
-        await auth.deleteUser(
-          uidCriado
-        );
-      } catch (erroAuth) {
-        console.error(
-          "Erro ao remover usuário do Authentication durante rollback:",
-          erroAuth
-        );
-      }
-
-      try {
-        await database
-          .ref(
-            `usuarios-v2/${uidCriado}`
-          )
-          .remove();
-
-        if (localIdProcessado) {
+        if (
+          vinculosUsuarioGravados
+        ) {
           await database
             .ref(
-              `locais-v2/${localIdProcessado}/usuarios/${uidCriado}`
+              `usuarios-v2/${uidResponsavel}/locais/${localIdProcessado}`
             )
             .remove();
 
           await database
             .ref(
-              `locais-v2/${localIdProcessado}/responsaveis/${uidCriado}`
+              `usuarios-v2/${uidResponsavel}/condominios/${localIdProcessado}`
+            )
+            .remove();
+        }
+
+        await database
+          .ref(
+            `locais-v2/${localIdProcessado}/usuarios/${uidResponsavel}`
+          )
+          .remove();
+
+        await database
+          .ref(
+            `locais-v2/${localIdProcessado}/responsaveis/${uidResponsavel}`
+          )
+          .remove();
+
+        if (
+          usuarioCriadoNoAuthentication &&
+          !usuarioBancoExistiaAntes
+        ) {
+          await database
+            .ref(
+              `usuarios-v2/${uidResponsavel}`
             )
             .remove();
         }
       } catch (erroBanco) {
         console.error(
-          "Erro ao remover usuário do banco durante rollback:",
+          "Erro ao desfazer vínculos do usuário durante rollback:",
           erroBanco
         );
+      }
+
+      if (
+        usuarioCriadoNoAuthentication
+      ) {
+        try {
+          await auth.deleteUser(
+            uidResponsavel
+          );
+        } catch (erroAuth) {
+          console.error(
+            "Erro ao remover usuário novo do Authentication durante rollback:",
+            erroAuth
+          );
+        }
       }
     }
 
