@@ -15,9 +15,6 @@ import {
 import {
   implantarResidencia,
 } from "./ImplantadorResidencia";
-import {
-  criarOuAtualizarLocalUniversal,
-} from "../locais/CadastroUniversal";
 
 export type TipoLocalImplantacao =
   | "condominio"
@@ -138,9 +135,15 @@ export type ResultadoImplantadorSegmento = {
   detalhes?: Record<string, boolean | number | string>;
 };
 
-type LocalPrincipalExistente = {
+type LocalPrincipalBanco = {
   id?: string;
+  localId?: string;
+  nome?: string;
   slug?: string;
+  tipo?: string;
+  tipoLocal?: string;
+  segmento?: string;
+  status?: string;
 };
 
 export function criarEtapa(
@@ -202,31 +205,60 @@ export function normalizarSlugLocal(
     .replace(/^-+|-+$/g, "");
 }
 
+function texto(
+  valor: unknown
+): string {
+  return typeof valor === "string"
+    ? valor.trim()
+    : "";
+}
+
 function validarContexto(
   contexto: ContextoImplantacao
 ): void {
   if (!contexto.database) {
-    throw new Error("Database não informado.");
+    throw new Error(
+      "Database não informado."
+    );
   }
 
-  const localId = contexto.local.localId.trim();
-  const localNome = contexto.local.localNome.trim();
-  const localSlug = contexto.local.localSlug.trim();
-  const criadoPorUid = contexto.criadoPorUid.trim();
-  const responsavelUid = contexto.responsavel.uid.trim();
-  const responsavelNome = contexto.responsavel.nome.trim();
-  const responsavelEmail = contexto.responsavel.email.trim();
+  const localId =
+    contexto.local.localId.trim();
+
+  const localNome =
+    contexto.local.localNome.trim();
+
+  const localSlug =
+    contexto.local.localSlug.trim();
+
+  const criadoPorUid =
+    contexto.criadoPorUid.trim();
+
+  const responsavelUid =
+    contexto.responsavel.uid.trim();
+
+  const responsavelNome =
+    contexto.responsavel.nome.trim();
+
+  const responsavelEmail =
+    contexto.responsavel.email.trim();
 
   if (!localId) {
-    throw new Error("LocalId não informado.");
+    throw new Error(
+      "LocalId não informado."
+    );
   }
 
   if (!localNome) {
-    throw new Error("LocalNome não informado.");
+    throw new Error(
+      "LocalNome não informado."
+    );
   }
 
   if (!localSlug) {
-    throw new Error("LocalSlug não informado.");
+    throw new Error(
+      "LocalSlug não informado."
+    );
   }
 
   if (!criadoPorUid) {
@@ -284,59 +316,96 @@ function validarContexto(
   }
 }
 
-async function validarIdentidadeUnica(
+async function validarLocalPrincipal(
   contexto: ContextoImplantacao
 ): Promise<void> {
-  const localId = contexto.local.localId.trim();
-  const localSlug = contexto.local.localSlug.trim();
+  const localId =
+    contexto.local.localId.trim();
 
-  const snapshotDireto =
+  const localSlug =
+    contexto.local.localSlug.trim();
+
+  const localNome =
+    contexto.local.localNome.trim();
+
+  const tipoLocal =
+    contexto.local.tipoLocal;
+
+  const snapshot =
     await contexto.database
-      .ref(`locais-v2/${localId}`)
+      .ref(
+        `locais-v2/${localId}`
+      )
       .get();
 
-  if (snapshotDireto.exists()) {
+  if (!snapshot.exists()) {
     throw new Error(
-      `Já existe um local com o ID "${localId}" em locais-v2.`
+      `O local "${localId}" ainda não foi criado em locais-v2.`
     );
   }
 
-  const snapshotLocais =
-    await contexto.database
-      .ref("locais-v2")
-      .get();
+  const local =
+    snapshot.val() as LocalPrincipalBanco;
 
-  if (!snapshotLocais.exists()) {
-    return;
+  const idBanco =
+    texto(
+      local.id ||
+      local.localId
+    );
+
+  const slugBanco =
+    texto(local.slug);
+
+  const nomeBanco =
+    texto(local.nome);
+
+  const tipoBanco =
+    texto(
+      local.tipo ||
+      local.tipoLocal ||
+      local.segmento
+    );
+
+  if (
+    idBanco &&
+    idBanco !== localId
+  ) {
+    throw new Error(
+      `O local "${localId}" possui ID divergente em locais-v2.`
+    );
   }
 
-  const locais =
-    snapshotLocais.val() as Record<
-      string,
-      LocalPrincipalExistente
-    >;
-
-  for (
-    const [chave, local]
-    of Object.entries(locais)
+  if (
+    slugBanco &&
+    slugBanco !== localSlug
   ) {
-    const slugExistente =
-      local.slug?.trim();
+    throw new Error(
+      `O local "${localId}" possui slug diferente em locais-v2.`
+    );
+  }
 
-    const idExistente =
-      local.id?.trim();
+  if (
+    nomeBanco &&
+    nomeBanco !== localNome
+  ) {
+    throw new Error(
+      `O local "${localId}" possui nome diferente em locais-v2.`
+    );
+  }
 
-    if (slugExistente === localSlug) {
-      throw new Error(
-        `O slug "${localSlug}" já está sendo usado por locais-v2/${chave}.`
-      );
-    }
+  if (
+    tipoBanco &&
+    tipoBanco !== tipoLocal
+  ) {
+    throw new Error(
+      `O local "${localId}" possui tipo diferente em locais-v2.`
+    );
+  }
 
-    if (idExistente === localId) {
-      throw new Error(
-        `O ID "${localId}" já está registrado no campo id de locais-v2/${chave}.`
-      );
-    }
+  if (local.status === "inativo") {
+    throw new Error(
+      `O local "${localId}" está inativo.`
+    );
   }
 }
 
@@ -345,62 +414,14 @@ export async function executarImplantacao(
 ): Promise<ResultadoImplantadorSegmento> {
   validarContexto(contexto);
 
-await criarOuAtualizarLocalUniversal(
-  contexto.database,
-  {
-    localId: contexto.local.localId,
-
-    nome: contexto.local.localNome,
-
-    slug: contexto.local.localSlug,
-
-    tipo: contexto.local.tipoLocal,
-
-    cidade: contexto.local.cidade ?? "",
-
-    estado: contexto.local.estado ?? "",
-
-    endereco: contexto.local.endereco ?? "",
-
-    criadoPorUid: contexto.criadoPorUid,
-
-    criadoEm: contexto.criadoEm,
-
-    modulos: {},
-
-    estatisticas: {
-      totalUsuarios: 0,
-      totalUnidades: 0,
-      totalMoradores: 0,
-      totalFuncionarios: 0,
-      totalPrestadores: 0,
-      totalVisitantes: 0,
-      totalClientes: 0,
-      totalProfissionais: 0,
-      atualizadoEm: contexto.criadoEm,
-    },
-
-    configuracaoSegmento:
-      contexto.configuracaoSegmento,
-
-    identidadeVisual: {
-      tema: "clean",
-
-      corPrimaria: "#0F3D91",
-
-      corSecundaria: "#FFFFFF",
-
-      corTexto: "#111827",
-
-      logoUrl: "",
-
-      bannerUrl: "",
-    },
-  }
-);
-
-
-  await validarIdentidadeUnica(
+  /*
+   * O Cadastro Universal já é executado pela API:
+   * app/api/implantacao/criar-responsavel/route.ts
+   *
+   * Aqui apenas confirmamos que o local principal
+   * existe e corresponde ao contexto recebido.
+   */
+  await validarLocalPrincipal(
     contexto
   );
 
