@@ -1,4 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
+import {
+  NextRequest,
+  NextResponse,
+} from "next/server";
 
 import {
   obterFirebaseAdmin,
@@ -38,16 +41,33 @@ type CorpoCriarResponsavel = {
   identidadeVisual?: unknown;
 };
 
-const PERFIL_PADRAO = "sindico";
+type UrlsOficiaisLocal = {
+  acessoPublico: string;
+  qrPng: string;
+  qrSvg: string;
+  placaA4: string;
+};
 
-const LOCAL_PADRAO_ID = "cnd-tulipas";
-const LOCAL_PADRAO_NOME = "Residencial Tulipas";
-const LOCAL_PADRAO_SLUG = "cnd-tulipas";
-const TIPO_LOCAL_PADRAO: TipoLocalImplantacao =
-  "condominio";
+const PERFIL_PADRAO =
+  "sindico";
+
+const LOCAL_PADRAO_ID =
+  "cnd-tulipas";
+
+const LOCAL_PADRAO_NOME =
+  "Residencial Tulipas";
+
+const LOCAL_PADRAO_SLUG =
+  "cnd-tulipas";
+
+const TIPO_LOCAL_PADRAO:
+  TipoLocalImplantacao =
+    "condominio";
 
 const TIPOS_LOCAL_PERMITIDOS =
-  new Set<TipoLocalImplantacao>([
+  new Set<
+    TipoLocalImplantacao
+  >([
     "condominio",
     "beauty",
     "barbearia",
@@ -58,51 +78,102 @@ const TIPOS_LOCAL_PERMITIDOS =
     "outro",
   ]);
 
-const PERMISSOES_SINDICO: Record<string, boolean> = {
-  dashboard: true,
-  "central-inteligente": true,
-  condominio: true,
+const PERMISSOES_SINDICO:
+  Record<
+    string,
+    boolean
+  > = {
+    dashboard:
+      true,
 
-  receberChamadas: true,
-  atenderChamadas: true,
-  abrirPortao: true,
+    "central-inteligente":
+      true,
 
-  visualizarComunicados: true,
-  enviarComunicados: true,
+    condominio:
+      true,
 
-  gerenciarMoradores: true,
-  gerenciarUnidades: true,
-  gerenciarUsuarios: true,
+    receberChamadas:
+      true,
 
-  visualizarFinanceiro: true,
-  gerenciarFinanceiro: false,
+    atenderChamadas:
+      true,
 
-  visualizarReservas: true,
-  gerenciarReservas: true,
+    abrirPortao:
+      true,
 
-  visualizarPrestadores: true,
-  gerenciarPrestadores: true,
+    visualizarComunicados:
+      true,
 
-  visualizarContratos: true,
-  gerenciarContratos: true,
+    enviarComunicados:
+      true,
 
-  visualizarRelatorios: true,
-  gerenciarConfiguracoes: true,
+    gerenciarMoradores:
+      true,
 
-  moradores: true,
-  unidades: true,
-  comunicados: true,
-  prestadores: true,
-  relatorios: true,
-  configuracoes: true,
-};
+    gerenciarUnidades:
+      true,
+
+    gerenciarUsuarios:
+      true,
+
+    visualizarFinanceiro:
+      true,
+
+    gerenciarFinanceiro:
+      false,
+
+    visualizarReservas:
+      true,
+
+    gerenciarReservas:
+      true,
+
+    visualizarPrestadores:
+      true,
+
+    gerenciarPrestadores:
+      true,
+
+    visualizarContratos:
+      true,
+
+    gerenciarContratos:
+      true,
+
+    visualizarRelatorios:
+      true,
+
+    gerenciarConfiguracoes:
+      true,
+
+    moradores:
+      true,
+
+    unidades:
+      true,
+
+    comunicados:
+      true,
+
+    prestadores:
+      true,
+
+    relatorios:
+      true,
+
+    configuracoes:
+      true,
+  };
 
 function textoObrigatorio(
-  valor: unknown,
-  campo: string
+  valor:
+    unknown,
+  campo:
+    string
 ): string {
   if (
-    typeof valor !== "string" ||
+    typeof valor !==
+      "string" ||
     !valor.trim()
   ) {
     throw new Error(
@@ -114,20 +185,24 @@ function textoObrigatorio(
 }
 
 function textoOpcional(
-  valor: unknown
+  valor:
+    unknown
 ): string {
-  return typeof valor === "string"
+  return typeof valor ===
+    "string"
     ? valor.trim()
     : "";
 }
 
 function normalizarEmail(
-  valor: unknown
+  valor:
+    unknown
 ): string {
-  const email = textoObrigatorio(
-    valor,
-    "email"
-  ).toLowerCase();
+  const email =
+    textoObrigatorio(
+      valor,
+      "email"
+    ).toLowerCase();
 
   const formatoValido =
     /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(
@@ -144,14 +219,19 @@ function normalizarEmail(
 }
 
 function validarSenha(
-  valor: unknown
+  valor:
+    unknown
 ): string {
-  const senha = textoObrigatorio(
-    valor,
-    "senhaProvisoria"
-  );
+  const senha =
+    textoObrigatorio(
+      valor,
+      "senhaProvisoria"
+    );
 
-  if (senha.length < 6) {
+  if (
+    senha.length <
+    6
+  ) {
     throw new Error(
       "A senha provisória precisa ter pelo menos 6 caracteres."
     );
@@ -161,22 +241,32 @@ function validarSenha(
 }
 
 function normalizarId(
-  valor: string
+  valor:
+    string
 ): string {
-  const normalizado = valor
-    .trim()
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(
-      /[\u0300-\u036f]/g,
-      ""
-    )
-    .replace(
-      /[^a-z0-9-_]/g,
-      "-"
-    )
-    .replace(/-+/g, "-")
-    .replace(/^-|-$/g, "");
+  const normalizado =
+    valor
+      .trim()
+      .toLowerCase()
+      .normalize(
+        "NFD"
+      )
+      .replace(
+        /[\u0300-\u036f]/g,
+        ""
+      )
+      .replace(
+        /[^a-z0-9-_]/g,
+        "-"
+      )
+      .replace(
+        /-+/g,
+        "-"
+      )
+      .replace(
+        /^-|-$/g,
+        ""
+      );
 
   if (!normalizado) {
     throw new Error(
@@ -188,15 +278,22 @@ function normalizarId(
 }
 
 function normalizarTipoLocal(
-  valor: unknown
+  valor:
+    unknown
 ): TipoLocalImplantacao {
-  const tipo = normalizarId(
-    textoOpcional(valor) ||
+  const tipo =
+    normalizarId(
+      textoOpcional(
+        valor
+      ) ||
       TIPO_LOCAL_PADRAO
-  ) as TipoLocalImplantacao;
+    ) as
+      TipoLocalImplantacao;
 
   if (
-    !TIPOS_LOCAL_PERMITIDOS.has(tipo)
+    !TIPOS_LOCAL_PERMITIDOS.has(
+      tipo
+    )
   ) {
     throw new Error(
       "O tipo de local informado não é permitido."
@@ -207,25 +304,34 @@ function normalizarTipoLocal(
 }
 
 function normalizarConfiguracaoSegmento(
-  valor: unknown,
-  tipoLocal: TipoLocalImplantacao
+  valor:
+    unknown,
+  tipoLocal:
+    TipoLocalImplantacao
 ): ConfiguracaoSegmentoImplantacao {
   if (
-    typeof valor !== "object" ||
-    valor === null
+    typeof valor !==
+      "object" ||
+    valor ===
+      null
   ) {
     throw new Error(
       "A configuração do segmento não foi informada."
     );
   }
 
-  const configuracao = valor as {
-    tipo?: unknown;
-    dados?: unknown;
-  };
+  const configuracao =
+    valor as {
+      tipo?:
+        unknown;
+
+      dados?:
+        unknown;
+    };
 
   if (
-    typeof configuracao.tipo !== "string"
+    typeof configuracao.tipo !==
+    "string"
   ) {
     throw new Error(
       "O tipo da configuração do segmento é inválido."
@@ -235,10 +341,12 @@ function normalizarConfiguracaoSegmento(
   const tipoConfiguracao =
     normalizarId(
       configuracao.tipo
-    ) as TipoLocalImplantacao;
+    ) as
+      TipoLocalImplantacao;
 
   if (
-    tipoConfiguracao !== tipoLocal
+    tipoConfiguracao !==
+    tipoLocal
   ) {
     throw new Error(
       "A configuração enviada não corresponde ao tipo do local."
@@ -246,8 +354,10 @@ function normalizarConfiguracaoSegmento(
   }
 
   if (
-    typeof configuracao.dados !== "object" ||
-    configuracao.dados === null ||
+    typeof configuracao.dados !==
+      "object" ||
+    configuracao.dados ===
+      null ||
     Array.isArray(
       configuracao.dados
     )
@@ -258,14 +368,18 @@ function normalizarConfiguracaoSegmento(
   }
 
   return {
-    tipo: tipoConfiguracao,
+    tipo:
+      tipoConfiguracao,
+
     dados:
       configuracao.dados,
-  } as ConfiguracaoSegmentoImplantacao;
+  } as
+    ConfiguracaoSegmentoImplantacao;
 }
 
 function obterTokenBearer(
-  request: NextRequest
+  request:
+    NextRequest
 ): string {
   const cabecalho =
     request.headers.get(
@@ -274,16 +388,21 @@ function obterTokenBearer(
 
   if (
     !cabecalho ||
-    !cabecalho.startsWith("Bearer ")
+    !cabecalho.startsWith(
+      "Bearer "
+    )
   ) {
     throw new Error(
       "Token de autenticação não informado."
     );
   }
 
-  const token = cabecalho
-    .slice("Bearer ".length)
-    .trim();
+  const token =
+    cabecalho
+      .slice(
+        "Bearer ".length
+      )
+      .trim();
 
   if (!token) {
     throw new Error(
@@ -294,73 +413,180 @@ function obterTokenBearer(
   return token;
 }
 
+function obterBaseUrl(
+  request:
+    NextRequest
+): string {
+  const configurada =
+    process.env
+      .NEXT_PUBLIC_APP_URL ||
+    process.env
+      .VERCEL_URL;
+
+  if (configurada) {
+    if (
+      configurada.startsWith(
+        "http://"
+      ) ||
+      configurada.startsWith(
+        "https://"
+      )
+    ) {
+      return configurada.replace(
+        /\/+$/g,
+        ""
+      );
+    }
+
+    return `https://${configurada}`.replace(
+      /\/+$/g,
+      ""
+    );
+  }
+
+  return request.nextUrl
+    .origin
+    .replace(
+      /\/+$/g,
+      ""
+    );
+}
+
+function criarUrlsOficiais(
+  request:
+    NextRequest,
+  localSlug:
+    string
+): UrlsOficiaisLocal {
+  const baseUrl =
+    obterBaseUrl(
+      request
+    );
+
+  const slugSeguro =
+    encodeURIComponent(
+      localSlug
+    );
+
+  return {
+    acessoPublico:
+      `${baseUrl}/acesso-v2/${slugSeguro}`,
+
+    qrPng:
+      `${baseUrl}/api/qrcode/${slugSeguro}`,
+
+    qrSvg:
+      `${baseUrl}/api/qrcode/${slugSeguro}?formato=svg`,
+
+    placaA4:
+      `${baseUrl}/api/materiais/qrcode/${slugSeguro}`,
+  };
+}
+
 function criarModulosIniciais(
-  tipoLocal: TipoLocalImplantacao,
-  agora: number
+  tipoLocal:
+    TipoLocalImplantacao,
+  agora:
+    number
 ) {
   const base = {
     dashboard: {
-      ativo: true,
-      implantadoEm: agora,
+      ativo:
+        true,
+
+      implantadoEm:
+        agora,
     },
 
     marketplace: {
-      ativo: true,
-      implantadoEm: agora,
+      ativo:
+        true,
+
+      implantadoEm:
+        agora,
     },
 
     financeiro: {
-      ativo: true,
-      implantadoEm: agora,
+      ativo:
+        true,
+
+      implantadoEm:
+        agora,
     },
 
     clubeQr: {
-      ativo: false,
-      implantadoEm: null,
+      ativo:
+        false,
+
+      implantadoEm:
+        null,
     },
   };
 
-  if (tipoLocal === "condominio") {
-    return {
-      ...base,
-
-      acesso: {
-        ativo: true,
-        implantadoEm: agora,
-      },
-
-      condominio: {
-        ativo: true,
-        implantadoEm: agora,
-      },
-
-      beauty: {
-        ativo: false,
-        implantadoEm: null,
-      },
-    };
-  }
-
   if (
-    tipoLocal === "beauty" ||
-    tipoLocal === "barbearia"
+    tipoLocal ===
+    "condominio"
   ) {
     return {
       ...base,
 
       acesso: {
-        ativo: false,
-        implantadoEm: null,
+        ativo:
+          true,
+
+        implantadoEm:
+          agora,
       },
 
       condominio: {
-        ativo: false,
-        implantadoEm: null,
+        ativo:
+          true,
+
+        implantadoEm:
+          agora,
       },
 
       beauty: {
-        ativo: true,
-        implantadoEm: agora,
+        ativo:
+          false,
+
+        implantadoEm:
+          null,
+      },
+    };
+  }
+
+  if (
+    tipoLocal ===
+      "beauty" ||
+    tipoLocal ===
+      "barbearia"
+  ) {
+    return {
+      ...base,
+
+      acesso: {
+        ativo:
+          false,
+
+        implantadoEm:
+          null,
+      },
+
+      condominio: {
+        ativo:
+          false,
+
+        implantadoEm:
+          null,
+      },
+
+      beauty: {
+        ativo:
+          true,
+
+        implantadoEm:
+          agora,
       },
     };
   }
@@ -369,52 +595,85 @@ function criarModulosIniciais(
     ...base,
 
     acesso: {
-      ativo: false,
-      implantadoEm: null,
+      ativo:
+        false,
+
+      implantadoEm:
+        null,
     },
 
     condominio: {
-      ativo: false,
-      implantadoEm: null,
+      ativo:
+        false,
+
+      implantadoEm:
+        null,
     },
 
     beauty: {
-      ativo: false,
-      implantadoEm: null,
+      ativo:
+        false,
+
+      implantadoEm:
+        null,
     },
   };
 }
 
 function criarEstatisticasIniciais(
-  agora: number
+  agora:
+    number
 ) {
   return {
-    totalUsuarios: 0,
-    totalUnidades: 0,
-    totalMoradores: 0,
-    totalFuncionarios: 0,
-    totalPrestadores: 0,
-    totalVisitantes: 0,
-    totalClientes: 0,
-    totalProfissionais: 0,
+    totalUsuarios:
+      0,
 
-    atualizadoEm: agora,
+    totalUnidades:
+      0,
+
+    totalMoradores:
+      0,
+
+    totalFuncionarios:
+      0,
+
+    totalPrestadores:
+      0,
+
+    totalVisitantes:
+      0,
+
+    totalClientes:
+      0,
+
+    totalProfissionais:
+      0,
+
+    atualizadoEm:
+      agora,
   };
 }
 
 async function validarAdministradorMaster(
-  request: NextRequest
+  request:
+    NextRequest
 ) {
   const {
     auth,
     database,
-  } = obterFirebaseAdmin();
+  } =
+    obterFirebaseAdmin();
 
   const token =
-    obterTokenBearer(request);
+    obterTokenBearer(
+      request
+    );
 
   const tokenDecodificado =
-    await auth.verifyIdToken(token);
+    await auth
+      .verifyIdToken(
+        token
+      );
 
   const snapshot =
     await database
@@ -423,62 +682,84 @@ async function validarAdministradorMaster(
       )
       .get();
 
-  if (!snapshot.exists()) {
+  if (
+    !snapshot.exists()
+  ) {
     throw new Error(
       "O usuário autenticado não possui cadastro no QR Core."
     );
   }
 
-  const usuario = snapshot.val() as {
-    status?: string;
+  const usuario =
+    snapshot.val() as {
+      status?:
+        string;
 
-    condominios?: Record<
-      string,
-      {
-        ativo?: boolean;
-        perfilPrincipal?: string;
-        perfis?: Record<
+      condominios?:
+        Record<
           string,
-          boolean
+          {
+            ativo?:
+              boolean;
+
+            perfilPrincipal?:
+              string;
+
+            perfis?:
+              Record<
+                string,
+                boolean
+              >;
+          }
         >;
-      }
-    >;
-  };
+    };
 
   if (
     usuario.status &&
-    usuario.status !== "ativo"
+    usuario.status !==
+      "ativo"
   ) {
     throw new Error(
       "O usuário autenticado não está ativo."
     );
   }
 
-  const vinculos = Object.values(
-    usuario.condominios ?? {}
-  );
+  const vinculos =
+    Object.values(
+      usuario.condominios ??
+      {}
+    );
 
   const administradorMaster =
-    vinculos.some((vinculo) => {
-      if (vinculo.ativo === false) {
-        return false;
+    vinculos.some(
+      (
+        vinculo
+      ) => {
+        if (
+          vinculo.ativo ===
+          false
+        ) {
+          return false;
+        }
+
+        return (
+          vinculo.perfilPrincipal ===
+            "administrador_master" ||
+          vinculo.perfilPrincipal ===
+            "administrador-master" ||
+          vinculo.perfis?.[
+            "administrador_master"
+          ] === true ||
+          vinculo.perfis?.[
+            "administrador-master"
+          ] === true
+        );
       }
+    );
 
-      return (
-        vinculo.perfilPrincipal ===
-          "administrador_master" ||
-        vinculo.perfilPrincipal ===
-          "administrador-master" ||
-        vinculo.perfis?.[
-          "administrador_master"
-        ] === true ||
-        vinculo.perfis?.[
-          "administrador-master"
-        ] === true
-      );
-    });
-
-  if (!administradorMaster) {
+  if (
+    !administradorMaster
+  ) {
     throw new Error(
       "Você não possui permissão para realizar implantações."
     );
@@ -488,20 +769,29 @@ async function validarAdministradorMaster(
 }
 
 async function removerEstruturasCriadas(
-  estruturas: string[]
+  estruturas:
+    string[]
 ) {
   const {
     database,
-  } = obterFirebaseAdmin();
+  } =
+    obterFirebaseAdmin();
 
   for (
-    const caminho of [...estruturas].reverse()
+    const caminho of
+      [
+        ...estruturas,
+      ].reverse()
   ) {
     try {
       await database
-        .ref(caminho)
+        .ref(
+          caminho
+        )
         .remove();
-    } catch (erro) {
+    } catch (
+      erro
+    ) {
       console.error(
         `Erro ao remover estrutura "${caminho}" durante rollback:`,
         erro
@@ -511,30 +801,38 @@ async function removerEstruturasCriadas(
 }
 
 export async function POST(
-  request: NextRequest
+  request:
+    NextRequest
 ) {
   const {
     auth,
     database,
-  } = obterFirebaseAdmin();
+  } =
+    obterFirebaseAdmin();
 
-  let uidResponsavel: string | null = null;
+  let uidResponsavel:
+    string | null =
+      null;
 
-  let usuarioCriadoNoAuthentication = false;
+  let usuarioCriadoNoAuthentication =
+    false;
 
-  let usuarioBancoExistiaAntes = false;
+  let usuarioBancoExistiaAntes =
+    false;
 
-  let vinculosUsuarioGravados = false;
+  let vinculosUsuarioGravados =
+    false;
 
-  let localCriadoNestaOperacao = false;
+  let localCriadoNestaOperacao =
+    false;
 
   let localIdProcessado:
-    | string
-    | null = null;
+    string | null =
+      null;
 
   let resultadoSegmento:
-    | ResultadoImplantadorSegmento
-    | null = null;
+    ResultadoImplantadorSegmento | null =
+      null;
 
   try {
     const administrador =
@@ -543,39 +841,56 @@ export async function POST(
       );
 
     const corpo =
-      (await request.json()) as CorpoCriarResponsavel;
+      (
+        await request.json()
+      ) as
+        CorpoCriarResponsavel;
 
-    const nome = textoObrigatorio(
-      corpo.nome,
-      "nome"
-    );
+    const nome =
+      textoObrigatorio(
+        corpo.nome,
+        "nome"
+      );
 
     const email =
-      normalizarEmail(corpo.email);
+      normalizarEmail(
+        corpo.email
+      );
 
     const telefone =
-      textoOpcional(corpo.telefone);
+      textoOpcional(
+        corpo.telefone
+      );
 
     const senhaProvisoriaInformada =
       textoOpcional(
         corpo.senhaProvisoria
       );
 
-    const localId = normalizarId(
-      textoOpcional(corpo.localId) ||
+    const localId =
+      normalizarId(
+        textoOpcional(
+          corpo.localId
+        ) ||
         LOCAL_PADRAO_ID
-    );
+      );
 
-    localIdProcessado = localId;
+    localIdProcessado =
+      localId;
 
     const localNome =
-      textoOpcional(corpo.localNome) ||
+      textoOpcional(
+        corpo.localNome
+      ) ||
       LOCAL_PADRAO_NOME;
 
-    const localSlug = normalizarId(
-      textoOpcional(corpo.localSlug) ||
+    const localSlug =
+      normalizarId(
+        textoOpcional(
+          corpo.localSlug
+        ) ||
         LOCAL_PADRAO_SLUG
-    );
+      );
 
     const tipoLocal =
       normalizarTipoLocal(
@@ -583,20 +898,30 @@ export async function POST(
       );
 
     const cidade =
-      textoOpcional(corpo.cidade);
+      textoOpcional(
+        corpo.cidade
+      );
 
     const estado =
-      textoOpcional(corpo.estado)
-        .toUpperCase();
+      textoOpcional(
+        corpo.estado
+      ).toUpperCase();
 
     const endereco =
-      textoOpcional(corpo.endereco);
+      textoOpcional(
+        corpo.endereco
+      );
 
     const perfil =
       normalizarId(
-        textoOpcional(corpo.perfil) ||
-          PERFIL_PADRAO
-      ).replaceAll("-", "_");
+        textoOpcional(
+          corpo.perfil
+        ) ||
+        PERFIL_PADRAO
+      ).replaceAll(
+        "-",
+        "_"
+      );
 
     const configuracaoSegmento =
       normalizarConfiguracaoSegmento(
@@ -606,11 +931,14 @@ export async function POST(
 
     const identidadeVisual:
       IdentidadeVisualLocal =
-      normalizarIdentidadeVisual(
-        corpo.identidadeVisual
-      );
+        normalizarIdentidadeVisual(
+          corpo.identidadeVisual
+        );
 
-    if (perfil !== "sindico") {
+    if (
+      perfil !==
+      "sindico"
+    ) {
       throw new Error(
         "Nesta primeira etapa, somente o perfil de síndico está liberado."
       );
@@ -621,24 +949,33 @@ export async function POST(
         ReturnType<
           typeof auth.getUserByEmail
         >
-      > | null = null;
+      > | null =
+        null;
 
     try {
       usuarioAuthenticationExistente =
-        await auth.getUserByEmail(
-          email
-        );
-    } catch (erroBusca) {
+        await auth
+          .getUserByEmail(
+            email
+          );
+    } catch (
+      erroBusca
+    ) {
       const codigo =
-        typeof erroBusca === "object" &&
-        erroBusca !== null &&
-        "code" in erroBusca
+        typeof erroBusca ===
+          "object" &&
+        erroBusca !==
+          null &&
+        "code" in
+          erroBusca
           ? String(
               (
                 erroBusca as {
-                  code?: unknown;
+                  code?:
+                    unknown;
                 }
-              ).code ?? ""
+              ).code ??
+              ""
             )
           : "";
 
@@ -650,7 +987,8 @@ export async function POST(
       }
     }
 
-    const agora = Date.now();
+    const agora =
+      Date.now();
 
     const modulosIniciais =
       criarModulosIniciais(
@@ -661,6 +999,12 @@ export async function POST(
     const estatisticasIniciais =
       criarEstatisticasIniciais(
         agora
+      );
+
+    const urlsOficiais =
+      criarUrlsOficiais(
+        request,
+        localSlug
       );
 
     const resultadoCadastroLocal =
@@ -679,7 +1023,9 @@ export async function POST(
             tipoLocal,
 
           cidade,
+
           estado,
+
           endereco,
 
           criadoPorUid:
@@ -703,6 +1049,77 @@ export async function POST(
     localCriadoNestaOperacao =
       resultadoCadastroLocal.criado;
 
+    await database
+      .ref(
+        `locais-v2/${localId}`
+      )
+      .update({
+        urls:
+          urlsOficiais,
+
+        qrcode: {
+          id:
+            `${localId}-qr-principal`,
+
+          localId,
+
+          localNome,
+
+          localSlug,
+
+          tipoLocal,
+
+          tipo:
+            "principal",
+
+          url:
+            urlsOficiais.acessoPublico,
+
+          urlImagemPng:
+            urlsOficiais.qrPng,
+
+          urlImagemSvg:
+            urlsOficiais.qrSvg,
+
+          ativo:
+            true,
+
+          versao:
+            1,
+
+          criadoEm:
+            agora,
+
+          atualizadoEm:
+            agora,
+        },
+
+        materiais: {
+          a4: {
+            tipo:
+              "a4",
+
+            formato:
+              "pdf",
+
+            url:
+              urlsOficiais.placaA4,
+
+            ativo:
+              true,
+
+            geradoSobDemanda:
+              true,
+
+            atualizadoEm:
+              agora,
+          },
+        },
+
+        atualizadoEm:
+          agora,
+      });
+
     if (
       usuarioAuthenticationExistente
     ) {
@@ -715,15 +1132,19 @@ export async function POST(
         );
 
       const usuarioAuthentication =
-        await auth.createUser({
-          email,
-          password:
-            senhaProvisoria,
-          displayName:
-            nome,
-          disabled:
-            false,
-        });
+        await auth
+          .createUser({
+            email,
+
+            password:
+              senhaProvisoria,
+
+            displayName:
+              nome,
+
+            disabled:
+              false,
+          });
 
       uidResponsavel =
         usuarioAuthentication.uid;
@@ -732,7 +1153,9 @@ export async function POST(
         true;
     }
 
-    if (!uidResponsavel) {
+    if (
+      !uidResponsavel
+    ) {
       throw new Error(
         "Não foi possível determinar o UID do responsável."
       );
@@ -740,30 +1163,45 @@ export async function POST(
 
     const vinculoUniversal = {
       localId,
+
       localNome,
+
       localSlug,
+
       tipoLocal,
 
-      condominioId: localId,
-      condominioNome: localNome,
-      condominioSlug: localSlug,
+      condominioId:
+        localId,
 
-      perfilPrincipal: perfil,
+      condominioNome:
+        localNome,
+
+      condominioSlug:
+        localSlug,
+
+      perfilPrincipal:
+        perfil,
 
       perfis: {
-        [perfil]: true,
+        [perfil]:
+          true,
       },
 
-      unidades: {},
+      unidades:
+        {},
 
       permissoes: {
         ...PERMISSOES_SINDICO,
       },
 
-      ativo: true,
+      ativo:
+        true,
 
-      criadoEm: agora,
-      atualizadoEm: agora,
+      criadoEm:
+        agora,
+
+      atualizadoEm:
+        agora,
     };
 
     const referenciaUsuarioBanco =
@@ -772,7 +1210,8 @@ export async function POST(
       );
 
     const snapshotUsuarioBanco =
-      await referenciaUsuarioBanco.get();
+      await referenciaUsuarioBanco
+        .get();
 
     usuarioBancoExistiaAntes =
       snapshotUsuarioBanco.exists();
@@ -781,80 +1220,102 @@ export async function POST(
       snapshotUsuarioBanco.exists()
         ? (
             snapshotUsuarioBanco.val() as {
-              criadoEm?: number;
-              ultimoLogin?: number;
-              primeiroAcesso?: boolean;
-              precisaTrocarSenha?: boolean;
-              origem?: string;
+              criadoEm?:
+                number;
+
+              ultimoLogin?:
+                number;
+
+              primeiroAcesso?:
+                boolean;
+
+              precisaTrocarSenha?:
+                boolean;
+
+              origem?:
+                string;
             }
           )
         : null;
 
-    await referenciaUsuarioBanco.update({
-      uid:
-        uidResponsavel,
+    await referenciaUsuarioBanco
+      .update({
+        uid:
+          uidResponsavel,
 
-      nome,
-      email,
-      telefone,
+        nome,
 
-      status:
-        "ativo",
+        email,
 
-      criadoEm:
-        usuarioBancoExistente
-          ?.criadoEm ??
-        agora,
+        telefone,
 
-      atualizadoEm:
-        agora,
+        status:
+          "ativo",
 
-      ultimoLogin:
-        usuarioBancoExistente
-          ?.ultimoLogin ??
-        0,
+        criadoEm:
+          usuarioBancoExistente
+            ?.criadoEm ??
+          agora,
 
-      primeiroAcesso:
-        usuarioBancoExistente
-          ?.primeiroAcesso ??
-        usuarioCriadoNoAuthentication,
+        atualizadoEm:
+          agora,
 
-      precisaTrocarSenha:
-        usuarioBancoExistente
-          ?.precisaTrocarSenha ??
-        usuarioCriadoNoAuthentication,
+        ultimoLogin:
+          usuarioBancoExistente
+            ?.ultimoLogin ??
+          0,
 
-      origem:
-        usuarioBancoExistente
-          ?.origem ??
-        "assistente-implantacao-qr-core",
+        primeiroAcesso:
+          usuarioBancoExistente
+            ?.primeiroAcesso ??
+          usuarioCriadoNoAuthentication,
 
-      [`locais/${localId}`]:
-        vinculoUniversal,
+        precisaTrocarSenha:
+          usuarioBancoExistente
+            ?.precisaTrocarSenha ??
+          usuarioCriadoNoAuthentication,
 
-      [`condominios/${localId}`]:
-        vinculoUniversal,
-    });
+        origem:
+          usuarioBancoExistente
+            ?.origem ??
+          "assistente-implantacao-qr-core",
+
+        [`locais/${localId}`]:
+          vinculoUniversal,
+
+        [`condominios/${localId}`]:
+          vinculoUniversal,
+      });
 
     vinculosUsuarioGravados =
       true;
 
     const referenciaUsuarioLocal = {
-      uid: uidResponsavel,
+      uid:
+        uidResponsavel,
+
       nome,
+
       email,
+
       telefone,
 
-      perfilPrincipal: perfil,
+      perfilPrincipal:
+        perfil,
 
       perfis: {
-        [perfil]: true,
+        [perfil]:
+          true,
       },
 
-      ativo: true,
+      ativo:
+        true,
 
-      criadoEm: agora,
-      atualizadoEm: agora,
+      criadoEm:
+        agora,
+
+      atualizadoEm:
+        agora,
     };
 
     await database
@@ -870,16 +1331,25 @@ export async function POST(
         `locais-v2/${localId}/responsaveis/${uidResponsavel}`
       )
       .set({
-        uid: uidResponsavel,
+        uid:
+          uidResponsavel,
+
         nome,
+
         email,
+
         telefone,
 
         perfil,
-        ativo: true,
 
-        criadoEm: agora,
-        atualizadoEm: agora,
+        ativo:
+          true,
+
+        criadoEm:
+          agora,
+
+        atualizadoEm:
+          agora,
       });
 
     await database
@@ -887,35 +1357,49 @@ export async function POST(
         `locais-v2/${localId}/estatisticas`
       )
       .update({
-        totalUsuarios: 1,
-        atualizadoEm: agora,
+        totalUsuarios:
+          1,
+
+        atualizadoEm:
+          agora,
       });
 
     resultadoSegmento =
       await executarImplantacao({
         database,
 
-        criadoEm: agora,
+        criadoEm:
+          agora,
 
         criadoPorUid:
           administrador.uid,
 
         local: {
           localId,
+
           localNome,
+
           localSlug,
+
           tipoLocal,
 
           cidade,
+
           estado,
+
           endereco,
         },
 
         responsavel: {
-          uid: uidResponsavel,
+          uid:
+            uidResponsavel,
+
           nome,
+
           email,
+
           telefone,
+
           perfil,
         },
 
@@ -927,7 +1411,7 @@ export async function POST(
     ) {
       throw new Error(
         resultadoSegmento.mensagem ||
-          "O implantador do segmento não concluiu a operação."
+        "O implantador do segmento não concluiu a operação."
       );
     }
 
@@ -937,13 +1421,16 @@ export async function POST(
       )
       .update({
         implantacao: {
-          status: "concluida",
+          status:
+            "concluida",
 
           estruturasCriadas:
-            resultadoSegmento.estruturasCriadas,
+            resultadoSegmento
+              .estruturasCriadas,
 
           etapas:
-            resultadoSegmento.etapas,
+            resultadoSegmento
+              .etapas,
 
           concluidaEm:
             Date.now(),
@@ -962,8 +1449,11 @@ export async function POST(
           "implantacao_concluida",
 
         localId,
+
         localNome,
+
         localSlug,
+
         tipoLocal,
 
         usuarioUid:
@@ -984,6 +1474,28 @@ export async function POST(
 
         identidadeVisual,
 
+        urls:
+          urlsOficiais,
+
+        qrPrincipal: {
+          id:
+            `${localId}-qr-principal`,
+
+          url:
+            urlsOficiais.acessoPublico,
+
+          png:
+            urlsOficiais.qrPng,
+
+          svg:
+            urlsOficiais.qrSvg,
+        },
+
+        materiais: {
+          a4:
+            urlsOficiais.placaA4,
+        },
+
         modulosAtivos:
           Object.entries(
             criarModulosIniciais(
@@ -992,24 +1504,37 @@ export async function POST(
             )
           )
             .filter(
-              ([, modulo]) =>
-                modulo.ativo === true
+              (
+                [
+                  ,
+                  modulo,
+                ]
+              ) =>
+                modulo.ativo ===
+                true
             )
             .map(
-              ([moduloId]) =>
+              (
+                [
+                  moduloId,
+                ]
+              ) =>
                 moduloId
             ),
 
         estruturasCriadas:
-          resultadoSegmento.estruturasCriadas,
+          resultadoSegmento
+            .estruturasCriadas,
 
         etapas:
-          resultadoSegmento.etapas,
+          resultadoSegmento
+            .etapas,
 
         criadoPorUid:
           administrador.uid,
 
-        criadoEm: agora,
+        criadoEm:
+          agora,
 
         criadoEmFormatado:
           new Date(
@@ -1021,22 +1546,34 @@ export async function POST(
 
     return NextResponse.json(
       {
-        sucesso: true,
+        sucesso:
+          true,
 
         mensagem:
           usuarioCriadoNoAuthentication
-            ? "Local, novo responsável, módulos e estrutura do segmento implantados com sucesso."
+            ? "Local, novo responsável, módulos, URLs, QR principal e estrutura do segmento implantados com sucesso."
             : "Local implantado e vinculado ao responsável já existente com sucesso.",
 
         local: {
-          id: localId,
-          nome: localNome,
-          slug: localSlug,
-          tipo: tipoLocal,
-          status: "ativo",
+          id:
+            localId,
+
+          nome:
+            localNome,
+
+          slug:
+            localSlug,
+
+          tipo:
+            tipoLocal,
+
+          status:
+            "ativo",
 
           cidade,
+
           estado,
+
           endereco,
 
           modulos:
@@ -1048,14 +1585,45 @@ export async function POST(
           configuracaoSegmento,
 
           identidadeVisual,
+
+          urls:
+            urlsOficiais,
+
+          qrcode: {
+            id:
+              `${localId}-qr-principal`,
+
+            tipo:
+              "principal",
+
+            url:
+              urlsOficiais.acessoPublico,
+
+            png:
+              urlsOficiais.qrPng,
+
+            svg:
+              urlsOficiais.qrSvg,
+          },
+
+          materiais: {
+            a4:
+              urlsOficiais.placaA4,
+          },
         },
 
         usuario: {
-          uid: uidResponsavel,
+          uid:
+            uidResponsavel,
+
           nome,
+
           email,
+
           telefone,
-          status: "ativo",
+
+          status:
+            "ativo",
 
           primeiroAcesso:
             usuarioCriadoNoAuthentication,
@@ -1069,8 +1637,11 @@ export async function POST(
 
         vinculo: {
           localId,
+
           localNome,
+
           localSlug,
+
           tipoLocal,
 
           condominioId:
@@ -1090,20 +1661,26 @@ export async function POST(
             resultadoSegmento.sucesso,
 
           estruturasCriadas:
-            resultadoSegmento.estruturasCriadas,
+            resultadoSegmento
+              .estruturasCriadas,
 
           etapas:
-            resultadoSegmento.etapas,
+            resultadoSegmento
+              .etapas,
 
           mensagem:
-            resultadoSegmento.mensagem,
+            resultadoSegmento
+              .mensagem,
         },
       },
       {
-        status: 201,
+        status:
+          201,
       }
     );
-  } catch (erro) {
+  } catch (
+    erro
+  ) {
     console.error(
       "Erro ao realizar implantação:",
       erro
@@ -1163,7 +1740,9 @@ export async function POST(
             )
             .remove();
         }
-      } catch (erroBanco) {
+      } catch (
+        erroBanco
+      ) {
         console.error(
           "Erro ao desfazer vínculos do usuário durante rollback:",
           erroBanco
@@ -1174,10 +1753,13 @@ export async function POST(
         usuarioCriadoNoAuthentication
       ) {
         try {
-          await auth.deleteUser(
-            uidResponsavel
-          );
-        } catch (erroAuth) {
+          await auth
+            .deleteUser(
+              uidResponsavel
+            );
+        } catch (
+          erroAuth
+        ) {
           console.error(
             "Erro ao remover usuário novo do Authentication durante rollback:",
             erroAuth
@@ -1196,7 +1778,9 @@ export async function POST(
             `locais-v2/${localIdProcessado}`
           )
           .remove();
-      } catch (erroLocal) {
+      } catch (
+        erroLocal
+      ) {
         console.error(
           "Erro ao remover local durante rollback:",
           erroLocal
@@ -1227,15 +1811,19 @@ export async function POST(
 
     return NextResponse.json(
       {
-        sucesso: false,
-        erro: mensagem,
+        sucesso:
+          false,
+
+        erro:
+          mensagem,
       },
       {
-        status: naoAutorizado
-          ? 401
-          : semPermissao
-          ? 403
-          : 400,
+        status:
+          naoAutorizado
+            ? 401
+            : semPermissao
+            ? 403
+            : 400,
       }
     );
   }
