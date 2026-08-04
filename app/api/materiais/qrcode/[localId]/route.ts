@@ -8,66 +8,134 @@ import {
 import {
   obterFirebaseAdminQr,
 } from "../../../../services/server/firebaseAdminQr";
+
 import {
   gerarMaterialPdf,
   type DadosMaterial,
   type SegmentoMaterial,
+  type TemaMaterial,
 } from "../../../../services/implantacao/materiais";
+
 export const runtime =
   "nodejs";
 
 export const dynamic =
   "force-dynamic";
 
+type IdentidadeVisualBanco = {
+  tema?:
+    string;
+
+  corPrimaria?:
+    string;
+
+  corSecundaria?:
+    string;
+
+  corTexto?:
+    string;
+
+  logoUrl?:
+    string;
+
+  bannerUrl?:
+    string;
+};
+
 type LocalBanco = {
-  id?: string;
+  id?:
+    string;
 
-  nome?: string;
+  localId?:
+    string;
 
-  slug?: string;
+  nome?:
+    string;
 
-  tipo?: string;
+  slug?:
+    string;
 
-  tipoLocal?: string;
+  tipo?:
+    string;
 
-  segmento?: string;
+  tipoLocal?:
+    string;
 
-  status?: string;
+  segmento?:
+    string;
 
-  cidade?: string;
+  status?:
+    string;
 
-  estado?: string;
+  ativo?:
+    boolean;
 
-  telefone?: string;
+  cidade?:
+    string;
 
-  whatsapp?: string;
+  estado?:
+    string;
 
-  email?: string;
+  telefone?:
+    string;
 
-  site?: string;
+  whatsapp?:
+    string;
 
-  instagram?: string;
+  email?:
+    string;
 
-  facebook?: string;
+  site?:
+    string;
 
-  logo?: string;
+  instagram?:
+    string;
 
-  corPrimaria?: string;
+  facebook?:
+    string;
 
-  corSecundaria?: string;
+  logo?:
+    string;
 
-  corTexto?: string;
+  corPrimaria?:
+    string;
+
+  corSecundaria?:
+    string;
+
+  corTexto?:
+    string;
+
+  identidadeVisual?:
+    IdentidadeVisualBanco;
+
+  configuracao?: {
+    identidadeVisual?:
+      IdentidadeVisualBanco;
+  };
 };
 
 type LocalEncontrado = {
-  localId: string;
+  localId:
+    string;
 
   dados:
     LocalBanco;
 };
 
+function texto(
+  valor:
+    unknown
+): string {
+  return typeof valor ===
+    "string"
+    ? valor.trim()
+    : "";
+}
+
 function obterBaseUrl(
-  request: NextRequest
+  request:
+    NextRequest
 ): string {
   const configurada =
     process.env.NEXT_PUBLIC_APP_URL ||
@@ -188,10 +256,49 @@ function obterSegmentoMaterial(
   return "condominio";
 }
 
-async function buscarEmColecao(
-  colecao: string,
-  identificador: string
-): Promise<LocalEncontrado | null> {
+function obterTemaMaterial(
+  identidade:
+    IdentidadeVisualBanco
+): TemaMaterial {
+  const tema =
+    texto(
+      identidade.tema
+    ).toLowerCase();
+
+  if (
+    tema === "institucional" ||
+    tema === "premium"
+  ) {
+    return tema;
+  }
+
+  return "clean";
+}
+
+function obterIdentidadeVisual(
+  local:
+    LocalBanco
+): IdentidadeVisualBanco {
+  return {
+    ...(
+      local.configuracao
+        ?.identidadeVisual ??
+      {}
+    ),
+
+    ...(
+      local.identidadeVisual ??
+      {}
+    ),
+  };
+}
+
+async function buscarLocal(
+  identificador:
+    string
+): Promise<
+  LocalEncontrado | null
+> {
   const {
     database,
   } = obterFirebaseAdminQr();
@@ -199,7 +306,7 @@ async function buscarEmColecao(
   const snapshotDireto =
     await database
       .ref(
-        `${colecao}/${identificador}`
+        `locais-v2/${identificador}`
       )
       .get();
 
@@ -216,19 +323,21 @@ async function buscarEmColecao(
     };
   }
 
-  const snapshotColecao =
+  const snapshotLocais =
     await database
-      .ref(colecao)
+      .ref(
+        "locais-v2"
+      )
       .get();
 
   if (
-    !snapshotColecao.exists()
+    !snapshotLocais.exists()
   ) {
     return null;
   }
 
-  const registros =
-    snapshotColecao.val() as
+  const locais =
+    snapshotLocais.val() as
       Record<
         string,
         LocalBanco
@@ -239,18 +348,24 @@ async function buscarEmColecao(
       chave,
       dados,
     ] of Object.entries(
-      registros
+      locais
     )
   ) {
-    const slug =
-      dados.slug?.trim();
-
     const id =
-      dados.id?.trim();
+      texto(
+        dados.id ||
+        dados.localId
+      );
+
+    const slug =
+      texto(
+        dados.slug
+      );
 
     if (
-      slug === identificador ||
-      id === identificador
+      chave === identificador ||
+      id === identificador ||
+      slug === identificador
     ) {
       return {
         localId:
@@ -264,41 +379,14 @@ async function buscarEmColecao(
   return null;
 }
 
-async function buscarLocal(
-  identificador: string
-): Promise<LocalEncontrado | null> {
-  const colecoes = [
-    "locais-v2",
-    "condominios-v2",
-    "estabelecimentos-v2",
-    "residencias-v2",
-    "empresas-v2",
-  ];
-
-  for (
-    const colecao of
-      colecoes
-  ) {
-    const encontrado =
-      await buscarEmColecao(
-        colecao,
-        identificador
-      );
-
-    if (encontrado) {
-      return encontrado;
-    }
-  }
-
-  return null;
-}
-
 export async function GET(
-  request: NextRequest,
+  request:
+    NextRequest,
   contexto: {
     params:
       Promise<{
-        localId: string;
+        localId:
+          string;
       }>;
   }
 ): Promise<Response> {
@@ -316,13 +404,15 @@ export async function GET(
     if (!identificador) {
       return NextResponse.json(
         {
-          sucesso: false,
+          sucesso:
+            false,
 
           mensagem:
             "O local não foi informado.",
         },
         {
-          status: 400,
+          status:
+            400,
         }
       );
     }
@@ -335,13 +425,15 @@ export async function GET(
     if (!encontrado) {
       return NextResponse.json(
         {
-          sucesso: false,
+          sucesso:
+            false,
 
           mensagem:
-            "Local não encontrado pelo ID nem pelo slug.",
+            "Local não encontrado em locais-v2 pelo ID ou slug.",
         },
         {
-          status: 404,
+          status:
+            404,
         }
       );
     }
@@ -351,32 +443,46 @@ export async function GET(
 
     if (
       local.status ===
-      "inativo"
+        "inativo" ||
+      local.ativo ===
+        false
     ) {
       return NextResponse.json(
         {
-          sucesso: false,
+          sucesso:
+            false,
 
           mensagem:
             "O local está inativo.",
         },
         {
-          status: 410,
+          status:
+            410,
         }
       );
     }
 
     const nome =
-      local.nome?.trim() ||
+      texto(
+        local.nome
+      ) ||
       identificador;
 
     const slug =
-      local.slug?.trim() ||
-      local.id?.trim() ||
+      texto(
+        local.slug ||
+        local.id ||
+        local.localId
+      ) ||
       identificador;
 
     const segmento =
       obterSegmentoMaterial(
+        local
+      );
+
+    const identidadeVisual =
+      obterIdentidadeVisual(
         local
       );
 
@@ -399,43 +505,88 @@ export async function GET(
 
         segmento,
 
+        tema:
+          obterTemaMaterial(
+            identidadeVisual
+          ),
+
         cidade:
-          local.cidade,
+          texto(
+            local.cidade
+          ) ||
+          undefined,
 
         estado:
-          local.estado,
+          texto(
+            local.estado
+          ) ||
+          undefined,
 
         telefone:
-          local.telefone,
+          texto(
+            local.telefone
+          ) ||
+          undefined,
 
         whatsapp:
-          local.whatsapp,
+          texto(
+            local.whatsapp
+          ) ||
+          undefined,
 
         email:
-          local.email,
+          texto(
+            local.email
+          ) ||
+          undefined,
 
         site:
-          local.site,
+          texto(
+            local.site
+          ) ||
+          undefined,
 
         instagram:
-          local.instagram,
+          texto(
+            local.instagram
+          ) ||
+          undefined,
 
         facebook:
-          local.facebook,
+          texto(
+            local.facebook
+          ) ||
+          undefined,
 
         logo:
-          local.logo,
+          texto(
+            identidadeVisual.logoUrl ||
+            local.logo
+          ) ||
+          undefined,
 
         urlQr,
 
         corPrimaria:
-          local.corPrimaria,
+          texto(
+            identidadeVisual.corPrimaria ||
+            local.corPrimaria
+          ) ||
+          undefined,
 
         corSecundaria:
-          local.corSecundaria,
+          texto(
+            identidadeVisual.corSecundaria ||
+            local.corSecundaria
+          ) ||
+          undefined,
 
         corTexto:
-          local.corTexto,
+          texto(
+            identidadeVisual.corTexto ||
+            local.corTexto
+          ) ||
+          undefined,
       };
 
     const resultado =
@@ -444,16 +595,19 @@ export async function GET(
       );
 
     return new Response(
-      Buffer.from(resultado.bytes),
+      Buffer.from(
+        resultado.bytes
+      ),
       {
-        status: 200,
+        status:
+          200,
 
         headers: {
           "Content-Type":
             resultado.mimeType,
 
-         "Content-Disposition":
-  `inline; filename="${resultado.nomeArquivo}"`,
+          "Content-Disposition":
+            `inline; filename="${resultado.nomeArquivo}"`,
 
           "Content-Length":
             String(
@@ -488,12 +642,14 @@ export async function GET(
 
     return NextResponse.json(
       {
-        sucesso: false,
+        sucesso:
+          false,
 
         mensagem,
       },
       {
-        status: 500,
+        status:
+          500,
       }
     );
   }
