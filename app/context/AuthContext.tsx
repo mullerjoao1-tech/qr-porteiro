@@ -1,19 +1,19 @@
 "use client";
 
 import {
+  type ReactNode,
   createContext,
   useContext,
   useEffect,
   useMemo,
   useState,
-  ReactNode,
 } from "react";
 
 import {
   entrarComEmailSenha,
-  sairDaConta,
   enviarRecuperacaoSenha,
   observarUsuarioAutenticado,
+  sairDaConta,
 } from "@/app/services/auth/auth";
 
 import {
@@ -27,225 +27,389 @@ import {
   type VinculoComPermissoes,
 } from "@/app/services/permissoes";
 
-import type { Usuario } from "@/app/types/Usuario";
+import type {
+  Usuario,
+} from "@/app/types/Usuario";
 
 type AuthContextType = {
-  usuario: Usuario | null;
-  carregando: boolean;
+  usuario:
+    Usuario | null;
 
-  vinculosAtivos: Array<
-    [string, VinculoComPermissoes]
-  >;
+  carregando:
+    boolean;
+
+  vinculosAtivos:
+    Array<
+      [
+        string,
+        VinculoComPermissoes,
+      ]
+    >;
 
   /**
    * null = Carteira Geral.
    * string = local específico selecionado.
    */
-  vinculoSelecionadoId: string | null;
+  vinculoSelecionadoId:
+    string | null;
 
   /**
    * null = Carteira Geral.
    */
-  vinculoSelecionado: VinculoComPermissoes | null;
+  vinculoSelecionado:
+    VinculoComPermissoes | null;
 
-  selecionarVinculo: (
-    vinculoId: string
-  ) => void;
+  selecionarVinculo:
+    (
+      vinculoId:
+        string
+    ) => void;
 
-  selecionarCarteiraGeral: () => void;
+  selecionarCarteiraGeral:
+    () => void;
 
-  login: (
-    email: string,
-    senha: string
-  ) => Promise<void>;
+  login:
+    (
+      email:
+        string,
+      senha:
+        string
+    ) => Promise<void>;
 
-  logout: () => Promise<void>;
+  logout:
+    () => Promise<void>;
 
-  recuperarSenha: (
-    email: string
-  ) => Promise<void>;
+  recuperarSenha:
+    (
+      email:
+        string
+    ) => Promise<void>;
 
-  atualizarUsuario: () => Promise<void>;
+  atualizarUsuario:
+    () => Promise<void>;
 };
 
 const AuthContext =
-  createContext<AuthContextType | null>(null);
+  createContext<
+    AuthContextType | null
+  >(
+    null
+  );
 
 export function AuthProvider({
   children,
 }: {
-  children: ReactNode;
+  children:
+    ReactNode;
 }) {
-  const [usuario, setUsuario] =
-    useState<Usuario | null>(null);
+  const [
+    usuario,
+    setUsuario,
+  ] =
+    useState<
+      Usuario | null
+    >(
+      null
+    );
 
-  const [carregando, setCarregando] =
-    useState(true);
+  const [
+    carregando,
+    setCarregando,
+  ] =
+    useState(
+      true
+    );
 
-  /**
-   * null representa a Carteira Geral.
-   */
   const [
     vinculoSelecionadoId,
     setVinculoSelecionadoId,
-  ] = useState<string | null>(null);
+  ] =
+    useState<
+      string | null
+    >(
+      null
+    );
 
   function definirUsuario(
-    usuarioBanco: Usuario | null
+    usuarioBanco:
+      Usuario | null
   ) {
-    setUsuario(usuarioBanco);
+    setUsuario(
+      usuarioBanco
+    );
 
-    /**
-     * Todo novo login ou troca de usuário começa
-     * pela visão consolidada da Carteira Geral.
+    /*
+     * Todo login começa na Carteira Geral.
+     * A seleção do local deve ser explícita,
+     * inclusive quando existe somente um vínculo.
      */
-    setVinculoSelecionadoId(null);
+    setVinculoSelecionadoId(
+      null
+    );
   }
 
-  useEffect(() => {
-    const unsubscribe =
-      observarUsuarioAutenticado(
-        async (firebaseUser) => {
-          try {
-            if (!firebaseUser) {
-              definirUsuario(null);
-              return;
-            }
+  useEffect(
+    () => {
+      const unsubscribe =
+        observarUsuarioAutenticado(
+          async (
+            firebaseUser
+          ) => {
+            setCarregando(
+              true
+            );
 
-            const usuarioBanco =
-              await buscarUsuarioPorUid(
-                firebaseUser.uid
+            try {
+              if (
+                !firebaseUser
+              ) {
+                definirUsuario(
+                  null
+                );
+
+                return;
+              }
+
+              const usuarioBanco =
+                await buscarUsuarioPorUid(
+                  firebaseUser.uid
+                );
+
+              definirUsuario(
+                usuarioBanco
               );
 
-            definirUsuario(usuarioBanco);
+              if (
+                usuarioBanco
+              ) {
+                await registrarUltimoLogin(
+                  firebaseUser.uid
+                );
+              }
+            } catch (
+              erro
+            ) {
+              console.error(
+                "Erro ao carregar usuário autenticado:",
+                erro
+              );
 
-            if (usuarioBanco) {
-              await registrarUltimoLogin(
-                firebaseUser.uid
+              definirUsuario(
+                null
+              );
+            } finally {
+              setCarregando(
+                false
               );
             }
-          } finally {
-            setCarregando(false);
           }
-        }
-      );
+        );
 
-    return unsubscribe;
-  }, []);
+      return unsubscribe;
+    },
+    []
+  );
 
   const vinculosAtivos =
     useMemo(
-      () => obterVinculosAtivos(usuario),
-      [usuario]
+      () =>
+        obterVinculosAtivos(
+          usuario
+        ),
+      [
+        usuario,
+      ]
     );
 
   const vinculoSelecionado =
-    useMemo(() => {
-      if (
-        !usuario ||
-        !vinculoSelecionadoId
-      ) {
-        return null;
-      }
+    useMemo(
+      () => {
+        if (
+          !usuario ||
+          !vinculoSelecionadoId
+        ) {
+          return null;
+        }
 
-      const vinculo = obterVinculo(
+        const vinculo =
+          obterVinculo(
+            usuario,
+            vinculoSelecionadoId
+          );
+
+        if (
+          !vinculo ||
+          vinculo.ativo ===
+            false
+        ) {
+          return null;
+        }
+
+        return vinculo;
+      },
+      [
         usuario,
-        vinculoSelecionadoId
-      );
-
-      if (
-        !vinculo ||
-        vinculo.ativo === false
-      ) {
-        return null;
-      }
-
-      return vinculo;
-    }, [
-      usuario,
-      vinculoSelecionadoId,
-    ]);
+        vinculoSelecionadoId,
+      ]
+    );
 
   function selecionarVinculo(
-    vinculoId: string
+    vinculoId:
+      string
   ) {
     if (!usuario) {
-      return;
+      throw new Error(
+        "Não existe usuário carregado."
+      );
     }
 
-    const vinculo = obterVinculo(
-      usuario,
-      vinculoId
-    );
+    const vinculo =
+      obterVinculo(
+        usuario,
+        vinculoId
+      );
 
     if (
       !vinculo ||
-      vinculo.ativo === false
+      vinculo.ativo ===
+        false
     ) {
       throw new Error(
         "Este vínculo não existe ou está inativo."
       );
     }
 
-    setVinculoSelecionadoId(vinculoId);
+    setVinculoSelecionadoId(
+      vinculoId
+    );
   }
 
   function selecionarCarteiraGeral() {
-    setVinculoSelecionadoId(null);
+    setVinculoSelecionadoId(
+      null
+    );
   }
 
   async function login(
-    email: string,
-    senha: string
+    email:
+      string,
+    senha:
+      string
   ) {
-    setCarregando(true);
+    setCarregando(
+      true
+    );
 
     try {
-      const credencial =
+      const resultado =
         await entrarComEmailSenha(
           email,
           senha
         );
 
-      if (!credencial.usuario) {
+      if (
+        !resultado.sucesso ||
+        !resultado.usuario
+      ) {
         throw new Error(
+          resultado.erro ||
           "Usuário não autenticado."
         );
       }
 
       const usuarioBanco =
         await buscarUsuarioPorUid(
-          credencial.usuario.uid
+          resultado.usuario.uid
         );
 
-      if (!usuarioBanco) {
-        definirUsuario(null);
+      if (
+        !usuarioBanco
+      ) {
+        await sairDaConta();
+
+        definirUsuario(
+          null
+        );
 
         throw new Error(
           "Usuário autenticado, mas sem cadastro na plataforma."
         );
       }
 
-      definirUsuario(usuarioBanco);
+      if (
+        usuarioBanco.status !==
+        "ativo"
+      ) {
+        await sairDaConta();
+
+        definirUsuario(
+          null
+        );
+
+        throw new Error(
+          `O usuário está com status "${usuarioBanco.status}".`
+        );
+      }
+
+      definirUsuario(
+        usuarioBanco
+      );
 
       await registrarUltimoLogin(
-        credencial.usuario.uid
+        resultado.usuario.uid
       );
     } finally {
-      setCarregando(false);
+      setCarregando(
+        false
+      );
     }
   }
 
   async function logout() {
-    await sairDaConta();
+    setCarregando(
+      true
+    );
 
-    definirUsuario(null);
+    try {
+      const resultado =
+        await sairDaConta();
+
+      if (
+        !resultado.sucesso
+      ) {
+        throw new Error(
+          resultado.erro ||
+          "Não foi possível sair da conta."
+        );
+      }
+
+      definirUsuario(
+        null
+      );
+    } finally {
+      setCarregando(
+        false
+      );
+    }
   }
 
   async function recuperarSenha(
-    email: string
+    email:
+      string
   ) {
-    await enviarRecuperacaoSenha(email);
+    const resultado =
+      await enviarRecuperacaoSenha(
+        email
+      );
+
+    if (
+      !resultado.sucesso
+    ) {
+      throw new Error(
+        resultado.erro ||
+        "Não foi possível enviar a recuperação de senha."
+      );
+    }
   }
 
   async function atualizarUsuario() {
@@ -258,7 +422,9 @@ export function AuthProvider({
         usuario.uid
       );
 
-    setUsuario(atualizado);
+    setUsuario(
+      atualizado
+    );
 
     if (
       vinculoSelecionadoId &&
@@ -272,42 +438,64 @@ export function AuthProvider({
 
       if (
         !vinculoAtualizado ||
-        vinculoAtualizado.ativo === false
+        vinculoAtualizado.ativo ===
+          false
       ) {
-        setVinculoSelecionadoId(null);
+        setVinculoSelecionadoId(
+          null
+        );
       }
+    }
+
+    if (!atualizado) {
+      setVinculoSelecionadoId(
+        null
+      );
     }
   }
 
-  const value = useMemo(
-    () => ({
-      usuario,
-      carregando,
+  const value =
+    useMemo<
+      AuthContextType
+    >(
+      () => ({
+        usuario,
 
-      vinculosAtivos,
+        carregando,
 
-      vinculoSelecionadoId,
-      vinculoSelecionado,
+        vinculosAtivos,
 
-      selecionarVinculo,
-      selecionarCarteiraGeral,
+        vinculoSelecionadoId,
 
-      login,
-      logout,
-      recuperarSenha,
-      atualizarUsuario,
-    }),
-    [
-      usuario,
-      carregando,
-      vinculosAtivos,
-      vinculoSelecionadoId,
-      vinculoSelecionado,
-    ]
-  );
+        vinculoSelecionado,
+
+        selecionarVinculo,
+
+        selecionarCarteiraGeral,
+
+        login,
+
+        logout,
+
+        recuperarSenha,
+
+        atualizarUsuario,
+      }),
+      [
+        usuario,
+        carregando,
+        vinculosAtivos,
+        vinculoSelecionadoId,
+        vinculoSelecionado,
+      ]
+    );
 
   return (
-    <AuthContext.Provider value={value}>
+    <AuthContext.Provider
+      value={
+        value
+      }
+    >
       {children}
     </AuthContext.Provider>
   );
@@ -315,7 +503,9 @@ export function AuthProvider({
 
 export function useAuth() {
   const context =
-    useContext(AuthContext);
+    useContext(
+      AuthContext
+    );
 
   if (!context) {
     throw new Error(

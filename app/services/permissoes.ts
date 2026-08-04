@@ -1,260 +1,589 @@
-import type { Usuario } from "@/app/types/Usuario";
+import type {
+  Usuario,
+  VinculoCondominioUsuario,
+  VinculoLocalUsuario,
+} from "@/app/types/Usuario";
 
-export type PermissoesDoVinculo = Record<string, boolean>;
+export type PermissoesDoVinculo =
+  Record<
+    string,
+    boolean | undefined
+  >;
 
-export type VinculoComPermissoes = {
-  ativo?: boolean;
+export type VinculoComPermissoes =
+  VinculoLocalUsuario & {
+    condominioId?:
+      string;
 
-  condominioId?: string;
-  condominioNome?: string;
-  condominioSlug?: string;
+    condominioNome?:
+      string;
 
-  perfilPrincipal?: string;
-  perfis?: Record<string, boolean>;
+    condominioSlug?:
+      string;
+  };
 
-  permissoes?: PermissoesDoVinculo;
+const PERFIL_ADMINISTRADOR_MASTER =
+  "administrador_master";
 
-  unidades?: Record<string, boolean>;
+const PERFIL_ADMINISTRADOR_MASTER_LEGADO =
+  "administrador-master";
 
-  criadoEm?: number;
-  atualizadoEm?: number;
-};
+function converterVinculoAntigo(
+  localId:
+    string,
+  vinculo:
+    VinculoCondominioUsuario
+): VinculoComPermissoes {
+  return {
+    localId:
+      vinculo.localId ||
+      vinculo.condominioId ||
+      localId,
 
-type UsuarioComVinculos = Usuario & {
-  condominios?: Record<string, VinculoComPermissoes>;
-};
+    localNome:
+      vinculo.localNome ||
+      vinculo.condominioNome,
 
-const PERFIL_ADMINISTRADOR_MASTER = "administrador_master";
-const PERFIL_ADMINISTRADOR_MASTER_LEGADO = "administrador-master";
+    localSlug:
+      vinculo.localSlug ||
+      vinculo.condominioSlug,
 
-/**
- * Verifica se o vínculo possui perfil de administrador master.
- *
- * Mantém compatibilidade temporária com o valor legado
- * "administrador-master", usado anteriormente com hífen.
- */
+    tipoLocal:
+      vinculo.tipoLocal ||
+      "condominio",
+
+    perfilPrincipal:
+      vinculo.perfilPrincipal,
+
+    perfis:
+      vinculo.perfis ??
+      {},
+
+    permissoes:
+      vinculo.permissoes ??
+      {},
+
+    unidades:
+      vinculo.unidades ??
+      {},
+
+    ativo:
+      vinculo.ativo !==
+      false,
+
+    criadoEm:
+      vinculo.criadoEm,
+
+    atualizadoEm:
+      vinculo.atualizadoEm,
+
+    condominioId:
+      vinculo.condominioId ||
+      localId,
+
+    condominioNome:
+      vinculo.condominioNome ||
+      vinculo.localNome,
+
+    condominioSlug:
+      vinculo.condominioSlug ||
+      vinculo.localSlug,
+  };
+}
+
 function possuiPerfilAdministradorMaster(
-  vinculo: VinculoComPermissoes
+  vinculo:
+    VinculoComPermissoes
 ): boolean {
+  const perfilPrincipal =
+    vinculo.perfilPrincipal;
+
+  const perfis =
+    vinculo.perfis ??
+    {};
+
   return (
-    vinculo.perfilPrincipal === PERFIL_ADMINISTRADOR_MASTER ||
-    vinculo.perfilPrincipal === PERFIL_ADMINISTRADOR_MASTER_LEGADO ||
-    vinculo.perfis?.[PERFIL_ADMINISTRADOR_MASTER] === true ||
-    vinculo.perfis?.[PERFIL_ADMINISTRADOR_MASTER_LEGADO] === true
+    perfilPrincipal ===
+      PERFIL_ADMINISTRADOR_MASTER ||
+    perfilPrincipal ===
+      PERFIL_ADMINISTRADOR_MASTER_LEGADO ||
+    perfis[
+      PERFIL_ADMINISTRADOR_MASTER
+    ] === true ||
+    perfis[
+      PERFIL_ADMINISTRADOR_MASTER_LEGADO
+    ] === true
   );
 }
 
 /**
- * Retorna todos os vínculos ativos do usuário.
+ * Prioridade oficial:
+ * usuarios-v2/{uid}/locais/{localId}
+ *
+ * Compatibilidade temporária:
+ * usuarios-v2/{uid}/condominios/{localId}
  */
 export function obterVinculosAtivos(
-  usuario: Usuario | null
-): Array<[string, VinculoComPermissoes]> {
+  usuario:
+    Usuario | null
+): Array<
+  [
+    string,
+    VinculoComPermissoes,
+  ]
+> {
   if (!usuario) {
     return [];
   }
 
-  const usuarioComVinculos = usuario as UsuarioComVinculos;
-  const condominios = usuarioComVinculos.condominios ?? {};
+  const locais =
+    usuario.locais ??
+    {};
 
-  return Object.entries(condominios).filter(
-    ([, vinculo]) => vinculo?.ativo !== false
-  );
+  const locaisAtivos =
+    Object.entries(
+      locais
+    )
+      .filter(
+        (
+          [
+            ,
+            vinculo,
+          ]
+        ) =>
+          vinculo?.ativo !==
+          false
+      )
+      .map(
+        (
+          [
+            localId,
+            vinculo,
+          ]
+        ): [
+          string,
+          VinculoComPermissoes,
+        ] => [
+          localId,
+          {
+            ...vinculo,
+
+            localId:
+              vinculo.localId ||
+              localId,
+
+            perfis:
+              vinculo.perfis ??
+              {},
+
+            permissoes:
+              vinculo.permissoes ??
+              {},
+
+            unidades:
+              vinculo.unidades ??
+              {},
+          },
+        ]
+      );
+
+  if (
+    locaisAtivos.length >
+    0
+  ) {
+    return locaisAtivos;
+  }
+
+  return Object.entries(
+    usuario.condominios ??
+    {}
+  )
+    .filter(
+      (
+        [
+          ,
+          vinculo,
+        ]
+      ) =>
+        vinculo?.ativo !==
+        false
+    )
+    .map(
+      (
+        [
+          localId,
+          vinculo,
+        ]
+      ): [
+        string,
+        VinculoComPermissoes,
+      ] => [
+        localId,
+        converterVinculoAntigo(
+          localId,
+          vinculo
+        ),
+      ]
+    );
 }
 
-/**
- * Retorna um vínculo específico do usuário.
- */
 export function obterVinculo(
-  usuario: Usuario | null,
-  vinculoId: string
+  usuario:
+    Usuario | null,
+  vinculoId:
+    string
 ): VinculoComPermissoes | null {
-  if (!usuario || !vinculoId) {
+  if (
+    !usuario ||
+    !vinculoId
+  ) {
     return null;
   }
 
-  const usuarioComVinculos = usuario as UsuarioComVinculos;
+  const universal =
+    usuario.locais?.[
+      vinculoId
+    ];
 
-  return usuarioComVinculos.condominios?.[vinculoId] ?? null;
+  if (universal) {
+    return {
+      ...universal,
+
+      localId:
+        universal.localId ||
+        vinculoId,
+
+      perfis:
+        universal.perfis ??
+        {},
+
+      permissoes:
+        universal.permissoes ??
+        {},
+
+      unidades:
+        universal.unidades ??
+        {},
+    };
+  }
+
+  const antigo =
+    usuario.condominios?.[
+      vinculoId
+    ];
+
+  if (!antigo) {
+    return null;
+  }
+
+  return converterVinculoAntigo(
+    vinculoId,
+    antigo
+  );
 }
 
-/**
- * Verifica se um vínculo está ativo.
- */
 export function vinculoEstaAtivo(
-  usuario: Usuario | null,
-  vinculoId: string
+  usuario:
+    Usuario | null,
+  vinculoId:
+    string
 ): boolean {
-  const vinculo = obterVinculo(usuario, vinculoId);
+  const vinculo =
+    obterVinculo(
+      usuario,
+      vinculoId
+    );
 
-  return Boolean(vinculo && vinculo.ativo !== false);
+  return Boolean(
+    vinculo &&
+    vinculo.ativo !==
+      false
+  );
 }
 
-/**
- * Retorna o primeiro vínculo ativo do usuário.
- *
- * Será utilizado como seleção automática quando o usuário
- * possuir somente um vínculo ativo.
- */
 export function obterPrimeiroVinculoAtivo(
-  usuario: Usuario | null
-): [string, VinculoComPermissoes] | null {
-  return obterVinculosAtivos(usuario)[0] ?? null;
+  usuario:
+    Usuario | null
+): [
+  string,
+  VinculoComPermissoes,
+] | null {
+  return (
+    obterVinculosAtivos(
+      usuario
+    )[0] ??
+    null
+  );
 }
 
-/**
- * Verifica se o usuário possui uma permissão em um vínculo específico.
- */
 export function podeAcessarNoVinculo(
-  usuario: Usuario | null,
-  vinculoId: string,
-  permissao: string
+  usuario:
+    Usuario | null,
+  vinculoId:
+    string,
+  permissao:
+    string
 ): boolean {
-  const vinculo = obterVinculo(usuario, vinculoId);
+  const vinculo =
+    obterVinculo(
+      usuario,
+      vinculoId
+    );
 
-  if (!vinculo || vinculo.ativo === false) {
-    return false;
-  }
-
-  if (possuiPerfilAdministradorMaster(vinculo)) {
-    return true;
-  }
-
-  return vinculo.permissoes?.[permissao] === true;
-}
-
-/**
- * Verifica se o usuário possui um perfil em um vínculo específico.
- */
-export function possuiPerfilNoVinculo(
-  usuario: Usuario | null,
-  vinculoId: string,
-  perfil: string
-): boolean {
-  const vinculo = obterVinculo(usuario, vinculoId);
-
-  if (!vinculo || vinculo.ativo === false) {
+  if (
+    !vinculo ||
+    vinculo.ativo ===
+      false
+  ) {
     return false;
   }
 
   if (
-    perfil === PERFIL_ADMINISTRADOR_MASTER ||
-    perfil === PERFIL_ADMINISTRADOR_MASTER_LEGADO
+    possuiPerfilAdministradorMaster(
+      vinculo
+    )
   ) {
-    return possuiPerfilAdministradorMaster(vinculo);
+    return true;
   }
 
   return (
-    vinculo.perfilPrincipal === perfil ||
-    vinculo.perfis?.[perfil] === true
+    vinculo.permissoes?.[
+      permissao
+    ] === true
   );
 }
 
-/**
- * Retorna as permissões liberadas em um vínculo específico.
- */
-export function listarPermissoesDoVinculo(
-  usuario: Usuario | null,
-  vinculoId: string
-): string[] {
-  const vinculo = obterVinculo(usuario, vinculoId);
+export function possuiPerfilNoVinculo(
+  usuario:
+    Usuario | null,
+  vinculoId:
+    string,
+  perfil:
+    string
+): boolean {
+  const vinculo =
+    obterVinculo(
+      usuario,
+      vinculoId
+    );
 
-  if (!vinculo || vinculo.ativo === false) {
+  if (
+    !vinculo ||
+    vinculo.ativo ===
+      false
+  ) {
+    return false;
+  }
+
+  if (
+    perfil ===
+      PERFIL_ADMINISTRADOR_MASTER ||
+    perfil ===
+      PERFIL_ADMINISTRADOR_MASTER_LEGADO
+  ) {
+    return possuiPerfilAdministradorMaster(
+      vinculo
+    );
+  }
+
+  return (
+    vinculo.perfilPrincipal ===
+      perfil ||
+    vinculo.perfis?.[
+      perfil
+    ] === true
+  );
+}
+
+export function listarPermissoesDoVinculo(
+  usuario:
+    Usuario | null,
+  vinculoId:
+    string
+): string[] {
+  const vinculo =
+    obterVinculo(
+      usuario,
+      vinculoId
+    );
+
+  if (
+    !vinculo ||
+    vinculo.ativo ===
+      false
+  ) {
     return [];
   }
 
-  if (possuiPerfilAdministradorMaster(vinculo)) {
-    return ["*"];
+  if (
+    possuiPerfilAdministradorMaster(
+      vinculo
+    )
+  ) {
+    return [
+      "*",
+    ];
   }
 
-  return Object.entries(vinculo.permissoes ?? {})
-    .filter(([, liberada]) => liberada === true)
-    .map(([permissao]) => permissao)
+  return Object.entries(
+    vinculo.permissoes ??
+    {}
+  )
+    .filter(
+      (
+        [
+          ,
+          liberada,
+        ]
+      ) =>
+        liberada ===
+        true
+    )
+    .map(
+      (
+        [
+          permissao,
+        ]
+      ) =>
+        permissao
+    )
     .sort();
 }
 
-/**
- * Verifica se o usuário possui uma permissão em pelo menos um vínculo ativo.
- *
- * Esta função continua existindo para consultas globais e telas
- * administrativas. As telas do local selecionado deverão usar
- * podeAcessarNoVinculo.
- */
 export function podeAcessar(
-  usuario: Usuario | null,
-  permissao: string
+  usuario:
+    Usuario | null,
+  permissao:
+    string
 ): boolean {
-  const vinculosAtivos = obterVinculosAtivos(usuario);
+  return obterVinculosAtivos(
+    usuario
+  ).some(
+    (
+      [
+        ,
+        vinculo,
+      ]
+    ) => {
+      if (
+        possuiPerfilAdministradorMaster(
+          vinculo
+        )
+      ) {
+        return true;
+      }
 
-  return vinculosAtivos.some(([, vinculo]) => {
-    if (possuiPerfilAdministradorMaster(vinculo)) {
-      return true;
+      return (
+        vinculo.permissoes?.[
+          permissao
+        ] === true
+      );
     }
-
-    return vinculo.permissoes?.[permissao] === true;
-  });
-}
-
-/**
- * Verifica se o usuário possui um perfil em pelo menos um vínculo ativo.
- *
- * Esta função continua disponível para consultas globais. As telas
- * do local selecionado deverão usar possuiPerfilNoVinculo.
- */
-export function possuiPerfil(
-  usuario: Usuario | null,
-  perfil: string
-): boolean {
-  const vinculosAtivos = obterVinculosAtivos(usuario);
-
-  return vinculosAtivos.some(([vinculoId]) =>
-    possuiPerfilNoVinculo(usuario, vinculoId, perfil)
   );
 }
 
-/**
- * Retorna todas as permissões liberadas ao usuário,
- * considerando todos os vínculos ativos.
- *
- * Esta função representa uma visão global do usuário.
- */
-export function listarPermissoes(
-  usuario: Usuario | null
-): string[] {
-  const permissoesLiberadas = new Set<string>();
-  const vinculosAtivos = obterVinculosAtivos(usuario);
+export function possuiPerfil(
+  usuario:
+    Usuario | null,
+  perfil:
+    string
+): boolean {
+  return obterVinculosAtivos(
+    usuario
+  ).some(
+    (
+      [
+        vinculoId,
+      ]
+    ) =>
+      possuiPerfilNoVinculo(
+        usuario,
+        vinculoId,
+        perfil
+      )
+  );
+}
 
-  for (const [, vinculo] of vinculosAtivos) {
-    if (possuiPerfilAdministradorMaster(vinculo)) {
-      permissoesLiberadas.add("*");
+export function listarPermissoes(
+  usuario:
+    Usuario | null
+): string[] {
+  const permissoesLiberadas =
+    new Set<
+      string
+    >();
+
+  for (
+    const [
+      ,
+      vinculo,
+    ] of obterVinculosAtivos(
+      usuario
+    )
+  ) {
+    if (
+      possuiPerfilAdministradorMaster(
+        vinculo
+      )
+    ) {
+      permissoesLiberadas.add(
+        "*"
+      );
     }
 
-    for (const [permissao, liberada] of Object.entries(
-      vinculo.permissoes ?? {}
-    )) {
-      if (liberada) {
-        permissoesLiberadas.add(permissao);
+    for (
+      const [
+        permissao,
+        liberada,
+      ] of Object.entries(
+        vinculo.permissoes ??
+        {}
+      )
+    ) {
+      if (
+        liberada ===
+        true
+      ) {
+        permissoesLiberadas.add(
+          permissao
+        );
       }
     }
   }
 
-  return Array.from(permissoesLiberadas).sort();
+  return Array.from(
+    permissoesLiberadas
+  ).sort();
 }
 
-/**
- * Retorna os IDs dos vínculos em que o usuário possui determinada permissão.
- */
 export function listarVinculosComPermissao(
-  usuario: Usuario | null,
-  permissao: string
+  usuario:
+    Usuario | null,
+  permissao:
+    string
 ): string[] {
-  return obterVinculosAtivos(usuario)
-    .filter(([vinculoId]) =>
-      podeAcessarNoVinculo(
-        usuario,
-        vinculoId,
-        permissao
-      )
+  return obterVinculosAtivos(
+    usuario
+  )
+    .filter(
+      (
+        [
+          vinculoId,
+        ]
+      ) =>
+        podeAcessarNoVinculo(
+          usuario,
+          vinculoId,
+          permissao
+        )
     )
-    .map(([vinculoId]) => vinculoId);
+    .map(
+      (
+        [
+          vinculoId,
+        ]
+      ) =>
+        vinculoId
+    );
 }
+

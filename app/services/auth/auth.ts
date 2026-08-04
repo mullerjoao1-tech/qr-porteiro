@@ -1,6 +1,8 @@
+"use client";
+
 import {
-  User,
-  UserCredential,
+  type User,
+  type UserCredential,
   createUserWithEmailAndPassword,
   onAuthStateChanged,
   sendPasswordResetEmail,
@@ -8,16 +10,28 @@ import {
   signOut,
 } from "firebase/auth";
 
-import { auth } from "../firebase";
+import {
+  auth,
+} from "../firebase";
 
 export type ResultadoAutenticacao = {
-  sucesso: boolean;
-  usuario?: User;
-  credencial?: UserCredential;
-  erro?: string;
+  sucesso:
+    boolean;
+
+  usuario?:
+    User;
+
+  credencial?:
+    UserCredential;
+
+  erro?:
+    string;
 };
 
-function traduzirErroFirebase(codigo?: string): string {
+function traduzirErroFirebase(
+  codigo?:
+    string
+): string {
   switch (codigo) {
     case "auth/invalid-email":
       return "E-mail inválido.";
@@ -49,115 +63,268 @@ function traduzirErroFirebase(codigo?: string): string {
   }
 }
 
-function obterCodigoErro(erro: unknown): string | undefined {
+function obterCodigoErro(
+  erro:
+    unknown
+): string | undefined {
   if (
-    typeof erro === "object" &&
-    erro !== null &&
-    "code" in erro &&
-    typeof (erro as { code?: unknown }).code === "string"
+    typeof erro ===
+      "object" &&
+    erro !==
+      null &&
+    "code" in
+      erro &&
+    typeof (
+      erro as {
+        code?:
+          unknown;
+      }
+    ).code ===
+      "string"
   ) {
-    return (erro as { code: string }).code;
+    return (
+      erro as {
+        code:
+          string;
+      }
+    ).code;
   }
 
   return undefined;
 }
 
+function normalizarEmail(
+  email:
+    string
+): string {
+  return email
+    .trim()
+    .toLowerCase();
+}
+
 export async function entrarComEmailSenha(
-  email: string,
-  senha: string
+  email:
+    string,
+  senha:
+    string
 ): Promise<ResultadoAutenticacao> {
   try {
-    const emailNormalizado = email.trim().toLowerCase();
+    const emailNormalizado =
+      normalizarEmail(
+        email
+      );
 
-    const credencial = await signInWithEmailAndPassword(
-      auth,
-      emailNormalizado,
-      senha
-    );
+    if (!emailNormalizado) {
+      return {
+        sucesso:
+          false,
+
+        erro:
+          "Informe o e-mail.",
+      };
+    }
+
+    if (!senha) {
+      return {
+        sucesso:
+          false,
+
+        erro:
+          "Informe a senha.",
+      };
+    }
+
+    const credencial =
+      await signInWithEmailAndPassword(
+        auth,
+        emailNormalizado,
+        senha
+      );
 
     return {
-      sucesso: true,
-      usuario: credencial.user,
+      sucesso:
+        true,
+
+      usuario:
+        credencial.user,
+
       credencial,
     };
   } catch (erro) {
     return {
-      sucesso: false,
-      erro: traduzirErroFirebase(obterCodigoErro(erro)),
+      sucesso:
+        false,
+
+      erro:
+        traduzirErroFirebase(
+          obterCodigoErro(
+            erro
+          )
+        ),
     };
   }
 }
 
 export async function criarContaComEmailSenha(
-  email: string,
-  senha: string
+  email:
+    string,
+  senha:
+    string
 ): Promise<ResultadoAutenticacao> {
   try {
-    const emailNormalizado = email.trim().toLowerCase();
+    const emailNormalizado =
+      normalizarEmail(
+        email
+      );
 
-    const credencial = await createUserWithEmailAndPassword(
-      auth,
-      emailNormalizado,
-      senha
-    );
+    if (!emailNormalizado) {
+      return {
+        sucesso:
+          false,
+
+        erro:
+          "Informe o e-mail.",
+      };
+    }
+
+    if (
+      senha.length <
+      6
+    ) {
+      return {
+        sucesso:
+          false,
+
+        erro:
+          "A senha precisa ter pelo menos 6 caracteres.",
+      };
+    }
+
+    const credencial =
+      await createUserWithEmailAndPassword(
+        auth,
+        emailNormalizado,
+        senha
+      );
 
     return {
-      sucesso: true,
-      usuario: credencial.user,
+      sucesso:
+        true,
+
+      usuario:
+        credencial.user,
+
       credencial,
     };
   } catch (erro) {
     return {
-      sucesso: false,
-      erro: traduzirErroFirebase(obterCodigoErro(erro)),
+      sucesso:
+        false,
+
+      erro:
+        traduzirErroFirebase(
+          obterCodigoErro(
+            erro
+          )
+        ),
     };
   }
 }
 
-export async function sairDaConta(): Promise<ResultadoAutenticacao> {
+export async function sairDaConta():
+  Promise<
+    ResultadoAutenticacao
+  > {
   try {
-    await signOut(auth);
+    await signOut(
+      auth
+    );
 
     return {
-      sucesso: true,
+      sucesso:
+        true,
     };
   } catch (erro) {
     return {
-      sucesso: false,
-      erro: traduzirErroFirebase(obterCodigoErro(erro)),
+      sucesso:
+        false,
+
+      erro:
+        traduzirErroFirebase(
+          obterCodigoErro(
+            erro
+          )
+        ),
     };
   }
 }
 
 export async function enviarRecuperacaoSenha(
-  email: string
+  email:
+    string
 ): Promise<ResultadoAutenticacao> {
   try {
-    const emailNormalizado = email.trim().toLowerCase();
+    const emailNormalizado =
+      normalizarEmail(
+        email
+      );
 
-    await sendPasswordResetEmail(auth, emailNormalizado);
+    if (!emailNormalizado) {
+      return {
+        sucesso:
+          false,
+
+        erro:
+          "Informe o e-mail.",
+      };
+    }
+
+    await sendPasswordResetEmail(
+      auth,
+      emailNormalizado
+    );
 
     return {
-      sucesso: true,
+      sucesso:
+        true,
     };
   } catch (erro) {
     return {
-      sucesso: false,
-      erro: traduzirErroFirebase(obterCodigoErro(erro)),
+      sucesso:
+        false,
+
+      erro:
+        traduzirErroFirebase(
+          obterCodigoErro(
+            erro
+          )
+        ),
     };
   }
 }
 
 export function observarUsuarioAutenticado(
-  callback: (usuario: User | null) => void
+  callback:
+    (
+      usuario:
+        User | null
+    ) => void
 ): () => void {
-  return onAuthStateChanged(auth, callback);
+  return onAuthStateChanged(
+    auth,
+    callback
+  );
 }
 
-export function obterUsuarioAtual(): User | null {
+export function obterUsuarioAtual():
+  User | null {
   return auth.currentUser;
 }
 
-export function usuarioEstaAutenticado(): boolean {
-  return auth.currentUser !== null;
+export function usuarioEstaAutenticado():
+  boolean {
+  return (
+    auth.currentUser !==
+    null
+  );
 }

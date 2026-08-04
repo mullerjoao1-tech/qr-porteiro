@@ -1,0 +1,163 @@
+﻿import {
+  User,
+  UserCredential,
+  createUserWithEmailAndPassword,
+  onAuthStateChanged,
+  sendPasswordResetEmail,
+  signInWithEmailAndPassword,
+  signOut,
+} from "firebase/auth";
+
+import { auth } from "../firebase";
+
+export type ResultadoAutenticacao = {
+  sucesso: boolean;
+  usuario?: User;
+  credencial?: UserCredential;
+  erro?: string;
+};
+
+function traduzirErroFirebase(codigo?: string): string {
+  switch (codigo) {
+    case "auth/invalid-email":
+      return "E-mail invÃ¡lido.";
+
+    case "auth/user-disabled":
+      return "Este usuÃ¡rio foi desativado.";
+
+    case "auth/user-not-found":
+      return "UsuÃ¡rio nÃ£o encontrado.";
+
+    case "auth/wrong-password":
+    case "auth/invalid-credential":
+      return "E-mail ou senha incorretos.";
+
+    case "auth/email-already-in-use":
+      return "Este e-mail jÃ¡ estÃ¡ cadastrado.";
+
+    case "auth/weak-password":
+      return "A senha precisa ter pelo menos 6 caracteres.";
+
+    case "auth/too-many-requests":
+      return "Muitas tentativas. Aguarde alguns minutos e tente novamente.";
+
+    case "auth/network-request-failed":
+      return "NÃ£o foi possÃ­vel conectar. Verifique sua internet.";
+
+    default:
+      return "NÃ£o foi possÃ­vel concluir a operaÃ§Ã£o.";
+  }
+}
+
+function obterCodigoErro(erro: unknown): string | undefined {
+  if (
+    typeof erro === "object" &&
+    erro !== null &&
+    "code" in erro &&
+    typeof (erro as { code?: unknown }).code === "string"
+  ) {
+    return (erro as { code: string }).code;
+  }
+
+  return undefined;
+}
+
+export async function entrarComEmailSenha(
+  email: string,
+  senha: string
+): Promise<ResultadoAutenticacao> {
+  try {
+    const emailNormalizado = email.trim().toLowerCase();
+
+    const credencial = await signInWithEmailAndPassword(
+      auth,
+      emailNormalizado,
+      senha
+    );
+
+    return {
+      sucesso: true,
+      usuario: credencial.user,
+      credencial,
+    };
+  } catch (erro) {
+    return {
+      sucesso: false,
+      erro: traduzirErroFirebase(obterCodigoErro(erro)),
+    };
+  }
+}
+
+export async function criarContaComEmailSenha(
+  email: string,
+  senha: string
+): Promise<ResultadoAutenticacao> {
+  try {
+    const emailNormalizado = email.trim().toLowerCase();
+
+    const credencial = await createUserWithEmailAndPassword(
+      auth,
+      emailNormalizado,
+      senha
+    );
+
+    return {
+      sucesso: true,
+      usuario: credencial.user,
+      credencial,
+    };
+  } catch (erro) {
+    return {
+      sucesso: false,
+      erro: traduzirErroFirebase(obterCodigoErro(erro)),
+    };
+  }
+}
+
+export async function sairDaConta(): Promise<ResultadoAutenticacao> {
+  try {
+    await signOut(auth);
+
+    return {
+      sucesso: true,
+    };
+  } catch (erro) {
+    return {
+      sucesso: false,
+      erro: traduzirErroFirebase(obterCodigoErro(erro)),
+    };
+  }
+}
+
+export async function enviarRecuperacaoSenha(
+  email: string
+): Promise<ResultadoAutenticacao> {
+  try {
+    const emailNormalizado = email.trim().toLowerCase();
+
+    await sendPasswordResetEmail(auth, emailNormalizado);
+
+    return {
+      sucesso: true,
+    };
+  } catch (erro) {
+    return {
+      sucesso: false,
+      erro: traduzirErroFirebase(obterCodigoErro(erro)),
+    };
+  }
+}
+
+export function observarUsuarioAutenticado(
+  callback: (usuario: User | null) => void
+): () => void {
+  return onAuthStateChanged(auth, callback);
+}
+
+export function obterUsuarioAtual(): User | null {
+  return auth.currentUser;
+}
+
+export function usuarioEstaAutenticado(): boolean {
+  return auth.currentUser !== null;
+}

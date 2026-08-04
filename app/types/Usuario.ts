@@ -18,6 +18,16 @@ export type TipoPerfil =
   | "administrador_master"
   | "outro";
 
+/**
+ * Mantemos string no índice para permitir leitura temporária
+ * de valores legados, como "administrador-master".
+ */
+export type PerfisUsuario =
+  Record<
+    string,
+    boolean | undefined
+  >;
+
 export type PermissoesUsuario = {
   receberChamadas?: boolean;
   atenderChamadas?: boolean;
@@ -50,20 +60,23 @@ export type PermissoesUsuario = {
 };
 
 export type VinculoLocalUsuario = {
-  localId: string;
-  localNome?: string;
-  localSlug?: string;
-  tipoLocal?: string;
+  localId:
+    string;
 
-  perfilPrincipal?: TipoPerfil;
+  localNome?:
+    string;
+
+  localSlug?:
+    string;
+
+  tipoLocal?:
+    string;
+
+  perfilPrincipal?:
+    TipoPerfil | string;
 
   perfis:
-    Partial<
-      Record<
-        TipoPerfil,
-        boolean
-      >
-    >;
+    PerfisUsuario;
 
   unidades?:
     Record<
@@ -86,7 +99,7 @@ export type VinculoLocalUsuario = {
 
 /**
  * Compatibilidade temporária com a estrutura antiga.
- * Novos fluxos devem usar VinculoLocalUsuario e usuarios-v2/{uid}/locais.
+ * Novos fluxos devem usar VinculoLocalUsuario.
  */
 export type VinculoCondominioUsuario =
   VinculoLocalUsuario & {
@@ -129,7 +142,7 @@ export type Usuario = {
     >;
 
   /**
-   * Compatibilidade com fluxos antigos de condomínio.
+   * Compatibilidade temporária com fluxos antigos.
    */
   condominios?:
     Record<
@@ -194,12 +207,7 @@ export type DadosVincularUsuarioLocal = {
     TipoPerfil;
 
   perfis?:
-    Partial<
-      Record<
-        TipoPerfil,
-        boolean
-      >
-    >;
+    PerfisUsuario;
 
   unidades?:
     Record<
