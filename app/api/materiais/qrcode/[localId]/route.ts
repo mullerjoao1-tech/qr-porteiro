@@ -13,81 +13,147 @@ import {
   gerarMaterialPdf,
   type DadosMaterial,
   type SegmentoMaterial,
+  type TemaMaterial,
 } from "../../../../services/implantacao/materiais";
 
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
-export const maxDuration = 60;
+export const runtime =
+  "nodejs";
+
+export const dynamic =
+  "force-dynamic";
+
+type IdentidadeVisualBanco = {
+  tema?:
+    string;
+
+  corPrimaria?:
+    string;
+
+  corSecundaria?:
+    string;
+
+  corTexto?:
+    string;
+
+  logoUrl?:
+    string;
+
+  bannerUrl?:
+    string;
+};
 
 type LocalBanco = {
-  id?: string;
-  codigo?: string;
-  nome?: string;
-  slug?: string;
-  tipo?: string;
-  tipoLocal?: string;
-  segmento?: string;
-  status?: string;
-  cidade?: string;
-  estado?: string;
-  telefone?: string;
-  whatsapp?: string;
-  email?: string;
-  site?: string;
-  instagram?: string;
-  facebook?: string;
-  logo?: string;
-  corPrimaria?: string;
-  corSecundaria?: string;
-  corTexto?: string;
+  id?:
+    string;
+
+  localId?:
+    string;
+
+  nome?:
+    string;
+
+  slug?:
+    string;
+
+  tipo?:
+    string;
+
+  tipoLocal?:
+    string;
+
+  segmento?:
+    string;
+
+  status?:
+    string;
+
+  ativo?:
+    boolean;
+
+  cidade?:
+    string;
+
+  estado?:
+    string;
+
+  telefone?:
+    string;
+
+  whatsapp?:
+    string;
+
+  email?:
+    string;
+
+  site?:
+    string;
+
+  instagram?:
+    string;
+
+  facebook?:
+    string;
+
+  logo?:
+    string;
+
+  corPrimaria?:
+    string;
+
+  corSecundaria?:
+    string;
+
+  corTexto?:
+    string;
+
+  identidadeVisual?:
+    IdentidadeVisualBanco;
+
+  configuracao?: {
+    identidadeVisual?:
+      IdentidadeVisualBanco;
+  };
 };
 
 type LocalEncontrado = {
-  localId: string;
-  dados: LocalBanco;
-  colecao: string;
+  localId:
+    string;
+
+  dados:
+    LocalBanco;
 };
 
-function comTimeout<T>(
-  promessa: Promise<T>,
-  milissegundos: number,
-  descricao: string
-): Promise<T> {
-  return new Promise<T>((resolver, rejeitar) => {
-    const temporizador = setTimeout(() => {
-      rejeitar(
-        new Error(
-          `Tempo limite excedido durante: ${descricao}.`
-        )
-      );
-    }, milissegundos);
-
-    promessa
-      .then((resultado) => {
-        clearTimeout(temporizador);
-        resolver(resultado);
-      })
-      .catch((erro) => {
-        clearTimeout(temporizador);
-        rejeitar(erro);
-      });
-  });
+function texto(
+  valor:
+    unknown
+): string {
+  return typeof valor ===
+    "string"
+    ? valor.trim()
+    : "";
 }
 
 function obterBaseUrl(
-  request: NextRequest
+  request:
+    NextRequest
 ): string {
   const configurada =
-    process.env.NEXT_PUBLIC_APP_URL?.trim() ||
-    process.env.VERCEL_PROJECT_PRODUCTION_URL?.trim() ||
-    process.env.VERCEL_URL?.trim();
+    process.env.NEXT_PUBLIC_APP_URL ||
+    process.env.VERCEL_URL;
 
   if (configurada) {
     if (
-      configurada.startsWith("http://") ||
-      configurada.startsWith("https://")
+      configurada.startsWith(
+        "http://"
+      ) ||
+      configurada.startsWith(
+        "https://"
+      )
     ) {
-      return configurada.replace(/\/+$/g, "");
+      return configurada.replace(
+        /\/+$/g,
+        ""
+      );
     }
 
     return `https://${configurada}`.replace(
@@ -103,27 +169,36 @@ function obterBaseUrl(
 }
 
 function normalizarTipo(
-  valor?: string
+  valor:
+    string | undefined
 ): string {
   return (
     valor
       ?.trim()
       .toLowerCase()
       .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .replace(/[^a-z0-9-_]/g, "-") ||
+      .replace(
+        /[\u0300-\u036f]/g,
+        ""
+      )
+      .replace(
+        /[^a-z0-9-_]/g,
+        "-"
+      ) ||
     ""
   );
 }
 
 function obterSegmentoMaterial(
-  local: LocalBanco
+  local:
+    LocalBanco
 ): SegmentoMaterial {
-  const tipo = normalizarTipo(
-    local.segmento ||
+  const tipo =
+    normalizarTipo(
+      local.segmento ||
       local.tipoLocal ||
       local.tipo
-  );
+    );
 
   if (
     tipo === "residencia" ||
@@ -181,71 +256,122 @@ function obterSegmentoMaterial(
   return "condominio";
 }
 
-async function buscarEmColecao(
-  colecao: string,
-  identificador: string
-): Promise<LocalEncontrado | null> {
-  const { database } = obterFirebaseAdminQr();
+function obterTemaMaterial(
+  identidade:
+    IdentidadeVisualBanco
+): TemaMaterial {
+  const tema =
+    texto(
+      identidade.tema
+    ).toLowerCase();
 
-  const snapshotDireto = await comTimeout(
-    database
-      .ref(`${colecao}/${identificador}`)
-      .get(),
-    8_000,
-    `consulta direta em ${colecao}`
-  );
+  if (
+    tema === "institucional" ||
+    tema === "premium"
+  ) {
+    return tema;
+  }
 
-  if (snapshotDireto.exists()) {
+  return "clean";
+}
+
+function obterIdentidadeVisual(
+  local:
+    LocalBanco
+): IdentidadeVisualBanco {
+  return {
+    ...(
+      local.configuracao
+        ?.identidadeVisual ??
+      {}
+    ),
+
+    ...(
+      local.identidadeVisual ??
+      {}
+    ),
+  };
+}
+
+async function buscarLocal(
+  identificador:
+    string
+): Promise<
+  LocalEncontrado | null
+> {
+  const {
+    database,
+  } = obterFirebaseAdminQr();
+
+  const snapshotDireto =
+    await database
+      .ref(
+        `locais-v2/${identificador}`
+      )
+      .get();
+
+  if (
+    snapshotDireto.exists()
+  ) {
     return {
-      localId: identificador,
-      dados: snapshotDireto.val() as LocalBanco,
-      colecao,
+      localId:
+        identificador,
+
+      dados:
+        snapshotDireto.val() as
+          LocalBanco,
     };
   }
 
-  const snapshotColecao = await comTimeout(
-    database
-      .ref(colecao)
-      .get(),
-    8_000,
-    `leitura da coleção ${colecao}`
-  );
-
-  if (!snapshotColecao.exists()) {
-    return null;
-  }
-
-  const valor = snapshotColecao.val();
+  const snapshotLocais =
+    await database
+      .ref(
+        "locais-v2"
+      )
+      .get();
 
   if (
-    !valor ||
-    typeof valor !== "object"
+    !snapshotLocais.exists()
   ) {
     return null;
   }
 
-  const registros = valor as Record<
-    string,
-    LocalBanco
-  >;
+  const locais =
+    snapshotLocais.val() as
+      Record<
+        string,
+        LocalBanco
+      >;
 
   for (
-    const [chave, dados]
-    of Object.entries(registros)
+    const [
+      chave,
+      dados,
+    ] of Object.entries(
+      locais
+    )
   ) {
-    const slug = dados.slug?.trim();
-    const id = dados.id?.trim();
-    const codigo = dados.codigo?.trim();
+    const id =
+      texto(
+        dados.id ||
+        dados.localId
+      );
+
+    const slug =
+      texto(
+        dados.slug
+      );
 
     if (
-      slug === identificador ||
+      chave === identificador ||
       id === identificador ||
-      codigo === identificador
+      slug === identificador
     ) {
       return {
-        localId: chave,
+        localId:
+          chave,
+
         dados,
-        colecao,
       };
     }
   }
@@ -253,45 +379,21 @@ async function buscarEmColecao(
   return null;
 }
 
-async function buscarLocal(
-  identificador: string
-): Promise<LocalEncontrado | null> {
-  const colecoes = [
-    "locais",
-    "qrCentral/locais",
-    "locais-v2",
-    "condominios-v2",
-    "residencias-v2",
-    "empresas-v2",
-    "estabelecimentos-v2",
-  ];
-
-  for (const colecao of colecoes) {
-    const encontrado =
-      await buscarEmColecao(
-        colecao,
-        identificador
-      );
-
-    if (encontrado) {
-      return encontrado;
-    }
-  }
-
-  return null;
-}
-
 export async function GET(
-  request: NextRequest,
+  request:
+    NextRequest,
   contexto: {
-    params: Promise<{
-      localId: string;
-    }>;
+    params:
+      Promise<{
+        localId:
+          string;
+      }>;
   }
 ): Promise<Response> {
   try {
     const {
-      localId: localIdRecebido,
+      localId:
+        localIdRecebido,
     } = await contexto.params;
 
     const identificador =
@@ -302,106 +404,194 @@ export async function GET(
     if (!identificador) {
       return NextResponse.json(
         {
-          sucesso: false,
+          sucesso:
+            false,
+
           mensagem:
             "O local não foi informado.",
         },
         {
-          status: 400,
+          status:
+            400,
         }
       );
     }
 
     const encontrado =
-      await comTimeout(
-        buscarLocal(identificador),
-        30_000,
-        "busca do local no Firebase"
+      await buscarLocal(
+        identificador
       );
 
     if (!encontrado) {
       return NextResponse.json(
         {
-          sucesso: false,
+          sucesso:
+            false,
+
           mensagem:
-            "Local não encontrado pelo ID, slug ou código.",
-          identificador,
+            "Local não encontrado em locais-v2 pelo ID ou slug.",
         },
         {
-          status: 404,
+          status:
+            404,
         }
       );
     }
 
-    const local = encontrado.dados;
+    const local =
+      encontrado.dados;
 
     if (
-      local.status
-        ?.trim()
-        .toLowerCase() === "inativo"
+      local.status ===
+        "inativo" ||
+      local.ativo ===
+        false
     ) {
       return NextResponse.json(
         {
-          sucesso: false,
+          sucesso:
+            false,
+
           mensagem:
             "O local está inativo.",
         },
         {
-          status: 410,
+          status:
+            410,
         }
       );
     }
 
     const nome =
-      local.nome?.trim() ||
+      texto(
+        local.nome
+      ) ||
       identificador;
 
     const slug =
-      local.slug?.trim() ||
-      local.id?.trim() ||
+      texto(
+        local.slug ||
+        local.id ||
+        local.localId
+      ) ||
       identificador;
 
     const segmento =
-      obterSegmentoMaterial(local);
+      obterSegmentoMaterial(
+        local
+      );
+
+    const identidadeVisual =
+      obterIdentidadeVisual(
+        local
+      );
 
     const baseUrl =
-      obterBaseUrl(request);
+      obterBaseUrl(
+        request
+      );
 
     const urlQr =
-      `${baseUrl}/acesso-v2/${encodeURIComponent(slug)}`;
+      `${baseUrl}/acesso-v2/${slug}`;
 
     const dadosMaterial:
       DadosMaterial = {
         localId:
           encontrado.localId,
+
         slug,
+
         nome,
+
         segmento,
-        cidade: local.cidade,
-        estado: local.estado,
-        telefone: local.telefone,
-        whatsapp: local.whatsapp,
-        email: local.email,
-        site: local.site,
-        instagram: local.instagram,
-        facebook: local.facebook,
-        logo: local.logo,
+
+        tema:
+          obterTemaMaterial(
+            identidadeVisual
+          ),
+
+        cidade:
+          texto(
+            local.cidade
+          ) ||
+          undefined,
+
+        estado:
+          texto(
+            local.estado
+          ) ||
+          undefined,
+
+        telefone:
+          texto(
+            local.telefone
+          ) ||
+          undefined,
+
+        whatsapp:
+          texto(
+            local.whatsapp
+          ) ||
+          undefined,
+
+        email:
+          texto(
+            local.email
+          ) ||
+          undefined,
+
+        site:
+          texto(
+            local.site
+          ) ||
+          undefined,
+
+        instagram:
+          texto(
+            local.instagram
+          ) ||
+          undefined,
+
+        facebook:
+          texto(
+            local.facebook
+          ) ||
+          undefined,
+
+        logo:
+          texto(
+            identidadeVisual.logoUrl ||
+            local.logo
+          ) ||
+          undefined,
+
         urlQr,
+
         corPrimaria:
-          local.corPrimaria,
+          texto(
+            identidadeVisual.corPrimaria ||
+            local.corPrimaria
+          ) ||
+          undefined,
+
         corSecundaria:
-          local.corSecundaria,
+          texto(
+            identidadeVisual.corSecundaria ||
+            local.corSecundaria
+          ) ||
+          undefined,
+
         corTexto:
-          local.corTexto,
+          texto(
+            identidadeVisual.corTexto ||
+            local.corTexto
+          ) ||
+          undefined,
       };
 
     const resultado =
-      await comTimeout(
-        gerarMaterialPdf(
-          dadosMaterial
-        ),
-        25_000,
-        "geração do PDF"
+      await gerarMaterialPdf(
+        dadosMaterial
       );
 
     return new Response(
@@ -409,56 +599,58 @@ export async function GET(
         resultado.bytes
       ),
       {
-        status: 200,
+        status:
+          200,
+
         headers: {
           "Content-Type":
             resultado.mimeType,
+
           "Content-Disposition":
             `inline; filename="${resultado.nomeArquivo}"`,
+
           "Content-Length":
             String(
               resultado.bytes
                 .byteLength
             ),
+
           "Cache-Control":
-            "no-store, max-age=0",
+            "no-store",
+
           "X-Local-Id":
             encontrado.localId,
+
           "X-Local-Slug":
             slug,
-          "X-Local-Colecao":
-            encontrado.colecao,
+
           "X-Material-Segmento":
             segmento,
         },
       }
     );
-  } catch (erro) {
-    const mensagem =
-      erro instanceof Error
-        ? erro.message
-        : "Não foi possível gerar o material.";
-
+    } catch (erro) {
     console.error(
       "Erro ao gerar material do QR:",
       erro
     );
 
-    const tempoExcedido =
-      mensagem
-        .toLowerCase()
-        .includes("tempo limite");
-
     return NextResponse.json(
       {
         sucesso: false,
-        mensagem,
+
+        mensagem:
+          erro instanceof Error
+            ? erro.message
+            : String(erro),
+
+        stack:
+          erro instanceof Error
+            ? erro.stack
+            : null,
       },
       {
-        status:
-          tempoExcedido
-            ? 504
-            : 500,
+        status: 500,
       }
     );
   }
