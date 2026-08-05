@@ -118,7 +118,10 @@ export default function AcessoV2Condominio() {
   const [popupTexto, setPopupTexto] = useState("");
   const [popupAudioBase64, setPopupAudioBase64] = useState("");
   const [popupTipo, setPopupTipo] = useState<"mensagem" | "audio" | "encerrado">("mensagem");
-
+const [
+  popupAudioFoiOuvido,
+  setPopupAudioFoiOuvido,
+] = useState(false);
   const chamadaAtivaRef = useRef(false);
   const chamadaFoiEnviadaRef = useRef(false);
   const ultimoPopupRef = useRef("");
