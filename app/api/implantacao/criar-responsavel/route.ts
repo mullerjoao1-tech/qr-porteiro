@@ -51,14 +51,6 @@ type UrlsOficiaisLocal = {
 const PERFIL_PADRAO =
   "sindico";
 
-const LOCAL_PADRAO_ID =
-  "cnd-tulipas";
-
-const LOCAL_PADRAO_NOME =
-  "Residencial Tulipas";
-
-const LOCAL_PADRAO_SLUG =
-  "cnd-tulipas";
 
 const TIPO_LOCAL_PADRAO:
   TipoLocalImplantacao =
@@ -301,6 +293,219 @@ function normalizarTipoLocal(
   }
 
   return tipo;
+}
+
+function normalizarComparacaoNome(
+  valor:
+    string
+): string {
+  return valor
+    .trim()
+    .toLowerCase()
+    .normalize(
+      "NFD"
+    )
+    .replace(
+      /[\u0300-\u036f]/g,
+      ""
+    )
+    .replace(
+      /\s+/g,
+      " "
+    );
+}
+
+type IdentidadeNomeLocal = {
+  nomeBase:
+    string;
+
+  nomeExibicao:
+    string;
+};
+
+function montarIdentidadeNomeLocal(
+  tipoLocal:
+    TipoLocalImplantacao,
+  nomeInformado:
+    string
+): IdentidadeNomeLocal {
+  const nomeLimpo =
+    nomeInformado
+      .trim()
+      .replace(
+        /\s+/g,
+        " "
+      );
+
+  if (!nomeLimpo) {
+    throw new Error(
+      "O nome do local não foi informado."
+    );
+  }
+
+  const configuracoes: Record<
+    TipoLocalImplantacao,
+    {
+      prefixoPadrao:
+        string;
+
+      prefixosAceitos:
+        string[];
+    }
+  > = {
+    condominio: {
+      prefixoPadrao:
+        "Condomínio",
+
+      prefixosAceitos: [
+        "Condomínio",
+        "Condominio",
+        "Residencial",
+      ],
+    },
+
+    beauty: {
+      prefixoPadrao:
+        "Salão",
+
+      prefixosAceitos: [
+        "Salão",
+        "Salao",
+        "Esmalteria",
+        "Studio",
+        "Estúdio",
+        "Espaço",
+        "Espaco",
+      ],
+    },
+
+    barbearia: {
+      prefixoPadrao:
+        "Barbearia",
+
+      prefixosAceitos: [
+        "Barbearia",
+        "Barber",
+      ],
+    },
+
+    clinica: {
+      prefixoPadrao:
+        "Clínica",
+
+      prefixosAceitos: [
+        "Clínica",
+        "Clinica",
+        "Consultório",
+        "Consultorio",
+      ],
+    },
+
+    empresa: {
+      prefixoPadrao:
+        "Empresa",
+
+      prefixosAceitos: [
+        "Empresa",
+        "Escritório",
+        "Escritorio",
+      ],
+    },
+
+    residencia: {
+      prefixoPadrao:
+        "Residência",
+
+      prefixosAceitos: [
+        "Residência",
+        "Residencia",
+        "Casa",
+      ],
+    },
+
+    restaurante: {
+      prefixoPadrao:
+        "Restaurante",
+
+      prefixosAceitos: [
+        "Restaurante",
+        "Bar",
+        "Pizzaria",
+        "Lanchonete",
+      ],
+    },
+
+    outro: {
+      prefixoPadrao:
+        "",
+
+      prefixosAceitos: [],
+    },
+  };
+
+  const configuracao =
+    configuracoes[
+      tipoLocal
+    ];
+
+  const nomeComparacao =
+    normalizarComparacaoNome(
+      nomeLimpo
+    );
+
+  for (
+    const prefixo of
+      configuracao.prefixosAceitos
+  ) {
+    const prefixoComparacao =
+      normalizarComparacaoNome(
+        prefixo
+      );
+
+    const possuiPrefixo =
+      nomeComparacao ===
+        prefixoComparacao ||
+      nomeComparacao.startsWith(
+        `${prefixoComparacao} `
+      );
+
+    if (possuiPrefixo) {
+      const nomeBase =
+        nomeLimpo
+          .slice(
+            prefixo.length
+          )
+          .trim() ||
+        nomeLimpo;
+
+      return {
+        nomeBase,
+
+        nomeExibicao:
+          nomeLimpo,
+      };
+    }
+  }
+
+  if (
+    !configuracao.prefixoPadrao
+  ) {
+    return {
+      nomeBase:
+        nomeLimpo,
+
+      nomeExibicao:
+        nomeLimpo,
+    };
+  }
+
+  return {
+    nomeBase:
+      nomeLimpo,
+
+    nomeExibicao:
+      `${configuracao.prefixoPadrao} ${nomeLimpo}`,
+  };
 }
 
 function normalizarConfiguracaoSegmento(
@@ -867,35 +1072,46 @@ export async function POST(
         corpo.senhaProvisoria
       );
 
-    const localId =
-      normalizarId(
-        textoOpcional(
-          corpo.localId
-        ) ||
-        LOCAL_PADRAO_ID
+    const tipoLocal =
+      normalizarTipoLocal(
+        corpo.tipoLocal
       );
 
-    localIdProcessado =
-      localId;
+    const localNomeInformado =
+      textoObrigatorio(
+        corpo.localNome,
+        "localNome"
+      );
 
-    const localNome =
-      textoOpcional(
-        corpo.localNome
-      ) ||
-      LOCAL_PADRAO_NOME;
+    const {
+      nomeBase:
+        localNomeBase,
+
+      nomeExibicao:
+        localNome,
+    } = montarIdentidadeNomeLocal(
+      tipoLocal,
+      localNomeInformado
+    );
 
     const localSlug =
       normalizarId(
         textoOpcional(
           corpo.localSlug
         ) ||
-        LOCAL_PADRAO_SLUG
+        localNomeInformado
       );
 
-    const tipoLocal =
-      normalizarTipoLocal(
-        corpo.tipoLocal
+    const localId =
+      normalizarId(
+        textoOpcional(
+          corpo.localId
+        ) ||
+        localSlug
       );
+
+    localIdProcessado =
+      localId;
 
     const cidade =
       textoOpcional(
@@ -1054,6 +1270,15 @@ export async function POST(
         `locais-v2/${localId}`
       )
       .update({
+        nome:
+          localNome,
+
+        nomeBase:
+          localNomeBase,
+
+        nomeExibicao:
+          localNome,
+
         urls:
           urlsOficiais,
 
@@ -1064,6 +1289,11 @@ export async function POST(
           localId,
 
           localNome,
+
+          localNomeBase,
+
+          localNomeExibicao:
+            localNome,
 
           localSlug,
 
@@ -1165,6 +1395,11 @@ export async function POST(
       localId,
 
       localNome,
+
+      localNomeBase,
+
+      localNomeExibicao:
+        localNome,
 
       localSlug,
 
@@ -1452,6 +1687,11 @@ export async function POST(
 
         localNome,
 
+        localNomeBase,
+
+        localNomeExibicao:
+          localNome,
+
         localSlug,
 
         tipoLocal,
@@ -1561,6 +1801,12 @@ export async function POST(
           nome:
             localNome,
 
+          nomeBase:
+            localNomeBase,
+
+          nomeExibicao:
+            localNome,
+
           slug:
             localSlug,
 
@@ -1639,6 +1885,11 @@ export async function POST(
           localId,
 
           localNome,
+
+          localNomeBase,
+
+          localNomeExibicao:
+            localNome,
 
           localSlug,
 

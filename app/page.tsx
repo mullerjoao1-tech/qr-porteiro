@@ -19,6 +19,10 @@ import {
   obterModulosDashboard,
 } from "@/app/services/dashboard";
 
+import {
+  resolverPainelInicial,
+} from "@/app/services/navigation/ResolverPainelInicial";
+
 import type {
   VinculoComPermissoes,
 } from "@/app/services/permissoes";
@@ -875,21 +879,49 @@ function PaginaStudio() {
           vinculoId
         );
 
-      const primeiroModulo =
-        modulosPermitidos[0];
+      const vinculo =
+        vinculosAtivos.find(
+          (
+            [
+              id,
+            ]
+          ) =>
+            id ===
+            vinculoId
+        )?.[1];
 
-      if (!primeiroModulo) {
+      if (!vinculo) {
+        throw new Error(
+          "O vínculo selecionado não foi encontrado."
+        );
+      }
+
+      if (
+        modulosPermitidos.length ===
+        0
+      ) {
         throw new Error(
           "Este local não possui nenhum módulo liberado para o usuário."
         );
       }
+
+      const rotaInicial =
+        resolverPainelInicial({
+          usuario,
+
+          vinculoId,
+
+          vinculo,
+
+          modulosPermitidos,
+        });
 
       selecionarVinculo(
         vinculoId
       );
 
       router.push(
-        primeiroModulo.rota
+        rotaInicial
       );
     } catch (
       erro

@@ -1,0 +1,601 @@
+﻿"use client";
+
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+
+import {
+  useMemo,
+} from "react";
+
+import {
+  useAuth,
+} from "@/app/context/AuthContext";
+
+import type {
+  VinculoComPermissoes,
+} from "@/app/services/permissoes";
+
+type AtalhoSindico = {
+  id:
+    string;
+
+  titulo:
+    string;
+
+  descricao:
+    string;
+
+  rota:
+    string;
+
+  icone:
+    string;
+};
+
+const ATALHOS_SINDICO:
+  AtalhoSindico[] = [
+    {
+      id:
+        "condominio",
+
+      titulo:
+        "GestÃ£o do condomÃ­nio",
+
+      descricao:
+        "Moradores, unidades, comunicados, reservas e operaÃ§Ã£o local.",
+
+      rota:
+        "/dashboard/condominio",
+
+      icone:
+        "ðŸ¢",
+    },
+
+    {
+      id:
+        "central",
+
+      titulo:
+        "Central Inteligente",
+
+      descricao:
+        "Alertas, ocorrÃªncias, prioridades e acompanhamento operacional.",
+
+      rota:
+        "/dashboard/central-inteligente",
+
+      icone:
+        "ðŸ§ ",
+    },
+
+    {
+      id:
+        "financeiro",
+
+      titulo:
+        "Financeiro",
+
+      descricao:
+        "Receitas, despesas, vencimentos e acompanhamento financeiro.",
+
+      rota:
+        "/dashboard/financeiro",
+
+      icone:
+        "ðŸ’°",
+    },
+
+    {
+      id:
+        "prestadores",
+
+      titulo:
+        "Prestadores",
+
+      descricao:
+        "ServiÃ§os, parceiros, documentos, histÃ³rico e oportunidades.",
+
+      rota:
+        "/dashboard/marketplace",
+
+      icone:
+        "ðŸ§°",
+    },
+
+    {
+      id:
+        "hardware",
+
+      titulo:
+        "Hardware e seguranÃ§a",
+
+      descricao:
+        "CÃ¢meras, portÃµes, dispositivos e integraÃ§Ãµes do local.",
+
+      rota:
+        "/hardware",
+
+      icone:
+        "ðŸ“·",
+    },
+
+    {
+      id:
+        "implantacao",
+
+      titulo:
+        "ImplantaÃ§Ã£o",
+
+      descricao:
+        "Acompanhe etapas, configuraÃ§Ãµes e evoluÃ§Ã£o do ambiente.",
+
+      rota:
+        "/dashboard/implantacao",
+
+      icone:
+        "ðŸš€",
+    },
+  ];
+
+function obterNomeLocal(
+  vinculoId:
+    string,
+  vinculo:
+    VinculoComPermissoes
+): string {
+  return (
+    vinculo.localNome ||
+    vinculo.condominioNome ||
+    vinculo.localSlug ||
+    vinculo.condominioSlug ||
+    vinculo.localId ||
+    vinculo.condominioId ||
+    vinculoId
+  );
+}
+
+function obterTipoLocal(
+  vinculo:
+    VinculoComPermissoes
+): string {
+  return (
+    vinculo.tipoLocal ||
+    "local"
+  )
+    .replaceAll(
+      "_",
+      " "
+    )
+    .replaceAll(
+      "-",
+      " "
+    );
+}
+
+function obterPerfil(
+  vinculo:
+    VinculoComPermissoes
+): string {
+  const perfil =
+    vinculo.perfilPrincipal ||
+    Object.entries(
+      vinculo.perfis ??
+      {}
+    ).find(
+      (
+        [
+          ,
+          ativo,
+        ]
+      ) =>
+        ativo === true
+    )?.[0] ||
+    "sÃ­ndico";
+
+  return perfil
+    .replaceAll(
+      "_",
+      " "
+    )
+    .replaceAll(
+      "-",
+      " "
+    );
+}
+
+export default function PaginaSindico() {
+  const router =
+    useRouter();
+
+  const {
+    usuario,
+    carregando,
+    vinculosAtivos,
+    vinculoSelecionadoId,
+    vinculoSelecionado,
+    selecionarVinculo,
+    selecionarCarteiraGeral,
+  } =
+    useAuth();
+
+  const locaisOrdenados =
+    useMemo(
+      () =>
+        [
+          ...vinculosAtivos,
+        ].sort(
+          (
+            [
+              idA,
+              vinculoA,
+            ],
+            [
+              idB,
+              vinculoB,
+            ]
+          ) =>
+            obterNomeLocal(
+              idA,
+              vinculoA
+            ).localeCompare(
+              obterNomeLocal(
+                idB,
+                vinculoB
+              ),
+              "pt-BR"
+            )
+        ),
+      [
+        vinculosAtivos,
+      ]
+    );
+
+  const nomeContexto =
+    vinculoSelecionado
+      ? obterNomeLocal(
+          vinculoSelecionadoId ||
+            "",
+          vinculoSelecionado
+        )
+      : "Carteira Geral";
+
+  function trocarLocal(
+    vinculoId:
+      string
+  ) {
+    selecionarVinculo(
+      vinculoId
+    );
+  }
+
+  function voltarInicio() {
+    router.push(
+      "/"
+    );
+  }
+
+  if (
+    carregando
+  ) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-slate-950 px-4 text-white">
+        <div className="text-center">
+          <div className="mx-auto h-12 w-12 animate-spin rounded-full border-4 border-slate-700 border-t-cyan-400" />
+
+          <p className="mt-4 text-sm font-bold text-slate-300">
+            Carregando painel do sÃ­ndico...
+          </p>
+        </div>
+      </main>
+    );
+  }
+
+  if (!usuario) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-slate-950 px-4 text-white">
+        <section className="w-full max-w-md rounded-3xl border border-red-500/30 bg-slate-900 p-6 text-center">
+          <h1 className="text-2xl font-black">
+            Acesso nÃ£o identificado
+          </h1>
+
+          <p className="mt-3 text-sm text-slate-300">
+            FaÃ§a login novamente para acessar o painel.
+          </p>
+
+          <button
+            type="button"
+            onClick={
+              voltarInicio
+            }
+            className="mt-6 w-full rounded-2xl bg-cyan-400 px-5 py-3 font-black text-slate-950"
+          >
+            Voltar ao inÃ­cio
+          </button>
+        </section>
+      </main>
+    );
+  }
+
+  return (
+    <main className="min-h-screen bg-slate-950 px-4 py-6 text-white sm:px-6 lg:px-8">
+      <div className="mx-auto w-full max-w-7xl">
+        <header className="rounded-3xl border border-slate-800 bg-slate-900 p-5 shadow-2xl sm:p-7">
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.2em] text-cyan-400">
+                QR Core â€¢ Painel do SÃ­ndico
+              </p>
+
+              <h1 className="mt-2 text-3xl font-black sm:text-4xl">
+                Bom dia,{" "}
+                {usuario.nome ||
+                  "SÃ­ndico"}
+              </h1>
+
+              <p className="mt-2 max-w-3xl text-sm leading-relaxed text-slate-300 sm:text-base">
+                Acompanhe o local, acesse os mÃ³dulos permitidos e mantenha
+                tudo importante na palma da mÃ£o.
+              </p>
+            </div>
+
+            <div className="w-full rounded-2xl border border-slate-700 bg-slate-950 p-4 lg:max-w-sm">
+              <p className="text-[11px] font-black uppercase tracking-wider text-slate-500">
+                Contexto atual
+              </p>
+
+              <p className="mt-2 text-lg font-black text-cyan-300">
+                {vinculoSelecionado
+                  ? "ðŸ¢ "
+                  : "ðŸŒ "}
+                {nomeContexto}
+              </p>
+
+              {vinculoSelecionado && (
+                <p className="mt-1 text-xs font-semibold capitalize text-slate-400">
+                  {obterTipoLocal(
+                    vinculoSelecionado
+                  )} â€¢{" "}
+                  {obterPerfil(
+                    vinculoSelecionado
+                  )}
+                </p>
+              )}
+
+              <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                <button
+                  type="button"
+                  onClick={
+                    () => {
+                      selecionarCarteiraGeral();
+                    }
+                  }
+                  className="rounded-xl border border-cyan-500/30 bg-cyan-500/10 px-3 py-2 text-sm font-black text-cyan-300 transition hover:bg-cyan-500/20"
+                >
+                  Carteira Geral
+                </button>
+
+                <button
+                  type="button"
+                  onClick={
+                    voltarInicio
+                  }
+                  className="rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 text-sm font-black text-slate-200 transition hover:bg-slate-700"
+                >
+                  Trocar contexto
+                </button>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <section className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <article className="rounded-3xl border border-cyan-500/20 bg-cyan-500/10 p-5">
+            <p className="text-xs font-black uppercase tracking-wider text-cyan-300">
+              Locais vinculados
+            </p>
+
+            <p className="mt-3 text-4xl font-black">
+              {vinculosAtivos.length}
+            </p>
+
+            <p className="mt-1 text-sm text-slate-300">
+              DisponÃ­veis para este usuÃ¡rio
+            </p>
+          </article>
+
+          <article className="rounded-3xl border border-green-500/20 bg-green-500/10 p-5">
+            <p className="text-xs font-black uppercase tracking-wider text-green-300">
+              Contexto
+            </p>
+
+            <p className="mt-3 text-xl font-black">
+              {vinculoSelecionado
+                ? "Local selecionado"
+                : "Carteira Geral"}
+            </p>
+
+            <p className="mt-1 text-sm text-slate-300">
+              PermissÃµes carregadas por vÃ­nculo
+            </p>
+          </article>
+
+          <article className="rounded-3xl border border-violet-500/20 bg-violet-500/10 p-5">
+            <p className="text-xs font-black uppercase tracking-wider text-violet-300">
+              Perfil
+            </p>
+
+            <p className="mt-3 text-xl font-black capitalize">
+              {vinculoSelecionado
+                ? obterPerfil(
+                    vinculoSelecionado
+                  )
+                : "VisÃ£o consolidada"}
+            </p>
+
+            <p className="mt-1 text-sm text-slate-300">
+              Acesso controlado por permissÃµes
+            </p>
+          </article>
+
+          <article className="rounded-3xl border border-amber-500/20 bg-amber-500/10 p-5">
+            <p className="text-xs font-black uppercase tracking-wider text-amber-300">
+              Ambiente
+            </p>
+
+            <p className="mt-3 text-xl font-black">
+              Studio
+            </p>
+
+            <p className="mt-1 text-sm text-slate-300">
+              Desenvolvimento e homologaÃ§Ã£o
+            </p>
+          </article>
+        </section>
+
+        <section className="mt-6 rounded-3xl border border-slate-800 bg-slate-900 p-5 sm:p-7">
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.2em] text-cyan-400">
+              Acesso rÃ¡pido
+            </p>
+
+            <h2 className="mt-2 text-2xl font-black">
+              MÃ³dulos do sÃ­ndico
+            </h2>
+
+            <p className="mt-2 text-sm text-slate-400">
+              Escolha o mÃ³dulo necessÃ¡rio para continuar a operaÃ§Ã£o.
+            </p>
+          </div>
+
+          <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            {ATALHOS_SINDICO.map(
+              (
+                atalho
+              ) => (
+                <Link
+                  key={
+                    atalho.id
+                  }
+                  href={
+                    atalho.rota
+                  }
+                  className="group rounded-3xl border border-slate-700 bg-slate-950 p-5 transition hover:-translate-y-1 hover:border-cyan-500 hover:bg-slate-800"
+                >
+                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-slate-700 bg-slate-900 text-3xl">
+                    {atalho.icone}
+                  </div>
+
+                  <h3 className="mt-5 text-xl font-black">
+                    {atalho.titulo}
+                  </h3>
+
+                  <p className="mt-2 text-sm leading-relaxed text-slate-400">
+                    {atalho.descricao}
+                  </p>
+
+                  <div className="mt-5 flex items-center justify-between text-sm font-black text-cyan-300">
+                    <span>
+                      Abrir mÃ³dulo
+                    </span>
+
+                    <span className="transition group-hover:translate-x-1">
+                      â†’
+                    </span>
+                  </div>
+                </Link>
+              )
+            )}
+          </div>
+        </section>
+
+        <section className="mt-6 rounded-3xl border border-slate-800 bg-slate-900 p-5 sm:p-7">
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.2em] text-green-400">
+              Carteira
+            </p>
+
+            <h2 className="mt-2 text-2xl font-black">
+              Locais disponÃ­veis
+            </h2>
+          </div>
+
+          <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            {locaisOrdenados.map(
+              (
+                [
+                  vinculoId,
+                  vinculo,
+                ]
+              ) => {
+                const selecionado =
+                  vinculoSelecionadoId ===
+                  vinculoId;
+
+                return (
+                  <article
+                    key={
+                      vinculoId
+                    }
+                    className={[
+                      "rounded-3xl border p-5",
+                      selecionado
+                        ? "border-green-500 bg-green-500/10"
+                        : "border-slate-700 bg-slate-950",
+                    ].join(
+                      " "
+                    )}
+                  >
+                    <p className="text-xs font-black uppercase tracking-wider text-green-400">
+                      {obterTipoLocal(
+                        vinculo
+                      )}
+                    </p>
+
+                    <h3 className="mt-2 text-xl font-black">
+                      {obterNomeLocal(
+                        vinculoId,
+                        vinculo
+                      )}
+                    </h3>
+
+                    <p className="mt-1 text-sm capitalize text-slate-400">
+                      {obterPerfil(
+                        vinculo
+                      )}
+                    </p>
+
+                    <button
+                      type="button"
+                      onClick={
+                        () =>
+                          trocarLocal(
+                            vinculoId
+                          )
+                      }
+                      className={[
+                        "mt-5 w-full rounded-2xl px-4 py-3 text-sm font-black transition",
+                        selecionado
+                          ? "bg-green-500 text-slate-950"
+                          : "border border-slate-700 bg-slate-800 text-white hover:border-green-500",
+                      ].join(
+                        " "
+                      )}
+                    >
+                      {selecionado
+                        ? "Local selecionado"
+                        : "Selecionar local"}
+                    </button>
+                  </article>
+                );
+              }
+            )}
+          </div>
+        </section>
+
+        <footer className="mt-8 text-center text-xs text-slate-600">
+          QR Acesso Studio â€¢ Dashboard modular do sÃ­ndico
+        </footer>
+      </div>
+    </main>
+  );
+}

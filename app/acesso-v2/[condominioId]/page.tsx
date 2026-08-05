@@ -18,11 +18,18 @@ type Unidade = {
   id: string;
   nome: string;
   tipo?: string;
+
   bloco?: string;
+
+  estruturaPaiId?: string;
+  estruturaPaiNome?: string;
+
   condominioId?: string;
   localId?: string;
   localNome?: string;
+  localSlug?: string;
   tipoLocal?: string;
+
   chamada?: {
     nome?: string;
     motivo?: string;
@@ -209,11 +216,35 @@ export default function AcessoV2Condominio() {
       }
 
       const todasAsUnidades = Object.entries(dados).map(
-        ([id, valor]: any) => ({
-          id,
-          ...valor,
-        })
-      ) as Unidade[];
+  ([id, valor]: any) => {
+    const blocoNormalizado =
+      valor.bloco ||
+      valor.estruturaPaiNome ||
+      (
+        valor.estruturaPaiId
+          ? String(
+              valor.estruturaPaiId
+            )
+              .replace(
+                /^bloco-/i,
+                "Bloco "
+              )
+              .replace(
+                /-/g,
+                " "
+              )
+          : ""
+      );
+
+    return {
+      id,
+      ...valor,
+
+      bloco:
+        blocoNormalizado,
+    };
+  }
+) as Unidade[];
 
       /*
        * Primeiro procuramos somente as unidades vinculadas

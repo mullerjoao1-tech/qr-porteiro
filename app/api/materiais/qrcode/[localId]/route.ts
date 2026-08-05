@@ -629,12 +629,7 @@ export async function GET(
         },
       }
     );
-  } catch (erro) {
-    const mensagem =
-      erro instanceof Error
-        ? erro.message
-        : "Não foi possível gerar o material.";
-
+    } catch (erro) {
     console.error(
       "Erro ao gerar material do QR:",
       erro
@@ -642,14 +637,20 @@ export async function GET(
 
     return NextResponse.json(
       {
-        sucesso:
-          false,
+        sucesso: false,
 
-        mensagem,
+        mensagem:
+          erro instanceof Error
+            ? erro.message
+            : String(erro),
+
+        stack:
+          erro instanceof Error
+            ? erro.stack
+            : null,
       },
       {
-        status:
-          500,
+        status: 500,
       }
     );
   }

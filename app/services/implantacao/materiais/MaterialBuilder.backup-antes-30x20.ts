@@ -1,4 +1,4 @@
-﻿import "server-only";
+import "server-only";
 
 import {
   PDFDocument,
@@ -20,8 +20,7 @@ export type TamanhoPaginaMaterial =
   | "a4-retrato"
   | "a4-paisagem"
   | "a5-retrato"
-  | "a5-paisagem"
-  | "30x20-paisagem";
+  | "a5-paisagem";
 
 export type ConfiguracaoPaginaMaterial = {
   tamanho:
@@ -133,16 +132,6 @@ const TAMANHOS_PAGINA: Record<
 
     altura:
       419.53,
-  },
-  "30x20-paisagem": {
-    tamanho:
-      "30x20-paisagem",
-
-    largura:
-      850.393701,
-
-    altura:
-      566.929134,
   },
 };
 
@@ -280,7 +269,7 @@ function validarDadosMaterial(
     !dados.localId.trim()
   ) {
     throw new Error(
-      "O ID do local nÃ£o foi informado para gerar o material."
+      "O ID do local não foi informado para gerar o material."
     );
   }
 
@@ -288,7 +277,7 @@ function validarDadosMaterial(
     !dados.nome.trim()
   ) {
     throw new Error(
-      "O nome do local nÃ£o foi informado para gerar o material."
+      "O nome do local não foi informado para gerar o material."
     );
   }
 
@@ -296,7 +285,7 @@ function validarDadosMaterial(
     !dados.slug.trim()
   ) {
     throw new Error(
-      "O slug do local nÃ£o foi informado para gerar o material."
+      "O slug do local não foi informado para gerar o material."
     );
   }
 
@@ -304,7 +293,7 @@ function validarDadosMaterial(
     !dados.urlQr.trim()
   ) {
     throw new Error(
-      "A URL do QR nÃ£o foi informada para gerar o material."
+      "A URL do QR não foi informada para gerar o material."
     );
   }
 }

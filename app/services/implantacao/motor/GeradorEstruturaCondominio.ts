@@ -12,17 +12,22 @@ import type {
 } from "../types";
 
 type EntradaGeradorCondominio = {
-  local: DadosLocalGerador;
+  local:
+    DadosLocalGerador;
 
   configuracao:
     ConfiguracaoCondominioGerador;
 };
 
 function preencherNumero(
-  numero: number,
-  tamanho = 2
+  numero:
+    number,
+  tamanho =
+    2
 ): string {
-  return String(numero).padStart(
+  return String(
+    numero
+  ).padStart(
     tamanho,
     "0"
   );
@@ -37,7 +42,8 @@ function validarConfiguracao(
     quantidadeBlocos,
     apartamentosPorBloco,
     quantidadeCasas,
-  } = configuracao;
+  } =
+    configuracao;
 
   if (
     tipoCondominio !==
@@ -59,7 +65,8 @@ function validarConfiguracao(
       "misto"
   ) {
     if (
-      quantidadeBlocos <= 0
+      quantidadeBlocos <=
+      0
     ) {
       throw new Error(
         "A quantidade de blocos precisa ser maior que zero."
@@ -83,7 +90,8 @@ function validarConfiguracao(
       "misto"
   ) {
     if (
-      quantidadeCasas <= 0
+      quantidadeCasas <=
+      0
     ) {
       throw new Error(
         "A quantidade de casas precisa ser maior que zero."
@@ -92,18 +100,75 @@ function validarConfiguracao(
   }
 }
 
-function gerarCasas(
-  local: DadosLocalGerador,
-  quantidadeCasas: number
-): UnidadeGerada[] {
-  const casas: UnidadeGerada[] =
-    [];
+/*
+ * Gera numeração de apartamentos usando
+ * quatro apartamentos por andar.
+ *
+ * 16 apartamentos:
+ *
+ * 11 12 13 14
+ * 21 22 23 24
+ * 31 32 33 34
+ * 41 42 43 44
+ */
+function gerarNumeracaoApartamentos(
+  quantidadeApartamentos:
+    number
+): string[] {
+  const apartamentosPorAndar =
+    4;
+
+  const numeros:
+    string[] =
+      [];
 
   for (
-    let numeroCasa = 1;
+    let indice =
+      0;
+    indice <
+    quantidadeApartamentos;
+    indice +=
+      1
+  ) {
+    const andar =
+      Math.floor(
+        indice /
+          apartamentosPorAndar
+      ) +
+      1;
+
+    const posicaoNoAndar =
+      (
+        indice %
+        apartamentosPorAndar
+      ) +
+      1;
+
+    numeros.push(
+      `${andar}${posicaoNoAndar}`
+    );
+  }
+
+  return numeros;
+}
+
+function gerarCasas(
+  local:
+    DadosLocalGerador,
+  quantidadeCasas:
+    number
+): UnidadeGerada[] {
+  const casas:
+    UnidadeGerada[] =
+      [];
+
+  for (
+    let numeroCasa =
+      1;
     numeroCasa <=
     quantidadeCasas;
-    numeroCasa += 1
+    numeroCasa +=
+      1
   ) {
     const numeroFormatado =
       preencherNumero(
@@ -143,11 +208,16 @@ function gerarCasas(
       status:
         "ativa",
 
-      moradores: {},
+      moradores:
+        {},
 
-      usuarios: {},
+      usuarios:
+        {},
 
-      configuracao: {},
+      configuracao: {
+        rotaMorador:
+          `/morador-v2/${slug}`,
+      },
 
       criadoEm:
         local.criadoEm,
@@ -161,10 +231,17 @@ function gerarCasas(
 }
 
 function gerarEstruturaVertical(
-  local: DadosLocalGerador,
+  local:
+    DadosLocalGerador,
   configuracao:
     ConfiguracaoCondominioGerador
 ): EstruturaUnidadesGerada {
+  const numerosApartamentos =
+    gerarNumeracaoApartamentos(
+      configuracao
+        .apartamentosPorBloco
+    );
+
   return gerarEstrutura({
     tipoEstrutura:
       "condominio",
@@ -191,11 +268,21 @@ function gerarEstruturaVertical(
       "apartamento",
 
     quantidadePais:
-      configuracao.quantidadeBlocos,
+      configuracao
+        .quantidadeBlocos,
 
     quantidadeFilhos:
       configuracao
         .apartamentosPorBloco,
+
+    numerosFilhos:
+      numerosApartamentos,
+
+    prefixoSlugFilho:
+      "ap",
+
+    preencherNumeroPai:
+      false,
 
     criadoEm:
       local.criadoEm,
@@ -227,7 +314,8 @@ export function gerarEstruturaCondominio({
     const casas =
       gerarCasas(
         local,
-        configuracao.quantidadeCasas
+        configuracao
+          .quantidadeCasas
       );
 
     return {
@@ -237,7 +325,8 @@ export function gerarEstruturaCondominio({
       localId:
         local.localId,
 
-      estruturasPai: [],
+      estruturasPai:
+        [],
 
       unidades:
         casas,
@@ -264,7 +353,8 @@ export function gerarEstruturaCondominio({
   const casas =
     gerarCasas(
       local,
-      configuracao.quantidadeCasas
+      configuracao
+        .quantidadeCasas
     );
 
   return {
@@ -279,23 +369,28 @@ export function gerarEstruturaCondominio({
         .estruturasPai,
 
     unidades: [
-      ...estruturaVertical.unidades,
+      ...estruturaVertical
+        .unidades,
+
       ...casas,
     ],
 
     totalEstruturasPai:
       estruturaVertical
-        .estruturasPai.length,
+        .estruturasPai
+        .length,
 
     totalUnidades:
       estruturaVertical
-        .unidades.length +
+        .unidades
+        .length +
       casas.length,
 
     totalPorTipo: {
       apartamento:
         estruturaVertical
-          .unidades.length,
+          .unidades
+          .length,
 
       casa:
         casas.length,

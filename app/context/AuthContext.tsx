@@ -96,6 +96,103 @@ const AuthContext =
     null
   );
 
+const PREFIXO_CHAVE_VINCULO =
+  "qr-core:vinculo-selecionado";
+
+function obterChaveVinculo(
+  uid:
+    string
+): string {
+  return `${PREFIXO_CHAVE_VINCULO}:${uid}`;
+}
+
+function lerVinculoSalvo(
+  usuario:
+    Usuario
+): string | null {
+  if (
+    typeof window ===
+    "undefined"
+  ) {
+    return null;
+  }
+
+  const vinculoId =
+    window.localStorage
+      .getItem(
+        obterChaveVinculo(
+          usuario.uid
+        )
+      )
+      ?.trim() ||
+    null;
+
+  if (!vinculoId) {
+    return null;
+  }
+
+  const vinculo =
+    obterVinculo(
+      usuario,
+      vinculoId
+    );
+
+  if (
+    !vinculo ||
+    vinculo.ativo ===
+      false
+  ) {
+    window.localStorage.removeItem(
+      obterChaveVinculo(
+        usuario.uid
+      )
+    );
+
+    return null;
+  }
+
+  return vinculoId;
+}
+
+function salvarVinculoSelecionado(
+  uid:
+    string,
+  vinculoId:
+    string
+): void {
+  if (
+    typeof window ===
+    "undefined"
+  ) {
+    return;
+  }
+
+  window.localStorage.setItem(
+    obterChaveVinculo(
+      uid
+    ),
+    vinculoId
+  );
+}
+
+function limparVinculoSelecionado(
+  uid:
+    string
+): void {
+  if (
+    typeof window ===
+    "undefined"
+  ) {
+    return;
+  }
+
+  window.localStorage.removeItem(
+    obterChaveVinculo(
+      uid
+    )
+  );
+}
+
 export function AuthProvider({
   children,
 }: {
@@ -132,17 +229,45 @@ export function AuthProvider({
 
   function definirUsuario(
     usuarioBanco:
-      Usuario | null
+      Usuario | null,
+    opcoes?: {
+      restaurarVinculo?:
+        boolean;
+    }
   ) {
     setUsuario(
       usuarioBanco
     );
 
+    if (!usuarioBanco) {
+      setVinculoSelecionadoId(
+        null
+      );
+
+      return;
+    }
+
+    if (
+      opcoes?.restaurarVinculo
+    ) {
+      setVinculoSelecionadoId(
+        lerVinculoSalvo(
+          usuarioBanco
+        )
+      );
+
+      return;
+    }
+
     /*
-     * Todo login começa na Carteira Geral.
-     * A seleção do local deve ser explícita,
-     * inclusive quando existe somente um vínculo.
+     * Um login realizado manualmente começa na Carteira Geral.
+     * Depois que o usuário selecionar um local, o contexto será
+     * preservado durante a navegação entre as rotas.
      */
+    limparVinculoSelecionado(
+      usuarioBanco.uid
+    );
+
     setVinculoSelecionadoId(
       null
     );
@@ -176,7 +301,11 @@ export function AuthProvider({
                 );
 
               definirUsuario(
-                usuarioBanco
+                usuarioBanco,
+                {
+                  restaurarVinculo:
+                    true,
+                }
               );
 
               if (
@@ -279,12 +408,23 @@ export function AuthProvider({
       );
     }
 
+    salvarVinculoSelecionado(
+      usuario.uid,
+      vinculoId
+    );
+
     setVinculoSelecionadoId(
       vinculoId
     );
   }
 
   function selecionarCarteiraGeral() {
+    if (usuario) {
+      limparVinculoSelecionado(
+        usuario.uid
+      );
+    }
+
     setVinculoSelecionadoId(
       null
     );
@@ -371,6 +511,9 @@ export function AuthProvider({
     );
 
     try {
+      const uidAtual =
+        usuario?.uid;
+
       const resultado =
         await sairDaConta();
 
@@ -380,6 +523,12 @@ export function AuthProvider({
         throw new Error(
           resultado.erro ||
           "Não foi possível sair da conta."
+        );
+      }
+
+      if (uidAtual) {
+        limparVinculoSelecionado(
+          uidAtual
         );
       }
 
@@ -426,9 +575,20 @@ export function AuthProvider({
       atualizado
     );
 
+    if (!atualizado) {
+      limparVinculoSelecionado(
+        usuario.uid
+      );
+
+      setVinculoSelecionadoId(
+        null
+      );
+
+      return;
+    }
+
     if (
-      vinculoSelecionadoId &&
-      atualizado
+      vinculoSelecionadoId
     ) {
       const vinculoAtualizado =
         obterVinculo(
@@ -441,16 +601,14 @@ export function AuthProvider({
         vinculoAtualizado.ativo ===
           false
       ) {
+        limparVinculoSelecionado(
+          atualizado.uid
+        );
+
         setVinculoSelecionadoId(
           null
         );
       }
-    }
-
-    if (!atualizado) {
-      setVinculoSelecionadoId(
-        null
-      );
     }
   }
 
