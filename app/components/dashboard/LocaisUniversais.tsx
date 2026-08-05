@@ -2,6 +2,12 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { get, onValue, ref, update } from "firebase/database";
+import {
+  Mail,
+  Phone,
+  ShieldCheck,
+  UserRound,
+} from "lucide-react";
 import { db } from "../../services/firebase";
 
 type TipoLocalUniversal =
@@ -20,6 +26,22 @@ type LocalUniversal = {
   slug: string;
   tipoLocal: TipoLocalUniversal;
   status?: string;
+
+  documento?: {
+    tipo?: "cpf" | "cnpj";
+    numero?: string;
+  };
+
+  cpf?: string | null;
+  cnpj?: string | null;
+
+bairro?: string;
+
+cep?: string;
+
+numero?: string;
+
+complemento?: string;
   ativo?: boolean;
   cidade?: string;
   estado?: string;
@@ -30,14 +52,51 @@ type LocalUniversal = {
     nome?: string;
     email?: string;
     telefone?: string;
+    cpf?: string;
     perfil?: string;
     ativo?: boolean;
+    atualizadoEm?: number;
   }>;
   implantacao?: {
     status?: string;
     tipoImplantacao?: string;
     implantadoEm?: number | string;
   };
+};
+
+type FormularioEdicaoLocal = {
+  nome: string;
+  status: string;
+  tipoDocumento: "cpf" | "cnpj";
+  numeroDocumento: string;
+  bairro: string;
+  cep: string;
+  endereco: string;
+  numero: string;
+  complemento: string;
+  cidade: string;
+  estado: string;
+};
+
+type ResponsavelLocal = {
+  id: string;
+  uid?: string;
+  nome?: string;
+  email?: string;
+  telefone?: string;
+  cpf?: string;
+  perfil?: string;
+  ativo?: boolean;
+  atualizadoEm?: number;
+};
+
+type FormularioEdicaoResponsavel = {
+  nome: string;
+  email: string;
+  telefone: string;
+  cpf: string;
+  perfil: string;
+  status: "ativo" | "inativo";
 };
 
 function iconeTipo(tipo: TipoLocalUniversal) {
@@ -70,6 +129,201 @@ function nomeTipo(tipo: TipoLocalUniversal) {
   return nomes[tipo] || tipo;
 }
 
+function somenteNumeros(
+  valor: string
+): string {
+  return valor.replace(/\D/g, "");
+}
+
+function formatarCpf(
+  valor: string
+): string {
+  const numeros =
+    somenteNumeros(valor).slice(0, 11);
+
+  return numeros
+    .replace(
+      /^(\d{3})(\d)/,
+      "$1.$2"
+    )
+    .replace(
+      /^(\d{3})\.(\d{3})(\d)/,
+      "$1.$2.$3"
+    )
+    .replace(
+      /\.(\d{3})(\d)/,
+      ".$1-$2"
+    );
+}
+
+function formatarCnpj(
+  valor: string
+): string {
+  const numeros =
+    somenteNumeros(valor).slice(0, 14);
+
+  return numeros
+    .replace(
+      /^(\d{2})(\d)/,
+      "$1.$2"
+    )
+    .replace(
+      /^(\d{2})\.(\d{3})(\d)/,
+      "$1.$2.$3"
+    )
+    .replace(
+      /\.(\d{3})(\d)/,
+      ".$1/$2"
+    )
+    .replace(
+      /(\d{4})(\d)/,
+      "$1-$2"
+    );
+}
+
+function formatarDocumento(
+  tipo: "cpf" | "cnpj",
+  valor: string
+): string {
+  return tipo === "cpf"
+    ? formatarCpf(valor)
+    : formatarCnpj(valor);
+}
+
+function obterDocumentoLocal(
+  local: LocalUniversal
+): {
+  tipo: "cpf" | "cnpj";
+  numero: string;
+} {
+  const tipoDocumento =
+    local.documento?.tipo === "cpf"
+      ? "cpf"
+      : local.documento?.tipo === "cnpj"
+      ? "cnpj"
+      : local.cpf
+      ? "cpf"
+      : "cnpj";
+
+  const numeroDocumento =
+    local.documento?.numero ||
+    local.cpf ||
+    local.cnpj ||
+    "";
+
+  return {
+    tipo: tipoDocumento,
+    numero: formatarDocumento(
+      tipoDocumento,
+      numeroDocumento
+    ),
+  };
+}
+
+function formatarTelefone(
+  valor?: string
+): string {
+  if (!valor) {
+    return "Telefone não informado";
+  }
+
+  const numeros =
+    valor.replace(/\D/g, "");
+
+  if (numeros.length === 11) {
+    return numeros.replace(
+      /^(\d{2})(\d{5})(\d{4})$/,
+      "($1) $2-$3"
+    );
+  }
+
+  if (numeros.length === 10) {
+    return numeros.replace(
+      /^(\d{2})(\d{4})(\d{4})$/,
+      "($1) $2-$3"
+    );
+  }
+
+  return valor;
+}
+
+function nomePerfil(
+  valor?: string
+): string {
+  const perfis: Record<
+    string,
+    string
+  > = {
+    sindico:
+      "Síndico",
+
+    proprietario:
+      "Proprietário",
+
+    administrador:
+      "Administrador",
+
+    gestor_local:
+      "Gestor local",
+
+    gerente:
+      "Gerente",
+
+    responsavel:
+      "Responsável",
+  };
+
+  return perfis[
+    valor || ""
+  ] || valor || "Responsável";
+}
+
+function ambienteAtual(): {
+  nome: string;
+  classe: string;
+  icone: string;
+} {
+  if (
+    typeof window !==
+    "undefined"
+  ) {
+    const hostname =
+      window.location.hostname;
+
+    const ambienteLocal =
+      hostname ===
+        "localhost" ||
+      hostname ===
+        "127.0.0.1";
+
+    if (
+      ambienteLocal
+    ) {
+      return {
+        nome:
+          "STUDIO",
+
+        classe:
+          "border-amber-500 bg-amber-500/15 text-amber-300",
+
+        icone:
+          "🧪",
+      };
+    }
+  }
+
+  return {
+    nome:
+      "PRODUÇÃO",
+
+    classe:
+      "border-green-500 bg-green-500/15 text-green-300",
+
+    icone:
+      "🟢",
+  };
+}
+
 function formatarData(valor?: number | string) {
   if (!valor) return "Data não informada";
 
@@ -88,12 +342,37 @@ function formatarData(valor?: number | string) {
   });
 }
 
-function obterResponsavel(local: LocalUniversal) {
-  const responsaveis = Object.values(local.responsaveis || {});
+function obterResponsavelComId(
+  local: LocalUniversal
+): ResponsavelLocal | null {
+  const responsaveis =
+    Object.entries(
+      local.responsaveis || {}
+    ).map(
+      ([
+        id,
+        responsavel,
+      ]) => ({
+        id,
+        ...responsavel,
+      })
+    );
 
   return (
-    responsaveis.find((responsavel) => responsavel.ativo !== false) ||
-    responsaveis[0]
+    responsaveis.find(
+      (responsavel) =>
+        responsavel.ativo !== false
+    ) ||
+    responsaveis[0] ||
+    null
+  );
+}
+
+function obterResponsavel(
+  local: LocalUniversal
+) {
+  return obterResponsavelComId(
+    local
   );
 }
 
@@ -104,6 +383,61 @@ export default function LocaisUniversais() {
   const [filtroTipo, setFiltroTipo] = useState("todos");
   const [localSelecionado, setLocalSelecionado] =
     useState<LocalUniversal | null>(null);
+
+  const [editandoLocal, setEditandoLocal] =
+    useState(false);
+
+  const [salvandoLocal, setSalvandoLocal] =
+    useState(false);
+
+  const [
+    editandoResponsavel,
+    setEditandoResponsavel,
+  ] =
+    useState(false);
+
+  const [
+    salvandoResponsavel,
+    setSalvandoResponsavel,
+  ] =
+    useState(false);
+
+  const [
+    responsavelSelecionado,
+    setResponsavelSelecionado,
+  ] =
+    useState<ResponsavelLocal | null>(
+      null
+    );
+
+  const [
+    formularioResponsavel,
+    setFormularioResponsavel,
+  ] =
+    useState<FormularioEdicaoResponsavel>({
+      nome: "",
+      email: "",
+      telefone: "",
+      cpf: "",
+      perfil: "responsavel",
+      status: "ativo",
+    });
+
+  const [formularioEdicao, setFormularioEdicao] =
+    useState<FormularioEdicaoLocal>({
+      nome: "",
+      status: "ativo",
+      tipoDocumento: "cnpj",
+      numeroDocumento: "",
+      bairro: "",
+      cep: "",
+      endereco: "",
+      numero: "",
+      complemento: "",
+      cidade: "",
+      estado: "",
+    });
+
 const [selecionados, setSelecionados] = useState<string[]>([]);
 const [modoSelecao, setModoSelecao] = useState(false);
 const [modalExclusaoAberto, setModalExclusaoAberto] =
@@ -157,6 +491,9 @@ const [excluindo, setExcluindo] = useState(false);
           local.cidade,
           local.estado,
           local.endereco,
+          local.documento?.numero,
+          local.cpf,
+          local.cnpj,
         ]
           .filter(Boolean)
           .join(" ")
@@ -187,6 +524,684 @@ const locaisSelecionados = useMemo(
   const totalCondominios = locais.filter(
     (local) => local.tipoLocal === "condominio"
   ).length;
+
+  const ambiente =
+    ambienteAtual();
+
+function abrirDetalhesLocal(
+  local: LocalUniversal
+) {
+  const documentoLocal =
+    obterDocumentoLocal(local);
+
+  setLocalSelecionado(local);
+
+  setFormularioEdicao({
+    nome:
+      local.nome || "",
+
+    status:
+      local.status ||
+      (
+        local.ativo === false
+          ? "inativo"
+          : "ativo"
+      ),
+
+    tipoDocumento:
+      local.tipoLocal === "residencia"
+        ? documentoLocal.tipo
+        : "cnpj",
+
+    numeroDocumento:
+      formatarDocumento(
+        local.tipoLocal === "residencia"
+          ? documentoLocal.tipo
+          : "cnpj",
+        documentoLocal.numero
+      ),
+
+    bairro:
+      local.bairro || "",
+
+    cep:
+      local.cep || "",
+
+    endereco:
+      local.endereco || "",
+
+    numero:
+      local.numero || "",
+
+    complemento:
+      local.complemento || "",
+
+    cidade:
+      local.cidade || "",
+
+    estado:
+      local.estado || "",
+  });
+
+  const responsavel =
+    obterResponsavelComId(local);
+
+  setResponsavelSelecionado(
+    responsavel
+  );
+
+  setFormularioResponsavel({
+    nome:
+      responsavel?.nome || "",
+
+    email:
+      responsavel?.email || "",
+
+    telefone:
+      responsavel?.telefone || "",
+
+    cpf:
+      formatarCpf(
+        responsavel?.cpf || ""
+      ),
+
+    perfil:
+      responsavel?.perfil ||
+      (
+        local.tipoLocal ===
+          "condominio"
+          ? "sindico"
+          : "responsavel"
+      ),
+
+    status:
+      responsavel?.ativo === false
+        ? "inativo"
+        : "ativo",
+  });
+
+  setEditandoLocal(false);
+  setEditandoResponsavel(false);
+}
+
+function fecharDetalhesLocal() {
+  if (
+    salvandoLocal ||
+    salvandoResponsavel
+  ) {
+    return;
+  }
+
+  setEditandoLocal(false);
+  setEditandoResponsavel(false);
+  setResponsavelSelecionado(null);
+  setLocalSelecionado(null);
+}
+
+function alterarCampoEdicao(
+  campo: keyof FormularioEdicaoLocal,
+  valor: string
+) {
+  setFormularioEdicao(
+    (
+      atual
+    ) => ({
+      ...atual,
+      [campo]:
+        valor,
+    })
+  );
+}
+
+function cancelarEdicaoLocal() {
+  if (
+    !localSelecionado ||
+    salvandoLocal
+  ) {
+    return;
+  }
+
+  setFormularioEdicao({
+    nome:
+      localSelecionado.nome || "",
+
+    status:
+      localSelecionado.status ||
+      (
+        localSelecionado.ativo === false
+          ? "inativo"
+          : "ativo"
+      ),
+
+    tipoDocumento:
+      localSelecionado.tipoLocal === "residencia"
+        ? obterDocumentoLocal(
+            localSelecionado
+          ).tipo
+        : "cnpj",
+
+    numeroDocumento:
+      formatarDocumento(
+        localSelecionado.tipoLocal === "residencia"
+          ? obterDocumentoLocal(
+              localSelecionado
+            ).tipo
+          : "cnpj",
+        obterDocumentoLocal(
+          localSelecionado
+        ).numero
+      ),
+
+    bairro:
+      localSelecionado.bairro || "",
+
+    cep:
+      localSelecionado.cep || "",
+
+    endereco:
+      localSelecionado.endereco || "",
+
+    numero:
+      localSelecionado.numero || "",
+
+    complemento:
+      localSelecionado.complemento || "",
+
+    cidade:
+      localSelecionado.cidade || "",
+
+    estado:
+      localSelecionado.estado || "",
+  });
+
+  setEditandoLocal(false);
+}
+
+async function salvarEdicaoLocal() {
+  if (
+    !localSelecionado ||
+    salvandoLocal
+  ) {
+    return;
+  }
+
+  const nome =
+    formularioEdicao.nome
+      .trim()
+      .replace(
+        /\s+/g,
+        " "
+      );
+
+  if (
+    !nome
+  ) {
+    alert(
+      "O nome do local é obrigatório."
+    );
+
+    return;
+  }
+
+  const status =
+    formularioEdicao.status ===
+      "inativo"
+      ? "inativo"
+      : "ativo";
+
+  const tipoDocumento:
+    "cpf" | "cnpj" =
+      localSelecionado.tipoLocal ===
+        "residencia"
+        ? formularioEdicao.tipoDocumento
+        : "cnpj";
+
+  const numeroDocumento =
+    formatarDocumento(
+      tipoDocumento,
+      formularioEdicao.numeroDocumento
+    );
+
+  const dadosAtualizados = {
+    nome,
+
+    status,
+
+    ativo:
+      status !==
+      "inativo",
+
+    documento: {
+      tipo:
+        tipoDocumento,
+
+      numero:
+        numeroDocumento,
+    },
+
+    cpf:
+      tipoDocumento === "cpf"
+        ? numeroDocumento
+        : null,
+
+    cnpj:
+      tipoDocumento === "cnpj"
+        ? numeroDocumento
+        : null,
+
+    bairro:
+      formularioEdicao.bairro.trim(),
+
+    cep:
+      formularioEdicao.cep.trim(),
+
+    endereco:
+      formularioEdicao.endereco
+        .trim(),
+
+    numero:
+      formularioEdicao.numero.trim(),
+
+    complemento:
+      formularioEdicao.complemento
+        .trim(),
+
+    cidade:
+      formularioEdicao.cidade.trim(),
+
+    estado:
+      formularioEdicao.estado
+        .trim()
+        .toUpperCase(),
+
+    atualizadoEm:
+      Date.now(),
+  };
+
+  try {
+    setSalvandoLocal(true);
+
+    await update(
+      ref(
+        db,
+        `locais-v2/${localSelecionado.id}`
+      ),
+      dadosAtualizados
+    );
+
+    setLocalSelecionado(
+      (
+        atual
+      ) =>
+        atual
+          ? {
+              ...atual,
+              ...dadosAtualizados,
+            }
+          : null
+    );
+
+    setFormularioEdicao(
+      (
+        atual
+      ) => ({
+        ...atual,
+        nome:
+          dadosAtualizados.nome,
+        status:
+          dadosAtualizados.status,
+        tipoDocumento,
+        numeroDocumento,
+        estado:
+          dadosAtualizados.estado,
+      })
+    );
+
+    setEditandoLocal(false);
+
+    alert(
+      "Dados do local atualizados com sucesso."
+    );
+  } catch (
+    erro
+  ) {
+    console.error(
+      "Erro ao atualizar o local:",
+      erro
+    );
+
+    alert(
+      "Não foi possível salvar as alterações."
+    );
+  } finally {
+    setSalvandoLocal(false);
+  }
+}
+
+function iniciarEdicaoResponsavel() {
+  if (
+    !localSelecionado
+  ) {
+    return;
+  }
+
+  const responsavel =
+    obterResponsavelComId(
+      localSelecionado
+    );
+
+  setResponsavelSelecionado(
+    responsavel
+  );
+
+  setFormularioResponsavel({
+    nome:
+      responsavel?.nome || "",
+
+    email:
+      responsavel?.email || "",
+
+    telefone:
+      responsavel?.telefone || "",
+
+    cpf:
+      formatarCpf(
+        responsavel?.cpf || ""
+      ),
+
+    perfil:
+      responsavel?.perfil ||
+      (
+        localSelecionado.tipoLocal ===
+          "condominio"
+          ? "sindico"
+          : "responsavel"
+      ),
+
+    status:
+      responsavel?.ativo === false
+        ? "inativo"
+        : "ativo",
+  });
+
+  setEditandoLocal(false);
+  setEditandoResponsavel(true);
+}
+
+function alterarCampoResponsavel(
+  campo: keyof FormularioEdicaoResponsavel,
+  valor: string
+) {
+  setFormularioResponsavel(
+    (
+      atual
+    ) => ({
+      ...atual,
+      [campo]:
+        valor,
+    })
+  );
+}
+
+function cancelarEdicaoResponsavel() {
+  if (
+    salvandoResponsavel
+  ) {
+    return;
+  }
+
+  setEditandoResponsavel(false);
+}
+
+async function salvarEdicaoResponsavel() {
+  if (
+    !localSelecionado ||
+    salvandoResponsavel
+  ) {
+    return;
+  }
+
+  const nome =
+    formularioResponsavel.nome
+      .trim()
+      .replace(
+        /\s+/g,
+        " "
+      );
+
+  const email =
+    formularioResponsavel.email
+      .trim()
+      .toLowerCase();
+
+  const telefone =
+    formularioResponsavel.telefone
+      .trim();
+
+  const cpf =
+    formatarCpf(
+      formularioResponsavel.cpf
+    );
+
+  const perfil =
+    formularioResponsavel.perfil
+      .trim()
+      .toLowerCase()
+      .replace(
+        /\s+/g,
+        "_"
+      ) ||
+    "responsavel";
+
+  const ativo =
+    formularioResponsavel.status !==
+      "inativo";
+
+  if (
+    !nome
+  ) {
+    alert(
+      "O nome do responsável é obrigatório."
+    );
+
+    return;
+  }
+
+  if (
+    !email
+  ) {
+    alert(
+      "O e-mail do responsável é obrigatório."
+    );
+
+    return;
+  }
+
+  const emailValido =
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(
+      email
+    );
+
+  if (
+    !emailValido
+  ) {
+    alert(
+      "Digite um e-mail válido."
+    );
+
+    return;
+  }
+
+  const agora =
+    Date.now();
+
+  const idResponsavel =
+    responsavelSelecionado?.id ||
+    responsavelSelecionado?.uid ||
+    `responsavel-${agora}`;
+
+  const uidResponsavel =
+    responsavelSelecionado?.uid ||
+    (
+      responsavelSelecionado?.id &&
+      !responsavelSelecionado.id.startsWith(
+        "responsavel-"
+      )
+        ? responsavelSelecionado.id
+        : ""
+    );
+
+  const dadosResponsavel = {
+    uid:
+      uidResponsavel ||
+      idResponsavel,
+
+    nome,
+
+    email,
+
+    telefone,
+
+    cpf,
+
+    perfil,
+
+    ativo,
+
+    atualizadoEm:
+      agora,
+  };
+
+  const atualizacoes: Record<
+    string,
+    string | boolean | number | null
+  > = {
+    [`locais-v2/${localSelecionado.id}/responsaveis/${idResponsavel}/uid`]:
+      dadosResponsavel.uid,
+
+    [`locais-v2/${localSelecionado.id}/responsaveis/${idResponsavel}/nome`]:
+      dadosResponsavel.nome,
+
+    [`locais-v2/${localSelecionado.id}/responsaveis/${idResponsavel}/email`]:
+      dadosResponsavel.email,
+
+    [`locais-v2/${localSelecionado.id}/responsaveis/${idResponsavel}/telefone`]:
+      dadosResponsavel.telefone,
+
+    [`locais-v2/${localSelecionado.id}/responsaveis/${idResponsavel}/cpf`]:
+      dadosResponsavel.cpf,
+
+    [`locais-v2/${localSelecionado.id}/responsaveis/${idResponsavel}/perfil`]:
+      dadosResponsavel.perfil,
+
+    [`locais-v2/${localSelecionado.id}/responsaveis/${idResponsavel}/ativo`]:
+      dadosResponsavel.ativo,
+
+    [`locais-v2/${localSelecionado.id}/responsaveis/${idResponsavel}/atualizadoEm`]:
+      agora,
+  };
+
+  if (
+    uidResponsavel
+  ) {
+    atualizacoes[
+      `usuarios-v2/${uidResponsavel}/nome`
+    ] =
+      dadosResponsavel.nome;
+
+    atualizacoes[
+      `usuarios-v2/${uidResponsavel}/email`
+    ] =
+      dadosResponsavel.email;
+
+    atualizacoes[
+      `usuarios-v2/${uidResponsavel}/telefone`
+    ] =
+      dadosResponsavel.telefone;
+
+    atualizacoes[
+      `usuarios-v2/${uidResponsavel}/cpf`
+    ] =
+      dadosResponsavel.cpf;
+
+    atualizacoes[
+      `usuarios-v2/${uidResponsavel}/atualizadoEm`
+    ] =
+      agora;
+  }
+
+  try {
+    setSalvandoResponsavel(
+      true
+    );
+
+    await update(
+      ref(db),
+      atualizacoes
+    );
+
+    const responsavelAtualizado:
+      ResponsavelLocal = {
+        id:
+          idResponsavel,
+
+        ...dadosResponsavel,
+      };
+
+    setResponsavelSelecionado(
+      responsavelAtualizado
+    );
+
+    setLocalSelecionado(
+      (
+        atual
+      ) => {
+        if (
+          !atual
+        ) {
+          return null;
+        }
+
+        return {
+          ...atual,
+
+          responsaveis: {
+            ...(
+              atual.responsaveis ||
+              {}
+            ),
+
+            [idResponsavel]:
+              dadosResponsavel,
+          },
+        };
+      }
+    );
+
+    setEditandoResponsavel(
+      false
+    );
+
+    alert(
+      "Responsável atualizado com sucesso."
+    );
+  } catch (
+    erro
+  ) {
+    console.error(
+      "Erro ao atualizar o responsável:",
+      erro
+    );
+
+    alert(
+      "Não foi possível salvar os dados do responsável."
+    );
+  } finally {
+    setSalvandoResponsavel(
+      false
+    );
+  }
+}
 
 function abrirAcesso(local: LocalUniversal) {
   window.open(
@@ -720,7 +1735,7 @@ async function excluirLocaisDefinitivamente() {
                  <div className="mt-auto grid grid-cols-2 gap-2 pt-5">
   <button
     type="button"
-    onClick={() => setLocalSelecionado(local)}
+    onClick={() => abrirDetalhesLocal(local)}
     className="rounded-xl bg-slate-700 px-3 py-2.5 text-sm font-black text-white transition-all hover:bg-slate-600 active:scale-95"
   >
     Ver detalhes
@@ -882,83 +1897,772 @@ async function excluirLocaisDefinitivamente() {
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-sm font-black text-blue-300">
-                  {iconeTipo(localSelecionado.tipoLocal)} {nomeTipo(
-                    localSelecionado.tipoLocal
-                  )}
+                  {iconeTipo(localSelecionado.tipoLocal)}{" "}
+                  {nomeTipo(localSelecionado.tipoLocal)}
                 </p>
+
                 <h3 className="mt-1 text-2xl font-black">
-                  {localSelecionado.nome}
+                  {editandoLocal
+                    ? "Editar local"
+                    : editandoResponsavel
+                    ? "Editar responsável"
+                    : localSelecionado.nome}
                 </h3>
+
+                {editandoLocal && (
+                  <p className="mt-1 text-sm text-slate-400">
+                    Altere os dados cadastrais e clique em salvar.
+                  </p>
+                )}
+
+                {editandoResponsavel && (
+                  <p className="mt-1 text-sm text-slate-400">
+                    Atualize os dados da pessoa responsável pelo local.
+                  </p>
+                )}
+
+                <div className="mt-3">
+                  <span
+                    className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-black ${ambiente.classe}`}
+                  >
+                    <span>
+                      {ambiente.icone}
+                    </span>
+
+                    {ambiente.nome}
+                  </span>
+                </div>
               </div>
 
               <button
                 type="button"
-                onClick={() => setLocalSelecionado(null)}
-                className="flex h-11 w-11 items-center justify-center rounded-xl bg-slate-800 text-xl font-black hover:bg-slate-700"
+                onClick={fecharDetalhesLocal}
+                disabled={salvandoLocal || salvandoResponsavel}
+                className="flex h-11 w-11 items-center justify-center rounded-xl bg-slate-800 text-xl font-black hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 ✕
               </button>
             </div>
 
-            <div className="mt-5 space-y-3">
-              {[
-                ["ID", localSelecionado.id],
-                ["Slug", localSelecionado.slug],
-                ["Tipo", nomeTipo(localSelecionado.tipoLocal)],
-                ["Status", localSelecionado.status || "ativo"],
-                ["Endereço", localSelecionado.endereco || "Não informado"],
-                [
-                  "Cidade/Estado",
-                  `${localSelecionado.cidade || "Não informado"}${
-                    localSelecionado.estado
-                      ? `/${localSelecionado.estado}`
-                      : ""
-                  }`,
-                ],
-                [
-                  "Implantação",
-                  localSelecionado.implantacao?.status || "Não informada",
-                ],
-              ].map(([titulo, valor]) => (
-                <div
-                  key={titulo}
-                  className="rounded-xl border border-slate-700 bg-slate-800 p-3"
-                >
-                  <p className="text-[10px] font-black text-slate-500">
-                    {titulo}
-                  </p>
-                  <p className="mt-1 break-all font-bold text-slate-200">
-                    {valor}
+            {editandoResponsavel ? (
+              <div className="mt-5 space-y-4">
+                {!responsavelSelecionado && (
+                  <div className="rounded-2xl border border-amber-700 bg-amber-950/30 p-4 text-sm font-bold text-amber-200">
+                    Nenhum responsável estava cadastrado. Ao salvar, um novo responsável será criado para este local.
+                  </div>
+                )}
+
+                <div>
+                  <label className="text-xs font-black text-slate-400">
+                    NOME DO RESPONSÁVEL
+                  </label>
+
+                  <input
+                    value={formularioResponsavel.nome}
+                    onChange={(evento) =>
+                      alterarCampoResponsavel(
+                        "nome",
+                        evento.target.value
+                      )
+                    }
+                    placeholder="Nome completo"
+                    className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-800 p-3 font-bold text-white outline-none placeholder:text-slate-600 focus:border-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-black text-slate-400">
+                    E-MAIL
+                  </label>
+
+                  <input
+                    type="email"
+                    value={formularioResponsavel.email}
+                    onChange={(evento) =>
+                      alterarCampoResponsavel(
+                        "email",
+                        evento.target.value
+                      )
+                    }
+                    placeholder="responsavel@email.com"
+                    className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-800 p-3 font-bold text-white outline-none placeholder:text-slate-600 focus:border-blue-500"
+                  />
+
+                  <p className="mt-2 text-xs text-amber-300">
+                    Este campo altera o e-mail cadastral no banco. A troca do e-mail usado para login no Firebase Authentication será tratada separadamente.
                   </p>
                 </div>
-              ))}
-            </div>
 
-           <div className="mt-5 grid grid-cols-2 gap-3">
-  <button
-    type="button"
-    onClick={() => copiarLink(localSelecionado)}
-    className="rounded-xl bg-slate-700 py-3 font-black hover:bg-slate-600"
-  >
-    🔗 Copiar link
-  </button>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <label className="text-xs font-black text-slate-400">
+                      TELEFONE
+                    </label>
 
-  <button
-    type="button"
-    onClick={() => abrirAcesso(localSelecionado)}
-    className="rounded-xl bg-blue-600 py-3 font-black hover:bg-blue-500"
-  >
-    🌐 Visitante
-  </button>
+                    <input
+                      value={formularioResponsavel.telefone}
+                      onChange={(evento) =>
+                        alterarCampoResponsavel(
+                          "telefone",
+                          evento.target.value
+                        )
+                      }
+                      placeholder="(41) 99999-9999"
+                      className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-800 p-3 font-bold text-white outline-none placeholder:text-slate-600 focus:border-blue-500"
+                    />
+                  </div>
 
-  <button
-    type="button"
-    onClick={() => abrirPainel(localSelecionado)}
-    className="col-span-2 rounded-xl bg-green-600 py-3 font-black hover:bg-green-500"
-  >
-    🏠 Abrir painel do responsável
-  </button>
+                  <div>
+                    <label className="text-xs font-black text-slate-400">
+                      CPF
+                    </label>
+
+                    <input
+                      inputMode="numeric"
+                      value={formularioResponsavel.cpf}
+                      onChange={(evento) =>
+                        alterarCampoResponsavel(
+                          "cpf",
+                          formatarCpf(
+                            evento.target.value
+                          )
+                        )
+                      }
+                      placeholder="000.000.000-00"
+                      className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-800 p-3 font-bold text-white outline-none placeholder:text-slate-600 focus:border-blue-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <label className="text-xs font-black text-slate-400">
+                      CARGO / PERFIL
+                    </label>
+
+                    <select
+                      value={formularioResponsavel.perfil}
+                      onChange={(evento) =>
+                        alterarCampoResponsavel(
+                          "perfil",
+                          evento.target.value
+                        )
+                      }
+                      className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-800 p-3 font-bold text-white outline-none focus:border-blue-500"
+                    >
+                      <option value="sindico">
+                        Síndico
+                      </option>
+
+                      <option value="proprietario">
+                        Proprietário
+                      </option>
+
+                      <option value="administrador">
+                        Administrador
+                      </option>
+
+                      <option value="gestor_local">
+                        Gestor local
+                      </option>
+
+                      <option value="gerente">
+                        Gerente
+                      </option>
+
+                      <option value="responsavel">
+                        Responsável
+                      </option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-black text-slate-400">
+                      STATUS
+                    </label>
+
+                    <select
+                      value={formularioResponsavel.status}
+                      onChange={(evento) =>
+                        alterarCampoResponsavel(
+                          "status",
+                          evento.target.value === "inativo"
+                            ? "inativo"
+                            : "ativo"
+                        )
+                      }
+                      className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-800 p-3 font-bold text-white outline-none focus:border-blue-500"
+                    >
+                      <option value="ativo">
+                        Ativo
+                      </option>
+
+                      <option value="inativo">
+                        Inativo
+                      </option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="mt-6 grid gap-3 sm:grid-cols-2">
+                  <button
+                    type="button"
+                    onClick={cancelarEdicaoResponsavel}
+                    disabled={salvandoResponsavel}
+                    className="rounded-xl bg-slate-700 px-5 py-3 font-black text-white hover:bg-slate-600 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Cancelar
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={salvarEdicaoResponsavel}
+                    disabled={salvandoResponsavel}
+                    className="rounded-xl bg-green-600 px-5 py-3 font-black text-white hover:bg-green-500 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {salvandoResponsavel
+                      ? "Salvando..."
+                      : "💾 Salvar responsável"}
+                  </button>
+                </div>
+              </div>
+            ) : editandoLocal ? (
+              <div className="mt-5 space-y-4">
+                <div>
+                  <label className="text-xs font-black text-slate-400">
+                    NOME DO LOCAL
+                  </label>
+
+                  <input
+                    value={formularioEdicao.nome}
+                    onChange={(evento) =>
+                      alterarCampoEdicao(
+                        "nome",
+                        evento.target.value
+                      )
+                    }
+                    className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-800 p-3 font-bold text-white outline-none focus:border-blue-500"
+                  />
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <label className="text-xs font-black text-slate-400">
+                      ID
+                    </label>
+
+                    <input
+                      value={localSelecionado.id}
+                      disabled
+                      className="mt-2 w-full cursor-not-allowed rounded-xl border border-slate-700 bg-slate-950 p-3 font-bold text-slate-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-black text-slate-400">
+                      SLUG
+                    </label>
+
+                    <input
+                      value={localSelecionado.slug}
+                      disabled
+                      className="mt-2 w-full cursor-not-allowed rounded-xl border border-slate-700 bg-slate-950 p-3 font-bold text-slate-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <label className="text-xs font-black text-slate-400">
+                      TIPO
+                    </label>
+
+                    <input
+                      value={nomeTipo(localSelecionado.tipoLocal)}
+                      disabled
+                      className="mt-2 w-full cursor-not-allowed rounded-xl border border-slate-700 bg-slate-950 p-3 font-bold text-slate-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-black text-slate-400">
+                      STATUS
+                    </label>
+
+                    <select
+                      value={formularioEdicao.status}
+                      onChange={(evento) =>
+                        alterarCampoEdicao(
+                          "status",
+                          evento.target.value
+                        )
+                      }
+                      className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-800 p-3 font-bold text-white outline-none focus:border-blue-500"
+                    >
+                      <option value="ativo">
+                        Ativo
+                      </option>
+
+                      <option value="inativo">
+                        Inativo
+                      </option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <label className="text-xs font-black text-slate-400">
+                      DOCUMENTO
+                    </label>
+
+                    <div
+                      className={
+                        localSelecionado.tipoLocal === "residencia"
+                          ? "mt-2 grid grid-cols-[120px_1fr] gap-2"
+                          : "mt-2"
+                      }
+                    >
+                      {localSelecionado.tipoLocal === "residencia" && (
+                        <select
+                          value={formularioEdicao.tipoDocumento}
+                          onChange={(evento) => {
+                            const novoTipo =
+                              evento.target.value === "cpf"
+                                ? "cpf"
+                                : "cnpj";
+
+                            setFormularioEdicao(
+                              (atual) => ({
+                                ...atual,
+                                tipoDocumento:
+                                  novoTipo,
+                                numeroDocumento:
+                                  formatarDocumento(
+                                    novoTipo,
+                                    atual.numeroDocumento
+                                  ),
+                              })
+                            );
+                          }}
+                          className="w-full rounded-xl border border-slate-700 bg-slate-800 p-3 font-bold text-white outline-none focus:border-blue-500"
+                        >
+                          <option value="cpf">
+                            CPF
+                          </option>
+
+                          <option value="cnpj">
+                            CNPJ
+                          </option>
+                        </select>
+                      )}
+
+                      <input
+                        value={formularioEdicao.numeroDocumento}
+                        onChange={(evento) =>
+                          alterarCampoEdicao(
+                            "numeroDocumento",
+                            formatarDocumento(
+                              localSelecionado.tipoLocal === "residencia"
+                                ? formularioEdicao.tipoDocumento
+                                : "cnpj",
+                              evento.target.value
+                            )
+                          )
+                        }
+                        inputMode="numeric"
+                        placeholder={
+                          (
+                            localSelecionado.tipoLocal === "residencia"
+                              ? formularioEdicao.tipoDocumento
+                              : "cnpj"
+                          ) === "cpf"
+                            ? "000.000.000-00"
+                            : "00.000.000/0000-00"
+                        }
+                        className="w-full rounded-xl border border-slate-700 bg-slate-800 p-3 font-bold text-white outline-none placeholder:text-slate-600 focus:border-blue-500"
+                      />
+                    </div>
+
+                    {localSelecionado.tipoLocal !== "residencia" && (
+                      <p className="mt-2 text-xs font-bold text-slate-500">
+                        CNPJ
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-black text-slate-400">
+                      CEP
+                    </label>
+
+                    <input
+                      value={formularioEdicao.cep}
+                      onChange={(evento) =>
+                        alterarCampoEdicao(
+                          "cep",
+                          evento.target.value
+                        )
+                      }
+                      placeholder="00000-000"
+                      className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-800 p-3 font-bold text-white outline-none placeholder:text-slate-600 focus:border-blue-500"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-xs font-black text-slate-400">
+                    ENDEREÇO
+                  </label>
+
+                  <input
+                    value={formularioEdicao.endereco}
+                    onChange={(evento) =>
+                      alterarCampoEdicao(
+                        "endereco",
+                        evento.target.value
+                      )
+                    }
+                    placeholder="Rua, avenida ou estrada"
+                    className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-800 p-3 font-bold text-white outline-none placeholder:text-slate-600 focus:border-blue-500"
+                  />
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <label className="text-xs font-black text-slate-400">
+                      NÚMERO
+                    </label>
+
+                    <input
+                      value={formularioEdicao.numero}
+                      onChange={(evento) =>
+                        alterarCampoEdicao(
+                          "numero",
+                          evento.target.value
+                        )
+                      }
+                      placeholder="123"
+                      className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-800 p-3 font-bold text-white outline-none placeholder:text-slate-600 focus:border-blue-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-black text-slate-400">
+                      COMPLEMENTO
+                    </label>
+
+                    <input
+                      value={formularioEdicao.complemento}
+                      onChange={(evento) =>
+                        alterarCampoEdicao(
+                          "complemento",
+                          evento.target.value
+                        )
+                      }
+                      placeholder="Bloco, sala, sobrado..."
+                      className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-800 p-3 font-bold text-white outline-none placeholder:text-slate-600 focus:border-blue-500"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-xs font-black text-slate-400">
+                    BAIRRO
+                  </label>
+
+                  <input
+                    value={formularioEdicao.bairro}
+                    onChange={(evento) =>
+                      alterarCampoEdicao(
+                        "bairro",
+                        evento.target.value
+                      )
+                    }
+                    placeholder="Nome do bairro"
+                    className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-800 p-3 font-bold text-white outline-none placeholder:text-slate-600 focus:border-blue-500"
+                  />
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-[1fr_120px]">
+                  <div>
+                    <label className="text-xs font-black text-slate-400">
+                      CIDADE
+                    </label>
+
+                    <input
+                      value={formularioEdicao.cidade}
+                      onChange={(evento) =>
+                        alterarCampoEdicao(
+                          "cidade",
+                          evento.target.value
+                        )
+                      }
+                      placeholder="Cidade"
+                      className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-800 p-3 font-bold text-white outline-none placeholder:text-slate-600 focus:border-blue-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-black text-slate-400">
+                      ESTADO
+                    </label>
+
+                    <input
+                      value={formularioEdicao.estado}
+                      onChange={(evento) =>
+                        alterarCampoEdicao(
+                          "estado",
+                          evento.target.value
+                            .slice(0, 2)
+                            .toUpperCase()
+                        )
+                      }
+                      maxLength={2}
+                      placeholder="PR"
+                      className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-800 p-3 text-center font-bold uppercase text-white outline-none placeholder:text-slate-600 focus:border-blue-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="mt-6 grid gap-3 sm:grid-cols-2">
+                  <button
+                    type="button"
+                    onClick={cancelarEdicaoLocal}
+                    disabled={salvandoLocal}
+                    className="rounded-xl bg-slate-700 px-5 py-3 font-black text-white hover:bg-slate-600 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Cancelar
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={salvarEdicaoLocal}
+                    disabled={salvandoLocal}
+                    className="rounded-xl bg-green-600 px-5 py-3 font-black text-white hover:bg-green-500 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {salvandoLocal
+                      ? "Salvando..."
+                      : "💾 Salvar alterações"}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className="mt-5 space-y-3">
+                  {(
+                    [
+                      ["ID", localSelecionado.id],
+                      ["Slug", localSelecionado.slug],
+                      [
+                        "Tipo",
+                        nomeTipo(localSelecionado.tipoLocal),
+                      ],
+                      [
+                        "Status",
+                        localSelecionado.status || "ativo",
+                      ],
+                      [
+                        localSelecionado.tipoLocal === "residencia"
+                          ? `Documento (${
+                              obterDocumentoLocal(
+                                localSelecionado
+                              ).tipo.toUpperCase()
+                            })`
+                          : "CNPJ",
+                        obterDocumentoLocal(
+                          localSelecionado
+                        ).numero ||
+                          "Não informado",
+                      ],
+                      [
+                        "Bairro",
+                        localSelecionado.bairro || "Não informado",
+                      ],
+                      [
+                        "CEP",
+                        localSelecionado.cep || "Não informado",
+                      ],
+                      [
+                        "Endereço",
+                        localSelecionado.endereco ||
+                          "Não informado",
+                      ],
+                      [
+                        "Número",
+                        localSelecionado.numero || "Não informado",
+                      ],
+                      [
+                        "Complemento",
+                        localSelecionado.complemento ||
+                          "Não informado",
+                      ],
+                      [
+                        "Cidade",
+                        localSelecionado.cidade || "Não informado",
+                      ],
+                      [
+                        "Estado",
+                        localSelecionado.estado || "Não informado",
+                      ],
+                      [
+                        "Implantação",
+                        localSelecionado.implantacao?.status ||
+                          "Não informada",
+                      ],
+                    ] as Array<[string, string]>
+                  ).map(([titulo, valor]) => (
+                    <div
+                      key={titulo}
+                      className="rounded-xl border border-slate-700 bg-slate-800 p-3"
+                    >
+                      <p className="text-[10px] font-black text-slate-500">
+                        {titulo}
+                      </p>
+
+                      <p className="mt-1 break-all font-bold text-slate-200">
+                        {valor}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="mt-5 rounded-3xl border border-slate-700 bg-slate-950 p-6">
+  <div className="flex items-center gap-2">
+    <UserRound
+      className="h-5 w-5 text-blue-400"
+      strokeWidth={2.3}
+    />
+
+    <span className="text-sm font-black uppercase tracking-wide text-blue-300">
+      Responsável
+    </span>
+  </div>
+
+  <h3 className="mt-5 text-3xl font-black leading-tight text-white">
+    {obterResponsavel(localSelecionado)?.nome ||
+      "Não informado"}
+  </h3>
+
+  <div className="mt-6 space-y-4">
+    <div className="flex items-start gap-3 text-slate-300">
+      <Mail
+        className="mt-0.5 h-5 w-5 shrink-0 text-slate-400"
+        strokeWidth={2.2}
+      />
+
+      <span className="break-all">
+        {obterResponsavel(localSelecionado)?.email ||
+          "E-mail não informado"}
+      </span>
+    </div>
+
+    <div className="flex items-center gap-3 text-slate-300">
+      <Phone
+        className="h-5 w-5 shrink-0 text-slate-400"
+        strokeWidth={2.2}
+      />
+
+      <span>
+        {formatarTelefone(
+          obterResponsavel(localSelecionado)?.telefone
+        )}
+      </span>
+    </div>
+  </div>
+
+  <div className="mt-7 flex flex-wrap gap-3">
+    <div className="inline-flex items-center gap-2 rounded-full border border-blue-500/30 bg-blue-500/10 px-4 py-2">
+      <ShieldCheck
+        className="h-4 w-4 text-blue-400"
+        strokeWidth={2.3}
+      />
+
+      <span className="font-black text-blue-300">
+        {nomePerfil(
+          obterResponsavel(localSelecionado)?.perfil
+        )}
+      </span>
+    </div>
+
+    <div
+      className={
+        obterResponsavel(localSelecionado)?.ativo === false
+          ? "inline-flex items-center gap-2 rounded-full border border-slate-500/30 bg-slate-500/10 px-4 py-2"
+          : "inline-flex items-center gap-2 rounded-full border border-green-500/30 bg-green-500/10 px-4 py-2"
+      }
+    >
+      <span
+        className={
+          obterResponsavel(localSelecionado)?.ativo === false
+            ? "h-2.5 w-2.5 rounded-full bg-slate-400"
+            : "h-2.5 w-2.5 rounded-full bg-green-400"
+        }
+      />
+
+      <span
+        className={
+          obterResponsavel(localSelecionado)?.ativo === false
+            ? "font-black text-slate-300"
+            : "font-black text-green-300"
+        }
+      >
+        {obterResponsavel(localSelecionado)?.ativo === false
+          ? "Inativo"
+          : "Ativo"}
+      </span>
+    </div>
+  </div>
 </div>
+
+                <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditandoResponsavel(false);
+                      setEditandoLocal(true);
+                    }}
+                    className="flex h-14 items-center justify-center rounded-2xl bg-amber-500 px-4 text-base font-black text-black transition-all hover:scale-[1.02] hover:bg-amber-400 active:scale-95"
+                  >
+                    ✏️ Editar local
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={iniciarEdicaoResponsavel}
+                    className="flex h-14 items-center justify-center rounded-2xl bg-violet-600 px-4 text-base font-black text-white transition-all hover:scale-[1.02] hover:bg-violet-500 active:scale-95"
+                  >
+                    👤 Editar responsável
+                  </button>
+                </div>
+
+                <div className="mt-3 grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => copiarLink(localSelecionado)}
+                    className="flex h-14 items-center justify-center rounded-2xl bg-slate-700 px-4 text-base font-black text-white transition-all hover:scale-[1.02] hover:bg-slate-600 active:scale-95"
+                  >
+                    🔗 Copiar link
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => abrirAcesso(localSelecionado)}
+                    className="flex h-14 items-center justify-center rounded-2xl bg-blue-600 px-4 text-base font-black text-white transition-all hover:scale-[1.02] hover:bg-blue-500 active:scale-95"
+                  >
+                    🌐 Visitante
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => abrirPainel(localSelecionado)}
+                    className="col-span-2 flex h-14 items-center justify-center rounded-2xl bg-green-600 px-4 text-base font-black text-white transition-all hover:scale-[1.02] hover:bg-green-500 active:scale-95"
+                  >
+                    🚀 Entrar no painel
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}
