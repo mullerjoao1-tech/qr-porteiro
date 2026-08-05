@@ -70,6 +70,7 @@ function blobParaBase64(blob: Blob): Promise<string> {
 }
 
 export default function AcessoV2Condominio() {
+  console.log("VERSAO BUILD 05/08/2026 18:45");
   const params = useParams();
   const condominioId = String(params.condominioId || "condominio-teste");
 
