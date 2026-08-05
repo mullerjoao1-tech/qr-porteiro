@@ -185,7 +185,7 @@ export default function AcessoV2Condominio() {
               : "";
 
           const blocoPeloNome =
-            nomeUnidade.match(/^(Bloco\\s+\\d+)/i)?.[1] || "";
+            nomeUnidade.match(/^(Bloco\s+\d+)/i)?.[1] || "";
 
           const blocoNormalizado =
             valor.bloco ||
