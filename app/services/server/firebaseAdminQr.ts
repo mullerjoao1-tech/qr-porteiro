@@ -2,10 +2,10 @@ import "server-only";
 
 import {
   cert,
+  getApp,
   getApps,
   initializeApp,
   type App,
-  type ServiceAccount,
 } from "firebase-admin/app";
 
 import {
@@ -15,31 +15,17 @@ import {
 
 type FirebaseAdminQr = {
   app: App;
+
   database: Database;
 };
 
-type ChaveGoogle = {
-  project_id?: string;
-  client_email?: string;
-  private_key?: string;
+let cache:
+  | FirebaseAdminQr
+  | null = null;
 
-  projectId?: string;
-  clientEmail?: string;
-  privateKey?: string;
-};
-
-type CredenciaisNormalizadas = {
-  serviceAccount: ServiceAccount;
-  projectId: string;
-};
-
-const NOME_APP = "qr-materiais-admin";
-
-let cache: FirebaseAdminQr | null = null;
-
-function obterCredenciais(): CredenciaisNormalizadas {
+function obterChaveServico() {
   const chaveTexto =
-    process.env.FIREBASE_SERVICE_ACCOUNT_KEY?.trim();
+    process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
 
   if (!chaveTexto) {
     throw new Error(
@@ -48,105 +34,40 @@ function obterCredenciais(): CredenciaisNormalizadas {
   }
 
   try {
-    const chaveOriginal = JSON.parse(
+    return JSON.parse(
       chaveTexto
-    ) as ChaveGoogle;
-
-    const projectId =
-      chaveOriginal.project_id ||
-      chaveOriginal.projectId;
-
-    const clientEmail =
-      chaveOriginal.client_email ||
-      chaveOriginal.clientEmail;
-
-    const privateKeyOriginal =
-      chaveOriginal.private_key ||
-      chaveOriginal.privateKey;
-
-    const privateKey =
-      typeof privateKeyOriginal === "string"
-        ? privateKeyOriginal.replace(/\\n/g, "\n")
-        : undefined;
-
-    if (
-      !projectId ||
-      !clientEmail ||
-      !privateKey
-    ) {
-      throw new Error(
-        "O JSON da conta de serviço não possui project_id, client_email ou private_key."
-      );
-    }
-
-    return {
-      projectId,
-      serviceAccount: {
-        projectId,
-        clientEmail,
-        privateKey,
-      },
-    };
-  } catch (erro) {
-    const mensagem =
-      erro instanceof Error
-        ? erro.message
-        : "JSON inválido.";
-
+    );
+  } catch {
     throw new Error(
-      `A variável FIREBASE_SERVICE_ACCOUNT_KEY possui um JSON inválido: ${mensagem}`
+      "A variável FIREBASE_SERVICE_ACCOUNT_KEY possui um JSON inválido."
     );
   }
 }
 
-function obterDatabaseUrl(projectId: string): string {
-  /*
-   * Não usamos NEXT_PUBLIC_FIREBASE_DATABASE_URL aqui.
-   * A Preview recebeu temporariamente variáveis do Studio,
-   * enquanto a conta de serviço pertence à produção.
-   */
-  const configurada =
-    process.env.FIREBASE_DATABASE_URL?.trim();
-
-  if (configurada) {
-    return configurada.replace(/\/+$/g, "");
-  }
-
-  return `https://${projectId}-default-rtdb.firebaseio.com`;
-}
-
-export function obterFirebaseAdminQr(): FirebaseAdminQr {
+export function obterFirebaseAdminQr():
+  FirebaseAdminQr {
   if (cache) {
     return cache;
   }
 
-  const credenciais =
-    obterCredenciais();
-
-  const existente = getApps().find(
-    (appAtual) =>
-      appAtual.name === NOME_APP
-  );
-
   const app =
-    existente ??
-    initializeApp(
-      {
-        credential: cert(
-          credenciais.serviceAccount
-        ),
+    getApps().length > 0
+      ? getApp()
+      : initializeApp({
+          credential:
+            cert(
+              obterChaveServico()
+            ),
 
-        databaseURL:
-          obterDatabaseUrl(
-            credenciais.projectId
-          ),
-      },
-      NOME_APP
-    );
+          databaseURL:
+            "https://qr-acesso-studio-default-rtdb.firebaseio.com",
+        });
 
   cache = {
     app,
-    database: getDatabase(app),
+
+    database:
+      getDatabase(app),
   };
 
   return cache;
