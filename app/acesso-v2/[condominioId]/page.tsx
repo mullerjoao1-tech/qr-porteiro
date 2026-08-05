@@ -177,22 +177,33 @@ export default function AcessoV2Condominio() {
         return;
       }
 
-      const todasAsUnidades = Object.entries(dados).map(([id, valor]: [string, any]) => {
-        const blocoNormalizado =
-          valor.bloco ||
-          valor.estruturaPaiNome ||
-          (valor.estruturaPaiId
-            ? String(valor.estruturaPaiId)
-                .replace(/^bloco-/i, "Bloco ")
-                .replace(/-/g, " ")
-            : "");
+      const todasAsUnidades = Object.entries(dados).map(
+        ([id, valor]: [string, any]) => {
+          const nomeUnidade =
+            typeof valor.nome === "string"
+              ? valor.nome.trim()
+              : "";
 
-        return {
-          id,
-          ...valor,
-          bloco: blocoNormalizado,
-        };
-      }) as Unidade[];
+          const blocoPeloNome =
+            nomeUnidade.match(/^(Bloco\\s+\\d+)/i)?.[1] || "";
+
+          const blocoNormalizado =
+            valor.bloco ||
+            valor.estruturaPaiNome ||
+            (valor.estruturaPaiId
+              ? String(valor.estruturaPaiId)
+                  .replace(/^bloco-/i, "Bloco ")
+                  .replace(/-/g, " ")
+              : "") ||
+            blocoPeloNome;
+
+          return {
+            id,
+            ...valor,
+            bloco: blocoNormalizado,
+          };
+        }
+      ) as Unidade[];
 
       const localIdAtual = localCadastro?.id || condominioId;
 
