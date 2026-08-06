@@ -6,7 +6,11 @@ import { getToken } from "firebase/messaging";
 import { ref, onValue, update, remove, push, set, get } from "firebase/database";
 import { db, messagingPromise } from "../../services/firebase";
 import { useLocalAtual } from "@/app/hooks/useLocalAtual";
-
+import {
+  listarResponsaveisDaUnidade,
+  recusarEEncaminhar,
+  registrarAtendimentoDoResponsavel,
+} from "@/app/services/chamadas/MotorEscalonamento";
 type MensagemConversa = {
   id?: string;
   autor: "visitante" | "morador";
@@ -719,39 +723,208 @@ const nomeLocal =
   }
 
   async function atenderSolicitacao() {
-    if (status === "Sem chamado ativo") {
-      alert("Não existe chamada ativa para atender.");
-      return;
-    }
-
-    if (status === "Em atendimento") {
-      alert("Esta chamada já está em atendimento.");
-      return;
-    }
-
-    setStatus("Em atendimento");
-    setPopupAtendimentoAberto(false);
-    pararToqueContinuo();
-
-    try {
-      await update(ref(db, caminhoFirebase), {
-        status: "Em atendimento",
-        notificar: false,
-        atendidoEm: new Date().toISOString(),
-        ultimaAtividade: Date.now(),
-      });
-    } catch (erro) {
-      console.error("Erro ao atender chamada:", erro);
-      alert("Não foi possível confirmar o atendimento.");
-      return;
-    }
-
-    void Promise.allSettled([
-      registrarAnalytics("atendida"),
-      registrarLog("chamada_atendida", "Chamada atendida pelo painel"),
-    ]);
+  if (status === "Sem chamado ativo") {
+    alert("Não existe chamada ativa para atender.");
+    return;
   }
 
+  if (status === "Em atendimento") {
+    alert("Esta chamada já está em atendimento.");
+    return;
+  }
+
+  setPopupAtendimentoAberto(false);
+  pararToqueContinuo();
+
+  try {
+    const chamadaSnapshot =
+      await get(
+        ref(
+          db,
+          caminhoFirebase
+        )
+      );
+
+    const chamadaAtual =
+      chamadaSnapshot.val() || {};
+
+    const responsavelAtualId =
+      String(
+        chamadaAtual.responsavelAtualId ||
+        ""
+      );
+
+    /*
+     * Enquanto ainda não houver responsável individual
+     * definido na chamada, preserva o funcionamento atual.
+     */
+    if (!responsavelAtualId) {
+      await update(
+        ref(
+          db,
+          caminhoFirebase
+        ),
+        {
+          status:
+            "Em atendimento",
+
+          notificar:
+            false,
+
+          atendidoEm:
+            new Date().toISOString(),
+
+          ultimaAtividade:
+            Date.now(),
+        }
+      );
+    } else {
+      const responsaveis =
+        await listarResponsaveisDaUnidade(
+          slug
+        );
+
+      const responsavelAtual =
+        responsaveis.find(
+          (
+            responsavel
+          ) =>
+            responsavel.id ===
+            responsavelAtualId
+        );
+
+      if (!responsavelAtual) {
+        throw new Error(
+          "O responsável atual da chamada não foi encontrado."
+        );
+      }
+
+      await registrarAtendimentoDoResponsavel(
+        caminhoFirebase,
+        responsavelAtual
+      );
+    }
+
+    setStatus(
+      "Em atendimento"
+    );
+
+    void Promise.allSettled([
+      registrarAnalytics(
+        "atendida"
+      ),
+
+      registrarLog(
+        "chamada_atendida",
+        responsavelAtualId
+          ? `Chamada atendida pelo responsável ${responsavelAtualId}`
+          : "Chamada atendida pelo painel"
+      ),
+    ]);
+  } catch (erro) {
+    console.error(
+      "Erro ao atender chamada:",
+      erro
+    );
+
+    alert(
+      erro instanceof Error
+        ? erro.message
+        : "Não foi possível confirmar o atendimento."
+    );
+  }
+}
+async function naoPossoAtender() {
+  if (
+    status ===
+    "Sem chamado ativo"
+  ) {
+    alert(
+      "Não existe chamada ativa."
+    );
+
+    return;
+  }
+
+  pararToqueContinuo();
+  setPopupAtendimentoAberto(
+    false
+  );
+
+  try {
+    const chamadaSnapshot =
+      await get(
+        ref(
+          db,
+          caminhoFirebase
+        )
+      );
+
+    const chamadaAtual =
+      chamadaSnapshot.val() || {};
+
+    const responsavelAtualId =
+      String(
+        chamadaAtual.responsavelAtualId ||
+        ""
+      );
+
+    if (!responsavelAtualId) {
+      alert(
+        "A chamada ainda não possui um responsável individual definido."
+      );
+
+      setPopupAtendimentoAberto(
+        true
+      );
+
+      return;
+    }
+
+    const resultado =
+      await recusarEEncaminhar(
+        slug,
+        caminhoFirebase,
+        responsavelAtualId
+      );
+
+    await registrarLog(
+      "chamada_recusada",
+      `Responsável ${responsavelAtualId} informou que não pode atender.`
+    );
+
+    if (
+      resultado.sucesso &&
+      resultado.responsavel
+    ) {
+      alert(
+        `Chamada encaminhada para ${resultado.responsavel.nome}.`
+      );
+
+      return;
+    }
+
+    alert(
+      resultado.motivo ||
+      "Não existe outro responsável disponível no momento."
+    );
+  } catch (erro) {
+    console.error(
+      "Erro ao encaminhar chamada:",
+      erro
+    );
+
+    setPopupAtendimentoAberto(
+      true
+    );
+
+    alert(
+      erro instanceof Error
+        ? erro.message
+        : "Não foi possível encaminhar a chamada."
+    );
+  }
+}
   async function enviarMensagemRapida(mensagem: string) {
     if (status === "Sem chamado ativo") {
       alert("Não existe chamada ativa para responder.");
@@ -1549,20 +1722,20 @@ Mensagem: ${mensagemErro}`
             >
               ✅ ATENDER AGORA
             </button>
-
+<button
+  type="button"
+  onClick={naoPossoAtender}
+  className="w-full mt-3 rounded-2xl bg-blue-600 py-4 text-lg font-black text-white transition-all hover:bg-blue-500 active:scale-95"
+>
+  🔵 NÃO POSSO ATENDER
+</button>
             <div className="mt-4 bg-slate-800 border border-yellow-500/40 rounded-2xl p-3">
               <p className="text-yellow-300 text-sm font-bold">
                 Ouça o áudio e veja a câmera. Para responder, clique em ATENDER AGORA.
               </p>
             </div>
-
-            <button
-              onClick={finalizarSolicitacao}
-              className="w-full mt-3 bg-red-600 hover:bg-red-500 text-white font-bold py-3 rounded-2xl"
-            >
-              ❌ FINALIZAR
-            </button>
-          </div>
+           
+                      </div>
         </div>
       )}
 

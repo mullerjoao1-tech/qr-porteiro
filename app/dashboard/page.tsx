@@ -440,17 +440,36 @@ export default function Dashboard() {
       const codigo = `MOR-${String(moradores.length + 1).padStart(4, "0")}`;
       const unidadeNome = `${unidade.localNome} • ${montarNomeUnidade(unidade)}`;
 
-      await set(novoMoradorRef, {
-        codigo,
-        nome: formatarNome(nomeMorador),
-        telefone: telefoneMorador.trim(),
-        unidadeId: unidade.id,
-        unidadeNome,
-        prioridade: Number(prioridadeMorador),
-        podeAbrirPortao,
-        status: "ativo",
-        criadoEm: new Date().toISOString(),
-      });
+     await set(novoMoradorRef, {
+  codigo,
+
+  nome: formatarNome(nomeMorador),
+
+  telefone: telefoneMorador.trim(),
+
+  unidadeId: unidade.id,
+
+  unidadeNome,
+
+  prioridade: Number(prioridadeMorador),
+
+  // ===== NOVO MOTOR DE ATENDIMENTO =====
+  ordemAtendimento: Number(prioridadeMorador),
+
+  recebeChamadas: true,
+
+  disponivel: true,
+
+  encaminhamentoAutomatico: true,
+
+  podeAbrirPortao,
+
+  status: "ativo",
+
+  criadoEm: new Date().toISOString(),
+
+  ultimoStatusEm: Date.now(),
+});
 
       setNomeMorador("");
       setTelefoneMorador("");

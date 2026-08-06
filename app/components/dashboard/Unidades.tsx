@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import ResponsaveisUnidade from "./ResponsaveisUnidade";
 
 type LocalCadastrado = {
   id: string;
@@ -21,7 +22,7 @@ type UnidadeCadastrada = {
 
 type AbaUnidade =
   | "geral"
-  | "moradores"
+  | "responsaveis"
   | "historico"
   | "visitantes"
   | "entregas"
@@ -181,7 +182,7 @@ export default function Unidades({
     icone: string;
   }> = [
     { id: "geral", nome: "Geral", icone: "🏠" },
-    { id: "moradores", nome: "Moradores", icone: "👥" },
+    { id: "responsaveis", nome: "Responsáveis", icone: "👥" },
     { id: "historico", nome: "Histórico", icone: "🕘" },
     { id: "visitantes", nome: "Visitantes", icone: "🚶" },
     { id: "entregas", nome: "Entregas", icone: "📦" },
@@ -812,17 +813,24 @@ export default function Unidades({
               </div>
             )}
 
-            {abaAtiva !== "geral" && (
-              <div className="mt-5 rounded-2xl border border-slate-700 bg-slate-800 p-8 text-center">
-                <div className="text-4xl">🚧</div>
-                <p className="mt-3 font-black text-white">
-                  Módulo preparado
-                </p>
-                <p className="mt-2 text-sm text-slate-400">
-                  Esta área será conectada aos dados reais nas próximas etapas.
-                </p>
-              </div>
+            {abaAtiva === "responsaveis" && (
+              <ResponsaveisUnidade
+                unidadeId={unidadeSelecionada.id}
+              />
             )}
+
+            {abaAtiva !== "geral" &&
+              abaAtiva !== "responsaveis" && (
+                <div className="mt-5 rounded-2xl border border-slate-700 bg-slate-800 p-8 text-center">
+                  <div className="text-4xl">🚧</div>
+                  <p className="mt-3 font-black text-white">
+                    Módulo preparado
+                  </p>
+                  <p className="mt-2 text-sm text-slate-400">
+                    Esta área será conectada aos dados reais nas próximas etapas.
+                  </p>
+                </div>
+              )}
           </div>
         </div>
       )}
