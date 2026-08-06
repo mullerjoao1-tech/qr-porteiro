@@ -294,83 +294,61 @@ function obterIdentidadeVisual(
 }
 
 async function buscarLocal(
-  identificador:
-    string
-): Promise<
-  LocalEncontrado | null
-> {
-  const {
-    database,
-  } = obterFirebaseAdminQr();
+  identificador: string
+): Promise<LocalEncontrado | null> {
+  const { database } =
+    obterFirebaseAdminQr();
 
-  const snapshotDireto =
+  const snapshot =
     await database
-      .ref(
-        `locais-v2/${identificador}`
-      )
+      .ref("qrCentral/locais")
       .get();
 
-  if (
-    snapshotDireto.exists()
-  ) {
-    return {
-      localId:
-        identificador,
-
-      dados:
-        snapshotDireto.val() as
-          LocalBanco,
-    };
-  }
-
-  const snapshotLocais =
-    await database
-      .ref(
-        "locais-v2"
-      )
-      .get();
-
-  if (
-    !snapshotLocais.exists()
-  ) {
+  if (!snapshot.exists()) {
     return null;
   }
 
   const locais =
-    snapshotLocais.val() as
-      Record<
-        string,
-        LocalBanco
-      >;
+    snapshot.val() as Record<
+      string,
+      LocalBanco & {
+        codigo?: string;
+        qrPrincipal?: string;
+      }
+    >;
 
-  for (
-    const [
+  const procura =
+    identificador
+      .trim()
+      .toLowerCase();
+
+  for (const [chave, dados] of Object.entries(locais)) {
+
+    const candidatos = [
       chave,
-      dados,
-    ] of Object.entries(
-      locais
-    )
-  ) {
-    const id =
-      texto(
-        dados.id ||
-        dados.localId
-      );
-
-    const slug =
-      texto(
-        dados.slug
+      dados.id,
+      dados.localId,
+      dados.slug,
+      dados.nome,
+      dados.codigo,
+      dados.qrPrincipal,
+      dados.qrPrincipal
+        ?.split("/")
+        .filter(Boolean)
+        .pop(),
+    ]
+      .filter(Boolean)
+      .map((v) =>
+        String(v)
+          .trim()
+          .toLowerCase()
       );
 
     if (
-      chave === identificador ||
-      id === identificador ||
-      slug === identificador
+      candidatos.includes(procura)
     ) {
       return {
-        localId:
-          chave,
-
+        localId: chave,
         dados,
       };
     }
@@ -429,7 +407,7 @@ export async function GET(
             false,
 
           mensagem:
-            "Local não encontrado em locais-v2 pelo ID ou slug.",
+            "Local não encontrado em qrCentral/locais.",
         },
         {
           status:
