@@ -191,8 +191,8 @@ const nomeLocal =
   const caminhoLogs = `logs-v2/${slug}`;
   const caminhoAnalytics = `analytics-v2/${slug}`;
 
-  const TEMPO_AGUARDANDO = 5 * 60 * 1000;
-  const TEMPO_EM_ATENDIMENTO = 3 * 60 * 1000;
+  const TEMPO_AGUARDANDO = 2 * 60 * 1000;
+  const TEMPO_EM_ATENDIMENTO = 1 * 60 * 1000;
 
   const chamadaAtiva =
     nome !== "Nenhuma solicitação" &&
@@ -641,7 +641,10 @@ const nomeLocal =
 
     if (dados.status === "Em atendimento") {
       tempoLimite = TEMPO_EM_ATENDIMENTO;
-      dataBase = dados.atendidoEm || dados.criadoEm;
+      dataBase =
+        dados.ultimaAtividade ||
+        dados.atendidoEm ||
+        dados.criadoEm;
     }
 
     if (!dataBase) return;
@@ -705,7 +708,7 @@ const nomeLocal =
       void remove(ref(db, caminhoFirebase)).catch((erro) => {
         console.error("Erro ao limpar chamada encerrada:", erro);
       });
-    }, 5000);
+    }, 2000);
   }
 
   function limparFinalizacaoAutomatica() {
@@ -735,6 +738,7 @@ const nomeLocal =
         status: "Em atendimento",
         notificar: false,
         atendidoEm: new Date().toISOString(),
+        ultimaAtividade: Date.now(),
       });
     } catch (erro) {
       console.error("Erro ao atender chamada:", erro);
@@ -987,7 +991,7 @@ const nomeLocal =
       void remove(ref(db, caminhoFirebase)).catch((erro) => {
         console.error("Erro ao limpar chamada encerrada:", erro);
       });
-    }, 5000);
+    }, 2000);
   }
 
   function tocarBip() {
