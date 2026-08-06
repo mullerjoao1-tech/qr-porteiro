@@ -42,6 +42,85 @@ function obterNomeDestaque(
     .toUpperCase();
 }
 
+function normalizarBytesImagem(
+  entrada: unknown
+): Uint8Array {
+  if (
+    entrada instanceof
+      Uint8Array
+  ) {
+    return entrada;
+  }
+
+  if (
+    entrada instanceof
+      ArrayBuffer
+  ) {
+    return new Uint8Array(
+      entrada
+    );
+  }
+
+  if (
+    typeof entrada ===
+      "string"
+  ) {
+    const valor =
+      entrada.trim();
+
+    const indiceBase64 =
+      valor.indexOf(
+        "base64,"
+      );
+
+    const base64 =
+      indiceBase64 >= 0
+        ? valor.slice(
+            indiceBase64 +
+              "base64,".length
+          )
+        : valor;
+
+    return new Uint8Array(
+      Buffer.from(
+        base64,
+        "base64"
+      )
+    );
+  }
+
+  throw new Error(
+    "Formato de imagem não reconhecido."
+  );
+}
+
+function imagemEhPng(
+  bytes: Uint8Array
+): boolean {
+  return (
+    bytes.length >= 8 &&
+    bytes[0] === 0x89 &&
+    bytes[1] === 0x50 &&
+    bytes[2] === 0x4e &&
+    bytes[3] === 0x47 &&
+    bytes[4] === 0x0d &&
+    bytes[5] === 0x0a &&
+    bytes[6] === 0x1a &&
+    bytes[7] === 0x0a
+  );
+}
+
+function imagemEhJpeg(
+  bytes: Uint8Array
+): boolean {
+  return (
+    bytes.length >= 3 &&
+    bytes[0] === 0xff &&
+    bytes[1] === 0xd8 &&
+    bytes[2] === 0xff
+  );
+}
+
 const template: TemplateMaterial = {
   async gerar(
     dados: DadosMaterial
@@ -68,14 +147,30 @@ const template: TemplateMaterial = {
         } = contexto;
 
         const bytesPlaca =
-          await readFile(
-            CAMINHO_PLACA_PADRAO
+          normalizarBytesImagem(
+            await readFile(
+              CAMINHO_PLACA_PADRAO
+            )
           );
 
         const placa =
-          await pdf.embedPng(
+          imagemEhPng(
             bytesPlaca
-          );
+          )
+            ? await pdf.embedPng(
+                bytesPlaca
+              )
+            : imagemEhJpeg(
+                  bytesPlaca
+                )
+              ? await pdf.embedJpg(
+                  bytesPlaca
+                )
+              : (() => {
+                  throw new Error(
+                    "A arte-base do condomínio não é um arquivo PNG ou JPEG válido."
+                  );
+                })();
 
         const larguraPagina =
           configuracao.largura;
@@ -124,10 +219,29 @@ const template: TemplateMaterial = {
             0.390,
         };
 
-        const imagemQr =
-          await pdf.embedPng(
+        const bytesQr =
+          normalizarBytesImagem(
             qrPng
           );
+
+        const imagemQr =
+          imagemEhPng(
+            bytesQr
+          )
+            ? await pdf.embedPng(
+                bytesQr
+              )
+            : imagemEhJpeg(
+                  bytesQr
+                )
+              ? await pdf.embedJpg(
+                  bytesQr
+                )
+              : (() => {
+                  throw new Error(
+                    "O QR Code gerado não é um arquivo PNG ou JPEG válido."
+                  );
+                })();
 
         pagina.drawImage(
           imagemQr,
