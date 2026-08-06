@@ -99,14 +99,12 @@ function obterCredenciais(): CredenciaisNormalizadas {
   }
 }
 
-function obterDatabaseUrl(projectId: string): string {
-  /*
-   * Não usamos NEXT_PUBLIC_FIREBASE_DATABASE_URL aqui.
-   * A Preview recebeu temporariamente variáveis do Studio,
-   * enquanto a conta de serviço pertence à produção.
-   */
+function obterDatabaseUrl(
+  projectId: string
+): string {
   const configurada =
-    process.env.FIREBASE_DATABASE_URL?.trim();
+    process.env.FIREBASE_DATABASE_URL?.trim() ||
+    process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL?.trim();
 
   if (configurada) {
     return configurada.replace(/\/+$/g, "");
@@ -123,6 +121,11 @@ export function obterFirebaseAdminQr(): FirebaseAdminQr {
   const credenciais =
     obterCredenciais();
 
+  const databaseURL =
+    obterDatabaseUrl(
+      credenciais.projectId
+    );
+
   const existente = getApps().find(
     (appAtual) =>
       appAtual.name === NOME_APP
@@ -136,10 +139,7 @@ export function obterFirebaseAdminQr(): FirebaseAdminQr {
           credenciais.serviceAccount
         ),
 
-        databaseURL:
-          obterDatabaseUrl(
-            credenciais.projectId
-          ),
+        databaseURL,
       },
       NOME_APP
     );
