@@ -23,119 +23,57 @@ export const dynamic =
   "force-dynamic";
 
 type IdentidadeVisualBanco = {
-  tema?:
-    string;
-
-  corPrimaria?:
-    string;
-
-  corSecundaria?:
-    string;
-
-  corTexto?:
-    string;
-
-  logoUrl?:
-    string;
-
-  bannerUrl?:
-    string;
+  tema?: string;
+  corPrimaria?: string;
+  corSecundaria?: string;
+  corTexto?: string;
+  logoUrl?: string;
+  bannerUrl?: string;
 };
 
 type LocalBanco = {
-  id?:
-    string;
-
-  localId?:
-    string;
-
-  nome?:
-    string;
-
-  slug?:
-    string;
-
-  tipo?:
-    string;
-
-  tipoLocal?:
-    string;
-
-  segmento?:
-    string;
-
-  status?:
-    string;
-
-  ativo?:
-    boolean;
-
-  cidade?:
-    string;
-
-  estado?:
-    string;
-
-  telefone?:
-    string;
-
-  whatsapp?:
-    string;
-
-  email?:
-    string;
-
-  site?:
-    string;
-
-  instagram?:
-    string;
-
-  facebook?:
-    string;
-
-  logo?:
-    string;
-
-  corPrimaria?:
-    string;
-
-  corSecundaria?:
-    string;
-
-  corTexto?:
-    string;
-
-  identidadeVisual?:
-    IdentidadeVisualBanco;
-
+  id?: string;
+  localId?: string;
+  nome?: string;
+  slug?: string;
+  tipo?: string;
+  tipoLocal?: string;
+  segmento?: string;
+  status?: string;
+  ativo?: boolean;
+  cidade?: string;
+  estado?: string;
+  telefone?: string;
+  whatsapp?: string;
+  email?: string;
+  site?: string;
+  instagram?: string;
+  facebook?: string;
+  logo?: string;
+  corPrimaria?: string;
+  corSecundaria?: string;
+  corTexto?: string;
+  identidadeVisual?: IdentidadeVisualBanco;
   configuracao?: {
-    identidadeVisual?:
-      IdentidadeVisualBanco;
+    identidadeVisual?: IdentidadeVisualBanco;
   };
 };
 
 type LocalEncontrado = {
-  localId:
-    string;
-
-  dados:
-    LocalBanco;
+  localId: string;
+  dados: LocalBanco;
 };
 
 function texto(
-  valor:
-    unknown
+  valor: unknown
 ): string {
-  return typeof valor ===
-    "string"
+  return typeof valor === "string"
     ? valor.trim()
     : "";
 }
 
 function obterBaseUrl(
-  request:
-    NextRequest
+  request: NextRequest
 ): string {
   const configurada =
     process.env.NEXT_PUBLIC_APP_URL ||
@@ -143,12 +81,8 @@ function obterBaseUrl(
 
   if (configurada) {
     if (
-      configurada.startsWith(
-        "http://"
-      ) ||
-      configurada.startsWith(
-        "https://"
-      )
+      configurada.startsWith("http://") ||
+      configurada.startsWith("https://")
     ) {
       return configurada.replace(
         /\/+$/g,
@@ -169,8 +103,7 @@ function obterBaseUrl(
 }
 
 function normalizarTipo(
-  valor:
-    string | undefined
+  valor: string | undefined
 ): string {
   return (
     valor
@@ -190,8 +123,7 @@ function normalizarTipo(
 }
 
 function obterSegmentoMaterial(
-  local:
-    LocalBanco
+  local: LocalBanco
 ): SegmentoMaterial {
   const tipo =
     normalizarTipo(
@@ -257,8 +189,7 @@ function obterSegmentoMaterial(
 }
 
 function obterTemaMaterial(
-  identidade:
-    IdentidadeVisualBanco
+  identidade: IdentidadeVisualBanco
 ): TemaMaterial {
   const tema =
     texto(
@@ -276,8 +207,7 @@ function obterTemaMaterial(
 }
 
 function obterIdentidadeVisual(
-  local:
-    LocalBanco
+  local: LocalBanco
 ): IdentidadeVisualBanco {
   return {
     ...(
@@ -294,11 +224,8 @@ function obterIdentidadeVisual(
 }
 
 async function buscarLocal(
-  identificador:
-    string
-): Promise<
-  LocalEncontrado | null
-> {
+  identificador: string
+): Promise<LocalEncontrado | null> {
   const {
     database,
   } = obterFirebaseAdminQr();
@@ -338,10 +265,7 @@ async function buscarLocal(
 
   const locais =
     snapshotLocais.val() as
-      Record<
-        string,
-        LocalBanco
-      >;
+      Record<string, LocalBanco>;
 
   for (
     const [
@@ -380,13 +304,11 @@ async function buscarLocal(
 }
 
 export async function GET(
-  request:
-    NextRequest,
+  request: NextRequest,
   contexto: {
     params:
       Promise<{
-        localId:
-          string;
+        localId: string;
       }>;
   }
 ): Promise<Response> {
@@ -629,7 +551,7 @@ export async function GET(
         },
       }
     );
-    } catch (erro) {
+  } catch (erro) {
     console.error(
       "Erro ao gerar material do QR:",
       erro
@@ -637,7 +559,8 @@ export async function GET(
 
     return NextResponse.json(
       {
-        sucesso: false,
+        sucesso:
+          false,
 
         mensagem:
           erro instanceof Error
@@ -650,7 +573,8 @@ export async function GET(
             : null,
       },
       {
-        status: 500,
+        status:
+          500,
       }
     );
   }

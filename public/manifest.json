@@ -2,7 +2,7 @@
   "name": "QR Acesso Studio",
   "short_name": "QR Acesso",
   "description": "Plataforma QR Acesso para moradores e condomínios",
-  "start_url": "/morador-v2/bloco-1-ap-11",
+  "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "background_color": "#020617",
