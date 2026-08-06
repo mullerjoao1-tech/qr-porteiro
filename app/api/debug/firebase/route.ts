@@ -12,9 +12,18 @@ export const dynamic = "force-dynamic";
 export async function GET(): Promise<Response> {
   const inicio = Date.now();
 
+  let projectId: string | null = null;
+  let databaseUrl: string | null = null;
+
   try {
-    const { database } =
+    const { app, database } =
       obterFirebaseAdminQr();
+
+    projectId =
+      app.options.projectId ?? null;
+
+    databaseUrl =
+      app.options.databaseURL ?? null;
 
     const leituraBanco =
       database
@@ -42,15 +51,24 @@ export async function GET(): Promise<Response> {
       return NextResponse.json(
         {
           sucesso: true,
+
+          projectId,
+          databaseUrl,
+
           firebaseAdmin: "OK",
           leituraBanco: "OK",
-          locaisV2: "VAZIO OU INEXISTENTE",
-          duracaoMs: Date.now() - inicio,
+          locaisV2:
+            "VAZIO OU INEXISTENTE",
+
+          duracaoMs:
+            Date.now() - inicio,
         },
         {
           status: 200,
+
           headers: {
-            "Cache-Control": "no-store",
+            "Cache-Control":
+              "no-store",
           },
         }
       );
@@ -85,14 +103,18 @@ export async function GET(): Promise<Response> {
               typeof valor === "string"
           )
           .map((valor) =>
-            valor.trim().toLowerCase()
+            valor
+              .trim()
+              .toLowerCase()
           );
 
         const encontrado =
           identificadores.some(
             (identificador) =>
               valores.includes(
-                identificador.toLowerCase()
+                identificador
+                  .trim()
+                  .toLowerCase()
               )
           );
 
@@ -100,8 +122,10 @@ export async function GET(): Promise<Response> {
           return {
             encontrado: true,
             chave,
-            nome: local.nome ?? null,
-            slug: local.slug ?? null,
+            nome:
+              local.nome ?? null,
+            slug:
+              local.slug ?? null,
           };
         }
       }
@@ -114,8 +138,13 @@ export async function GET(): Promise<Response> {
     return NextResponse.json(
       {
         sucesso: true,
+
+        projectId,
+        databaseUrl,
+
         firebaseAdmin: "OK",
         leituraBanco: "OK",
+
         totalLocais:
           Object.keys(locais).length,
 
@@ -133,12 +162,15 @@ export async function GET(): Promise<Response> {
           "residencial-costa-casa-principal",
         ]),
 
-        duracaoMs: Date.now() - inicio,
+        duracaoMs:
+          Date.now() - inicio,
       },
       {
         status: 200,
+
         headers: {
-          "Cache-Control": "no-store",
+          "Cache-Control":
+            "no-store",
         },
       }
     );
@@ -146,18 +178,27 @@ export async function GET(): Promise<Response> {
     return NextResponse.json(
       {
         sucesso: false,
+
+        projectId,
+        databaseUrl,
+
         etapa:
           "inicialização ou leitura do Firebase",
+
         erro:
           erro instanceof Error
             ? erro.message
             : String(erro),
-        duracaoMs: Date.now() - inicio,
+
+        duracaoMs:
+          Date.now() - inicio,
       },
       {
         status: 500,
+
         headers: {
-          "Cache-Control": "no-store",
+          "Cache-Control":
+            "no-store",
         },
       }
     );
