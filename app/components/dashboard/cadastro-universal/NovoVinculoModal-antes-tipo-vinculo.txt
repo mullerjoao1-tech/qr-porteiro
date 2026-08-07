@@ -114,15 +114,6 @@ function nomeUnidade(
     : nome;
 }
 
-type VinculoExistente = {
-  localId?: string;
-  localSlug?: string;
-  condominioId?: string;
-  condominioSlug?: string;
-  slug?: string;
-  ativo?: boolean;
-  [chave: string]: unknown;
-};
 export default function NovoVinculoModal({
   aberto,
   onClose,
@@ -312,19 +303,19 @@ export default function NovoVinculoModal({
 
       function procurar(
         origem:
-          Record<string, unknown> | undefined
+          Record<
+            string,
+            VinculoExistente
+          > | undefined
       ) {
         if (!origem) {
-        return null;
-      }
-
-      if (!localSelecionado) {
-        return null;
-      }
+          return null;
+        }
 
         const encontrado =
-          (Object.entries(origem) as Array<[string, VinculoExistente]>)
-        .find(
+          Object.entries(
+            origem
+          ).find(
             ([
               chave,
               dados,
@@ -942,9 +933,6 @@ export default function NovoVinculoModal({
     </div>
   );
 }
-
-
-
 
 
 

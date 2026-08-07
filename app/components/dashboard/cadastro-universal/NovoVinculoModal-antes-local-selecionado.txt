@@ -312,19 +312,19 @@ export default function NovoVinculoModal({
 
       function procurar(
         origem:
-          Record<string, unknown> | undefined
+          Record<
+            string,
+            VinculoExistente
+          > | undefined
       ) {
         if (!origem) {
-        return null;
-      }
-
-      if (!localSelecionado) {
-        return null;
-      }
+          return null;
+        }
 
         const encontrado =
-          (Object.entries(origem) as Array<[string, VinculoExistente]>)
-        .find(
+          Object.entries(
+            origem
+          ).find(
             ([
               chave,
               dados,
@@ -942,8 +942,6 @@ export default function NovoVinculoModal({
     </div>
   );
 }
-
-
 
 
 
