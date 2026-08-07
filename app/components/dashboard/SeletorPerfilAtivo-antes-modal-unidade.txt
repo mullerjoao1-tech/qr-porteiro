@@ -1,0 +1,302 @@
+﻿"use client";
+
+import {
+  usePerfilAtivo,
+} from "@/app/context/PerfilAtivoContext";
+
+import {
+  useAuth,
+} from "@/app/context/AuthContext";
+
+import {
+  useRouter,
+} from "next/navigation";
+
+const NOMES_PERFIS:
+  Record<string, string> = {
+    morador: "Morador",
+    sindico: "Síndico",
+    administradora: "Administradora",
+    gestor_local: "Gestor local",
+    porteiro: "Porteiro",
+    central: "Central",
+    funcionario: "Funcionário",
+    financeiro: "Financeiro",
+    prestador: "Prestador",
+    conselheiro: "Conselheiro",
+    administrador_master:
+      "Administrador master",
+    proprietario: "Proprietário",
+    inquilino: "Inquilino",
+    responsavel: "Responsável",
+    gerente: "Gerente",
+    outro: "Outro",
+  };
+
+function normalizarPerfil(
+  perfil: string
+) {
+  return perfil
+    .trim()
+    .toLowerCase()
+    .replaceAll(
+      "-",
+      "_"
+    );
+}
+
+function nomePerfil(
+  perfil: string
+) {
+  const normalizado =
+    normalizarPerfil(
+      perfil
+    );
+
+  return (
+    NOMES_PERFIS[
+      normalizado
+    ] ||
+    perfil
+  );
+}
+
+function obterUnidadesDoVinculo(
+  vinculo: any
+): string[] {
+  if (
+    !vinculo?.unidades
+  ) {
+    return [];
+  }
+
+  return Object.entries(
+    vinculo.unidades
+  )
+    .filter(
+      ([
+        ,
+        valor,
+      ]) => {
+        if (
+          valor === true
+        ) {
+          return true;
+        }
+
+        if (
+          valor &&
+          typeof valor ===
+            "object"
+        ) {
+          return (
+            (
+              valor as any
+            ).ativo !== false
+          );
+        }
+
+        return false;
+      }
+    )
+    .map(
+      ([
+        unidadeId,
+      ]) =>
+        unidadeId
+    );
+}
+
+export default function SeletorPerfilAtivo() {
+  const router =
+    useRouter();
+
+  const {
+    perfilAtivo,
+    perfisDisponiveis,
+    selecionarPerfil,
+  } =
+    usePerfilAtivo();
+
+  const {
+    vinculoSelecionado,
+  } =
+    useAuth();
+
+  if (
+    perfisDisponiveis.length <=
+    1
+  ) {
+    return null;
+  }
+
+  function trocarPerfil(
+    perfil: string
+  ) {
+    const normalizado =
+      normalizarPerfil(
+        perfil
+      );
+
+    selecionarPerfil(
+      normalizado
+    );
+
+    switch (
+      normalizado
+    ) {
+      case "sindico":
+        router.push(
+          "/dashboard/sindico"
+        );
+        return;
+
+      case "financeiro":
+        router.push(
+          "/dashboard/financeiro"
+        );
+        return;
+
+      case "central":
+        router.push(
+          "/dashboard/central-inteligente"
+        );
+        return;
+
+      case "administradora":
+        router.push(
+          "/dashboard/administradora"
+        );
+        return;
+
+      case "administrador_master":
+        router.push(
+          "/dashboard"
+        );
+        return;
+
+      case "gestor_local":
+      case "proprietario":
+      case "responsavel":
+      case "gerente":
+        router.push(
+          "/dashboard"
+        );
+        return;
+
+      case "morador":
+      case "inquilino": {
+        const unidades =
+          obterUnidadesDoVinculo(
+            vinculoSelecionado
+          );
+
+        if (
+          unidades.length === 1
+        ) {
+          router.push(
+            `/morador-v2/${unidades[0]}`
+          );
+
+          return;
+        }
+
+        /*
+         * Se houver várias unidades, não vamos
+         * escolher uma automaticamente.
+         *
+         * Nesta situação permanecemos no contexto
+         * atual até criarmos o seletor universal
+         * de unidade.
+         */
+        alert(
+          unidades.length > 1
+            ? "Este perfil possui acesso a mais de uma unidade. Na próxima etapa vamos abrir o seletor de unidade."
+            : "Este perfil ainda não possui uma unidade vinculada."
+        );
+
+        return;
+      }
+
+      case "porteiro":
+      case "funcionario":
+      case "prestador":
+      case "conselheiro":
+      case "outro":
+      default:
+        /*
+         * Esses perfis ainda não possuem
+         * uma rota universal própria fechada.
+         *
+         * O perfil é alterado normalmente,
+         * mas não fazemos um redirecionamento
+         * incorreto.
+         */
+        return;
+    }
+  }
+
+  return (
+    <section className="rounded-3xl border border-violet-500/30 bg-violet-950/20 p-5">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div>
+          <p className="text-xs font-black uppercase tracking-wider text-violet-300">
+            Perfil no contexto atual
+          </p>
+
+          <h3 className="mt-1 text-xl font-black text-white">
+            {perfilAtivo
+              ? nomePerfil(
+                  perfilAtivo
+                )
+              : "Selecionar perfil"}
+          </h3>
+
+          <p className="mt-1 text-sm text-slate-400">
+            Troque sua função neste local sem sair da conta.
+          </p>
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          {perfisDisponiveis.map(
+            (perfil) => {
+              const ativo =
+                perfil ===
+                perfilAtivo;
+
+              return (
+                <button
+                  key={
+                    perfil
+                  }
+                  type="button"
+                  onClick={() =>
+                    trocarPerfil(
+                      perfil
+                    )
+                  }
+                  className={[
+                    "rounded-2xl border px-4 py-3 text-sm font-black transition active:scale-[0.98]",
+                    ativo
+                      ? "border-violet-400 bg-violet-500 text-white"
+                      : "border-slate-700 bg-slate-900 text-slate-200 hover:border-violet-500 hover:bg-slate-800",
+                  ].join(
+                    " "
+                  )}
+                >
+                  {ativo
+                    ? "✓ "
+                    : ""}
+
+                  {nomePerfil(
+                    perfil
+                  )}
+                </button>
+              );
+            }
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}

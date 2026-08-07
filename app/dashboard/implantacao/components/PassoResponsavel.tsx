@@ -4,6 +4,7 @@ type Props = {
   nome: string;
   email: string;
   telefone: string;
+  cpf: string;
   senha: string;
   mostrarSenha: boolean;
 
@@ -19,6 +20,10 @@ type Props = {
     valor: string
   ) => void;
 
+  onCpfChange: (
+    valor: string
+  ) => void;
+
   onSenhaChange: (
     valor: string
   ) => void;
@@ -28,15 +33,47 @@ type Props = {
   ) => void;
 };
 
+function formatarCpf(
+  valor:
+    string
+): string {
+  const numeros =
+    valor
+      .replace(
+        /\D/g,
+        ""
+      )
+      .slice(
+        0,
+        11
+      );
+
+  return numeros
+    .replace(
+      /^(\d{3})(\d)/,
+      "$1.$2"
+    )
+    .replace(
+      /^(\d{3})\.(\d{3})(\d)/,
+      "$1.$2.$3"
+    )
+    .replace(
+      /^(\d{3})\.(\d{3})\.(\d{3})(\d)/,
+      "$1.$2.$3-$4"
+    );
+}
+
 export default function PassoResponsavel({
   nome,
   email,
   telefone,
+  cpf,
   senha,
   mostrarSenha,
   onNomeChange,
   onEmailChange,
   onTelefoneChange,
+  onCpfChange,
   onSenhaChange,
   onMostrarSenhaChange,
 }: Props) {
@@ -77,6 +114,39 @@ export default function PassoResponsavel({
             placeholder="Nome do responsável"
             className="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-4 text-white outline-none transition placeholder:text-slate-600 focus:border-green-500"
           />
+        </div>
+
+        <div>
+          <label
+            htmlFor="responsavel-cpf"
+            className="mb-2 block text-sm font-bold text-slate-200"
+          >
+            CPF
+          </label>
+
+          <input
+            id="responsavel-cpf"
+            type="text"
+            value={cpf}
+            onChange={(evento) =>
+              onCpfChange(
+                formatarCpf(
+                  evento.target.value
+                )
+              )
+            }
+            inputMode="numeric"
+            autoComplete="off"
+            maxLength={14}
+            placeholder="000.000.000-00"
+            className="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-4 text-white outline-none transition placeholder:text-slate-600 focus:border-green-500"
+          />
+
+          <p className="mt-2 text-xs text-slate-500">
+            O CPF será usado para localizar uma
+            pessoa já existente e evitar cadastros
+            duplicados.
+          </p>
         </div>
 
         <div>

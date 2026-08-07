@@ -20,10 +20,16 @@ import {
   type IdentidadeVisualLocal,
 } from "@/app/services/locais/CadastroUniversal";
 
+import {
+  buscarOuCriarPessoaUniversal,
+  validarCpf,
+} from "@/app/services/usuarios/CadastroPessoaUniversal";
+
 type CorpoCriarResponsavel = {
   nome?: unknown;
   email?: unknown;
   telefone?: unknown;
+  cpf?: unknown;
   senhaProvisoria?: unknown;
 
   localId?: unknown;
@@ -208,28 +214,6 @@ function normalizarEmail(
   }
 
   return email;
-}
-
-function validarSenha(
-  valor:
-    unknown
-): string {
-  const senha =
-    textoObrigatorio(
-      valor,
-      "senhaProvisoria"
-    );
-
-  if (
-    senha.length <
-    6
-  ) {
-    throw new Error(
-      "A senha provisória precisa ter pelo menos 6 caracteres."
-    );
-  }
-
-  return senha;
 }
 
 function normalizarId(
@@ -1067,6 +1051,12 @@ export async function POST(
         corpo.telefone
       );
 
+    const cpf =
+      validarCpf(
+        corpo.cpf,
+        false
+      );
+
     const senhaProvisoriaInformada =
       textoOpcional(
         corpo.senhaProvisoria
@@ -1158,49 +1148,6 @@ export async function POST(
       throw new Error(
         "Nesta primeira etapa, somente o perfil de síndico está liberado."
       );
-    }
-
-    let usuarioAuthenticationExistente:
-      Awaited<
-        ReturnType<
-          typeof auth.getUserByEmail
-        >
-      > | null =
-        null;
-
-    try {
-      usuarioAuthenticationExistente =
-        await auth
-          .getUserByEmail(
-            email
-          );
-    } catch (
-      erroBusca
-    ) {
-      const codigo =
-        typeof erroBusca ===
-          "object" &&
-        erroBusca !==
-          null &&
-        "code" in
-          erroBusca
-          ? String(
-              (
-                erroBusca as {
-                  code?:
-                    unknown;
-                }
-              ).code ??
-              ""
-            )
-          : "";
-
-      if (
-        codigo !==
-        "auth/user-not-found"
-      ) {
-        throw erroBusca;
-      }
     }
 
     const agora =
@@ -1350,38 +1297,33 @@ export async function POST(
           agora,
       });
 
-    if (
-      usuarioAuthenticationExistente
-    ) {
-      uidResponsavel =
-        usuarioAuthenticationExistente.uid;
-    } else {
-      const senhaProvisoria =
-        validarSenha(
-          senhaProvisoriaInformada
-        );
+    const resultadoPessoa =
+      await buscarOuCriarPessoaUniversal({
+        auth,
 
-      const usuarioAuthentication =
-        await auth
-          .createUser({
-            email,
+        database,
 
-            password:
-              senhaProvisoria,
+        nome,
 
-            displayName:
-              nome,
+        email,
 
-            disabled:
-              false,
-          });
+        telefone,
 
-      uidResponsavel =
-        usuarioAuthentication.uid;
+        cpf,
 
-      usuarioCriadoNoAuthentication =
-        true;
-    }
+        senhaProvisoria:
+          senhaProvisoriaInformada,
+
+        origem:
+          "assistente-implantacao-qr-core",
+      });
+
+    uidResponsavel =
+      resultadoPessoa.uid;
+
+    usuarioCriadoNoAuthentication =
+      resultadoPessoa
+        .criadoNoAuthentication;
 
     if (
       !uidResponsavel
@@ -1451,69 +1393,10 @@ export async function POST(
     usuarioBancoExistiaAntes =
       snapshotUsuarioBanco.exists();
 
-    const usuarioBancoExistente =
-      snapshotUsuarioBanco.exists()
-        ? (
-            snapshotUsuarioBanco.val() as {
-              criadoEm?:
-                number;
-
-              ultimoLogin?:
-                number;
-
-              primeiroAcesso?:
-                boolean;
-
-              precisaTrocarSenha?:
-                boolean;
-
-              origem?:
-                string;
-            }
-          )
-        : null;
-
     await referenciaUsuarioBanco
       .update({
-        uid:
-          uidResponsavel,
-
-        nome,
-
-        email,
-
-        telefone,
-
-        status:
-          "ativo",
-
-        criadoEm:
-          usuarioBancoExistente
-            ?.criadoEm ??
-          agora,
-
         atualizadoEm:
           agora,
-
-        ultimoLogin:
-          usuarioBancoExistente
-            ?.ultimoLogin ??
-          0,
-
-        primeiroAcesso:
-          usuarioBancoExistente
-            ?.primeiroAcesso ??
-          usuarioCriadoNoAuthentication,
-
-        precisaTrocarSenha:
-          usuarioBancoExistente
-            ?.precisaTrocarSenha ??
-          usuarioCriadoNoAuthentication,
-
-        origem:
-          usuarioBancoExistente
-            ?.origem ??
-          "assistente-implantacao-qr-core",
 
         [`locais/${localId}`]:
           vinculoUniversal,
@@ -1534,6 +1417,10 @@ export async function POST(
       email,
 
       telefone,
+
+      cpf:
+        cpf ||
+        null,
 
       perfilPrincipal:
         perfil,
@@ -1574,6 +1461,10 @@ export async function POST(
         email,
 
         telefone,
+
+        cpf:
+          cpf ||
+          null,
 
         perfil,
 
@@ -1704,6 +1595,10 @@ export async function POST(
 
         usuarioEmail:
           email,
+
+        usuarioCpf:
+          cpf ||
+          null,
 
         usuarioReutilizado:
           !usuarioCriadoNoAuthentication,
@@ -1868,6 +1763,10 @@ export async function POST(
 
           telefone,
 
+          cpf:
+            cpf ||
+            null,
+
           status:
             "ativo",
 
@@ -1879,6 +1778,10 @@ export async function POST(
 
           usuarioReutilizado:
             !usuarioCriadoNoAuthentication,
+
+          encontradoPor:
+            resultadoPessoa
+              .encontradoPor,
         },
 
         vinculo: {

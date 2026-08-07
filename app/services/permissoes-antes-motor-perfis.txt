@@ -1,8 +1,3 @@
-﻿import {
-  obterPermissoesPadraoPorPerfil,
-  perfilPossuiPermissaoPadrao,
-} from "@/app/services/perfis/PermissoesPorPerfil";
-
 import type {
   Usuario,
   VinculoCondominioUsuario,
@@ -321,49 +316,6 @@ export function obterPrimeiroVinculoAtivo(
   );
 }
 
-function vinculoPossuiPermissao(
-  vinculo:
-    VinculoComPermissoes,
-  permissao:
-    string
-): boolean {
-  if (
-    possuiPerfilAdministradorMaster(
-      vinculo
-    )
-  ) {
-    return true;
-  }
-
-  const permissaoExplicita =
-    vinculo.permissoes?.[
-      permissao
-    ];
-
-  if (
-    permissaoExplicita ===
-    true
-  ) {
-    return true;
-  }
-
-  if (
-    permissaoExplicita ===
-    false
-  ) {
-    return false;
-  }
-
-  return perfilPossuiPermissaoPadrao({
-    perfilPrincipal:
-      vinculo.perfilPrincipal,
-
-    perfis:
-      vinculo.perfis,
-
-    permissao,
-  });
-}
 export function podeAcessarNoVinculo(
   usuario:
     Usuario | null,
@@ -381,16 +333,26 @@ export function podeAcessarNoVinculo(
   if (
     !vinculo ||
     vinculo.ativo ===
-    false
+      false
   ) {
     return false;
   }
 
-  return vinculoPossuiPermissao(
-    vinculo,
-    permissao
+  if (
+    possuiPerfilAdministradorMaster(
+      vinculo
+    )
+  ) {
+    return true;
+  }
+
+  return (
+    vinculo.permissoes?.[
+      permissao
+    ] === true
   );
 }
+
 export function possuiPerfilNoVinculo(
   usuario:
     Usuario | null,
@@ -624,7 +586,4 @@ export function listarVinculosComPermissao(
         vinculoId
     );
 }
-
-
-
 

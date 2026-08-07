@@ -357,6 +357,11 @@ export default function ImplantacaoPage() {
   ] = useState("");
 
   const [
+    cpfResponsavel,
+    setCpfResponsavel,
+  ] = useState("");
+
+  const [
     senhaProvisoria,
     setSenhaProvisoria,
   ] = useState("");
@@ -420,6 +425,13 @@ export default function ImplantacaoPage() {
           responsavelEmail.includes(
             "@"
           ) &&
+          cpfResponsavel
+            .replace(
+              /\D/g,
+              ""
+            )
+            .length ===
+            11 &&
           senhaProvisoria.length >=
             6
         );
@@ -486,6 +498,7 @@ export default function ImplantacaoPage() {
       localSlug,
       responsavelNome,
       responsavelEmail,
+      cpfResponsavel,
       senhaProvisoria,
       configuracaoSegmento,
     ]);
@@ -605,6 +618,9 @@ export default function ImplantacaoPage() {
               telefone:
                 responsavelTelefone.trim(),
 
+              cpf:
+                cpfResponsavel.trim(),
+
               senhaProvisoria,
 
               localId:
@@ -695,6 +711,7 @@ export default function ImplantacaoPage() {
     setResponsavelNome("");
     setResponsavelEmail("");
     setResponsavelTelefone("");
+    setCpfResponsavel("");
     setSenhaProvisoria("");
     setMostrarSenha(false);
 
@@ -1048,6 +1065,9 @@ export default function ImplantacaoPage() {
                   telefone={
                     responsavelTelefone
                   }
+                  cpf={
+                    cpfResponsavel
+                  }
                   senha={
                     senhaProvisoria
                   }
@@ -1062,6 +1082,9 @@ export default function ImplantacaoPage() {
                   }
                   onTelefoneChange={
                     setResponsavelTelefone
+                  }
+                  onCpfChange={
+                    setCpfResponsavel
                   }
                   onSenhaChange={
                     setSenhaProvisoria

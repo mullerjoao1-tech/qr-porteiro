@@ -1,12 +1,7 @@
-﻿"use client";
-
-import ModalTrocarContexto from "@/app/components/core/dashboard/ModalTrocarContexto";
-
-import SeletorPerfilAtivo from "@/app/components/dashboard/SeletorPerfilAtivo";
-
+"use client";
 
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 
 import DashboardAtalhos, {
   type AtalhoDashboard,
@@ -111,15 +106,6 @@ function obterPerfil(
 export default function PaginaSindico() {
   const router = useRouter();
 
-  const [
-    modalContextoAberto,
-    setModalContextoAberto,
-  ] = useState(
-    false
-  );
-
-
-
   const {
     usuario,
     carregando,
@@ -217,8 +203,6 @@ export default function PaginaSindico() {
         onTrocarContexto={voltarInicio}
       />
 
-      <SeletorPerfilAtivo />
-
       <DashboardIndicadores
         totalLocais={vinculosAtivos.length}
         possuiLocalSelecionado={Boolean(vinculoSelecionado)}
@@ -245,26 +229,6 @@ export default function PaginaSindico() {
         obterTipoLocal={obterTipoLocal}
         obterPerfil={obterPerfil}
       />
-      <ModalTrocarContexto
-        aberto={
-          modalContextoAberto
-        }
-        onFechar={() =>
-          setModalContextoAberto(
-            false
-          )
-        }
-      />
-
     </DashboardBase>
   );
 }
-
-
-
-
-
-
-
-
-

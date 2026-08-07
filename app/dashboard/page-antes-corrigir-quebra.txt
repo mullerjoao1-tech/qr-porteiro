@@ -2296,8 +2296,7 @@ setMenuMobileAberto(false);
 
           {telaAtiva !== "dashboard" &&
             telaAtiva !== "sindico" &&
-            telaAtiva !== "locais" &&
-            telaAtiva !== "locais-universais" &&
+            telaAtiva !== "locais" &&`r`n            telaAtiva !== "locais-universais" &&
             telaAtiva !== "unidades" &&
             telaAtiva !== "moradores" &&
             telaAtiva !== "pendentes" &&
@@ -2908,5 +2907,4 @@ setMenuMobileAberto(false);
     </main>
   );
 }
-
 
