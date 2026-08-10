@@ -1,4 +1,4 @@
-import "server-only";
+﻿import "server-only";
 
 import {
   readFile,
@@ -121,7 +121,7 @@ const template:
             configuracao.altura;
 
           /*
-           * Mantém a proporção original da arte e
+           * MantÃ©m a proporÃ§Ã£o original da arte e
            * encaixa a placa inteira dentro do A4.
            */
           const alturaPlaca =
@@ -165,7 +165,7 @@ const template:
           );
 
           /*
-           * O template já possui o espaço do nome limpo.
+           * O template jÃ¡ possui o espaÃ§o do nome limpo.
            * Aqui apenas escrevemos o nome real do local.
            */
           const nome =
@@ -197,7 +197,7 @@ const template:
               y:
                 yPlaca +
                 alturaPlaca *
-                  0.735,
+                  0.780,
 
               size:
                 tamanhoNome,
@@ -211,25 +211,25 @@ const template:
           );
 
           /*
-           * O template já possui a moldura do QR vazia.
+           * O template jÃ¡ possui a moldura do QR vazia.
            * Aqui colocamos apenas o QR verdadeiro,
            * preservando uma margem interna.
            */
           const tamanhoQr =
             larguraPlaca *
-            0.455;
+            0.335;
 
           const xQr =
             xPlaca +
             (
               larguraPlaca -
               tamanhoQr
-            ) / 2;
+            ) / 1.95;
 
           const yQr =
   yPlaca +
   alturaPlaca *
-      0.263;
+      0.435;
 
           const imagemQr =
             await pdf.embedPng(
@@ -258,3 +258,5 @@ const template:
   };
 
 export default template;
+
+

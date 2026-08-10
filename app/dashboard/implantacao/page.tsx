@@ -809,6 +809,13 @@ export default function ImplantacaoPage() {
             >
               ← Voltar
             </Link>
+
+            <Link
+              href="/dashboard/implantacao/locais-implantados"
+              className="rounded-2xl border border-cyan-400/40 bg-cyan-500/15 px-5 py-3 text-center text-sm font-black text-cyan-100 transition hover:bg-cyan-500/25 active:scale-[0.98]"
+            >
+              Locais Implantados
+            </Link>
           </div>
         </header>
 
