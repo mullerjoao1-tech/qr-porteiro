@@ -17,6 +17,25 @@ import FamiliaResidencia from "@/app/dashboard/condominio/FamiliaResidencia";
 import AcessosTemporariosResidencia from "@/app/dashboard/condominio/AcessosTemporariosResidencia";
 import { useAuth } from "@/app/context/AuthContext";
 
+
+function formatarNomeUnidadePainel(
+  unidadeId?: string | null
+) {
+  if (!unidadeId) {
+    return "Unidade vinculada";
+  }
+
+  const correspondencia =
+    unidadeId.match(
+      /bloco-(\d+)-ap-(\d+)$/i
+    );
+
+  if (correspondencia) {
+    return `Bloco ${correspondencia[1]} • Apartamento ${correspondencia[2]}`;
+  }
+
+  return unidadeId;
+}
 function normalizarTexto(
   valor?: string | null
 ) {
@@ -605,10 +624,7 @@ if (modoResidencia) {
               {nomeLocal}
             </p>
 
-            <p className="mt-1 text-sm text-blue-100">
-              {identificadorLocalAtual || "Residência vinculada"}
-            </p>
-          </div>
+</div>
         </section>
 
         <section className="mt-5 rounded-3xl border border-slate-800 bg-slate-900 p-5 md:p-6">
@@ -883,7 +899,7 @@ if (modoResidencia) {
               </p>
 
               <p className="mt-1 text-lg font-black">
-                {unidadeId || "Unidade vinculada"}
+                {formatarNomeUnidadePainel(unidadeId)}
               </p>
             </div>
           </section>
