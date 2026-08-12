@@ -906,6 +906,47 @@ export default function PaginaCondominio() {
     }
   }
 
+async function arquivarMoradorCadastrado(
+  moradorId: string
+) {
+  if (!moradorId) {
+    throw new Error(
+      "Morador nao informado."
+    );
+  }
+
+  const agora =
+    Date.now();
+
+  await update(
+    ref(
+      db,
+      `qrCentral/moradores/${moradorId}`
+    ),
+    {
+      status:
+        "arquivado",
+
+      ativo:
+        false,
+
+      arquivado:
+        true,
+
+      arquivadoEm:
+        agora,
+
+      atualizadoEm:
+        new Date(
+          agora
+        ).toISOString(),
+
+      ultimoStatusEm:
+        agora,
+    }
+  );
+}
+
 async function atualizarMoradorCadastrado(
   moradorId: string,
   dados: {
@@ -1393,6 +1434,10 @@ async function atualizarMoradorCadastrado(
 
               atualizarMorador={
                 atualizarMoradorCadastrado
+              }
+
+              arquivarMorador={
+                arquivarMoradorCadastrado
               }
 
               salvandoMorador={
