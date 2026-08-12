@@ -1829,6 +1829,7 @@ setMenuMobileAberto(false);
               podeAbrirPortao={podeAbrirPortao}
               setPodeAbrirPortao={setPodeAbrirPortao}
               cadastrarMorador={cadastrarMorador}
+              atualizarMorador={atualizarMorador}
               salvandoMorador={salvandoMorador}
             />
           )}

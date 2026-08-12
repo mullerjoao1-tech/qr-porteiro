@@ -1,5 +1,7 @@
 "use client";
 
+import { Suspense } from "react";
+
 import {
   useRouter,
   useSearchParams,
@@ -9,7 +11,7 @@ import DashboardBase from "@/app/components/core/dashboard/DashboardBase";
 import ComunicadosMorador from "@/app/components/core/morador/ComunicadosMorador";
 import { useAuth } from "@/app/context/AuthContext";
 
-export default function PaginaComunicadosMorador() {
+function ConteudoPaginaComunicadosMorador() {
   const router =
     useRouter();
 
@@ -122,5 +124,18 @@ export default function PaginaComunicadosMorador() {
         }
       />
     </DashboardBase>
+  );
+}
+export default function PaginaComunicadosMorador() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-slate-950 p-6 text-slate-300">
+          Carregando comunicados...
+        </div>
+      }
+    >
+      <ConteudoPaginaComunicadosMorador />
+    </Suspense>
   );
 }
