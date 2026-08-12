@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState } from "react";
 import { get, ref, onValue, push, set, update } from "firebase/database";
@@ -276,17 +276,17 @@ export default function Dashboard() {
 
   function formatarTextoTipo(texto: string) {
     const nomes: any = {
-      condominio: "Condomínio",
+      condominio: "CondomÃ­nio",
       casa: "Casa",
       airbnb: "Airbnb",
-      chacara: "Chácara",
+      chacara: "ChÃ¡cara",
       empresa: "Empresa",
       portaria: "Portaria",
       apartamento: "Apartamento",
       sala: "Sala",
       loja: "Loja",
       quarto: "Quarto",
-      chale: "Chalé",
+      chale: "ChalÃ©",
       livre: "Livre",
     };
 
@@ -359,17 +359,17 @@ export default function Dashboard() {
     const local = locais.find((item) => item.id === localSelecionadoId);
 
     if (!local) {
-      alert("Local não encontrado.");
+      alert("Local nÃ£o encontrado.");
       return;
     }
 
     if (!nomeUnidade.trim()) {
-      alert("Digite o nome ou número da unidade.");
+      alert("Digite o nome ou nÃºmero da unidade.");
       return;
     }
 
     if (local.tipo === "condominio" && !blocoUnidade.trim()) {
-      alert("Para condomínio, informe o bloco/torre.");
+      alert("Para condomÃ­nio, informe o bloco/torre.");
       return;
     }
 
@@ -417,7 +417,7 @@ export default function Dashboard() {
     const unidade = unidades.find((item) => item.id === unidadeMoradorId);
 
     if (!unidade) {
-      alert("Unidade não encontrada.");
+      alert("Unidade nÃ£o encontrada.");
       return;
     }
 
@@ -438,7 +438,7 @@ export default function Dashboard() {
       const novoMoradorRef = push(moradoresRef);
 
       const codigo = `MOR-${String(moradores.length + 1).padStart(4, "0")}`;
-      const unidadeNome = `${unidade.localNome} • ${montarNomeUnidade(unidade)}`;
+      const unidadeNome = `${unidade.localNome} â€¢ ${montarNomeUnidade(unidade)}`;
 
      await set(novoMoradorRef, {
   codigo,
@@ -485,6 +485,41 @@ export default function Dashboard() {
     }
   }
 
+async function atualizarMorador(
+  moradorId: string,
+  dados: {
+    nome: string;
+    telefone: string;
+    email?: string;
+    prioridade: number;
+    recebeChamadas: boolean;
+    podeAbrirPortao: boolean;
+    status: string;
+  }
+) {
+  if (!moradorId) {
+    throw new Error("Morador não identificado.");
+  }
+
+  const moradorRef = ref(
+    db,
+    `qrCentral/moradores/${moradorId}`
+  );
+
+  await update(moradorRef, {
+    nome: formatarNome(dados.nome),
+    telefone: dados.telefone.trim(),
+    email: dados.email?.trim() || "",
+    prioridade: Number(dados.prioridade),
+    ordemAtendimento: Number(dados.prioridade),
+    recebeChamadas: dados.recebeChamadas,
+    podeAbrirPortao: dados.podeAbrirPortao,
+    status: dados.status,
+    atualizadoEm: new Date().toISOString(),
+    ultimoStatusEm: Date.now(),
+  });
+}
+
   function abrirUnidadesDoLocal(local: LocalCadastrado) {
     setLocalSelecionadoId(local.id);
     setLocalAberto(null);
@@ -496,18 +531,18 @@ export default function Dashboard() {
 
     const confirmacao = window.confirm(
       [
-        "ATENÇÃO: excluir este local de teste por completo?",
+        "ATENÃ‡ÃƒO: excluir este local de teste por completo?",
         "",
         `Local: ${local.nome}`,
         "",
-        "Esta ação excluirá:",
-        "• o local;",
-        "• todas as unidades dele;",
-        "• todos os moradores vinculados;",
-        "• todas as atualizações cadastrais;",
-        "• todo o histórico de implantação dessas unidades;",
+        "Esta aÃ§Ã£o excluirÃ¡:",
+        "â€¢ o local;",
+        "â€¢ todas as unidades dele;",
+        "â€¢ todos os moradores vinculados;",
+        "â€¢ todas as atualizaÃ§Ãµes cadastrais;",
+        "â€¢ todo o histÃ³rico de implantaÃ§Ã£o dessas unidades;",
         "",
-        "Esta ação não pode ser desfeita.",
+        "Esta aÃ§Ã£o nÃ£o pode ser desfeita.",
       ].join("\n")
     );
 
@@ -518,7 +553,7 @@ export default function Dashboard() {
     );
 
     if (nomeDigitado !== local.nome) {
-      alert("Nome diferente. A exclusão foi cancelada.");
+      alert("Nome diferente. A exclusÃ£o foi cancelada.");
       return;
     }
 
@@ -580,7 +615,7 @@ export default function Dashboard() {
 
       await update(ref(db), alteracoes);
 
-      alert(`O local "${local.nome}" e todos os dados de teste foram excluídos.`);
+      alert(`O local "${local.nome}" e todos os dados de teste foram excluÃ­dos.`);
 
       setLocalSelecionadoId("");
       setLocalAberto(null);
@@ -588,7 +623,7 @@ export default function Dashboard() {
     } catch (erro) {
       console.error("Erro ao excluir local de teste:", erro);
       alert(
-        "Não foi possível excluir o local. Verifique o terminal antes de tentar novamente."
+        "NÃ£o foi possÃ­vel excluir o local. Verifique o terminal antes de tentar novamente."
       );
     } finally {
       setExcluindoLocal(false);
@@ -601,19 +636,19 @@ export default function Dashboard() {
 
   function textoPerfil(perfil?: string) {
     const perfis: Record<string, string> = {
-      proprietario: "Proprietário",
+      proprietario: "ProprietÃ¡rio",
       inquilino: "Inquilino",
       familiar: "Familiar",
       morador: "Morador",
-      funcionario: "Funcionário",
+      funcionario: "FuncionÃ¡rio",
       outro: "Outro",
     };
 
-    return perfis[perfil || ""] || perfil || "Não informado";
+    return perfis[perfil || ""] || perfil || "NÃ£o informado";
   }
 
   function formatarDataHora(data?: string) {
-    if (!data) return "Data não informada";
+    if (!data) return "Data nÃ£o informada";
 
     const valor = new Date(data);
 
@@ -632,16 +667,16 @@ export default function Dashboard() {
 
   function textoStatusImplantacao(status?: string) {
     const statusConhecidos: Record<string, string> = {
-      "sem-cadastro": "🔴 Sem cadastro",
-      "link-enviado": "🔵 Link enviado",
-      "cadastro-iniciado": "🟡 Cadastro iniciado",
-      "aguardando-analise": "🟠 Aguardando análise",
-      "correcao-solicitada": "🟣 Correção solicitada",
-      aprovado: "🟢 Aprovado",
-      implantado: "✅ Implantado",
+      "sem-cadastro": "ðŸ”´ Sem cadastro",
+      "link-enviado": "ðŸ”µ Link enviado",
+      "cadastro-iniciado": "ðŸŸ¡ Cadastro iniciado",
+      "aguardando-analise": "ðŸŸ  Aguardando anÃ¡lise",
+      "correcao-solicitada": "ðŸŸ£ CorreÃ§Ã£o solicitada",
+      aprovado: "ðŸŸ¢ Aprovado",
+      implantado: "âœ… Implantado",
     };
 
-    return statusConhecidos[status || ""] || "🔴 Sem cadastro";
+    return statusConhecidos[status || ""] || "ðŸ”´ Sem cadastro";
   }
 
   function classesStatusImplantacao(status?: string) {
@@ -849,33 +884,35 @@ export default function Dashboard() {
   nome: string;
   icone: string;
 }[] = [
-  { id: "inicio", nome: "Início", icone: "🏠" },
+  { id: "inicio", nome: "InÃ­cio", icone: "ðŸ " },
 
-  { id: "dashboard", nome: "Dashboard", icone: "📊" },
+  { id: "dashboard", nome: "Dashboard", icone: "ðŸ“Š" },
 
-  { id: "sindico", nome: "Síndico", icone: "🏢" },
+  ...(modoCondominio
+  ? [{ id: "sindico" as const, nome: "SÃ­ndico", icone: "ðŸ¢" }]
+  : []),
 
-  { id: "locais", nome: "Locais", icone: "🏢" },
+  { id: "locais", nome: "Locais", icone: "ðŸ¢" },
 
-  { id: "locais-universais", nome: "Cadastro Universal", icone: "🌐" },
+  { id: "locais-universais", nome: "Cadastro Universal", icone: "ðŸŒ" },
 
-  { id: "unidades", nome: "Unidades", icone: "🚪" },
+  { id: "unidades", nome: "Unidades", icone: "ðŸšª" },
 
-  { id: "moradores", nome: "Moradores", icone: "👥" },
+  { id: "moradores", nome: "Moradores", icone: "ðŸ‘¥" },
 
-  { id: "planos", nome: "Planos", icone: "💳" },
+  { id: "planos", nome: "Planos", icone: "ðŸ’³" },
 
-  { id: "pendentes", nome: "Pendentes", icone: "⏳" },
+  { id: "pendentes", nome: "Pendentes", icone: "â³" },
 
-  { id: "implantacao", nome: "Implantação", icone: "🚀" },
+  { id: "implantacao", nome: "ImplantaÃ§Ã£o", icone: "ðŸš€" },
 
-  { id: "contingencia", nome: "Contingência", icone: "🛟" },
+  { id: "contingencia", nome: "ContingÃªncia", icone: "ðŸ›Ÿ" },
 ];
 
   return (
     <main className="min-h-screen bg-slate-950 text-white">
       <header className="sticky top-0 z-40 flex items-center justify-between border-b border-slate-800 bg-slate-950 px-4 py-3 md:hidden">
-        <button onClick={()=>setMenuMobileAberto(true)} className="rounded-xl bg-slate-800 px-3 py-2">☰</button>
+        <button onClick={()=>setMenuMobileAberto(true)} className="rounded-xl bg-slate-800 px-3 py-2">â˜°</button>
         <span className="font-black text-blue-400">QR Central</span>
         <div className="w-8"/>
       </header>
@@ -960,7 +997,7 @@ setMenuMobileAberto(false);
           <div className="mt-8 bg-slate-800 rounded-xl p-4 border border-slate-700">
             <p className="text-xs text-slate-400">Piloto atual protegido</p>
             <p className="text-sm font-bold text-green-400 mt-1">
-              qr1 até qr5 intactos
+              qr1 atÃ© qr5 intactos
             </p>
           </div>
         </aside>
@@ -968,13 +1005,13 @@ setMenuMobileAberto(false);
         <section className="min-w-0 flex-1 overflow-x-hidden p-3 sm:p-4 md:p-8">
           {telaAtiva === "dashboard" && (
             <div className="space-y-5">
-              {/* Apresentação principal compacta */}
+              {/* ApresentaÃ§Ã£o principal compacta */}
 
               <section className="rounded-3xl border border-blue-500/30 bg-gradient-to-r from-blue-700 to-cyan-600 p-5 shadow-xl md:p-6">
                 <div className="grid gap-5 lg:grid-cols-[1fr_auto] lg:items-center">
                   <div>
                     <div className="inline-flex rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-[10px] font-black text-blue-50 backdrop-blur">
-                      QR ACESSO • PLATAFORMA INTELIGENTE
+                      QR ACESSO â€¢ PLATAFORMA INTELIGENTE
                     </div>
 
                     <h2 className="mt-4 text-3xl font-black leading-tight text-white md:text-4xl">
@@ -982,17 +1019,17 @@ setMenuMobileAberto(false);
                     </h2>
 
                     <p className="mt-2 max-w-3xl text-sm font-semibold leading-relaxed text-blue-50 md:text-base">
-                      Conectando pessoas, serviços, tecnologia e operações em
-                      uma única plataforma.
+                      Conectando pessoas, serviÃ§os, tecnologia e operaÃ§Ãµes em
+                      uma Ãºnica plataforma.
                     </p>
 
                     <div className="mt-4 flex flex-wrap gap-2">
                       <button
                         type="button"
-                        onClick={() => setTelaAtiva("sindico")}
+                        onClick={() => window.location.href = "/dashboard/morador"}
                         className="rounded-xl bg-white px-4 py-2.5 text-sm font-black text-blue-700 shadow transition-all hover:bg-blue-50 active:scale-95"
                       >
-                        Abrir Painel do Síndico
+                        Abrir minha residencia
                       </button>
 
                       <button
@@ -1002,7 +1039,7 @@ setMenuMobileAberto(false);
 }}
                         className="rounded-xl border border-white/30 bg-white/10 px-4 py-2.5 text-sm font-black text-white backdrop-blur transition-all hover:bg-white/20 active:scale-95"
                       >
-                        Ver implantação
+                        Ver implantaÃ§Ã£o
                       </button>
                     </div>
                   </div>
@@ -1010,21 +1047,21 @@ setMenuMobileAberto(false);
                   <div className="grid min-w-[260px] gap-3 sm:grid-cols-2 lg:grid-cols-1">
                     <div className="rounded-2xl border border-white/20 bg-slate-950/20 p-4 backdrop-blur">
                       <p className="text-[10px] font-black text-blue-100">
-                        🧪 QR ACESSO STUDIO
+                        ðŸ§ª QR ACESSO STUDIO
                       </p>
 
                       <p className="mt-1 text-lg font-black text-white">
-                        Ambiente de evolução
+                        Ambiente de evoluÃ§Ã£o
                       </p>
 
                       <p className="mt-1 text-xs leading-relaxed text-blue-100">
-                        Desenvolvimento, testes e homologação antes da produção.
+                        Desenvolvimento, testes e homologaÃ§Ã£o antes da produÃ§Ã£o.
                       </p>
                     </div>
 
                     <div className="rounded-2xl border border-white/20 bg-slate-950/20 p-4 backdrop-blur">
                       <p className="text-[10px] font-black text-blue-100">
-                        🛡️ AMBIENTE PROTEGIDO
+                        ðŸ›¡ï¸ AMBIENTE PROTEGIDO
                       </p>
 
                       <p className="mt-1 text-lg font-black text-white">
@@ -1032,7 +1069,7 @@ setMenuMobileAberto(false);
                       </p>
 
                       <p className="mt-1 text-xs leading-relaxed text-blue-100">
-                        qr1 até qr5 permanecem intactos durante os testes.
+                        qr1 atÃ© qr5 permanecem intactos durante os testes.
                       </p>
                     </div>
                   </div>
@@ -1048,12 +1085,12 @@ setMenuMobileAberto(false);
                   </p>
 
                   <h3 className="mt-1 text-2xl font-black text-white">
-                    Uma plataforma. Várias soluções conectadas.
+                    Uma plataforma. VÃ¡rias soluÃ§Ãµes conectadas.
                   </h3>
 
                   <p className="mt-2 max-w-3xl text-sm leading-relaxed text-slate-400">
                     Cada recurso conversa com os demais para entregar uma
-                    experiência única, modular e adaptável à realidade de cada
+                    experiÃªncia Ãºnica, modular e adaptÃ¡vel Ã  realidade de cada
                     cliente.
                   </p>
                 </div>
@@ -1061,55 +1098,55 @@ setMenuMobileAberto(false);
                 <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
                   {[
                     {
-                      icone: "🚪",
+                      icone: "ðŸšª",
                       titulo: "Controle de acesso",
                       texto:
-                        "Visitantes, portões, QR Code, abertura remota, BLE, NFC e integração com o hardware existente.",
+                        "Visitantes, portÃµes, QR Code, abertura remota, BLE, NFC e integraÃ§Ã£o com o hardware existente.",
                       status: "Ativo",
                       classes:
                         "border-blue-800 bg-blue-950/25 text-blue-300",
                     },
                     {
-                      icone: "📷",
-                      titulo: "Câmeras e segurança",
+                      icone: "ðŸ“·",
+                      titulo: "CÃ¢meras e seguranÃ§a",
                       texto:
-                        "Capturas, monitoramento, histórico visual e integração com diferentes marcas e protocolos.",
-                      status: "Em evolução",
+                        "Capturas, monitoramento, histÃ³rico visual e integraÃ§Ã£o com diferentes marcas e protocolos.",
+                      status: "Em evoluÃ§Ã£o",
                       classes:
                         "border-violet-800 bg-violet-950/25 text-violet-300",
                     },
                     {
-                      icone: "👥",
+                      icone: "ðŸ‘¥",
                       titulo: "Pessoas e unidades",
                       texto:
-                        "Perfis inteligentes, moradores, dependentes, unidades, visitantes, veículos, pets e histórico unificado.",
+                        "Perfis inteligentes, moradores, dependentes, unidades, visitantes, veÃ­culos, pets e histÃ³rico unificado.",
                       status: "Ativo",
                       classes:
                         "border-cyan-800 bg-cyan-950/25 text-cyan-300",
                     },
                     {
-                      icone: "🛠",
-                      titulo: "Operação e prestadores",
+                      icone: "ðŸ› ",
+                      titulo: "OperaÃ§Ã£o e prestadores",
                       texto:
-                        "Manutenções, solicitações, contratos, serviços, ordens de trabalho e acompanhamento de SLA.",
-                      status: "Disponível",
+                        "ManutenÃ§Ãµes, solicitaÃ§Ãµes, contratos, serviÃ§os, ordens de trabalho e acompanhamento de SLA.",
+                      status: "DisponÃ­vel",
                       classes:
                         "border-orange-800 bg-orange-950/25 text-orange-300",
                     },
                     {
-                      icone: "💰",
-                      titulo: "Gestão financeira",
+                      icone: "ðŸ’°",
+                      titulo: "GestÃ£o financeira",
                       texto:
-                        "Saúde financeira, pagamentos, inadimplência, contratos, previsões e indicadores executivos.",
-                      status: "Disponível",
+                        "SaÃºde financeira, pagamentos, inadimplÃªncia, contratos, previsÃµes e indicadores executivos.",
+                      status: "DisponÃ­vel",
                       classes:
                         "border-emerald-800 bg-emerald-950/25 text-emerald-300",
                     },
                     {
-                      icone: "🤖",
-                      titulo: "Inteligência e automação",
+                      icone: "ðŸ¤–",
+                      titulo: "InteligÃªncia e automaÃ§Ã£o",
                       texto:
-                        "Alertas críticos, prioridades, SLA, resumos inteligentes e comunicação automática com usuários.",
+                        "Alertas crÃ­ticos, prioridades, SLA, resumos inteligentes e comunicaÃ§Ã£o automÃ¡tica com usuÃ¡rios.",
                       status: "Novo",
                       classes:
                         "border-fuchsia-800 bg-fuchsia-950/25 text-fuchsia-300",
@@ -1139,28 +1176,28 @@ setMenuMobileAberto(false);
                 </div>
               </section>
 
-              {/* Evolua seu condomínio */}
+              {/* Evolua seu condomÃ­nio */}
 
               <section className="rounded-3xl border border-amber-700/70 bg-gradient-to-br from-amber-950/25 via-slate-900 to-slate-900 p-4 md:p-5">
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
                   <div>
                     <p className="text-xs font-black text-amber-300">
-                      🚀 EVOLUA SEU CONDOMÍNIO
+                      ðŸš€ EVOLUA SEU CONDOMÃNIO
                     </p>
 
                     <h3 className="mt-1 text-2xl font-black text-white">
-                      Próximas evoluções para sua operação
+                      PrÃ³ximas evoluÃ§Ãµes para sua operaÃ§Ã£o
                     </h3>
 
                     <p className="mt-2 max-w-3xl text-sm leading-relaxed text-slate-400">
-                      Recursos que podem melhorar a rotina do condomínio com
-                      benefícios claros e integração ao ecossistema QR Acesso.
+                      Recursos que podem melhorar a rotina do condomÃ­nio com
+                      benefÃ­cios claros e integraÃ§Ã£o ao ecossistema QR Acesso.
                     </p>
                   </div>
 
                   <div className="rounded-2xl border border-amber-800 bg-amber-950/20 px-4 py-3">
                     <p className="text-xs font-bold text-amber-300">
-                      EVOLUÇÕES DISPONÍVEIS
+                      EVOLUÃ‡Ã•ES DISPONÃVEIS
                     </p>
                     <p className="mt-1 text-2xl font-black text-white">4</p>
                   </div>
@@ -1169,50 +1206,50 @@ setMenuMobileAberto(false);
                 <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
                   {[
                     {
-                      icone: "📱",
+                      icone: "ðŸ“±",
                       titulo: "Acesso por NFC",
                       descricao:
-                        "Entre no condomínio aproximando o celular ou uma credencial NFC.",
+                        "Entre no condomÃ­nio aproximando o celular ou uma credencial NFC.",
                       beneficios: [
                         "Mais praticidade",
-                        "Mais segurança",
-                        "Menos chaves físicas",
+                        "Mais seguranÃ§a",
+                        "Menos chaves fÃ­sicas",
                       ],
-                      status: "Disponível",
+                      status: "DisponÃ­vel",
                       classes:
                         "border-blue-800 bg-blue-950/20 text-blue-300",
                     },
                     {
-                      icone: "📷",
-                      titulo: "Câmeras inteligentes",
+                      icone: "ðŸ“·",
+                      titulo: "CÃ¢meras inteligentes",
                       descricao:
-                        "Integre as câmeras existentes e registre imagens no histórico dos eventos.",
+                        "Integre as cÃ¢meras existentes e registre imagens no histÃ³rico dos eventos.",
                       beneficios: [
-                        "Histórico visual",
-                        "Registro automático",
-                        "Mais contexto e segurança",
+                        "HistÃ³rico visual",
+                        "Registro automÃ¡tico",
+                        "Mais contexto e seguranÃ§a",
                       ],
-                      status: "Em homologação",
+                      status: "Em homologaÃ§Ã£o",
                       classes:
                         "border-violet-800 bg-violet-950/20 text-violet-300",
                     },
                     {
-                      icone: "💰",
+                      icone: "ðŸ’°",
                       titulo: "Financeiro inteligente",
                       descricao:
-                        "Centralize caixa, inadimplência, contratos, pagamentos e previsões.",
+                        "Centralize caixa, inadimplÃªncia, contratos, pagamentos e previsÃµes.",
                       beneficios: [
-                        "Visão consolidada",
+                        "VisÃ£o consolidada",
                         "Menos planilhas",
-                        "Decisões mais rápidas",
+                        "DecisÃµes mais rÃ¡pidas",
                       ],
-                      status: "Disponível",
+                      status: "DisponÃ­vel",
                       classes:
                         "border-emerald-800 bg-emerald-950/20 text-emerald-300",
                     },
                     {
-                      icone: "🤖",
-                      titulo: "Inteligência operacional",
+                      icone: "ðŸ¤–",
+                      titulo: "InteligÃªncia operacional",
                       descricao:
                         "Identifique atrasos, falhas, prioridades e oportunidades automaticamente.",
                       beneficios: [
@@ -1251,7 +1288,7 @@ setMenuMobileAberto(false);
                             key={beneficio}
                             className="text-xs font-bold text-slate-300"
                           >
-                            ✓ {beneficio}
+                            âœ“ {beneficio}
                           </p>
                         ))}
                       </div>
@@ -1260,19 +1297,19 @@ setMenuMobileAberto(false);
                         type="button"
                         className="mt-auto pt-5 text-left text-sm font-black transition-all hover:brightness-125 active:scale-[0.98]"
                       >
-                        Conhecer solução →
+                        Conhecer soluÃ§Ã£o â†’
                       </button>
                     </article>
                   ))}
                 </div>
               </section>
 
-              {/* O que está chegando */}
+              {/* O que estÃ¡ chegando */}
 
               <section className="rounded-3xl border border-slate-800 bg-slate-900 p-4 md:p-5">
                 <div>
                   <p className="text-xs font-black text-cyan-300">
-                    O QUE ESTÁ CHEGANDO
+                    O QUE ESTÃ CHEGANDO
                   </p>
 
                   <h3 className="mt-1 text-2xl font-black text-white">
@@ -1280,47 +1317,47 @@ setMenuMobileAberto(false);
                   </h3>
 
                   <p className="mt-2 max-w-3xl text-sm leading-relaxed text-slate-400">
-                    Novos recursos passam primeiro pelo Studio e avançam após
-                    testes e homologação.
+                    Novos recursos passam primeiro pelo Studio e avanÃ§am apÃ³s
+                    testes e homologaÃ§Ã£o.
                   </p>
                 </div>
 
                 <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
                   {[
                     {
-                      icone: "🧠",
+                      icone: "ðŸ§ ",
                       nome: "Motor inteligente de SLA",
                       status: "Em desenvolvimento",
                       cor: "text-orange-300",
                     },
                     {
-                      icone: "📷",
-                      nome: "Gerenciador universal de câmeras",
-                      status: "Em homologação",
+                      icone: "ðŸ“·",
+                      nome: "Gerenciador universal de cÃ¢meras",
+                      status: "Em homologaÃ§Ã£o",
                       cor: "text-violet-300",
                     },
                     {
-                      icone: "📶",
-                      nome: "BLE como contingência local",
+                      icone: "ðŸ“¶",
+                      nome: "BLE como contingÃªncia local",
                       status: "Planejado",
                       cor: "text-blue-300",
                     },
                     {
-                      icone: "🕘",
-                      nome: "Histórico inteligente por pessoa",
+                      icone: "ðŸ•˜",
+                      nome: "HistÃ³rico inteligente por pessoa",
                       status: "Em desenvolvimento",
                       cor: "text-cyan-300",
                     },
                     {
-                      icone: "🛍️",
+                      icone: "ðŸ›ï¸",
                       nome: "Marketplace de prestadores",
                       status: "Planejado",
                       cor: "text-emerald-300",
                     },
                     {
-                      icone: "🏢",
-                      nome: "Central Inteligente de Operações",
-                      status: "Em evolução",
+                      icone: "ðŸ¢",
+                      nome: "Central Inteligente de OperaÃ§Ãµes",
+                      status: "Em evoluÃ§Ã£o",
                       cor: "text-fuchsia-300",
                     },
                   ].map((item) => (
@@ -1349,10 +1386,10 @@ setMenuMobileAberto(false);
                 </p>
 
                 <blockquote className="mt-3 max-w-5xl text-lg font-black leading-relaxed text-white md:text-2xl">
-                  O QR Acesso não é apenas um sistema de portaria. É uma
-                  plataforma modular criada para conectar pessoas, serviços,
-                  organizações e dispositivos, evoluindo junto com cada
-                  operação.
+                  O QR Acesso nÃ£o Ã© apenas um sistema de portaria. Ã‰ uma
+                  plataforma modular criada para conectar pessoas, serviÃ§os,
+                  organizaÃ§Ãµes e dispositivos, evoluindo junto com cada
+                  operaÃ§Ã£o.
                 </blockquote>
               </section>
             </div>
@@ -1366,13 +1403,13 @@ setMenuMobileAberto(false);
 
           {telaAtiva === "locais" && (
             <div className="space-y-5">
-              {/* Cabeçalho */}
+              {/* CabeÃ§alho */}
 
               <section className="rounded-3xl bg-gradient-to-r from-blue-700 to-cyan-600 p-5 text-white md:p-7">
                 <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
                   <div>
                     <p className="text-sm font-bold text-blue-100">
-                      🏢 MÓDULO DE LOCAIS
+                      ðŸ¢ MÃ“DULO DE LOCAIS
                     </p>
 
                     <h2 className="mt-1 text-3xl font-black md:text-4xl">
@@ -1380,8 +1417,8 @@ setMenuMobileAberto(false);
                     </h2>
 
                     <p className="mt-2 text-sm text-blue-100 md:text-base">
-                      Gerencie condomínios, casas, empresas, chácaras,
-                      portarias e outros espaços conectados ao QR Acesso.
+                      Gerencie condomÃ­nios, casas, empresas, chÃ¡caras,
+                      portarias e outros espaÃ§os conectados ao QR Acesso.
                     </p>
                   </div>
 
@@ -1390,7 +1427,7 @@ setMenuMobileAberto(false);
                     onClick={() => setModalNovoLocalAberto(true)}
                     className="rounded-2xl bg-white px-5 py-3 font-black text-blue-700 shadow-lg transition-all hover:bg-blue-50 active:scale-95"
                   >
-                    ＋ Novo local
+                    ï¼‹ Novo local
                   </button>
                 </div>
               </section>
@@ -1409,7 +1446,7 @@ setMenuMobileAberto(false);
 
                 <div className="rounded-2xl border border-blue-800 bg-blue-950/25 p-4">
                   <p className="text-xs font-bold text-blue-300">
-                    CONDOMÍNIOS
+                    CONDOMÃNIOS
                   </p>
                   <p className="mt-2 text-3xl font-black text-white">
                     {totalCondominios}
@@ -1441,13 +1478,13 @@ setMenuMobileAberto(false);
                 <div className="grid gap-3 lg:grid-cols-[1fr_240px_190px]">
                   <div className="relative">
                     <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-lg">
-                      🔍
+                      ðŸ”
                     </span>
 
                     <input
                       value={buscaLocal}
                       onChange={(event) => setBuscaLocal(event.target.value)}
-                      placeholder="Pesquisar por nome, cidade, código ou plano..."
+                      placeholder="Pesquisar por nome, cidade, cÃ³digo ou plano..."
                       className="w-full rounded-xl border border-slate-700 bg-slate-800 py-3 pl-12 pr-4 text-white outline-none transition-all placeholder:text-slate-500 focus:border-blue-500"
                     />
                   </div>
@@ -1460,12 +1497,12 @@ setMenuMobileAberto(false);
                     className="w-full rounded-xl border border-slate-700 bg-slate-800 p-3 text-white outline-none focus:border-blue-500"
                   >
                     <option value="todos">Todos os tipos</option>
-                    <option value="condominio">🏢 Condomínios</option>
-                    <option value="casa">🏠 Casas</option>
-                    <option value="empresa">🏭 Empresas</option>
-                    <option value="airbnb">🧳 Airbnb</option>
-                    <option value="chacara">🌳 Chácaras</option>
-                    <option value="portaria">🛡️ Portarias</option>
+                    <option value="condominio">ðŸ¢ CondomÃ­nios</option>
+                    <option value="casa">ðŸ  Casas</option>
+                    <option value="empresa">ðŸ­ Empresas</option>
+                    <option value="airbnb">ðŸ§³ Airbnb</option>
+                    <option value="chacara">ðŸŒ³ ChÃ¡caras</option>
+                    <option value="portaria">ðŸ›¡ï¸ Portarias</option>
                   </select>
 
                   <select
@@ -1476,9 +1513,9 @@ setMenuMobileAberto(false);
                     className="w-full rounded-xl border border-slate-700 bg-slate-800 p-3 text-white outline-none focus:border-blue-500"
                   >
                     <option value="todos">Todos os status</option>
-                    <option value="ativo">🟢 Ativos</option>
-                    <option value="inativo">⚪ Inativos</option>
-                    <option value="implantacao">🟠 Em implantação</option>
+                    <option value="ativo">ðŸŸ¢ Ativos</option>
+                    <option value="inativo">âšª Inativos</option>
+                    <option value="implantacao">ðŸŸ  Em implantaÃ§Ã£o</option>
                   </select>
                 </div>
 
@@ -1522,7 +1559,7 @@ setMenuMobileAberto(false);
 
                 {locaisFiltrados.length === 0 ? (
                   <div className="mt-5 rounded-2xl border border-slate-700 bg-slate-800 p-8 text-center">
-                    <div className="text-4xl">🏢</div>
+                    <div className="text-4xl">ðŸ¢</div>
                     <p className="mt-3 font-black text-slate-300">
                       Nenhum local encontrado
                     </p>
@@ -1556,16 +1593,16 @@ setMenuMobileAberto(false);
                             <div className="flex min-w-0 items-start gap-3">
                               <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-blue-950 text-2xl">
                                 {local.tipo === "condominio"
-                                  ? "🏢"
+                                  ? "ðŸ¢"
                                   : local.tipo === "casa"
-                                  ? "🏠"
+                                  ? "ðŸ "
                                   : local.tipo === "empresa"
-                                  ? "🏭"
+                                  ? "ðŸ­"
                                   : local.tipo === "airbnb"
-                                  ? "🧳"
+                                  ? "ðŸ§³"
                                   : local.tipo === "chacara"
-                                  ? "🌳"
-                                  : "📍"}
+                                  ? "ðŸŒ³"
+                                  : "ðŸ“"}
                               </div>
 
                               <div className="min-w-0">
@@ -1581,7 +1618,7 @@ setMenuMobileAberto(false);
                                         : "bg-slate-900 text-slate-400"
                                     }`}
                                   >
-                                    {ativo ? "🟢 Saudável" : "⚪ Inativo"}
+                                    {ativo ? "ðŸŸ¢ SaudÃ¡vel" : "âšª Inativo"}
                                   </span>
                                 </div>
 
@@ -1590,35 +1627,35 @@ setMenuMobileAberto(false);
                                 </h4>
 
                                 <p className="mt-1 text-sm text-slate-300">
-                                  📍 {local.cidade}/{local.estado}
+                                  ðŸ“ {local.cidade}/{local.estado}
                                 </p>
 
                                 <p className="mt-1 text-sm text-slate-400">
-                                  {formatarTextoTipo(local.tipo)} • Plano{" "}
-                                  {local.plano || "não informado"}
+                                  {formatarTextoTipo(local.tipo)} â€¢ Plano{" "}
+                                  {local.plano || "nÃ£o informado"}
                                 </p>
                               </div>
                             </div>
 
                             <div className="shrink-0 text-right">
                               <p className="text-xs font-bold text-slate-300">
-                                🏠 {unidadesDoLocal.length} unidades
+                                ðŸ  {unidadesDoLocal.length} unidades
                               </p>
 
                               <p className="mt-1 text-xs font-bold text-slate-400">
-                                👥 {moradoresDoLocal.length} moradores
+                                ðŸ‘¥ {moradoresDoLocal.length} moradores
                               </p>
 
                               <p className="mt-1 text-xs font-bold text-slate-400">
-                                🚪 {local.tipo === "condominio" ? 1 : 0} portaria
+                                ðŸšª {local.tipo === "condominio" ? 1 : 0} portaria
                               </p>
 
                               <p className="mt-1 text-xs font-bold text-slate-400">
-                                📷 0 câmeras
+                                ðŸ“· 0 cÃ¢meras
                               </p>
 
                               <p className="mt-3 text-xs font-black text-blue-300">
-                                Abrir perfil →
+                                Abrir perfil â†’
                               </p>
                             </div>
                           </div>
@@ -1637,7 +1674,7 @@ setMenuMobileAberto(false);
                     <div className="flex items-start justify-between gap-4">
                       <div>
                         <p className="text-sm font-bold text-blue-300">
-                          ＋ NOVO LOCAL
+                          ï¼‹ NOVO LOCAL
                         </p>
 
                         <h3 className="mt-1 text-2xl font-black text-white">
@@ -1645,8 +1682,8 @@ setMenuMobileAberto(false);
                         </h3>
 
                         <p className="mt-2 text-sm text-slate-400">
-                          Cadastre condomínios, casas, empresas, chácaras,
-                          portarias e outros espaços.
+                          Cadastre condomÃ­nios, casas, empresas, chÃ¡caras,
+                          portarias e outros espaÃ§os.
                         </p>
                       </div>
 
@@ -1656,7 +1693,7 @@ setMenuMobileAberto(false);
                         disabled={salvando}
                         className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-800 text-xl font-black transition-all hover:bg-slate-700 active:scale-95 disabled:opacity-50"
                       >
-                        ✕
+                        âœ•
                       </button>
                     </div>
 
@@ -1677,10 +1714,10 @@ setMenuMobileAberto(false);
                         }
                         className="w-full rounded-xl border border-slate-700 bg-slate-800 p-3 text-white outline-none focus:border-blue-500"
                       >
-                        <option value="condominio">Condomínio</option>
+                        <option value="condominio">CondomÃ­nio</option>
                         <option value="casa">Casa</option>
                         <option value="airbnb">Airbnb</option>
-                        <option value="chacara">Chácara</option>
+                        <option value="chacara">ChÃ¡cara</option>
                         <option value="empresa">Empresa</option>
                         <option value="portaria">Portaria</option>
                       </select>
@@ -1717,7 +1754,7 @@ setMenuMobileAberto(false);
                           Residencial Pro
                         </option>
                         <option value="airbnb">Airbnb</option>
-                        <option value="condominio">Condomínio</option>
+                        <option value="condominio">CondomÃ­nio</option>
                         <option value="teste-piloto">Teste Piloto</option>
                       </select>
 
@@ -1792,6 +1829,7 @@ setMenuMobileAberto(false);
               podeAbrirPortao={podeAbrirPortao}
               setPodeAbrirPortao={setPodeAbrirPortao}
               cadastrarMorador={cadastrarMorador}
+              atualizarMorador={atualizarMorador}
               salvandoMorador={salvandoMorador}
             />
           )}
@@ -1804,8 +1842,8 @@ setMenuMobileAberto(false);
               </h2>
 
               <p className="text-slate-400 mb-6">
-                Atualizações cadastrais enviadas pelos moradores e aguardando
-                análise.
+                AtualizaÃ§Ãµes cadastrais enviadas pelos moradores e aguardando
+                anÃ¡lise.
               </p>
 
               <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
@@ -1818,7 +1856,7 @@ setMenuMobileAberto(false);
 
                 <div className="bg-yellow-950/40 rounded-2xl p-5 border border-yellow-800">
                   <p className="text-yellow-300 text-sm font-bold">
-                    🟡 Aguardando análise
+                    ðŸŸ¡ Aguardando anÃ¡lise
                   </p>
                   <p className="text-3xl font-black mt-2">
                     {atualizacoesPendentes.length}
@@ -1827,7 +1865,7 @@ setMenuMobileAberto(false);
 
                 <div className="bg-green-950/40 rounded-2xl p-5 border border-green-800 col-span-2 lg:col-span-1">
                   <p className="text-green-300 text-sm font-bold">
-                    ✅ Já analisadas
+                    âœ… JÃ¡ analisadas
                   </p>
                   <p className="text-3xl font-black mt-2">
                     {
@@ -1843,10 +1881,10 @@ setMenuMobileAberto(false);
                 <div className="flex items-start justify-between gap-3 mb-5">
                   <div>
                     <h3 className="text-2xl font-black">
-                      Atualizações cadastrais
+                      AtualizaÃ§Ãµes cadastrais
                     </h3>
                     <p className="text-sm text-slate-400 mt-1">
-                      Nesta etapa, apenas conferimos se os dados enviados estão
+                      Nesta etapa, apenas conferimos se os dados enviados estÃ£o
                       chegando corretamente.
                     </p>
                   </div>
@@ -1855,10 +1893,10 @@ setMenuMobileAberto(false);
                 {atualizacoesPendentes.length === 0 ? (
                   <div className="bg-slate-800 rounded-xl p-6 border border-slate-700 text-center">
                     <p className="text-lg font-black text-slate-300">
-                      Nenhuma atualização pendente
+                      Nenhuma atualizaÃ§Ã£o pendente
                     </p>
                     <p className="text-sm text-slate-500 mt-2">
-                      As novas solicitações aparecerão aqui automaticamente.
+                      As novas solicitaÃ§Ãµes aparecerÃ£o aqui automaticamente.
                     </p>
                   </div>
                 ) : (
@@ -1872,7 +1910,7 @@ setMenuMobileAberto(false);
                           <div>
                             <div className="flex flex-wrap items-center gap-2">
                               <span className="text-xs font-black text-yellow-300 bg-yellow-950/50 border border-yellow-800 px-3 py-1 rounded-full">
-                                🟡 Pendente
+                                ðŸŸ¡ Pendente
                               </span>
 
                               <span className="text-xs font-black text-blue-300">
@@ -1881,24 +1919,24 @@ setMenuMobileAberto(false);
                             </div>
 
                             <h4 className="text-xl font-black mt-3">
-                              👤 {solicitacao.nome}
+                              ðŸ‘¤ {solicitacao.nome}
                             </h4>
 
                             <p className="text-sm text-slate-300 mt-2">
-                              🏢 {solicitacao.condominioNome}
+                              ðŸ¢ {solicitacao.condominioNome}
                             </p>
 
                             <p className="text-sm text-slate-300">
-                              🏠 {solicitacao.unidadeNome}
+                              ðŸ  {solicitacao.unidadeNome}
                             </p>
 
                             <p className="text-sm text-slate-400 mt-2">
-                              📱 {solicitacao.telefone}
+                              ðŸ“± {solicitacao.telefone}
                             </p>
 
                             {solicitacao.email && (
                               <p className="text-sm text-slate-400">
-                                ✉️ {solicitacao.email}
+                                âœ‰ï¸ {solicitacao.email}
                               </p>
                             )}
 
@@ -1909,8 +1947,8 @@ setMenuMobileAberto(false);
 
                               <span className="text-xs bg-slate-900 border border-slate-700 px-3 py-1 rounded-full text-cyan-300 font-bold">
                                 {solicitacao.recebeChamadas
-                                  ? "🔔 Recebe chamadas"
-                                  : "🔕 Não recebe chamadas"}
+                                  ? "ðŸ”” Recebe chamadas"
+                                  : "ðŸ”• NÃ£o recebe chamadas"}
                               </span>
                             </div>
                           </div>
@@ -1945,7 +1983,7 @@ setMenuMobileAberto(false);
           {telaAtiva === "implantacao" && (
             <div>
               <h2 className="text-3xl font-black text-blue-300 mb-2">
-                Implantação
+                ImplantaÃ§Ã£o
               </h2>
 
               <p className="text-slate-400 mb-6">
@@ -1965,7 +2003,7 @@ setMenuMobileAberto(false);
 
                     <p className="text-sm text-slate-400 mt-1">
                       {totalImplantadas} de {totalUnidadesImplantacao} unidade(s)
-                      concluída(s).
+                      concluÃ­da(s).
                     </p>
                   </div>
 
@@ -1985,7 +2023,7 @@ setMenuMobileAberto(false);
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
                 <div className="bg-green-950/40 border border-green-800 rounded-2xl p-4">
                   <p className="text-xs text-green-300 font-black">
-                    ✅ Implantadas
+                    âœ… Implantadas
                   </p>
                   <p className="text-3xl font-black mt-2">
                     {totalImplantadas}
@@ -1994,7 +2032,7 @@ setMenuMobileAberto(false);
 
                 <div className="bg-orange-950/40 border border-orange-800 rounded-2xl p-4">
                   <p className="text-xs text-orange-300 font-black">
-                    🟠 Aguardando análise
+                    ðŸŸ  Aguardando anÃ¡lise
                   </p>
                   <p className="text-3xl font-black mt-2">
                     {totalAguardandoAnalise}
@@ -2003,7 +2041,7 @@ setMenuMobileAberto(false);
 
                 <div className="bg-yellow-950/40 border border-yellow-800 rounded-2xl p-4">
                   <p className="text-xs text-yellow-300 font-black">
-                    🟡 Cadastro iniciado
+                    ðŸŸ¡ Cadastro iniciado
                   </p>
                   <p className="text-3xl font-black mt-2">
                     {totalCadastroIniciado}
@@ -2012,7 +2050,7 @@ setMenuMobileAberto(false);
 
                 <div className="bg-slate-900 border border-slate-700 rounded-2xl p-4">
                   <p className="text-xs text-slate-300 font-black">
-                    ⚪ Sem cadastro
+                    âšª Sem cadastro
                   </p>
                   <p className="text-3xl font-black mt-2">
                     {totalSemCadastro}
@@ -2027,10 +2065,10 @@ setMenuMobileAberto(false);
 
                 <div className="flex flex-wrap gap-2">
                   {[
-                    { id: "acao", nome: "⚡ Precisa de ação" },
+                    { id: "acao", nome: "âš¡ Precisa de aÃ§Ã£o" },
                     { id: "todos", nome: "Todas" },
-                    { id: "implantadas", nome: "✅ Implantadas" },
-                    { id: "sem-cadastro", nome: "⚪ Sem cadastro" },
+                    { id: "implantadas", nome: "âœ… Implantadas" },
+                    { id: "sem-cadastro", nome: "âšª Sem cadastro" },
                   ].map((filtro) => (
                     <button
                       key={filtro.id}
@@ -2063,7 +2101,7 @@ setMenuMobileAberto(false);
                   </p>
 
                   <p className="text-sm text-slate-500 mt-2">
-                    Cadastre as unidades para iniciar o acompanhamento da implantação.
+                    Cadastre as unidades para iniciar o acompanhamento da implantaÃ§Ã£o.
                   </p>
                 </div>
               ) : (
@@ -2108,7 +2146,7 @@ setMenuMobileAberto(false);
                             </p>
 
                             <h3 className="text-2xl font-black mt-1">
-                              🏢 {local.nome}
+                              ðŸ¢ {local.nome}
                             </h3>
 
                             <p className="text-sm text-slate-400 mt-1">
@@ -2247,7 +2285,7 @@ setMenuMobileAberto(false);
                                             </p>
 
                                             <p className="text-xl font-black text-white mt-1">
-                                              🏠{" "}
+                                              ðŸ {" "}
                                               {unidade.bloco
                                                 ? `${unidade.bloco} / ${unidade.nome}`
                                                 : unidade.nome}
@@ -2263,19 +2301,19 @@ setMenuMobileAberto(false);
 
                                         <div className="mt-3 flex flex-wrap gap-2">
                                           <span className="text-xs rounded-full border border-slate-700 bg-slate-900/80 px-2.5 py-1 text-slate-300">
-                                            👥 {unidade.moradoresDaUnidade.length}
+                                            ðŸ‘¥ {unidade.moradoresDaUnidade.length}
                                           </span>
 
                                           {unidade.implantacao?.protocolo && (
                                             <span className="text-xs rounded-full border border-slate-700 bg-slate-900/80 px-2.5 py-1 text-slate-400">
-                                              📋 Protocolo
+                                              ðŸ“‹ Protocolo
                                             </span>
                                           )}
                                         </div>
 
                                         {unidade.pendenciaDaUnidade && (
                                           <p className="mt-3 text-xs font-black text-orange-200">
-                                            Clique para visualizar a pendência
+                                            Clique para visualizar a pendÃªncia
                                           </p>
                                         )}
                                       </button>
@@ -2308,7 +2346,7 @@ setMenuMobileAberto(false);
                 </h2>
 
                 <div className="bg-slate-900 rounded-2xl p-6 border border-slate-800 mt-6">
-                  Esta tela será construída na próxima etapa.
+                  Esta tela serÃ¡ construÃ­da na prÃ³xima etapa.
                 </div>
               </div>
             )}
@@ -2344,12 +2382,12 @@ setMenuMobileAberto(false);
                     <div className="flex min-w-0 items-start gap-4">
                       <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-blue-950 text-3xl">
                         {localAberto.tipo === "condominio"
-                          ? "🏢"
+                          ? "ðŸ¢"
                           : localAberto.tipo === "casa"
-                          ? "🏠"
+                          ? "ðŸ "
                           : localAberto.tipo === "empresa"
-                          ? "🏭"
-                          : "📍"}
+                          ? "ðŸ­"
+                          : "ðŸ“"}
                       </div>
 
                       <div className="min-w-0">
@@ -2362,7 +2400,7 @@ setMenuMobileAberto(false);
                         </h3>
 
                         <p className="mt-1 text-sm text-slate-400">
-                          📍 {localAberto.cidade}/{localAberto.estado} •{" "}
+                          ðŸ“ {localAberto.cidade}/{localAberto.estado} â€¢{" "}
                           {formatarTextoTipo(localAberto.tipo)}
                         </p>
                       </div>
@@ -2374,19 +2412,19 @@ setMenuMobileAberto(false);
                       disabled={excluindoLocal}
                       className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-800 text-xl font-black transition-all hover:bg-slate-700 active:scale-95 disabled:opacity-50"
                     >
-                      ✕
+                      âœ•
                     </button>
                   </div>
 
                   <div className="mt-5 grid grid-cols-2 gap-2 md:hidden">
                     {[
-                      ["geral", "🏢 Geral"],
-                      ["estrutura", "🏗️ Estrutura"],
-                      ["operacao", "🛡️ Operação"],
-                      ["hardware", "🔌 Hardware"],
-                      ["financeiro", "💰 Financeiro"],
-                      ["historico", "🕘 Histórico"],
-                      ["configuracoes", "⚙️ Configurações"],
+                      ["geral", "ðŸ¢ Geral"],
+                      ["estrutura", "ðŸ—ï¸ Estrutura"],
+                      ["operacao", "ðŸ›¡ï¸ OperaÃ§Ã£o"],
+                      ["hardware", "ðŸ”Œ Hardware"],
+                      ["financeiro", "ðŸ’° Financeiro"],
+                      ["historico", "ðŸ•˜ HistÃ³rico"],
+                      ["configuracoes", "âš™ï¸ ConfiguraÃ§Ãµes"],
                     ].map(([id, nome]) => (
                       <button
                         key={id}
@@ -2405,13 +2443,13 @@ setMenuMobileAberto(false);
 
                   <div className="mt-5 hidden gap-2 overflow-x-auto pb-2 md:flex">
                     {[
-                      ["geral", "🏢 Geral"],
-                      ["estrutura", "🏗️ Estrutura"],
-                      ["operacao", "🛡️ Operação"],
-                      ["hardware", "🔌 Hardware"],
-                      ["financeiro", "💰 Financeiro"],
-                      ["historico", "🕘 Histórico"],
-                      ["configuracoes", "⚙️ Configurações"],
+                      ["geral", "ðŸ¢ Geral"],
+                      ["estrutura", "ðŸ—ï¸ Estrutura"],
+                      ["operacao", "ðŸ›¡ï¸ OperaÃ§Ã£o"],
+                      ["hardware", "ðŸ”Œ Hardware"],
+                      ["financeiro", "ðŸ’° Financeiro"],
+                      ["historico", "ðŸ•˜ HistÃ³rico"],
+                      ["configuracoes", "âš™ï¸ ConfiguraÃ§Ãµes"],
                     ].map(([id, nome]) => (
                       <button
                         key={id}
@@ -2479,7 +2517,7 @@ setMenuMobileAberto(false);
                               </p>
                               <p className="mt-1 font-black text-green-300">
                                 {localAberto.status === "ativo"
-                                  ? "🟢 Ativo"
+                                  ? "ðŸŸ¢ Ativo"
                                   : localAberto.status}
                               </p>
                             </div>
@@ -2498,7 +2536,7 @@ setMenuMobileAberto(false);
 
                         <div className="rounded-2xl border border-cyan-800 bg-cyan-950/25 p-4">
                           <p className="text-xs font-bold text-cyan-300">
-                            🤖 RESUMO
+                            ðŸ¤– RESUMO
                           </p>
 
                           <p className="mt-3 text-sm leading-relaxed text-slate-200">
@@ -2524,10 +2562,10 @@ setMenuMobileAberto(false);
 
                           <div className="mt-4 rounded-xl bg-slate-900 p-3">
                             <p className="text-xs text-slate-500">
-                              Situação atual
+                              SituaÃ§Ã£o atual
                             </p>
                             <p className="mt-1 font-black text-white">
-                              Operação em acompanhamento
+                              OperaÃ§Ã£o em acompanhamento
                             </p>
                           </div>
                         </div>
@@ -2545,7 +2583,7 @@ setMenuMobileAberto(false);
                                 Unidades
                               </p>
                               <p className="mt-1 text-2xl font-black text-white">
-                                🏠{" "}
+                                ðŸ {" "}
                                 {
                                   unidades.filter(
                                     (unidade) =>
@@ -2560,7 +2598,7 @@ setMenuMobileAberto(false);
                                 Moradores
                               </p>
                               <p className="mt-1 text-2xl font-black text-white">
-                                👥{" "}
+                                ðŸ‘¥{" "}
                                 {
                                   moradores.filter((morador) =>
                                     unidades.some(
@@ -2578,68 +2616,68 @@ setMenuMobileAberto(false);
                                 Portarias
                               </p>
                               <p className="mt-1 text-2xl font-black text-white">
-                                🚪 1
+                                ðŸšª 1
                               </p>
                             </div>
 
                             <div className="rounded-xl bg-slate-900 p-3">
                               <p className="text-xs text-slate-500">
-                                Câmeras
+                                CÃ¢meras
                               </p>
                               <p className="mt-1 text-2xl font-black text-white">
-                                📷 0
+                                ðŸ“· 0
                               </p>
                             </div>
                           </div>
 
                           <div className="mt-4 rounded-xl border border-green-900 bg-green-950/20 p-3">
                             <p className="text-xs font-bold text-green-300">
-                              SITUAÇÃO ATUAL
+                              SITUAÃ‡ÃƒO ATUAL
                             </p>
                             <p className="mt-1 text-sm font-black text-white">
-                              Operação estável. Nenhuma pendência crítica.
+                              OperaÃ§Ã£o estÃ¡vel. Nenhuma pendÃªncia crÃ­tica.
                             </p>
                           </div>
                         </div>
 
                         <div className="rounded-2xl border border-orange-800 bg-orange-950/20 p-4">
                           <p className="text-xs font-bold text-orange-300">
-                            PRÓXIMAS AÇÕES
+                            PRÃ“XIMAS AÃ‡Ã•ES
                           </p>
 
                           <div className="mt-4 space-y-3">
                             <div className="flex items-start gap-3 rounded-xl bg-slate-900/70 p-3">
-                              <span className="text-lg">👥</span>
+                              <span className="text-lg">ðŸ‘¥</span>
                               <div>
                                 <p className="text-sm font-black text-white">
                                   Concluir cadastro de moradores
                                 </p>
                                 <p className="mt-1 text-xs text-slate-400">
-                                  Ainda há unidades sem moradores vinculados.
+                                  Ainda hÃ¡ unidades sem moradores vinculados.
                                 </p>
                               </div>
                             </div>
 
                             <div className="flex items-start gap-3 rounded-xl bg-slate-900/70 p-3">
-                              <span className="text-lg">📷</span>
+                              <span className="text-lg">ðŸ“·</span>
                               <div>
                                 <p className="text-sm font-black text-white">
-                                  Integrar câmeras
+                                  Integrar cÃ¢meras
                                 </p>
                                 <p className="mt-1 text-xs text-slate-400">
-                                  Nenhuma câmera está vinculada ao local.
+                                  Nenhuma cÃ¢mera estÃ¡ vinculada ao local.
                                 </p>
                               </div>
                             </div>
 
                             <div className="flex items-start gap-3 rounded-xl bg-slate-900/70 p-3">
-                              <span className="text-lg">🔌</span>
+                              <span className="text-lg">ðŸ”Œ</span>
                               <div>
                                 <p className="text-sm font-black text-white">
                                   Revisar hardware
                                 </p>
                                 <p className="mt-1 text-xs text-slate-400">
-                                  Validar portões, dispositivos e contingência.
+                                  Validar portÃµes, dispositivos e contingÃªncia.
                                 </p>
                               </div>
                             </div>
@@ -2654,7 +2692,7 @@ setMenuMobileAberto(false);
                       <div className="grid gap-4 md:grid-cols-2">
                         <div className="rounded-2xl border border-blue-800 bg-blue-950/20 p-4">
                           <p className="text-xs font-bold text-blue-300">
-                            🏠 UNIDADES
+                            ðŸ  UNIDADES
                           </p>
                           <p className="mt-2 text-3xl font-black text-white">
                             {
@@ -2673,13 +2711,13 @@ setMenuMobileAberto(false);
                             onClick={() => abrirUnidadesDoLocal(localAberto)}
                             className="mt-4 text-sm font-black text-blue-300"
                           >
-                            Gerenciar unidades →
+                            Gerenciar unidades â†’
                           </button>
                         </div>
 
                         <div className="rounded-2xl border border-cyan-800 bg-cyan-950/20 p-4">
                           <p className="text-xs font-bold text-cyan-300">
-                            👥 MORADORES
+                            ðŸ‘¥ MORADORES
                           </p>
                           <p className="mt-2 text-3xl font-black text-white">
                             {
@@ -2693,7 +2731,7 @@ setMenuMobileAberto(false);
                             }
                           </p>
                           <p className="mt-1 text-sm text-slate-400">
-                            Pessoas vinculadas às unidades
+                            Pessoas vinculadas Ã s unidades
                           </p>
                         </div>
                       </div>
@@ -2718,7 +2756,7 @@ setMenuMobileAberto(false);
                                   {unidade.codigo}
                                 </p>
                                 <p className="mt-1 font-black text-white">
-                                  🏠{" "}
+                                  ðŸ {" "}
                                   {unidade.bloco
                                     ? `${unidade.bloco} / ${unidade.nome}`
                                     : unidade.nome}
@@ -2737,7 +2775,7 @@ setMenuMobileAberto(false);
                     <div className="mt-5 space-y-4">
                       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                         <div className="rounded-2xl border border-blue-800 bg-blue-950/20 p-4">
-                          <div className="text-2xl">🛡️</div>
+                          <div className="text-2xl">ðŸ›¡ï¸</div>
                           <p className="mt-2 font-black text-white">
                             Portarias
                           </p>
@@ -2747,44 +2785,44 @@ setMenuMobileAberto(false);
                         </div>
 
                         <div className="rounded-2xl border border-orange-800 bg-orange-950/20 p-4">
-                          <div className="text-2xl">📦</div>
+                          <div className="text-2xl">ðŸ“¦</div>
                           <p className="mt-2 font-black text-white">
                             Entregas
                           </p>
                           <p className="mt-1 text-xs text-slate-400">
-                            Operação preparada
+                            OperaÃ§Ã£o preparada
                           </p>
                         </div>
 
                         <div className="rounded-2xl border border-red-800 bg-red-950/20 p-4">
-                          <div className="text-2xl">🚨</div>
+                          <div className="text-2xl">ðŸš¨</div>
                           <p className="mt-2 font-black text-white">
-                            Ocorrências
+                            OcorrÃªncias
                           </p>
                           <p className="mt-1 text-xs text-slate-400">
-                            Nenhuma crítica
+                            Nenhuma crÃ­tica
                           </p>
                         </div>
 
                         <div className="rounded-2xl border border-violet-800 bg-violet-950/20 p-4">
-                          <div className="text-2xl">🛠️</div>
+                          <div className="text-2xl">ðŸ› ï¸</div>
                           <p className="mt-2 font-black text-white">
                             Prestadores
                           </p>
                           <p className="mt-1 text-xs text-slate-400">
-                            Gestão em evolução
+                            GestÃ£o em evoluÃ§Ã£o
                           </p>
                         </div>
                       </div>
 
                       <div className="rounded-2xl border border-cyan-800 bg-cyan-950/20 p-4">
                         <p className="text-xs font-bold text-cyan-300">
-                          🤖 RESUMO DA OPERAÇÃO
+                          ðŸ¤– RESUMO DA OPERAÃ‡ÃƒO
                         </p>
                         <p className="mt-2 text-sm leading-relaxed text-slate-300">
-                          A operação do local está estável. Nenhuma ocorrência
-                          crítica foi registrada e os recursos operacionais
-                          estão preparados para receber dados reais.
+                          A operaÃ§Ã£o do local estÃ¡ estÃ¡vel. Nenhuma ocorrÃªncia
+                          crÃ­tica foi registrada e os recursos operacionais
+                          estÃ£o preparados para receber dados reais.
                         </p>
                       </div>
                     </div>
@@ -2793,27 +2831,27 @@ setMenuMobileAberto(false);
                   {abaLocalAtiva === "hardware" && (
                     <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                       <div className="rounded-2xl border border-green-800 bg-green-950/20 p-4">
-                        <div className="text-3xl">🚪</div>
+                        <div className="text-3xl">ðŸšª</div>
                         <p className="mt-2 font-black text-white">
-                          Portões
+                          PortÃµes
                         </p>
                         <p className="mt-1 text-sm text-slate-400">
-                          Integração e controle de abertura
+                          IntegraÃ§Ã£o e controle de abertura
                         </p>
                       </div>
 
                       <div className="rounded-2xl border border-violet-800 bg-violet-950/20 p-4">
-                        <div className="text-3xl">📷</div>
+                        <div className="text-3xl">ðŸ“·</div>
                         <p className="mt-2 font-black text-white">
-                          Câmeras
+                          CÃ¢meras
                         </p>
                         <p className="mt-1 text-sm text-slate-400">
-                          Monitoramento e histórico visual
+                          Monitoramento e histÃ³rico visual
                         </p>
                       </div>
 
                       <div className="rounded-2xl border border-blue-800 bg-blue-950/20 p-4">
-                        <div className="text-3xl">📡</div>
+                        <div className="text-3xl">ðŸ“¡</div>
                         <p className="mt-2 font-black text-white">
                           Dispositivos
                         </p>
@@ -2827,14 +2865,14 @@ setMenuMobileAberto(false);
                   {abaLocalAtiva === "financeiro" && (
                     <div className="mt-5 rounded-2xl border border-emerald-800 bg-emerald-950/20 p-5">
                       <p className="text-xs font-bold text-emerald-300">
-                        💰 SAÚDE FINANCEIRA
+                        ðŸ’° SAÃšDE FINANCEIRA
                       </p>
                       <p className="mt-2 text-2xl font-black text-white">
-                        Visão financeira do local
+                        VisÃ£o financeira do local
                       </p>
                       <p className="mt-2 text-sm text-slate-400">
-                        Caixa, inadimplência, contratos, pagamentos e previsões
-                        serão consolidados neste nível.
+                        Caixa, inadimplÃªncia, contratos, pagamentos e previsÃµes
+                        serÃ£o consolidados neste nÃ­vel.
                       </p>
                     </div>
                   )}
@@ -2842,14 +2880,14 @@ setMenuMobileAberto(false);
                   {abaLocalAtiva === "historico" && (
                     <div className="mt-5 rounded-2xl border border-blue-800 bg-blue-950/20 p-5">
                       <p className="text-xs font-bold text-blue-300">
-                        🕘 HISTÓRICO DO LOCAL
+                        ðŸ•˜ HISTÃ“RICO DO LOCAL
                       </p>
                       <p className="mt-2 text-2xl font-black text-white">
                         Linha do tempo geral
                       </p>
                       <p className="mt-2 text-sm text-slate-400">
                         Eventos de unidades, moradores, acessos, entregas,
-                        hardware e operação serão consolidados aqui.
+                        hardware e operaÃ§Ã£o serÃ£o consolidados aqui.
                       </p>
                     </div>
                   )}
@@ -2862,12 +2900,12 @@ setMenuMobileAberto(false);
                     abaLocalAtiva !== "historico" &&
                     abaLocalAtiva !== "configuracoes" && (
                       <div className="mt-5 rounded-2xl border border-slate-700 bg-slate-800 p-8 text-center">
-                        <div className="text-4xl">🚧</div>
+                        <div className="text-4xl">ðŸš§</div>
                         <p className="mt-3 font-black text-white">
-                          Módulo preparado
+                          MÃ³dulo preparado
                         </p>
                         <p className="mt-2 text-sm text-slate-400">
-                          Esta área será conectada aos dados reais nas próximas
+                          Esta Ã¡rea serÃ¡ conectada aos dados reais nas prÃ³ximas
                           etapas.
                         </p>
                       </div>
@@ -2876,13 +2914,13 @@ setMenuMobileAberto(false);
                   {abaLocalAtiva === "configuracoes" && (
                     <div className="mt-5 rounded-2xl border border-red-900 bg-red-950/20 p-4">
                       <p className="font-black text-red-300">
-                        🧪 Limpeza de ambiente de teste
+                        ðŸ§ª Limpeza de ambiente de teste
                       </p>
 
                       <p className="mt-2 text-sm leading-relaxed text-red-100/80">
                         Exclui este local e todos os dados ligados a ele:
-                        unidades, moradores, solicitações e implantação. Use
-                        somente para cadastros fictícios.
+                        unidades, moradores, solicitaÃ§Ãµes e implantaÃ§Ã£o. Use
+                        somente para cadastros fictÃ­cios.
                       </p>
 
                       <button
@@ -2895,7 +2933,7 @@ setMenuMobileAberto(false);
                       >
                         {excluindoLocal
                           ? "Excluindo local e dados..."
-                          : "🗑️ Excluir local de teste completo"}
+                          : "ðŸ—‘ï¸ Excluir local de teste completo"}
                       </button>
                     </div>
                   )}
@@ -2908,6 +2946,7 @@ setMenuMobileAberto(false);
     </main>
   );
 }
+
 
 
 
