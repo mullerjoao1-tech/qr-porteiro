@@ -51,6 +51,7 @@ type Unidade = {
 type Props = {
   aberto: boolean;
   onClose: () => void;
+  pessoaInicialId?: string;
 };
 
 const PERFIS = [
@@ -148,6 +149,7 @@ type VinculoExistente = {
 export default function NovoVinculoModal({
   aberto,
   onClose,
+  pessoaInicialId,
 }: Props) {
   const [
     pessoas,
@@ -202,6 +204,12 @@ export default function NovoVinculoModal({
   useEffect(() => {
     if (!aberto) {
       return;
+    }
+
+    if (pessoaInicialId) {
+      setPessoaId(
+        pessoaInicialId
+      );
     }
 
     const desligarPessoas =
