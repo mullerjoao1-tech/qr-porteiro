@@ -16,6 +16,8 @@ import {
   db,
 } from "../../../services/firebase";
 
+import NovoVinculoModal from "./NovoVinculoModal";
+
 type PerfilUsuario = {
   [perfil: string]:
     boolean | undefined;
@@ -481,6 +483,11 @@ export default function PainelPessoas() {
   const [
     salvandoNovaPessoa,
     setSalvandoNovaPessoa,
+  ] = useState(false);
+
+  const [
+    modalNovoVinculoAberto,
+    setModalNovoVinculoAberto,
   ] = useState(false);
 
   useEffect(
@@ -1593,8 +1600,36 @@ A exclusão removerá a pessoa de usuarios-v2.`
               </div>
             </section>
 
-            <div className="mt-5 rounded-xl border border-amber-800 bg-amber-950/20 p-3 text-sm text-amber-300">
-              Na próxima etapa, esta tela permitirá editar a pessoa, criar vínculos e definir permissões.
+            <div className="mt-5 flex flex-col gap-3">
+              <button
+                type="button"
+                onClick={() =>
+                  setModalNovoVinculoAberto(
+                    true
+                  )
+                }
+                className="w-full rounded-xl bg-blue-600 px-5 py-3 font-black text-white transition hover:bg-blue-500 active:scale-[0.99]"
+              >
+                + Adicionar v?nculo
+              </button>
+
+              <div className="rounded-xl border border-slate-700 bg-slate-800/60 p-3 text-sm text-slate-400">
+                O v?nculo ser? adicionado a esta mesma identidade universal, sem criar outra pessoa.
+              </div>
+
+              <NovoVinculoModal
+                aberto={
+                  modalNovoVinculoAberto
+                }
+                pessoaInicialId={
+                  pessoaSelecionada.id
+                }
+                onClose={() =>
+                  setModalNovoVinculoAberto(
+                    false
+                  )
+                }
+              />
             </div>
           </div>
         </div>
