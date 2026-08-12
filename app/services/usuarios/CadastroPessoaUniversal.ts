@@ -153,20 +153,30 @@ export async function buscarOuCriarPessoaUniversal(
   let usuarioAuth: UserRecord | null = null;
   let encontradoPor: OrigemReutilizacaoPessoa = "novo";
 
-  if (cpf) {
-    const uidCpf = await buscarUidPorCpf(dados.database, cpf);
+  usuarioAuth =
+    await buscarPorEmail(
+      dados.auth,
+      email
+    );
 
-    if (uidCpf) {
-      usuarioAuth = await dados.auth.getUser(uidCpf);
-      encontradoPor = "cpf";
-    }
+  if (usuarioAuth) {
+    encontradoPor = "email";
   }
 
-  if (!usuarioAuth) {
-    usuarioAuth = await buscarPorEmail(dados.auth, email);
+  if (!usuarioAuth && cpf) {
+    const uidCpf =
+      await buscarUidPorCpf(
+        dados.database,
+        cpf
+      );
 
-    if (usuarioAuth) {
-      encontradoPor = "email";
+    if (uidCpf) {
+      usuarioAuth =
+        await dados.auth.getUser(
+          uidCpf
+        );
+
+      encontradoPor = "cpf";
     }
   }
 
