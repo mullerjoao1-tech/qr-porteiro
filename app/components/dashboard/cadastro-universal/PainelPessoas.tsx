@@ -478,6 +478,11 @@ export default function PainelPessoas() {
     setTelefoneNovaPessoa,
   ] = useState("");
 
+  const [
+    salvandoNovaPessoa,
+    setSalvandoNovaPessoa,
+  ] = useState(false);
+
   useEffect(
     () => {
       const referencia =
@@ -777,6 +782,126 @@ A exclusão removerá a pessoa de usuarios-v2.`
       );
     }
   }
+  async function cadastrarNovaPessoa() {
+    if (salvandoNovaPessoa) {
+      return;
+    }
+
+    const nome =
+      nomeNovaPessoa.trim();
+
+    const email =
+      emailNovaPessoa
+        .trim()
+        .toLowerCase();
+
+    const cpf =
+      somenteNumeros(
+        cpfNovaPessoa
+      );
+
+    const telefone =
+      telefoneNovaPessoa.trim();
+
+    if (!nome) {
+      alert(
+        "Informe o nome da pessoa."
+      );
+
+      return;
+    }
+
+    if (!email) {
+      alert(
+        "Informe o e-mail da pessoa."
+      );
+
+      return;
+    }
+
+    try {
+      setSalvandoNovaPessoa(
+        true
+      );
+
+      const resposta =
+        await fetch(
+          "/api/cadastro-universal/pessoas",
+          {
+            method: "POST",
+
+            headers: {
+              "Content-Type":
+                "application/json",
+            },
+
+            body: JSON.stringify({
+              nome,
+              email,
+              cpf,
+              telefone,
+            }),
+          }
+        );
+
+      const dados =
+        await resposta.json();
+
+      if (
+        !resposta.ok ||
+        !dados?.sucesso
+      ) {
+        throw new Error(
+          dados?.erro ||
+          "Nao foi possivel cadastrar a pessoa."
+        );
+      }
+
+      setModalNovaPessoaAberto(
+        false
+      );
+
+      setNomeNovaPessoa("");
+      setEmailNovaPessoa("");
+      setCpfNovaPessoa("");
+      setTelefoneNovaPessoa("");
+
+      if (dados.reutilizado) {
+        const origem =
+          dados.encontradoPor === "email"
+            ? "e-mail"
+            : dados.encontradoPor === "cpf"
+              ? "CPF"
+              : "cadastro existente";
+
+        alert(
+          "Pessoa ja existente no QR Core. Cadastro reutilizado por " +
+          origem +
+          "."
+        );
+      } else {
+        alert(
+          "Pessoa cadastrada com sucesso no QR Core."
+        );
+      }
+    } catch (erro) {
+      console.error(
+        "Erro ao cadastrar pessoa:",
+        erro
+      );
+
+      alert(
+        erro instanceof Error
+          ? erro.message
+          : "Nao foi possivel cadastrar a pessoa."
+      );
+    } finally {
+      setSalvandoNovaPessoa(
+        false
+      );
+    }
+  }
+
   return (
     <div className="space-y-5">
       <section className="rounded-3xl border border-blue-800 bg-gradient-to-r from-blue-950/70 to-slate-900 p-5 md:p-6">
@@ -937,9 +1062,13 @@ A exclusão removerá a pessoa de usuarios-v2.`
 
                 <button
                   type="button"
-                  className="rounded-xl bg-blue-600 px-5 py-3 font-black text-white hover:bg-blue-500"
+                  disabled={salvandoNovaPessoa}
+                  onClick={cadastrarNovaPessoa}
+                  className="rounded-xl bg-blue-600 px-5 py-3 font-black text-white hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  Continuar
+                  {salvandoNovaPessoa
+                    ? "Salvando..."
+                    : "Cadastrar pessoa"}
                 </button>
 
               </div>
