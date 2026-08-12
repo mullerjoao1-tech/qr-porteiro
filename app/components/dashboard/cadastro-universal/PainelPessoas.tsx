@@ -452,6 +452,32 @@ export default function PainelPessoas() {
     null
   );
 
+
+  const [
+    modalNovaPessoaAberto,
+    setModalNovaPessoaAberto,
+  ] = useState(false);
+
+  const [
+    nomeNovaPessoa,
+    setNomeNovaPessoa,
+  ] = useState("");
+
+  const [
+    emailNovaPessoa,
+    setEmailNovaPessoa,
+  ] = useState("");
+
+  const [
+    cpfNovaPessoa,
+    setCpfNovaPessoa,
+  ] = useState("");
+
+  const [
+    telefoneNovaPessoa,
+    setTelefoneNovaPessoa,
+  ] = useState("");
+
   useEffect(
     () => {
       const referencia =
@@ -772,18 +798,157 @@ A exclusão removerá a pessoa de usuarios-v2.`
           <button
             type="button"
             onClick={() =>
-              alert(
-                "O cadastro manual de uma nova pessoa será ligado ao CadastroPessoaUniversal na próxima etapa."
-              )
+              setModalNovaPessoaAberto(true)
             }
             className="rounded-xl bg-blue-600 px-5 py-3 font-black text-white transition hover:bg-blue-500 active:scale-95"
           >
-            ＋ Nova pessoa
+            ? Nova pessoa
           </button>
         </div>
       </section>
 
-      <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      
+      {modalNovaPessoaAberto && (
+        <div className="fixed inset-0 z-[300] flex items-center justify-center bg-black/80 p-4">
+          <div className="w-full max-w-xl rounded-3xl border border-slate-700 bg-slate-900 p-5 shadow-2xl md:p-6">
+
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-xs font-black uppercase tracking-wider text-blue-300">
+                  CADASTRO UNIVERSAL
+                </p>
+
+                <h2 className="mt-1 text-2xl font-black text-white">
+                  Nova pessoa
+                </h2>
+
+                <p className="mt-2 text-sm text-slate-400">
+                  O QR Core verificar? se essa identidade j? existe antes de criar um novo cadastro.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() =>
+                  setModalNovaPessoaAberto(false)
+                }
+                className="rounded-xl bg-slate-800 px-4 py-2 font-black text-white hover:bg-slate-700"
+              >
+                X
+              </button>
+            </div>
+
+            <div className="mt-6 space-y-4">
+
+              <div>
+                <label className="text-xs font-black uppercase tracking-wider text-slate-400">
+                  Nome completo
+                </label>
+
+                <input
+                  value={nomeNovaPessoa}
+                  onChange={(evento) =>
+                    setNomeNovaPessoa(
+                      evento.target.value
+                    )
+                  }
+                  placeholder="Nome completo"
+                  className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-800 p-3 text-white outline-none focus:border-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-black uppercase tracking-wider text-slate-400">
+                  E-mail
+                </label>
+
+                <input
+                  type="email"
+                  value={emailNovaPessoa}
+                  onChange={(evento) =>
+                    setEmailNovaPessoa(
+                      evento.target.value
+                    )
+                  }
+                  placeholder="email@exemplo.com"
+                  className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-800 p-3 text-white outline-none focus:border-blue-500"
+                />
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+
+                <div>
+                  <label className="text-xs font-black uppercase tracking-wider text-slate-400">
+                    CPF
+                  </label>
+
+                  <input
+                    value={cpfNovaPessoa}
+                    onChange={(evento) =>
+                      setCpfNovaPessoa(
+                        evento.target.value
+                      )
+                    }
+                    placeholder="CPF"
+                    className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-800 p-3 text-white outline-none focus:border-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-black uppercase tracking-wider text-slate-400">
+                    Telefone / WhatsApp
+                  </label>
+
+                  <input
+                    value={telefoneNovaPessoa}
+                    onChange={(evento) =>
+                      setTelefoneNovaPessoa(
+                        evento.target.value
+                      )
+                    }
+                    placeholder="(41) 99999-9999"
+                    className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-800 p-3 text-white outline-none focus:border-blue-500"
+                  />
+                </div>
+
+              </div>
+
+              <div className="rounded-2xl border border-blue-900 bg-blue-950/30 p-4">
+                <p className="font-black text-blue-200">
+                  Identidade ?nica no QR Core
+                </p>
+
+                <p className="mt-1 text-xs leading-relaxed text-slate-400">
+                  Se a pessoa j? existir, o cadastro existente ser? reutilizado em vez de criar uma duplicidade.
+                </p>
+              </div>
+
+              <div className="flex justify-end gap-2">
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    setModalNovaPessoaAberto(false)
+                  }
+                  className="rounded-xl border border-slate-700 bg-slate-800 px-5 py-3 font-black text-white hover:bg-slate-700"
+                >
+                  Cancelar
+                </button>
+
+                <button
+                  type="button"
+                  className="rounded-xl bg-blue-600 px-5 py-3 font-black text-white hover:bg-blue-500"
+                >
+                  Continuar
+                </button>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+<section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <div className="rounded-2xl border border-slate-700 bg-slate-900 p-4">
           <p className="text-xs font-bold text-slate-400">
             TOTAL
