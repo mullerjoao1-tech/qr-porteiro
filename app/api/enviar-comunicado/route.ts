@@ -306,11 +306,12 @@ export async function POST(request: Request) {
 
     for (const destinatario of destinatarios) {
       const { unidadeId: unidadeDestino, token } = destinatario;
-
       const link =
-        `${urlBase}/morador-v2/${encodeURIComponent(unidadeDestino)}` +
+        `${urlBase}/dashboard/morador/comunicados` +
+        `?local=${encodeURIComponent(condominioId)}` +
+        `&unidade=${encodeURIComponent(unidadeDestino)}` +
         (comunicadoId
-          ? `?comunicado=${encodeURIComponent(comunicadoId)}`
+          ? `&comunicado=${encodeURIComponent(comunicadoId)}`
           : "");
 
       try {

@@ -1,4 +1,4 @@
-/* QR Acesso Studio — Firebase Cloud Messaging Service Worker */
+/* QR Acesso Studio â€” Firebase Cloud Messaging Service Worker */
 
 importScripts(
   "https://www.gstatic.com/firebasejs/12.14.0/firebase-app-compat.js"
@@ -22,7 +22,7 @@ const messaging = firebase.messaging();
 
 messaging.onBackgroundMessage((payload) => {
   console.log(
-    "[firebase-messaging-sw] Notificação recebida em segundo plano:",
+    "[firebase-messaging-sw] NotificaÃ§Ã£o recebida em segundo plano:",
     payload
   );
 
@@ -32,12 +32,12 @@ messaging.onBackgroundMessage((payload) => {
   const titulo =
     notificacao.title ||
     dados.titulo ||
-    "📢 Novo comunicado";
+    "ðŸ“¢ Novo comunicado";
 
   const mensagem =
     notificacao.body ||
     dados.mensagem ||
-    "Você recebeu uma nova comunicação do condomínio.";
+    "VocÃª recebeu uma nova comunicaÃ§Ã£o do condomÃ­nio.";
 
   const unidadeId = dados.unidadeId || "";
   const comunicadoId = dados.comunicadoId || "";
@@ -45,10 +45,14 @@ messaging.onBackgroundMessage((payload) => {
   let urlDestino = "/";
 
   if (dados.tipo === "comunicado-v2" && unidadeId) {
+    const condominioId = dados.condominioId || "";
+
     urlDestino =
-      `/morador-v2/${encodeURIComponent(unidadeId)}` +
+      `/dashboard/morador/comunicados` +
+      `?local=${encodeURIComponent(condominioId)}` +
+      `&unidade=${encodeURIComponent(unidadeId)}` +
       (comunicadoId
-        ? `?comunicado=${encodeURIComponent(comunicadoId)}`
+        ? `&comunicado=${encodeURIComponent(comunicadoId)}`
         : "");
   } else if (dados.tipo === "chamada-v2" && unidadeId) {
     urlDestino = `/morador-v2/${encodeURIComponent(unidadeId)}`;

@@ -371,8 +371,10 @@ export async function POST(request: Request) {
       ? `${mensagem.slice(0, 117)}...`
       : mensagem,
   url:
-    `${urlBase}/morador-v2/${encodeURIComponent(unidadeId)}` +
-    `?comunicado=${encodeURIComponent(comunicadoId)}`,
+    `${urlBase}/dashboard/morador/comunicados` +
+                  `?local=${encodeURIComponent(condominioId)}` +
+                  `&unidade=${encodeURIComponent(unidadeId)}` +
+                  `&comunicado=${encodeURIComponent(comunicadoId)}`,
 },
             webpush: {
           headers: {
@@ -381,8 +383,10 @@ export async function POST(request: Request) {
           },
           fcmOptions: {
                 link:
-                  `${urlBase}/morador-v2/${encodeURIComponent(unidadeId)}` +
-                  `?comunicado=${encodeURIComponent(comunicadoId)}`,
+                  `${urlBase}/dashboard/morador/comunicados` +
+                  `?local=${encodeURIComponent(condominioId)}` +
+                  `&unidade=${encodeURIComponent(unidadeId)}` +
+                  `&comunicado=${encodeURIComponent(comunicadoId)}`,
               },
             },
           });
