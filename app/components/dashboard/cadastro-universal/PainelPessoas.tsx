@@ -934,7 +934,7 @@ A exclusão removerá a pessoa de usuarios-v2.`
             }
             className="rounded-xl bg-blue-600 px-5 py-3 font-black text-white transition hover:bg-blue-500 active:scale-95"
           >
-            ? Nova pessoa
+            + Nova pessoa
           </button>
         </div>
       </section>
@@ -955,7 +955,7 @@ A exclusão removerá a pessoa de usuarios-v2.`
                 </h2>
 
                 <p className="mt-2 text-sm text-slate-400">
-                  O QR Core verificar? se essa identidade j? existe antes de criar um novo cadastro.
+                  O QR Core verificará se essa identidade já existe antes de criar um novo cadastro.
                 </p>
               </div>
 
@@ -1047,11 +1047,11 @@ A exclusão removerá a pessoa de usuarios-v2.`
 
               <div className="rounded-2xl border border-blue-900 bg-blue-950/30 p-4">
                 <p className="font-black text-blue-200">
-                  Identidade ?nica no QR Core
+                  Identidade única no QR Core
                 </p>
 
                 <p className="mt-1 text-xs leading-relaxed text-slate-400">
-                  Se a pessoa j? existir, o cadastro existente ser? reutilizado em vez de criar uma duplicidade.
+                  Se a pessoa já existir, o cadastro existente será reutilizado em vez de criar uma duplicidade.
                 </p>
               </div>
 
@@ -1593,6 +1593,63 @@ A exclusão removerá a pessoa de usuarios-v2.`
                             )
                           }
                         </p>
+
+                    {vinculo.dados.unidades &&
+                      Object.keys(
+                        vinculo.dados.unidades
+                      ).filter(
+                        (unidadeId) =>
+                          vinculo.dados.unidades?.[
+                            unidadeId
+                          ] === true
+                      ).length > 0 && (
+                        <div className="mt-2 rounded-lg bg-slate-900/70 px-3 py-2">
+                          <p className="text-[10px] font-black uppercase tracking-wider text-slate-500">
+                            Unidade
+                          </p>
+
+                          {Object.keys(
+                            vinculo.dados.unidades
+                          )
+                            .filter(
+                              (unidadeId) =>
+                                vinculo.dados.unidades?.[
+                                  unidadeId
+                                ] === true
+                            )
+                            .map(
+                              (unidadeId) => {
+                                const nomeUnidade =
+                                  unidadeId
+                                    .replace(
+                                      vinculo.id + "-",
+                                      ""
+                                    )
+                                    .replace(
+                                      /-/g,
+                                      " "
+                                    )
+                                    .replace(
+                                      /bloco/gi,
+                                      "Bloco"
+                                    )
+                                    .replace(
+                                      / ap /gi,
+                                      " - Apartamento "
+                                    );
+
+                                return (
+                                  <p
+                                    key={unidadeId}
+                                    className="mt-1 text-xs font-bold text-cyan-300"
+                                  >
+                                    {nomeUnidade}
+                                  </p>
+                                );
+                              }
+                            )}
+                        </div>
+                      )}
                       </div>
                     )
                   )
@@ -1610,11 +1667,11 @@ A exclusão removerá a pessoa de usuarios-v2.`
                 }
                 className="w-full rounded-xl bg-blue-600 px-5 py-3 font-black text-white transition hover:bg-blue-500 active:scale-[0.99]"
               >
-                + Adicionar v?nculo
+                + Adicionar vínculo
               </button>
 
               <div className="rounded-xl border border-slate-700 bg-slate-800/60 p-3 text-sm text-slate-400">
-                O v?nculo ser? adicionado a esta mesma identidade universal, sem criar outra pessoa.
+                O vínculo será adicionado a esta mesma identidade universal, sem criar outra pessoa.
               </div>
 
               <NovoVinculoModal
