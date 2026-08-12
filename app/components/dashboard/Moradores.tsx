@@ -16,10 +16,12 @@ type Morador = {
   codigo: string;
   nome: string;
   telefone: string;
+email?: string;
   unidadeId: string;
   unidadeNome: string;
   prioridade: number;
   podeAbrirPortao: boolean;
+recebeChamadas?: boolean;
   status: string;
 };
 
@@ -69,6 +71,18 @@ type Props = {
   podeAbrirPortao: boolean;
   setPodeAbrirPortao: (valor: boolean) => void;
   cadastrarMorador: () => void;
+atualizarMorador: (
+  moradorId: string,
+  dados: {
+    nome: string;
+    telefone: string;
+    email?: string;
+    prioridade: number;
+    recebeChamadas: boolean;
+    podeAbrirPortao: boolean;
+    status: string;
+  }
+) => Promise<void>;
   salvandoMorador: boolean;
 };
 
@@ -179,6 +193,7 @@ export default function Moradores({
   podeAbrirPortao,
   setPodeAbrirPortao,
   cadastrarMorador,
+  atualizarMorador,
   salvandoMorador,
 }: Props) {
   const [busca, setBusca] = useState("");
@@ -192,6 +207,17 @@ export default function Moradores({
     useState<FiltroHistorico>("todos");
   const [eventoSelecionado, setEventoSelecionado] =
     useState<EventoMorador | null>(null);
+
+  const [editandoMorador, setEditandoMorador] = useState(false);
+  const [salvandoEdicao, setSalvandoEdicao] = useState(false);
+
+  const [nomeEdicao, setNomeEdicao] = useState("");
+  const [telefoneEdicao, setTelefoneEdicao] = useState("");
+  const [emailEdicao, setEmailEdicao] = useState("");
+  const [prioridadeEdicao, setPrioridadeEdicao] = useState("1");
+  const [recebeChamadasEdicao, setRecebeChamadasEdicao] = useState(true);
+  const [podeAbrirPortaoEdicao, setPodeAbrirPortaoEdicao] = useState(false);
+  const [statusEdicao, setStatusEdicao] = useState("ativo");
 
   const locais = useMemo(
     () =>
@@ -296,6 +322,81 @@ export default function Moradores({
     setAbaAtiva("geral");
     setFiltroHistorico("todos");
     setEventoSelecionado(null);
+  }
+
+  function iniciarEdicaoMorador() {
+    if (!moradorSelecionado) return;
+
+    setNomeEdicao(moradorSelecionado.nome || "");
+    setTelefoneEdicao(moradorSelecionado.telefone || "");
+    setEmailEdicao(moradorSelecionado.email || "");
+    setPrioridadeEdicao(String(moradorSelecionado.prioridade || 1));
+    setRecebeChamadasEdicao(
+      moradorSelecionado.recebeChamadas !== false
+    );
+    setPodeAbrirPortaoEdicao(
+      moradorSelecionado.podeAbrirPortao === true
+    );
+    setStatusEdicao(
+      moradorSelecionado.status || "ativo"
+    );
+
+    setEditandoMorador(true);
+  }
+
+  async function salvarEdicaoMorador() {
+    if (!moradorSelecionado || salvandoEdicao) return;
+
+    if (!nomeEdicao.trim()) {
+      alert("Informe o nome do morador.");
+      return;
+    }
+
+    if (!telefoneEdicao.trim()) {
+      alert("Informe o telefone do morador.");
+      return;
+    }
+
+    setSalvandoEdicao(true);
+
+    try {
+      const dadosAtualizados = {
+        nome: nomeEdicao.trim(),
+        telefone: telefoneEdicao.trim(),
+        email: emailEdicao.trim(),
+        prioridade: Number(prioridadeEdicao),
+        recebeChamadas: recebeChamadasEdicao,
+        podeAbrirPortao: podeAbrirPortaoEdicao,
+        status: statusEdicao,
+      };
+
+      await atualizarMorador(
+        moradorSelecionado.id,
+        dadosAtualizados
+      );
+
+      setMoradorSelecionado({
+        ...moradorSelecionado,
+        ...dadosAtualizados,
+      });
+
+      setEditandoMorador(false);
+
+      alert("Morador atualizado com sucesso.");
+    } catch (erro) {
+      console.error(
+        "Erro ao atualizar morador:",
+        erro
+      );
+
+      alert(
+        erro instanceof Error
+          ? erro.message
+          : "Nao foi possivel atualizar o morador."
+      );
+    } finally {
+      setSalvandoEdicao(false);
+    }
   }
 
   function fecharCadastro() {
@@ -820,6 +921,181 @@ export default function Moradores({
 
             {abaAtiva === "geral" && (
               <div className="mt-5 space-y-4">
+
+                {!editandoMorador ? (
+                  <div className="flex justify-end">
+                    <button
+                      type="button"
+                      onClick={iniciarEdicaoMorador}
+                      className="rounded-xl bg-blue-600 px-5 py-3 text-sm font-black text-white transition hover:bg-blue-500 active:scale-95"
+                    >
+                      ✏️ Editar cadastro
+                    </button>
+                  </div>
+                ) : (
+                  <div className="rounded-2xl border border-blue-700 bg-blue-950/25 p-4">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                      <div>
+                        <p className="text-xs font-black text-blue-300">
+                          EDITAR CADASTRO DO MORADOR
+                        </p>
+
+                        <p className="mt-1 text-sm text-slate-400">
+                          Local e unidade permanecem bloqueados nesta edi??o.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                      <div>
+                        <label className="text-xs font-bold text-slate-400">
+                          Nome
+                        </label>
+
+                        <input
+                          value={nomeEdicao}
+                          onChange={(event) =>
+                            setNomeEdicao(event.target.value)
+                          }
+                          className="mt-1 w-full rounded-xl border border-slate-700 bg-slate-900 p-3 text-white outline-none focus:border-blue-500"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-xs font-bold text-slate-400">
+                          Telefone / WhatsApp
+                        </label>
+
+                        <input
+                          value={telefoneEdicao}
+                          onChange={(event) =>
+                            setTelefoneEdicao(event.target.value)
+                          }
+                          className="mt-1 w-full rounded-xl border border-slate-700 bg-slate-900 p-3 text-white outline-none focus:border-blue-500"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-xs font-bold text-slate-400">
+                          E-mail
+                        </label>
+
+                        <input
+                          type="email"
+                          value={emailEdicao}
+                          onChange={(event) =>
+                            setEmailEdicao(event.target.value)
+                          }
+                          placeholder="email@exemplo.com"
+                          className="mt-1 w-full rounded-xl border border-slate-700 bg-slate-900 p-3 text-white outline-none placeholder:text-slate-600 focus:border-blue-500"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-xs font-bold text-slate-400">
+                          Prioridade de chamada
+                        </label>
+
+                        <select
+                          value={prioridadeEdicao}
+                          onChange={(event) =>
+                            setPrioridadeEdicao(event.target.value)
+                          }
+                          className="mt-1 w-full rounded-xl border border-slate-700 bg-slate-900 p-3 text-white outline-none focus:border-blue-500"
+                        >
+                          <option value="1">Prioridade 1</option>
+                          <option value="2">Prioridade 2</option>
+                          <option value="3">Prioridade 3</option>
+                          <option value="4">Prioridade 4</option>
+                          <option value="5">Prioridade 5</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="text-xs font-bold text-slate-400">
+                          Status
+                        </label>
+
+                        <select
+                          value={statusEdicao}
+                          onChange={(event) =>
+                            setStatusEdicao(event.target.value)
+                          }
+                          className="mt-1 w-full rounded-xl border border-slate-700 bg-slate-900 p-3 text-white outline-none focus:border-blue-500"
+                        >
+                          <option value="ativo">Ativo</option>
+                          <option value="inativo">Inativo</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                      <label className="flex cursor-pointer items-center justify-between rounded-xl border border-slate-700 bg-slate-900 p-4">
+                        <div>
+                          <p className="font-black text-white">
+                            Recebe chamadas
+                          </p>
+                          <p className="mt-1 text-xs text-slate-400">
+                            Participa do fluxo de atendimento da unidade.
+                          </p>
+                        </div>
+
+                        <input
+                          type="checkbox"
+                          checked={recebeChamadasEdicao}
+                          onChange={(event) =>
+                            setRecebeChamadasEdicao(event.target.checked)
+                          }
+                          className="h-5 w-5"
+                        />
+                      </label>
+
+                      <label className="flex cursor-pointer items-center justify-between rounded-xl border border-slate-700 bg-slate-900 p-4">
+                        <div>
+                          <p className="font-black text-white">
+                            Pode abrir portão
+                          </p>
+                          <p className="mt-1 text-xs text-slate-400">
+                            Permite abertura remota quando disponível.
+                          </p>
+                        </div>
+
+                        <input
+                          type="checkbox"
+                          checked={podeAbrirPortaoEdicao}
+                          onChange={(event) =>
+                            setPodeAbrirPortaoEdicao(event.target.checked)
+                          }
+                          className="h-5 w-5"
+                        />
+                      </label>
+                    </div>
+
+                    <div className="mt-4 grid grid-cols-2 gap-3">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setEditandoMorador(false)
+                        }
+                        disabled={salvandoEdicao}
+                        className="rounded-xl bg-slate-700 py-3 font-black text-white transition hover:bg-slate-600 disabled:opacity-50"
+                      >
+                        Cancelar
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={salvarEdicaoMorador}
+                        disabled={salvandoEdicao}
+                        className="rounded-xl bg-green-600 py-3 font-black text-white transition hover:bg-green-500 disabled:bg-slate-700"
+                      >
+                        {salvandoEdicao
+                          ? "Salvando..."
+                          : "💾 Salvar alterações"}
+                      </button>
+                    </div>
+                  </div>
+                )}
                 <div className="grid gap-4 lg:grid-cols-3">
                   <div className="rounded-2xl border border-slate-700 bg-slate-800 p-4 lg:col-span-2">
                     <p className="text-xs font-bold text-slate-400">

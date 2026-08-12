@@ -1,10 +1,6 @@
 "use client";
 
 import {
-  Suspense,
-} from "react";
-
-import {
   useRouter,
   useSearchParams,
 } from "next/navigation";
@@ -13,7 +9,7 @@ import DashboardBase from "@/app/components/core/dashboard/DashboardBase";
 import ComunicadosMorador from "@/app/components/core/morador/ComunicadosMorador";
 import { useAuth } from "@/app/context/AuthContext";
 
-function ConteudoComunicadosMorador() {
+export default function PaginaComunicadosMorador() {
   const router =
     useRouter();
 
@@ -77,6 +73,13 @@ function ConteudoComunicadosMorador() {
     condominioId ||
     "Condomínio";
 
+  /*
+   * Se nao existe contexto no link,
+   * aguardamos normalmente o AuthContext.
+   *
+   * Se o link ja trouxe local + unidade,
+   * podemos carregar diretamente.
+   */
   if (
     carregando &&
     (
@@ -119,27 +122,5 @@ function ConteudoComunicadosMorador() {
         }
       />
     </DashboardBase>
-  );
-}
-
-function CarregandoPaginaComunicados() {
-  return (
-    <DashboardBase>
-      <div className="rounded-3xl border border-slate-800 bg-slate-900 p-6 text-slate-300">
-        Carregando comunicados...
-      </div>
-    </DashboardBase>
-  );
-}
-
-export default function PaginaComunicadosMorador() {
-  return (
-    <Suspense
-      fallback={
-        <CarregandoPaginaComunicados />
-      }
-    >
-      <ConteudoComunicadosMorador />
-    </Suspense>
   );
 }

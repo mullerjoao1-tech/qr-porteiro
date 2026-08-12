@@ -1,0 +1,126 @@
+﻿
+  app\morador-v2\[unidadeId]\page.tsx:18:  texto?: string;
+  app\morador-v2\[unidadeId]\page.tsx:19:  audioBase64?: string;
+  app\morador-v2\[unidadeId]\page.tsx:20:  criadoEm: number;
+  app\morador-v2\[unidadeId]\page.tsx:21:};
+  app\morador-v2\[unidadeId]\page.tsx:22:
+> app\morador-v2\[unidadeId]\page.tsx:23:type ComunicadoMorador = {
+  app\morador-v2\[unidadeId]\page.tsx:24:  id: string;
+  app\morador-v2\[unidadeId]\page.tsx:25:  condominioId: string;
+  app\morador-v2\[unidadeId]\page.tsx:26:  condominioNome: string;
+  app\morador-v2\[unidadeId]\page.tsx:27:  tipo: "comunicado" | "assembleia" | "manutencao" | "emergencia";
+  app\morador-v2\[unidadeId]\page.tsx:28:  destinatario?:
+  app\morador-v2\[unidadeId]\page.tsx:29:    | "unidade"
+  app\morador-v2\[unidadeId]\page.tsx:30:    | "bloco"
+  app\morador-v2\[unidadeId]\page.tsx:31:    | "moradores"
+  app\morador-v2\[unidadeId]\page.tsx:32:    | "proprietarios"
+  app\morador-v2\[unidadeId]\page.tsx:33:    | "inquilinos"
+  app\morador-v2\[unidadeId]\page.tsx:34:    | "conselho"
+  app\morador-v2\[unidadeId]\page.tsx:35:    | "administradora"
+  app\morador-v2\[unidadeId]\page.tsx:36:    | "zeladoria"
+  app\morador-v2\[unidadeId]\page.tsx:37:    | "portaria";
+  app\morador-v2\[unidadeId]\page.tsx:38:  unidadeId?: string;
+  app\morador-v2\[unidadeId]\page.tsx:39:  blocoSelecionado?: string;
+  app\morador-v2\[unidadeId]\page.tsx:40:  unidadesDestinatarias?: string[];
+  app\morador-v2\[unidadeId]\page.tsx:41:  titulo: string;
+  app\morador-v2\[unidadeId]\page.tsx:42:  mensagem: string;
+  app\morador-v2\[unidadeId]\page.tsx:43:  detalhesModelo?: {
+  app\morador-v2\[unidadeId]\page.tsx:44:    dataEvento?: string;
+  app\morador-v2\[unidadeId]\page.tsx:45:    horarioEvento?: string;
+  app\morador-v2\[unidadeId]\page.tsx:46:    localEvento?: string;
+  app\morador-v2\[unidadeId]\page.tsx:47:    pauta?: string;
+  app\morador-v2\[unidadeId]\page.tsx:48:    empresaResponsavel?: string;
+  app\morador-v2\[unidadeId]\page.tsx:49:    impactoPrevisto?: string;
+  app\morador-v2\[unidadeId]\page.tsx:50:    tipoEmergencia?: string;
+  app\morador-v2\[unidadeId]\page.tsx:51:    orientacaoImediata?: string;
+  app\morador-v2\[unidadeId]\page.tsx:52:  };
+  app\morador-v2\[unidadeId]\page.tsx:53:  exigeCiencia?: boolean;
+  app\morador-v2\[unidadeId]\page.tsx:54:  exigirCiencia?: boolean;
+  app\morador-v2\[unidadeId]\page.tsx:55:  status: "enviado" | "agendado";
+  app\morador-v2\[unidadeId]\page.tsx:56:  criadoEm: number;
+  app\morador-v2\[unidadeId]\page.tsx:57:  criadoEmFormatado: string;
+  app\morador-v2\[unidadeId]\page.tsx:58:  visualizacoes?: Record<
+  app\morador-v2\[unidadeId]\page.tsx:90:  if (!ano || !mes || !dia) return data;
+  app\morador-v2\[unidadeId]\page.tsx:91:
+  app\morador-v2\[unidadeId]\page.tsx:92:  return `${dia}/${mes}/${ano}`;
+  app\morador-v2\[unidadeId]\page.tsx:93:}
+  app\morador-v2\[unidadeId]\page.tsx:94:
+> app\morador-v2\[unidadeId]\page.tsx:95:function iconeTipoComunicado(tipo: ComunicadoMorador["tipo"]) {
+  app\morador-v2\[unidadeId]\page.tsx:96:  if (tipo === "assembleia") return "👥";
+  app\morador-v2\[unidadeId]\page.tsx:97:  if (tipo === "manutencao") return "🛠️";
+  app\morador-v2\[unidadeId]\page.tsx:98:  if (tipo === "emergencia") return "🚨";
+  app\morador-v2\[unidadeId]\page.tsx:99:  return "📢";
+  app\morador-v2\[unidadeId]\page.tsx:100:}
+  app\morador-v2\[unidadeId]\page.tsx:101:
+  app\morador-v2\[unidadeId]\page.tsx:102:function textoTipoComunicado(tipo: ComunicadoMorador["tipo"]) {
+  app\morador-v2\[unidadeId]\page.tsx:103:  if (tipo === "assembleia") return "ASSEMBLEIA";
+  app\morador-v2\[unidadeId]\page.tsx:104:  if (tipo === "manutencao") return "MANUTENÇÃO";
+  app\morador-v2\[unidadeId]\page.tsx:105:  if (tipo === "emergencia") return "EMERGÊNCIA";
+  app\morador-v2\[unidadeId]\page.tsx:106:  return "COMUNICADO";
+  app\morador-v2\[unidadeId]\page.tsx:107:}
+  app\morador-v2\[unidadeId]\page.tsx:108:
+  app\morador-v2\[unidadeId]\page.tsx:109:export default function MoradorV2() {
+  app\morador-v2\[unidadeId]\page.tsx:110:  const params = useParams();
+  app\morador-v2\[unidadeId]\page.tsx:111:  const searchParams = useSearchParams();
+  app\morador-v2\[unidadeId]\page.tsx:112:  const comunicadoIdPeloLink = searchParams.get("comunicado") || "";
+  app\morador-v2\[unidadeId]\page.tsx:113:
+  app\morador-v2\[unidadeId]\page.tsx:114:  const slug = String(
+  app\morador-v2\[unidadeId]\page.tsx:115:    params?.unidadeId ||
+  app\morador-v2\[unidadeId]\page.tsx:116:      params?.slug ||
+  app\morador-v2\[unidadeId]\page.tsx:117:      params?.id ||
+  app\morador-v2\[unidadeId]\page.tsx:118:      params?.unidade ||
+  app\morador-v2\[unidadeId]\page.tsx:119:      "qr1"
+  app\morador-v2\[unidadeId]\page.tsx:120:  );
+  app\morador-v2\[unidadeId]\page.tsx:121:
+  app\morador-v2\[unidadeId]\page.tsx:122:  const [nome, setNome] = useState("Nenhuma solicitação");
+  app\morador-v2\[unidadeId]\page.tsx:123:  const [motivo, setMotivo] = useState("Aguardando visitante");
+  app\morador-v2\[unidadeId]\page.tsx:124:  const [status, setStatus] = useState("Sem chamado ativo");
+  app\morador-v2\[unidadeId]\page.tsx:125:  const [horaChamada, setHoraChamada] = useState("");
+  app\morador-v2\[unidadeId]\page.tsx:126:  const [modo, setModo] = useState("");
+  app\morador-v2\[unidadeId]\page.tsx:127:  const [mensagemResponsavel, setMensagemResponsavel] = useState("");
+  app\morador-v2\[unidadeId]\page.tsx:128:  const [historicoLista, setHistoricoLista] = useState<any[]>([]);
+  app\morador-v2\[unidadeId]\page.tsx:129:  const [avisoAuto, setAvisoAuto] = useState("");
+  app\morador-v2\[unidadeId]\page.tsx:130:  const [online, setOnline] = useState(true);
+  app\morador-v2\[unidadeId]\page.tsx:186:  localId || identificarCondominioPeloSlug(slug);
+  app\morador-v2\[unidadeId]\page.tsx:187:
+  app\morador-v2\[unidadeId]\page.tsx:188:const nomeLocal =
+  app\morador-v2\[unidadeId]\page.tsx:189:  localNome || "Morador V2";
+  app\morador-v2\[unidadeId]\page.tsx:190:
+> app\morador-v2\[unidadeId]\page.tsx:191:  const caminhoComunicados = `comunicados-v2/${condominioId}`;
+  app\morador-v2\[unidadeId]\page.tsx:192:  const caminhoFirebase = `unidades-v2/${slug}/chamada`;
+  app\morador-v2\[unidadeId]\page.tsx:193:  const caminhoHistorico = `historico-v2/${slug}`;
+  app\morador-v2\[unidadeId]\page.tsx:194:  const caminhoStatus = `status-v2/${slug}`;
+  app\morador-v2\[unidadeId]\page.tsx:195:  const caminhoLogs = `logs-v2/${slug}`;
+  app\morador-v2\[unidadeId]\page.tsx:196:  const caminhoAnalytics = `analytics-v2/${slug}`;
+  app\morador-v2\[unidadeId]\page.tsx:197:
+  app\morador-v2\[unidadeId]\page.tsx:198:  const TEMPO_AGUARDANDO = 2 * 60 * 1000;
+  app\morador-v2\[unidadeId]\page.tsx:199:  const TEMPO_EM_ATENDIMENTO = 1 * 60 * 1000;
+  app\morador-v2\[unidadeId]\page.tsx:200:
+  app\morador-v2\[unidadeId]\page.tsx:201:  const chamadaAtiva =
+  app\morador-v2\[unidadeId]\page.tsx:202:    nome !== "Nenhuma solicitação" &&
+  app\morador-v2\[unidadeId]\page.tsx:203:    status !== "Sem chamado ativo" &&
+  app\morador-v2\[unidadeId]\page.tsx:204:    status !== "Encerrado";
+  app\morador-v2\[unidadeId]\page.tsx:205:
+  app\morador-v2\[unidadeId]\page.tsx:206:  const aguardandoAtendimento = status === "Aguardando atendimento";
+  app\morador-v2\[unidadeId]\page.tsx:207:  const atendimentoEmAndamento = status === "Em atendimento";
+  app\morador-v2\[unidadeId]\page.tsx:208:  const mostrarPopupChamada = chamadaAtiva && popupAtendimentoAberto && aguardandoAtendimento;
+  app\morador-v2\[unidadeId]\page.tsx:209:
+  app\morador-v2\[unidadeId]\page.tsx:210:  async function registrarLog(tipo: string, detalhes: string) {
+  app\morador-v2\[unidadeId]\page.tsx:211:    try {
+  app\morador-v2\[unidadeId]\page.tsx:212:      const novoLog = push(ref(db, caminhoLogs));
+  app\morador-v2\[unidadeId]\page.tsx:213:
+  app\morador-v2\[unidadeId]\page.tsx:214:      await set(novoLog, {
+  app\morador-v2\[unidadeId]\page.tsx:215:        tipo,
+  app\morador-v2\[unidadeId]\page.tsx:216:        detalhes,
+  app\morador-v2\[unidadeId]\page.tsx:217:        unidade: slug,
+  app\morador-v2\[unidadeId]\page.tsx:218:        timestamp: new Date().toISOString(),
+  app\morador-v2\[unidadeId]\page.tsx:219:        nomeAtual: nome,
+  app\morador-v2\[unidadeId]\page.tsx:220:        statusAtual: status,
+  app\morador-v2\[unidadeId]\page.tsx:221:        navegador:
+  app\morador-v2\[unidadeId]\page.tsx:222:          typeof navigator !== "undefined" ? navigator.userAgent : "indisponivel",
+  app\morador-v2\[unidadeId]\page.tsx:223:      });
+  app\morador-v2\[unidadeId]\page.tsx:224:    } catch (erro) {
+  app\morador-v2\[unidadeId]\page.tsx:225:      console.error("Erro ao salvar log:", erro);
+  app\morador-v2\[unidadeId]\page.tsx:226:    }
+
+

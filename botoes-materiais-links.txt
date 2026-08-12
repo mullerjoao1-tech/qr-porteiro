@@ -1,0 +1,165 @@
+﻿
+  app\dashboard\implantacao\locais-implantados\page.tsx:168:      )}`
+  app\dashboard\implantacao\locais-implantados\page.tsx:169:    );
+  app\dashboard\implantacao\locais-implantados\page.tsx:170:
+  app\dashboard\implantacao\locais-implantados\page.tsx:171:    linhas.push(
+  app\dashboard\implantacao\locais-implantados\page.tsx:172:      `QR SVG: ${montarUrlCompleta(
+  app\dashboard\implantacao\locais-implantados\page.tsx:173:        obterUrlQr(local.id, "svg")
+  app\dashboard\implantacao\locais-implantados\page.tsx:174:      )}`
+  app\dashboard\implantacao\locais-implantados\page.tsx:175:    );
+  app\dashboard\implantacao\locais-implantados\page.tsx:176:
+  app\dashboard\implantacao\locais-implantados\page.tsx:177:    linhas.push(
+> app\dashboard\implantacao\locais-implantados\page.tsx:178:      `Placa PDF: ${montarUrlCompleta(
+  app\dashboard\implantacao\locais-implantados\page.tsx:179:        obterUrlPlaca(local.id)
+  app\dashboard\implantacao\locais-implantados\page.tsx:180:      )}`
+  app\dashboard\implantacao\locais-implantados\page.tsx:181:    );
+  app\dashboard\implantacao\locais-implantados\page.tsx:182:
+  app\dashboard\implantacao\locais-implantados\page.tsx:183:    await copiarTexto(
+  app\dashboard\implantacao\locais-implantados\page.tsx:184:      `todos-${local.id}`,
+  app\dashboard\implantacao\locais-implantados\page.tsx:185:      linhas.join("`n")
+  app\dashboard\implantacao\locais-implantados\page.tsx:186:    );
+  app\dashboard\implantacao\locais-implantados\page.tsx:187:  }
+  app\dashboard\implantacao\locais-implantados\page.tsx:188:
+  app\dashboard\implantacao\locais-implantados\page.tsx:189:  return (
+  app\dashboard\implantacao\locais-implantados\page.tsx:190:    <main className="min-h-screen bg-slate-950 text-white">
+  app\dashboard\implantacao\locais-implantados\page.tsx:191:      <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 
+py-6 md:px-6 md:py-8">
+  app\dashboard\implantacao\locais-implantados\page.tsx:192:        <header className="rounded-3xl border border-slate-800 
+bg-gradient-to-r from-slate-900 to-slate-950 p-6 md:p-8">
+  app\dashboard\implantacao\locais-implantados\page.tsx:193:          <p className="text-sm font-black uppercase tracking-wider 
+text-cyan-400">
+  app\dashboard\implantacao\locais-implantados\page.tsx:194:            QR CORE • IMPLANTAÇÃO
+  app\dashboard\implantacao\locais-implantados\page.tsx:195:          </p>
+  app\dashboard\implantacao\locais-implantados\page.tsx:196:
+  app\dashboard\implantacao\locais-implantados\page.tsx:197:          <h1 className="mt-2 text-3xl font-black md:text-4xl">
+  app\dashboard\implantacao\locais-implantados\page.tsx:198:            Locais Implantados
+  app\dashboard\implantacao\locais-implantados\page.tsx:199:          </h1>
+  app\dashboard\implantacao\locais-implantados\page.tsx:200:
+  app\dashboard\implantacao\locais-implantados\page.tsx:201:          <p className="mt-2 max-w-3xl text-sm leading-relaxed 
+text-slate-400">
+  app\dashboard\implantacao\locais-implantados\page.tsx:202:            Acompanhe os locais já implantados, seus acessos,
+  app\dashboard\implantacao\locais-implantados\page.tsx:203:            materiais, ambiente e status operacional.
+  app\dashboard\implantacao\locais-implantados\page.tsx:327:                  Materiais
+  app\dashboard\implantacao\locais-implantados\page.tsx:328:                </p>
+  app\dashboard\implantacao\locais-implantados\page.tsx:329:
+  app\dashboard\implantacao\locais-implantados\page.tsx:330:                <div className="grid grid-cols-2 gap-3">
+  app\dashboard\implantacao\locais-implantados\page.tsx:331:                  <a
+  app\dashboard\implantacao\locais-implantados\page.tsx:332:                    href={obterUrlQr(local.id, "png")}
+  app\dashboard\implantacao\locais-implantados\page.tsx:333:                    target="_blank"
+  app\dashboard\implantacao\locais-implantados\page.tsx:334:                    rel="noreferrer"
+  app\dashboard\implantacao\locais-implantados\page.tsx:335:                    className="rounded-xl border border-sky-500/30 
+bg-sky-500/10 px-4 py-3 text-center text-sm font-black text-sky-300 transition hover:bg-sky-500/20"
+  app\dashboard\implantacao\locais-implantados\page.tsx:336:                  >
+> app\dashboard\implantacao\locais-implantados\page.tsx:337:                    Ver QR
+  app\dashboard\implantacao\locais-implantados\page.tsx:338:                  </a>
+  app\dashboard\implantacao\locais-implantados\page.tsx:339:
+  app\dashboard\implantacao\locais-implantados\page.tsx:340:                  <a
+  app\dashboard\implantacao\locais-implantados\page.tsx:341:                    href={obterUrlQr(local.id, "png", true)}
+  app\dashboard\implantacao\locais-implantados\page.tsx:342:                    className="rounded-xl border border-blue-500/30 
+bg-blue-500/10 px-4 py-3 text-center text-sm font-black text-blue-300 transition hover:bg-blue-500/20"
+  app\dashboard\implantacao\locais-implantados\page.tsx:343:                  >
+  app\dashboard\implantacao\locais-implantados\page.tsx:344:                    PNG
+  app\dashboard\implantacao\locais-implantados\page.tsx:345:                  </a>
+  app\dashboard\implantacao\locais-implantados\page.tsx:346:
+  app\dashboard\implantacao\locais-implantados\page.tsx:347:                  <a
+  app\dashboard\implantacao\locais-implantados\page.tsx:348:                    href={obterUrlQr(local.id, "svg", true)}
+  app\dashboard\implantacao\locais-implantados\page.tsx:349:                    className="rounded-xl border border-fuchsia-500/30 
+bg-fuchsia-500/10 px-4 py-3 text-center text-sm font-black text-fuchsia-300 transition hover:bg-fuchsia-500/20"
+  app\dashboard\implantacao\locais-implantados\page.tsx:350:                  >
+  app\dashboard\implantacao\locais-implantados\page.tsx:351:                    SVG
+  app\dashboard\implantacao\locais-implantados\page.tsx:352:                  </a>
+  app\dashboard\implantacao\locais-implantados\page.tsx:353:
+  app\dashboard\implantacao\locais-implantados\page.tsx:354:                  <a
+  app\dashboard\implantacao\locais-implantados\page.tsx:355:                    href={obterUrlPlaca(local.id)}
+  app\dashboard\implantacao\locais-implantados\page.tsx:356:                    target="_blank"
+  app\dashboard\implantacao\locais-implantados\page.tsx:357:                    rel="noreferrer"
+  app\dashboard\implantacao\locais-implantados\page.tsx:358:                    className="rounded-xl border border-emerald-500/30 
+bg-emerald-500/10 px-4 py-3 text-center text-sm font-black text-emerald-300 transition hover:bg-emerald-500/20"
+  app\dashboard\implantacao\locais-implantados\page.tsx:359:                  >
+> app\dashboard\implantacao\locais-implantados\page.tsx:360:                    Placa PDF
+  app\dashboard\implantacao\locais-implantados\page.tsx:361:                  </a>
+  app\dashboard\implantacao\locais-implantados\page.tsx:362:                </div>
+  app\dashboard\implantacao\locais-implantados\page.tsx:363:              </div>
+  app\dashboard\implantacao\locais-implantados\page.tsx:364:
+  app\dashboard\implantacao\locais-implantados\page.tsx:365:              <div className="mt-5 border-t border-slate-800 pt-5">
+  app\dashboard\implantacao\locais-implantados\page.tsx:366:                <p className="mb-3 text-xs font-black uppercase 
+tracking-wider text-slate-500">
+  app\dashboard\implantacao\locais-implantados\page.tsx:367:                  Links
+  app\dashboard\implantacao\locais-implantados\page.tsx:368:                </p>
+  app\dashboard\implantacao\locais-implantados\page.tsx:369:
+  app\dashboard\implantacao\locais-implantados\page.tsx:370:                <div className="grid gap-3">
+  app\dashboard\implantacao\locais-implantados\page.tsx:371:                  {local.visitante && (
+  app\dashboard\implantacao\locais-implantados\page.tsx:372:                    <button
+  app\dashboard\implantacao\locais-implantados\page.tsx:373:                      type="button"
+  app\dashboard\implantacao\locais-implantados\page.tsx:374:                      onClick={() =>
+  app\dashboard\implantacao\locais-implantados\page.tsx:375:                        copiarTexto(
+  app\dashboard\implantacao\locais-implantados\page.tsx:376:                          `visitante-${local.id}`,
+  app\dashboard\implantacao\locais-implantados\page.tsx:377:                          montarUrlCompleta(local.visitante)
+  app\dashboard\implantacao\locais-implantados\page.tsx:378:                        )
+  app\dashboard\implantacao\locais-implantados\page.tsx:379:                      }
+  app\dashboard\implantacao\locais-implantados\page.tsx:380:                      className="rounded-xl border border-slate-700 
+bg-slate-950 px-4 py-3 text-left text-sm font-bold text-slate-300 transition hover:bg-slate-800"
+  app\dashboard\implantacao\locais-implantados\page.tsx:381:                    >
+  app\dashboard\implantacao\locais-implantados\page.tsx:382:                      {copiado === `visitante-${local.id}`
+  app\dashboard\implantacao\locais-implantados\page.tsx:383:                        ? "Link do visitante copiado"
+> app\dashboard\implantacao\locais-implantados\page.tsx:384:                        : "Copiar link do visitante"}
+  app\dashboard\implantacao\locais-implantados\page.tsx:385:                    </button>
+  app\dashboard\implantacao\locais-implantados\page.tsx:386:                  )}
+  app\dashboard\implantacao\locais-implantados\page.tsx:387:
+  app\dashboard\implantacao\locais-implantados\page.tsx:388:                  {local.morador && (
+  app\dashboard\implantacao\locais-implantados\page.tsx:389:                    <button
+  app\dashboard\implantacao\locais-implantados\page.tsx:390:                      type="button"
+  app\dashboard\implantacao\locais-implantados\page.tsx:391:                      onClick={() =>
+  app\dashboard\implantacao\locais-implantados\page.tsx:392:                        copiarTexto(
+  app\dashboard\implantacao\locais-implantados\page.tsx:393:                          `morador-${local.id}`,
+  app\dashboard\implantacao\locais-implantados\page.tsx:394:                          montarUrlCompleta(local.morador)
+  app\dashboard\implantacao\locais-implantados\page.tsx:395:                        )
+  app\dashboard\implantacao\locais-implantados\page.tsx:396:                      }
+  app\dashboard\implantacao\locais-implantados\page.tsx:397:                      className="rounded-xl border border-slate-700 
+bg-slate-950 px-4 py-3 text-left text-sm font-bold text-slate-300 transition hover:bg-slate-800"
+  app\dashboard\implantacao\locais-implantados\page.tsx:398:                    >
+  app\dashboard\implantacao\locais-implantados\page.tsx:399:                      {copiado === `morador-${local.id}`
+  app\dashboard\implantacao\locais-implantados\page.tsx:400:                        ? "Link do morador copiado"
+> app\dashboard\implantacao\locais-implantados\page.tsx:401:                        : "Copiar link do morador"}
+  app\dashboard\implantacao\locais-implantados\page.tsx:402:                    </button>
+  app\dashboard\implantacao\locais-implantados\page.tsx:403:                  )}
+  app\dashboard\implantacao\locais-implantados\page.tsx:404:
+  app\dashboard\implantacao\locais-implantados\page.tsx:405:                  <button
+  app\dashboard\implantacao\locais-implantados\page.tsx:406:                    type="button"
+  app\dashboard\implantacao\locais-implantados\page.tsx:407:                    onClick={() =>
+  app\dashboard\implantacao\locais-implantados\page.tsx:408:                      copiarTexto(
+  app\dashboard\implantacao\locais-implantados\page.tsx:409:                        `qr-${local.id}`,
+  app\dashboard\implantacao\locais-implantados\page.tsx:410:                        montarUrlCompleta(
+  app\dashboard\implantacao\locais-implantados\page.tsx:411:                          obterUrlQr(local.id, "png")
+  app\dashboard\implantacao\locais-implantados\page.tsx:412:                        )
+  app\dashboard\implantacao\locais-implantados\page.tsx:413:                      )
+  app\dashboard\implantacao\locais-implantados\page.tsx:414:                    }
+  app\dashboard\implantacao\locais-implantados\page.tsx:415:                    className="rounded-xl border border-slate-700 
+bg-slate-950 px-4 py-3 text-left text-sm font-bold text-slate-300 transition hover:bg-slate-800"
+  app\dashboard\implantacao\locais-implantados\page.tsx:416:                  >
+  app\dashboard\implantacao\locais-implantados\page.tsx:417:                    {copiado === `qr-${local.id}`
+  app\dashboard\implantacao\locais-implantados\page.tsx:418:                      ? "Link do QR copiado"
+> app\dashboard\implantacao\locais-implantados\page.tsx:419:                      : "Copiar link do QR"}
+  app\dashboard\implantacao\locais-implantados\page.tsx:420:                  </button>
+  app\dashboard\implantacao\locais-implantados\page.tsx:421:
+  app\dashboard\implantacao\locais-implantados\page.tsx:422:                  <button
+  app\dashboard\implantacao\locais-implantados\page.tsx:423:                    type="button"
+  app\dashboard\implantacao\locais-implantados\page.tsx:424:                    onClick={() => copiarLinksLocal(local)}
+  app\dashboard\implantacao\locais-implantados\page.tsx:425:                    className="rounded-xl border border-amber-500/30 
+bg-amber-500/10 px-4 py-3 text-center text-sm font-black text-amber-300 transition hover:bg-amber-500/20"
+  app\dashboard\implantacao\locais-implantados\page.tsx:426:                  >
+  app\dashboard\implantacao\locais-implantados\page.tsx:427:                    {copiado === `todos-${local.id}`
+  app\dashboard\implantacao\locais-implantados\page.tsx:428:                      ? "Links copiados"
+> app\dashboard\implantacao\locais-implantados\page.tsx:429:                      : "Copiar todos os links"}
+  app\dashboard\implantacao\locais-implantados\page.tsx:430:                  </button>
+  app\dashboard\implantacao\locais-implantados\page.tsx:431:                </div>
+  app\dashboard\implantacao\locais-implantados\page.tsx:432:              </div>
+  app\dashboard\implantacao\locais-implantados\page.tsx:433:            </article>
+  app\dashboard\implantacao\locais-implantados\page.tsx:434:          ))}
+  app\dashboard\implantacao\locais-implantados\page.tsx:435:        </section>
+  app\dashboard\implantacao\locais-implantados\page.tsx:436:      </div>
+  app\dashboard\implantacao\locais-implantados\page.tsx:437:    </main>
+  app\dashboard\implantacao\locais-implantados\page.tsx:438:  );
+  app\dashboard\implantacao\locais-implantados\page.tsx:439:}
+
+

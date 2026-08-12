@@ -1,0 +1,330 @@
+﻿"use client";
+
+import {
+  useMemo,
+  useState,
+} from "react";
+
+import {
+  useRouter,
+  useSearchParams,
+} from "next/navigation";
+
+import DashboardBase from "@/app/components/core/dashboard/DashboardBase";
+import MateriaisDoLocal from "@/app/components/core/dashboard/MateriaisDoLocal";
+import FamiliaResidencia from "@/app/dashboard/condominio/FamiliaResidencia";
+import AcessosTemporariosResidencia from "@/app/dashboard/condominio/AcessosTemporariosResidencia";
+import { useAuth } from "@/app/context/AuthContext";
+
+function normalizarTexto(
+  valor?: string | null
+) {
+  return (valor || "")
+    .trim()
+    .toLowerCase()
+    .replaceAll("_", " ")
+    .replaceAll("-", " ");
+}
+
+export default function PaginaMorador() {
+  const router =
+    useRouter();
+
+  const searchParams =
+    useSearchParams();
+
+  const modoPessoal =
+    searchParams.get("modo") === "pessoal";
+
+  const {
+    usuario,
+    carregando,
+    vinculoSelecionadoId,
+    vinculoSelecionado,
+    logout,
+  } = useAuth();
+
+  const [
+    saindo,
+    setSaindo,
+  ] =
+    useState(false);
+
+  const [
+    abrindoPortao,
+    setAbrindoPortao,
+  ] =
+    useState(false);
+
+  const [
+    statusPortao,
+    setStatusPortao,
+  ] =
+    useState("");
+
+  const [
+    telaResidencia,
+    setTelaResidencia,
+  ] = useState<
+    "inicio" | "familia" | "temporarios"
+  >("inicio");
+
+  const nomeLocal =
+    useMemo(() => {
+      if (
+        !vinculoSelecionado
+      ) {
+        return "Local nao selecionado";
+      }
+
+      return (
+        vinculoSelecionado.localNome ||
+        vinculoSelecionado.condominioNome ||
+        vinculoSelecionado.localSlug ||
+        vinculoSelecionado.condominioSlug ||
+        vinculoSelecionado.localId ||
+        vinculoSelecionado.condominioId ||
+        vinculoSelecionadoId ||
+        "Local"
+      );
+    }, [
+      vinculoSelecionado,
+      vinculoSelecionadoId,
+    ]);
+
+  const unidadeId =
+    useMemo(() => {
+      if (
+        !vinculoSelecionado
+      ) {
+        return null;
+      }
+
+      return (
+        Object.entries(
+          vinculoSelecionado.unidades ??
+          {}
+        ).find(
+          ([, ativo]) =>
+            ativo === true
+        )?.[0] ??
+        null
+      );
+    }, [
+      vinculoSelecionado,
+    ]);
+
+  const tipoLocal =
+    normalizarTexto(
+      vinculoSelecionado
+        ?.tipoLocal
+    );
+
+  const modoResidencia =
+    tipoLocal ===
+    "residencia";
+
+  const identificadorLocalAtual = (
+    vinculoSelecionado?.localId ||
+    vinculoSelecionado?.localSlug ||
+    vinculoSelecionado?.condominioId ||
+    vinculoSelecionado?.condominioSlug ||
+    vinculoSelecionadoId ||
+    ""
+  )
+    .trim()
+    .toLowerCase();
+
+  const modoMuller =
+    identificadorLocalAtual === "muller";
+
+  const permissoes =
+    vinculoSelecionado
+      ?.permissoes ??
+    {};
+
+  const podeReceberChamadas =
+    permissoes
+      .receberChamadas ===
+    true;
+
+  const podeAbrirPortao =
+    permissoes
+      .abrirPortao ===
+    true;
+
+  const podeVisualizarCameras =
+    permissoes
+      .visualizarCameras ===
+    true;
+
+  const podeControlarAlarme =
+    permissoes
+      .controlarAlarme ===
+    true;
+
+  const perfilPrincipalNormalizado = (
+    vinculoSelecionado?.perfilPrincipal ||
+    ""
+  )
+    .trim()
+    .toLowerCase()
+    .replaceAll("-", "_");
+
+  const podeVoltarSindico =
+    perfilPrincipalNormalizado === "sindico" ||
+    Object.entries(
+      vinculoSelecionado?.perfis ?? {}
+    ).some(
+      ([perfil, ativo]) =>
+        ativo === true &&
+        perfil
+          .trim()
+          .toLowerCase()
+          .replaceAll("-", "_") === "sindico"
+    );
+
+  const perfisAdministrativosResidencia =
+    Object.entries(
+      vinculoSelecionado?.perfis ?? {}
+    )
+      .filter(([, ativo]) => ativo === true)
+      .map(([perfil]) =>
+        perfil
+          .trim()
+          .toLowerCase()
+          .replaceAll("-", "_")
+      );
+
+  const podeGerenciarResidencia =
+    perfilPrincipalNormalizado === "administrador_master" ||
+    perfilPrincipalNormalizado === "proprietario" ||
+    perfilPrincipalNormalizado === "responsavel" ||
+    perfilPrincipalNormalizado === "gestor_local" ||
+    perfilPrincipalNormalizado === "gerente" ||
+    perfisAdministrativosResidencia.includes(
+      "administrador_master"
+    ) ||
+    perfisAdministrativosResidencia.includes(
+      "proprietario"
+    ) ||
+    perfisAdministrativosResidencia.includes(
+      "responsavel"
+    ) ||
+    perfisAdministrativosResidencia.includes(
+      "gestor_local"
+    ) ||
+    perfisAdministrativosResidencia.includes(
+      "gerente"
+    );
+
+  async function sair() {
+    try {
+      setSaindo(true);
+
+      await logout();
+
+      window.location.href =
+        "/";
+    } finally {
+      setSaindo(false);
+    }
+  }
+
+  function abrirAtendimentoVisitantes() {
+    if (
+      !podeReceberChamadas &&
+      modoResidencia
+    ) {
+      alert(
+        "Este perfil nao possui permissao para receber chamadas."
+      );
+
+      return;
+    }
+
+
+if (modoResidencia) {
+      const slugResidencia =
+        vinculoSelecionado?.localSlug ||
+        vinculoSelecionado?.condominioSlug ||
+        vinculoSelecionadoId ||
+        "";
+
+      if (!slugResidencia) {
+        alert(
+          "Nao foi possivel identificar esta residencia."
+        );
+
+        return;
+      }
+
+      const unidadeResidencia =
+        slugResidencia === "muller"
+          ? "muller-principal"
+          : `${slugResidencia}-principal`;
+
+      router.push(
+        `/morador-v2/${encodeURIComponent(
+          unidadeResidencia
+        )}`
+      );
+
+      return;
+    }
+
+    if (!unidadeId) {
+      alert(
+        "Nenhuma unidade esta vinculada a este perfil."
+      );
+
+      return;
+    }
+
+    router.push(
+      `/morador-v2/${encodeURIComponent(
+        unidadeId
+      )}`
+    );
+  }
+
+  async function abrirPortao() {
+    if (
+      !podeAbrirPortao ||
+      abrindoPortao
+    ) {
+      return;
+    }
+
+    try {
+      setAbrindoPortao(
+        true
+      );
+
+      setStatusPortao(
+        "\u23F3 Abrindo port\u00e3o..."
+      );
+
+      const resposta =
+        await fetch(
+          "/api/abrir-portao"
+        );
+
+      const dados =
+        await resposta.json();
+
+      if (
+        !resposta.ok ||
+        !dados.success
+      ) {
+        throw new Error(
+          dados.erro ||
+          dados.mensagem ||
+          "Falha ao abrir o portao."
+        );
+      }
+
+      setStatusPortao(
+        "\u2705 Port\u00e3o aberto com sucesso"
+      );
+    } catch (erro) {

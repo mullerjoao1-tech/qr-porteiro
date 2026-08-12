@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  Suspense,
   useMemo,
   useState,
 } from "react";
@@ -27,7 +26,7 @@ function normalizarTexto(
     .replaceAll("-", " ");
 }
 
-function ConteudoPaginaMorador() {
+export default function PaginaMorador() {
   const router =
     useRouter();
 
@@ -579,6 +578,13 @@ if (modoResidencia) {
               ) : null}
 
               <button
+  type="button"
+  onClick={() => router.push("/dashboard")}
+  className="rounded-2xl border border-white/30 bg-white/10 px-5 py-3 text-sm font-black text-white transition hover:bg-white/20 active:scale-[0.98]"
+>
+  ← Voltar
+</button>
+<button
                 type="button"
                 onClick={sair}
                 disabled={saindo}
@@ -999,26 +1005,3 @@ if (modoResidencia) {
 }
 
 
-
-
-function CarregandoPaginaMorador() {
-  return (
-    <DashboardBase>
-      <div className="rounded-3xl border border-slate-800 bg-slate-900 p-6 text-slate-300">
-        Carregando painel do morador...
-      </div>
-    </DashboardBase>
-  );
-}
-
-export default function PaginaMorador() {
-  return (
-    <Suspense
-      fallback={
-        <CarregandoPaginaMorador />
-      }
-    >
-      <ConteudoPaginaMorador />
-    </Suspense>
-  );
-}

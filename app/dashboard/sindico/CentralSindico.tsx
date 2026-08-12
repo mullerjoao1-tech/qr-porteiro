@@ -539,10 +539,49 @@ export default function CentralSindico() {
     vinculoSelecionadoId,
     selecionarVinculo,
     selecionarCarteiraGeral,
+logout,
   } = useAuth();
 
   const contextoAtual: ContextoPainel =
     vinculoSelecionadoId ?? "carteira-geral";
+const vinculoAtual =
+vinculosAtivos.find(
+([id]) =>
+id === vinculoSelecionadoId
+)?.[1] ?? null;
+
+const identificadorLocal = (
+vinculoAtual?.localId ||
+vinculoAtual?.localSlug ||
+vinculoAtual?.condominioId ||
+vinculoAtual?.condominioSlug ||
+vinculoSelecionadoId ||
+""
+)
+.trim()
+.toLowerCase();
+
+const tipoLocalAtual =
+identificadorLocal === "residencial-costa" ||
+identificadorLocal === "muller"
+? "residencia"
+: (
+vinculoAtual?.tipoLocal ||
+"condominio"
+)
+.trim()
+.toLowerCase()
+.replaceAll("-", "_");
+
+const podeAbrirMinhaUnidade =
+Boolean(
+  vinculoAtual &&
+  Object.keys(
+    vinculoAtual.unidades ?? {}
+  ).length > 0
+);
+
+
   const [seletorContextoAberto, setSeletorContextoAberto] = useState(false);
   const [popupResumoAberto, setPopupResumoAberto] = useState(false);
   const [popupSaudeAberto, setPopupSaudeAberto] = useState(false);
@@ -1599,6 +1638,16 @@ export default function CentralSindico() {
   }
 
 
+  function meusAcessos() {
+  window.location.href = "/dashboard/meus-acessos";
+}
+
+async function sair() {
+    await logout();
+    window.location.href = "/";
+  }
+
+
   return (
     <div className="space-y-5">
       {/* Cabeçalho */}
@@ -1616,7 +1665,7 @@ export default function CentralSindico() {
           </div>
 
           <div className="flex w-full flex-col gap-3 md:w-auto">
-            <div className="grid grid-cols-2 gap-2">
+            <div className="flex flex-wrap gap-2 md:justify-end">
               <button
                 type="button"
                 onClick={() => abrirComunicacao("comunicado")}
@@ -1641,6 +1690,14 @@ export default function CentralSindico() {
               >
                 📚 Comunicados enviados
               </button>
+
+<button
+            type="button"
+            onClick={sair}
+            className="rounded-2xl border border-red-400/50 bg-red-600 px-5 py-3 text-xs font-black text-white shadow-lg transition-all hover:bg-red-500 active:scale-95 md:text-sm"
+          >
+            Sair
+          </button>
             </div>
 
             <div className="relative">
@@ -1749,13 +1806,33 @@ export default function CentralSindico() {
           <div className="mt-5 flex items-center justify-between rounded-2xl border border-white/20 bg-black/10 px-4 py-3">
             <div>
               <p className="text-xs font-bold text-blue-100">
-                👁 MODO CONDOMÍNIO
+            {tipoLocalAtual === "residencia"
+              ? "MODO RESID?NCIA"
+              : "MODO CONDOMÍNIO"}
               </p>
 
-              <p className="mt-1 text-sm font-black text-white">
-                <>{contextoSelecionado.nome}<br />Todos os módulos utilizam este contexto.</>
-              </p>
+          <p className="mt-1 text-sm font-black text-white">
+            <>
+              {contextoSelecionado.nome}
+              <br />
+              Todos os módulos utilizam este contexto.
+            </>
+          </p>
             </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+            {podeAbrirMinhaUnidade && (
+              <button
+                type="button"
+                onClick={() => {
+                  window.location.href =
+                    "/dashboard/morador";
+                }}
+                className="shrink-0 rounded-xl bg-cyan-400 px-3 py-2 text-xs font-black text-slate-950 transition-all hover:bg-cyan-300 active:scale-95"
+              >
+                Minha unidade
+              </button>
+            )}
 
             <button
               type="button"
@@ -1765,12 +1842,18 @@ export default function CentralSindico() {
               Ver geral
             </button>
           </div>
+          </div>
         )}
       </section>
 
       {/* Atenção agora */}
 
-      <section className="rounded-2xl border border-red-700 bg-red-950/20 p-4 md:p-5">
+      
+
+<section
+        id="sindico-atencao"
+        className="scroll-mt-6 rounded-2xl border border-red-700 bg-red-950/20 p-4 md:p-5"
+      >
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="text-xs font-bold text-red-300 md:text-sm">

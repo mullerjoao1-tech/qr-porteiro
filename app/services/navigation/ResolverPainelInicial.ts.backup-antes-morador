@@ -1,0 +1,287 @@
+import type {
+  ModuloDashboard,
+} from "@/app/config/dashboard";
+
+import type {
+  Usuario,
+} from "@/app/types/Usuario";
+
+import type {
+  VinculoComPermissoes,
+} from "@/app/services/permissoes";
+
+export type DadosResolverPainelInicial = {
+  usuario:
+    Usuario | null;
+
+  vinculoId:
+    string;
+
+  vinculo:
+    VinculoComPermissoes;
+
+  modulosPermitidos:
+    ModuloDashboard[];
+};
+
+const PERFIL_ADMINISTRADOR_MASTER =
+  "administrador_master";
+
+const PERFIL_ADMINISTRADOR_MASTER_LEGADO =
+  "administrador-master";
+
+function normalizarValor(
+  valor:
+    string | undefined
+): string {
+  return (
+    valor
+      ?.trim()
+      .toLowerCase()
+      .replaceAll(
+        "-",
+        "_"
+      ) ||
+    ""
+  );
+}
+
+function possuiPerfil(
+  vinculo:
+    VinculoComPermissoes,
+  perfil:
+    string
+): boolean {
+  const perfilNormalizado =
+    normalizarValor(
+      perfil
+    );
+
+  const perfilPrincipal =
+    normalizarValor(
+      vinculo.perfilPrincipal
+    );
+
+  if (
+    perfilPrincipal ===
+    perfilNormalizado
+  ) {
+    return true;
+  }
+
+  return Object.entries(
+    vinculo.perfis ??
+    {}
+  ).some(
+    (
+      [
+        nomePerfil,
+        ativo,
+      ]
+    ) =>
+      ativo === true &&
+      normalizarValor(
+        nomePerfil
+      ) === perfilNormalizado
+  );
+}
+
+function possuiAdministradorMaster(
+  vinculo:
+    VinculoComPermissoes
+): boolean {
+  return (
+    possuiPerfil(
+      vinculo,
+      PERFIL_ADMINISTRADOR_MASTER
+    ) ||
+    possuiPerfil(
+      vinculo,
+      PERFIL_ADMINISTRADOR_MASTER_LEGADO
+    )
+  );
+}
+
+function obterTipoLocal(
+  vinculo:
+    VinculoComPermissoes
+): string {
+  return normalizarValor(
+    vinculo.tipoLocal
+  );
+}
+
+function obterPrimeiraUnidade(
+  vinculo:
+    VinculoComPermissoes
+): string | null {
+  const unidades =
+    Object.entries(
+      vinculo.unidades ??
+      {}
+    ).find(
+      (
+        [
+          ,
+          ativo,
+        ]
+      ) =>
+        ativo === true
+    );
+
+  return unidades?.[0] ??
+    null;
+}
+
+function rotaPrimeiroModulo(
+  modulosPermitidos:
+    ModuloDashboard[]
+): string {
+  return (
+    modulosPermitidos[0]
+      ?.rota ||
+    "/dashboard"
+  );
+}
+
+export function resolverPainelInicial({
+  vinculo,
+  modulosPermitidos,
+}: DadosResolverPainelInicial): string {
+  const tipoLocal =
+    obterTipoLocal(
+      vinculo
+    );
+
+  if (
+    possuiAdministradorMaster(
+      vinculo
+    )
+  ) {
+    return "/dashboard";
+  }
+
+  if (
+    possuiPerfil(
+      vinculo,
+      "administradora"
+    )
+  ) {
+    return "/dashboard/administradora";
+  }
+
+  if (
+  possuiPerfil(
+    vinculo,
+    "sindico"
+  )
+) {
+  return "/dashboard/condominio";
+}
+
+  if (
+    possuiPerfil(
+      vinculo,
+      "central"
+    )
+  ) {
+    return "/dashboard/central-inteligente";
+  }
+
+  if (
+    possuiPerfil(
+      vinculo,
+      "financeiro"
+    )
+  ) {
+    return "/dashboard/financeiro";
+  }
+
+  if (
+    possuiPerfil(
+      vinculo,
+      "porteiro"
+    )
+  ) {
+    return "/painel-central-v2";
+  }
+
+  if (
+    possuiPerfil(
+      vinculo,
+      "morador"
+    )
+  ) {
+    const unidadeId =
+      obterPrimeiraUnidade(
+        vinculo
+      );
+
+    if (unidadeId) {
+      return `/morador-v2/${encodeURIComponent(
+        unidadeId
+      )}`;
+    }
+
+    return rotaPrimeiroModulo(
+      modulosPermitidos
+    );
+  }
+
+  if (
+    possuiPerfil(
+      vinculo,
+      "gestor_local"
+    ) ||
+    possuiPerfil(
+      vinculo,
+      "funcionario"
+    )
+  ) {
+    if (
+      tipoLocal ===
+        "beauty" ||
+      tipoLocal ===
+        "barbearia"
+    ) {
+      return "/dashboard/beauty";
+    }
+
+    if (
+      tipoLocal ===
+        "condominio" ||
+      tipoLocal ===
+        "residencia"
+    ) {
+      return "/dashboard/condominio";
+    }
+
+    return rotaPrimeiroModulo(
+      modulosPermitidos
+    );
+  }
+
+  if (
+    possuiPerfil(
+      vinculo,
+      "conselheiro"
+    )
+  ) {
+    return "/dashboard/condominio";
+  }
+
+  if (
+    possuiPerfil(
+      vinculo,
+      "prestador"
+    )
+  ) {
+    return "/dashboard/marketplace";
+  }
+
+  return rotaPrimeiroModulo(
+    modulosPermitidos
+  );
+}
+
+export default resolverPainelInicial;

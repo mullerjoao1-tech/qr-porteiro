@@ -1,0 +1,241 @@
+﻿
+  app\dashboard\condominio\page.tsx:70:  id: string;
+  app\dashboard\condominio\page.tsx:71:  codigo: string;
+  app\dashboard\condominio\page.tsx:72:  nome: string;
+  app\dashboard\condominio\page.tsx:73:  telefone: string;
+  app\dashboard\condominio\page.tsx:74:email?: string;
+  app\dashboard\condominio\page.tsx:75:  unidadeId: string;
+  app\dashboard\condominio\page.tsx:76:  unidadeNome: string;
+  app\dashboard\condominio\page.tsx:77:  prioridade: number;
+> app\dashboard\condominio\page.tsx:78:  podeAbrirPortao: boolean;
+  app\dashboard\condominio\page.tsx:79:recebeChamadas?: boolean;
+  app\dashboard\condominio\page.tsx:80:  status: string;
+  app\dashboard\condominio\page.tsx:81:};
+  app\dashboard\condominio\page.tsx:82:
+  app\dashboard\condominio\page.tsx:83:
+  app\dashboard\condominio\page.tsx:84:type AtualizacaoCadastralCondominio = {
+  app\dashboard\condominio\page.tsx:85:  id: string;
+  app\dashboard\condominio\page.tsx:86:  codigo: string;
+  app\dashboard\condominio\page.tsx:87:  condominioId: string;
+  app\dashboard\condominio\page.tsx:88:  condominioNome: string;
+  app\dashboard\condominio\page.tsx:89:  condominioSlug?: string;
+  app\dashboard\condominio\page.tsx:90:  unidadeId: string;
+  app\dashboard\condominio\page.tsx:91:  unidadeCodigo?: string;
+  app\dashboard\condominio\page.tsx:92:  unidadeNome: string;
+  app\dashboard\condominio\page.tsx:93:  bloco?: string;
+  app\dashboard\condominio\page.tsx:94:  nomeUnidade?: string;
+  app\dashboard\condominio\page.tsx:95:  nome: string;
+  app\dashboard\condominio\page.tsx:96:  telefone: string;
+  app\dashboard\condominio\page.tsx:97:  email?: string;
+  app\dashboard\condominio\page.tsx:98:  perfil: string;
+  app\dashboard\condominio\page.tsx:221:
+  app\dashboard\condominio\page.tsx:222:  const [
+  app\dashboard\condominio\page.tsx:223:    prioridadeMorador,
+  app\dashboard\condominio\page.tsx:224:    setPrioridadeMorador,
+  app\dashboard\condominio\page.tsx:225:  ] =
+  app\dashboard\condominio\page.tsx:226:    useState("1");
+  app\dashboard\condominio\page.tsx:227:
+  app\dashboard\condominio\page.tsx:228:  const [
+> app\dashboard\condominio\page.tsx:229:    podeAbrirPortao,
+> app\dashboard\condominio\page.tsx:230:    setPodeAbrirPortao,
+  app\dashboard\condominio\page.tsx:231:  ] =
+  app\dashboard\condominio\page.tsx:232:    useState(false);
+  app\dashboard\condominio\page.tsx:233:
+  app\dashboard\condominio\page.tsx:234:  const [
+  app\dashboard\condominio\page.tsx:235:    salvandoMorador,
+  app\dashboard\condominio\page.tsx:236:    setSalvandoMorador,
+  app\dashboard\condominio\page.tsx:237:  ] =
+  app\dashboard\condominio\page.tsx:238:    useState(false);
+  app\dashboard\condominio\page.tsx:239:
+  app\dashboard\condominio\page.tsx:240:  const [
+  app\dashboard\condominio\page.tsx:241:    atualizacoesCadastrais,
+  app\dashboard\condominio\page.tsx:242:    setAtualizacoesCadastrais,
+  app\dashboard\condominio\page.tsx:243:  ] =
+  app\dashboard\condominio\page.tsx:244:    useState<AtualizacaoCadastralCondominio[]>([]);
+  app\dashboard\condominio\page.tsx:245:
+  app\dashboard\condominio\page.tsx:246:  const [
+  app\dashboard\condominio\page.tsx:247:    atualizacaoSelecionada,
+  app\dashboard\condominio\page.tsx:248:    setAtualizacaoSelecionada,
+  app\dashboard\condominio\page.tsx:249:  ] =
+  app\dashboard\condominio\page.tsx:250:    useState<AtualizacaoCadastralCondominio | null>(null);
+  app\dashboard\condominio\page.tsx:759:      );
+  app\dashboard\condominio\page.tsx:760:    } finally {
+  app\dashboard\condominio\page.tsx:761:      setSalvandoUnidade(
+  app\dashboard\condominio\page.tsx:762:        false
+  app\dashboard\condominio\page.tsx:763:      );
+  app\dashboard\condominio\page.tsx:764:    }
+  app\dashboard\condominio\page.tsx:765:  }
+  app\dashboard\condominio\page.tsx:766:
+> app\dashboard\condominio\page.tsx:767:  async function cadastrarMorador() {
+  app\dashboard\condominio\page.tsx:768:    if (!unidadeMoradorId) {
+  app\dashboard\condominio\page.tsx:769:      alert(
+  app\dashboard\condominio\page.tsx:770:        "Selecione uma unidade."
+  app\dashboard\condominio\page.tsx:771:      );
+  app\dashboard\condominio\page.tsx:772:      return;
+  app\dashboard\condominio\page.tsx:773:    }
+  app\dashboard\condominio\page.tsx:774:
+  app\dashboard\condominio\page.tsx:775:    const unidade =
+  app\dashboard\condominio\page.tsx:776:      unidades.find(
+  app\dashboard\condominio\page.tsx:777:        (item) =>
+  app\dashboard\condominio\page.tsx:778:          item.id ===
+  app\dashboard\condominio\page.tsx:779:          unidadeMoradorId
+  app\dashboard\condominio\page.tsx:780:      );
+  app\dashboard\condominio\page.tsx:781:
+  app\dashboard\condominio\page.tsx:782:    if (!unidade) {
+  app\dashboard\condominio\page.tsx:783:      alert(
+  app\dashboard\condominio\page.tsx:784:        "Unidade nao encontrada."
+  app\dashboard\condominio\page.tsx:785:      );
+  app\dashboard\condominio\page.tsx:786:      return;
+  app\dashboard\condominio\page.tsx:787:    }
+  app\dashboard\condominio\page.tsx:863:            true,
+  app\dashboard\condominio\page.tsx:864:
+  app\dashboard\condominio\page.tsx:865:          disponivel:
+  app\dashboard\condominio\page.tsx:866:            true,
+  app\dashboard\condominio\page.tsx:867:
+  app\dashboard\condominio\page.tsx:868:          encaminhamentoAutomatico:
+  app\dashboard\condominio\page.tsx:869:            true,
+  app\dashboard\condominio\page.tsx:870:
+> app\dashboard\condominio\page.tsx:871:          podeAbrirPortao,
+  app\dashboard\condominio\page.tsx:872:
+  app\dashboard\condominio\page.tsx:873:          status:
+  app\dashboard\condominio\page.tsx:874:            "ativo",
+  app\dashboard\condominio\page.tsx:875:
+  app\dashboard\condominio\page.tsx:876:          criadoEm:
+  app\dashboard\condominio\page.tsx:877:            new Date()
+  app\dashboard\condominio\page.tsx:878:              .toISOString(),
+  app\dashboard\condominio\page.tsx:879:
+  app\dashboard\condominio\page.tsx:880:          ultimoStatusEm:
+  app\dashboard\condominio\page.tsx:881:            Date.now(),
+  app\dashboard\condominio\page.tsx:882:        }
+  app\dashboard\condominio\page.tsx:883:      );
+  app\dashboard\condominio\page.tsx:884:
+  app\dashboard\condominio\page.tsx:885:      setNomeMorador("");
+  app\dashboard\condominio\page.tsx:886:      setTelefoneMorador("");
+  app\dashboard\condominio\page.tsx:887:      setPrioridadeMorador(
+  app\dashboard\condominio\page.tsx:888:        "1"
+  app\dashboard\condominio\page.tsx:889:      );
+> app\dashboard\condominio\page.tsx:890:      setPodeAbrirPortao(
+  app\dashboard\condominio\page.tsx:891:        false
+  app\dashboard\condominio\page.tsx:892:      );
+  app\dashboard\condominio\page.tsx:893:
+  app\dashboard\condominio\page.tsx:894:      alert(
+  app\dashboard\condominio\page.tsx:895:        "Morador cadastrado com sucesso."
+  app\dashboard\condominio\page.tsx:896:      );
+  app\dashboard\condominio\page.tsx:897:    } catch (erro) {
+  app\dashboard\condominio\page.tsx:898:      console.error(
+  app\dashboard\condominio\page.tsx:899:        erro
+  app\dashboard\condominio\page.tsx:900:      );
+  app\dashboard\condominio\page.tsx:901:
+  app\dashboard\condominio\page.tsx:902:      alert(
+  app\dashboard\condominio\page.tsx:903:        "Erro ao cadastrar morador."
+  app\dashboard\condominio\page.tsx:904:      );
+  app\dashboard\condominio\page.tsx:905:    } finally {
+  app\dashboard\condominio\page.tsx:906:      setSalvandoMorador(
+  app\dashboard\condominio\page.tsx:907:        false
+  app\dashboard\condominio\page.tsx:908:      );
+  app\dashboard\condominio\page.tsx:909:    }
+  app\dashboard\condominio\page.tsx:910:  }
+  app\dashboard\condominio\page.tsx:911:
+> app\dashboard\condominio\page.tsx:912:async function atualizarMoradorCadastrado(
+  app\dashboard\condominio\page.tsx:913:  moradorId: string,
+  app\dashboard\condominio\page.tsx:914:  dados: {
+  app\dashboard\condominio\page.tsx:915:    nome: string;
+  app\dashboard\condominio\page.tsx:916:    telefone: string;
+  app\dashboard\condominio\page.tsx:917:    email?: string;
+  app\dashboard\condominio\page.tsx:918:    prioridade: number;
+  app\dashboard\condominio\page.tsx:919:    recebeChamadas: boolean;
+> app\dashboard\condominio\page.tsx:920:    podeAbrirPortao: boolean;
+  app\dashboard\condominio\page.tsx:921:    status: string;
+  app\dashboard\condominio\page.tsx:922:  }
+  app\dashboard\condominio\page.tsx:923:) {
+  app\dashboard\condominio\page.tsx:924:  if (!moradorId) {
+  app\dashboard\condominio\page.tsx:925:    throw new Error(
+  app\dashboard\condominio\page.tsx:926:      "Morador nao informado."
+  app\dashboard\condominio\page.tsx:927:    );
+  app\dashboard\condominio\page.tsx:928:  }
+  app\dashboard\condominio\page.tsx:929:
+  app\dashboard\condominio\page.tsx:930:  const nome =
+  app\dashboard\condominio\page.tsx:931:    dados.nome.trim();
+  app\dashboard\condominio\page.tsx:932:
+  app\dashboard\condominio\page.tsx:933:  const telefone =
+  app\dashboard\condominio\page.tsx:934:    dados.telefone.trim();
+  app\dashboard\condominio\page.tsx:935:
+  app\dashboard\condominio\page.tsx:936:  if (!nome) {
+  app\dashboard\condominio\page.tsx:937:    throw new Error(
+  app\dashboard\condominio\page.tsx:938:      "Informe o nome do morador."
+  app\dashboard\condominio\page.tsx:939:    );
+  app\dashboard\condominio\page.tsx:940:  }
+  app\dashboard\condominio\page.tsx:963:        Number(dados.prioridade),
+  app\dashboard\condominio\page.tsx:964:
+  app\dashboard\condominio\page.tsx:965:      ordemAtendimento:
+  app\dashboard\condominio\page.tsx:966:        Number(dados.prioridade),
+  app\dashboard\condominio\page.tsx:967:
+  app\dashboard\condominio\page.tsx:968:      recebeChamadas:
+  app\dashboard\condominio\page.tsx:969:        dados.recebeChamadas,
+  app\dashboard\condominio\page.tsx:970:
+> app\dashboard\condominio\page.tsx:971:      podeAbrirPortao:
+> app\dashboard\condominio\page.tsx:972:        dados.podeAbrirPortao,
+  app\dashboard\condominio\page.tsx:973:
+  app\dashboard\condominio\page.tsx:974:      status:
+  app\dashboard\condominio\page.tsx:975:        dados.status,
+  app\dashboard\condominio\page.tsx:976:
+  app\dashboard\condominio\page.tsx:977:      atualizadoEm:
+  app\dashboard\condominio\page.tsx:978:        new Date().toISOString(),
+  app\dashboard\condominio\page.tsx:979:
+  app\dashboard\condominio\page.tsx:980:      ultimoStatusEm:
+  app\dashboard\condominio\page.tsx:981:        Date.now(),
+  app\dashboard\condominio\page.tsx:982:    }
+  app\dashboard\condominio\page.tsx:983:  );
+  app\dashboard\condominio\page.tsx:984:}
+  app\dashboard\condominio\page.tsx:985:
+  app\dashboard\condominio\page.tsx:986:  const atualizacoesDoLocal =
+  app\dashboard\condominio\page.tsx:987:    useMemo(
+  app\dashboard\condominio\page.tsx:988:      () =>
+  app\dashboard\condominio\page.tsx:989:        atualizacoesCadastrais
+  app\dashboard\condominio\page.tsx:990:          .filter((item) => {
+  app\dashboard\condominio\page.tsx:991:            const candidatos = [
+  app\dashboard\condominio\page.tsx:992:              item.condominioId,
+  app\dashboard\condominio\page.tsx:1377:              prioridadeMorador={
+  app\dashboard\condominio\page.tsx:1378:                prioridadeMorador
+  app\dashboard\condominio\page.tsx:1379:              }
+  app\dashboard\condominio\page.tsx:1380:
+  app\dashboard\condominio\page.tsx:1381:              setPrioridadeMorador={
+  app\dashboard\condominio\page.tsx:1382:                setPrioridadeMorador
+  app\dashboard\condominio\page.tsx:1383:              }
+  app\dashboard\condominio\page.tsx:1384:
+> app\dashboard\condominio\page.tsx:1385:              podeAbrirPortao={
+> app\dashboard\condominio\page.tsx:1386:                podeAbrirPortao
+  app\dashboard\condominio\page.tsx:1387:              }
+  app\dashboard\condominio\page.tsx:1388:
+> app\dashboard\condominio\page.tsx:1389:              setPodeAbrirPortao={
+> app\dashboard\condominio\page.tsx:1390:                setPodeAbrirPortao
+  app\dashboard\condominio\page.tsx:1391:              }
+  app\dashboard\condominio\page.tsx:1392:
+> app\dashboard\condominio\page.tsx:1393:              cadastrarMorador={
+> app\dashboard\condominio\page.tsx:1394:                cadastrarMorador
+  app\dashboard\condominio\page.tsx:1395:              }
+  app\dashboard\condominio\page.tsx:1396:
+  app\dashboard\condominio\page.tsx:1397:              atualizarMorador={
+> app\dashboard\condominio\page.tsx:1398:                atualizarMoradorCadastrado
+  app\dashboard\condominio\page.tsx:1399:              }
+  app\dashboard\condominio\page.tsx:1400:
+  app\dashboard\condominio\page.tsx:1401:              salvandoMorador={
+  app\dashboard\condominio\page.tsx:1402:                salvandoMorador
+  app\dashboard\condominio\page.tsx:1403:              }
+  app\dashboard\condominio\page.tsx:1404:            />
+  app\dashboard\condominio\page.tsx:1405:
+  app\dashboard\condominio\page.tsx:1406:          </div>
+  app\dashboard\condominio\page.tsx:1407:
+  app\dashboard\condominio\page.tsx:1408:        ) : telaAtiva ===
+  app\dashboard\condominio\page.tsx:1409:        "pendentes" ? (
+  app\dashboard\condominio\page.tsx:1410:
+  app\dashboard\condominio\page.tsx:1411:          <div className="space-y-5">
+  app\dashboard\condominio\page.tsx:1412:
+  app\dashboard\condominio\page.tsx:1413:            <div className="flex justify-end">
+  app\dashboard\condominio\page.tsx:1414:              <button
+  app\dashboard\condominio\page.tsx:1415:                type="button"
+  app\dashboard\condominio\page.tsx:1416:                onClick={() =>
+  app\dashboard\condominio\page.tsx:1417:                  setTelaAtiva(
+  app\dashboard\condominio\page.tsx:1418:                    "inicio"
+
+

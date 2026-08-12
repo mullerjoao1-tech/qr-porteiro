@@ -1,0 +1,736 @@
+import "server-only";
+
+import {
+  randomInt,
+  randomUUID,
+} from "node:crypto";
+
+import {
+  NextRequest,
+  NextResponse,
+} from "next/server";
+
+import {
+  obterFirebaseAdmin,
+} from "@/app/services/server/firebaseAdmin";
+
+import {
+registrarHistoricoLocal,
+} from "@/app/services/server/historicoLocal";
+
+type VinculoBanco = {
+  ativo?: boolean;
+  perfilPrincipal?: string;
+  perfis?: Record<string, boolean>;
+  permissoes?: Record<string, boolean>;
+};
+
+type UsuarioBanco = {
+  status?: string;
+  locais?: Record<string, VinculoBanco>;
+};
+
+function texto(
+  valor: unknown
+): string {
+  return typeof valor === "string"
+    ? valor.trim()
+    : "";
+}
+
+function obterTokenBearer(
+  request: NextRequest
+): string {
+  const authorization =
+    request.headers.get(
+      "authorization"
+    ) || "";
+
+  if (
+    !authorization.startsWith(
+      "Bearer "
+    )
+  ) {
+    throw new Error(
+      "Autentica??o n?o informada."
+    );
+  }
+
+  const token =
+    authorization
+      .slice(7)
+      .trim();
+
+  if (!token) {
+    throw new Error(
+      "Token de autentica??o inv?lido."
+    );
+  }
+
+  return token;
+}
+
+async function validarGestor(
+  request: NextRequest,
+  localId: string
+) {
+  const {
+    auth,
+    database,
+  } =
+    obterFirebaseAdmin();
+
+  const token =
+    obterTokenBearer(
+      request
+    );
+
+  const decodificado =
+    await auth.verifyIdToken(
+      token
+    );
+
+  const snapshot =
+    await database
+      .ref(
+        `usuarios-v2/${decodificado.uid}`
+      )
+      .get();
+
+  if (!snapshot.exists()) {
+    throw new Error(
+      "Usu?rio n?o encontrado."
+    );
+  }
+
+  const usuario =
+    snapshot.val() as UsuarioBanco;
+
+  const vinculo =
+    usuario.locais?.[
+      localId
+    ];
+
+  if (
+    !vinculo ||
+    vinculo.ativo === false
+  ) {
+    throw new Error(
+      "Voc? n?o possui v?nculo ativo com esta resid?ncia."
+    );
+  }
+
+  const perfilPrincipal = (
+    vinculo.perfilPrincipal ||
+    ""
+  )
+    .trim()
+    .toLowerCase()
+    .replaceAll("-", "_");
+
+  const autorizado =
+    perfilPrincipal ===
+      "administrador_master" ||
+    perfilPrincipal ===
+      "proprietario" ||
+    perfilPrincipal ===
+      "responsavel" ||
+    perfilPrincipal ===
+      "gestor_local" ||
+perfilPrincipal ===
+"morador" ||
+    vinculo.perfis?.[
+      "administrador_master"
+    ] === true ||
+    vinculo.perfis?.[
+      "proprietario"
+    ] === true ||
+    vinculo.perfis?.[
+      "morador"
+    ] === true ||
+    vinculo.permissoes?.[
+      "gerenciarMoradores"
+    ] === true;
+
+  if (!autorizado) {
+    throw new Error(
+      "Voc? n?o possui permiss?o para gerenciar acessos tempor?rios."
+    );
+  }
+
+  return {
+    uid:
+      decodificado.uid,
+
+    database,
+  };
+}
+
+function gerarPin() {
+  return String(
+    randomInt(
+      100000,
+      1000000
+    )
+  );
+}
+
+export async function GET(
+  request: NextRequest
+) {
+  try {
+    const localId =
+      texto(
+        request.nextUrl.searchParams.get(
+          "localId"
+        )
+      );
+
+    if (!localId) {
+      throw new Error(
+        "Local n?o informado."
+      );
+    }
+
+    const {
+      database,
+    } =
+      await validarGestor(
+        request,
+        localId
+      );
+
+    const snapshot =
+      await database
+        .ref(
+          `acessos-temporarios-v2/${localId}`
+        )
+        .get();
+
+    if (!snapshot.exists()) {
+      return NextResponse.json({
+        sucesso: true,
+        acessos: [],
+      });
+    }
+
+    const dados =
+      snapshot.val() as
+        Record<
+          string,
+          Record<string, unknown>
+        >;
+
+    const agora =
+      Date.now();
+
+    const acessos =
+      Object.entries(
+        dados
+      )
+        .map(
+          ([
+            id,
+            acesso,
+          ]) => {
+            const inicio =
+              Number(
+                acesso.inicio ||
+                0
+              );
+
+            const fim =
+              Number(
+                acesso.fim ||
+                0
+              );
+
+            let status =
+              "ativo";
+
+            if (
+              inicio &&
+              agora < inicio
+            ) {
+              status =
+                "agendado";
+            }
+
+            if (
+              fim &&
+              agora > fim
+            ) {
+              status =
+                "expirado";
+            }
+
+            if (
+              acesso.ativo ===
+              false
+            ) {
+              status =
+                "revogado";
+            }
+
+            return {
+              id,
+              ...acesso,
+              status,
+            };
+          }
+        )
+        .sort(
+          (
+            a,
+            b
+          ) =>
+            Number(
+              (b as Record<string, unknown>).criadoEm ||
+              0
+            ) -
+            Number(
+              (a as Record<string, unknown>).criadoEm ||
+              0
+            )
+        );
+
+    return NextResponse.json({
+      sucesso: true,
+      acessos,
+    });
+  } catch (erro) {
+    return NextResponse.json(
+      {
+        sucesso: false,
+        mensagem:
+          erro instanceof Error
+            ? erro.message
+            : "N?o foi poss?vel carregar os acessos tempor?rios.",
+      },
+      {
+        status: 400,
+      }
+    );
+  }
+}
+
+export async function POST(
+  request: NextRequest
+) {
+  try {
+    const corpo =
+      await request.json();
+
+    const localId =
+      texto(
+        corpo.localId
+      );
+
+    const nome =
+      texto(
+        corpo.nome
+      );
+
+    const tipo =
+      texto(
+        corpo.tipo
+      );
+
+    const inicio =
+      Number(
+        corpo.inicio
+      );
+
+    const fim =
+      Number(
+        corpo.fim
+      );
+
+    if (!localId) {
+      throw new Error(
+        "Local n?o informado."
+      );
+    }
+
+    if (!nome) {
+      throw new Error(
+        "Informe o nome da pessoa."
+      );
+    }
+
+    if (!inicio) {
+      throw new Error(
+        "Informe quando o acesso come?a."
+      );
+    }
+
+    if (!fim) {
+      throw new Error(
+        "Informe quando o acesso termina."
+      );
+    }
+
+    if (fim <= inicio) {
+      throw new Error(
+        "O vencimento precisa ser posterior ao in?cio."
+      );
+    }
+
+    const gestor =
+      await validarGestor(
+        request,
+        localId
+      );
+
+    const id =
+      randomUUID();
+
+    const pin =
+      gerarPin();
+
+    const agora =
+      Date.now();
+
+    const acesso = {
+      id,
+      localId,
+
+      nome,
+
+      tipo:
+        tipo ||
+        "visitante",
+
+      pin,
+
+      inicio,
+      fim,
+
+      permissoes: {
+        abrirPortao:
+          corpo.permissoes
+            ?.abrirPortao ===
+          true,
+
+        visualizarCameras:
+          corpo.permissoes
+            ?.visualizarCameras ===
+          true,
+
+        controlarAlarme:
+          corpo.permissoes
+            ?.controlarAlarme ===
+          true,
+      },
+
+      ativo:
+        true,
+
+      criadoPor:
+        gestor.uid,
+
+      criadoEm:
+        agora,
+
+      atualizadoEm:
+        agora,
+    };
+
+    await gestor.database
+      .ref(
+        `acessos-temporarios-v2/${localId}/${id}`
+      )
+      .set(
+        acesso
+      );
+
+    await registrarHistoricoLocal({
+      database:
+        gestor.database,
+
+      localId,
+
+      tipoLocal:
+        "residencia",
+
+      modulo:
+        "acessos_temporarios",
+
+      acao:
+        "acesso_temporario_criado",
+
+      entidadeTipo:
+        "acesso_temporario",
+
+      entidadeId:
+        id,
+
+      atorUid:
+        gestor.uid,
+
+      dados: {
+        nome,
+        tipo:
+          tipo || "visitante",
+        inicio,
+        fim,
+        permissoes:
+          acesso.permissoes,
+      },
+    });
+
+    return NextResponse.json({
+      sucesso: true,
+      acesso,
+      mensagem:
+        "Acesso tempor?rio criado com sucesso.",
+    });
+  } catch (erro) {
+    return NextResponse.json(
+      {
+        sucesso: false,
+        mensagem:
+          erro instanceof Error
+            ? erro.message
+            : "N?o foi poss?vel criar o acesso tempor?rio.",
+      },
+      {
+        status: 400,
+      }
+    );
+  }
+}
+
+export async function PATCH(
+request: NextRequest
+) {
+try {
+const corpo =
+await request.json();
+
+const localId =
+texto(
+corpo.localId
+);
+
+const acessoId =
+texto(
+corpo.acessoId
+);
+
+if (!localId) {
+throw new Error(
+"Local nao informado."
+);
+}
+
+if (!acessoId) {
+throw new Error(
+"Acesso nao informado."
+);
+}
+
+if (
+texto(corpo.acao) !==
+"arquivar"
+) {
+throw new Error(
+"Acao invalida."
+);
+}
+
+const gestor =
+await validarGestor(
+request,
+localId
+);
+
+const referencia =
+gestor.database.ref(
+`acessos-temporarios-v2/${localId}/${acessoId}`
+);
+
+const snapshot =
+await referencia.get();
+
+if (!snapshot.exists()) {
+throw new Error(
+"Acesso temporario nao encontrado."
+);
+}
+
+const acesso =
+snapshot.val() as
+Record<string, unknown>;
+
+const agora =
+Date.now();
+
+await referencia.update({
+arquivado:
+true,
+
+arquivadoEm:
+agora,
+
+arquivadoPor:
+gestor.uid,
+
+atualizadoEm:
+agora,
+});
+
+await registrarHistoricoLocal({
+database:
+gestor.database,
+
+localId,
+
+tipoLocal:
+"residencia",
+
+modulo:
+"acessos_temporarios",
+
+acao:
+"acesso_temporario_arquivado",
+
+entidadeTipo:
+"acesso_temporario",
+
+entidadeId:
+acessoId,
+
+atorUid:
+gestor.uid,
+
+dados: {
+nome:
+acesso.nome || "",
+},
+});
+
+return NextResponse.json({
+sucesso:
+true,
+
+mensagem:
+"Acesso enviado para o historico.",
+});
+} catch (erro) {
+return NextResponse.json(
+{
+sucesso:
+false,
+
+mensagem:
+erro instanceof Error
+? erro.message
+: "Nao foi possivel arquivar o acesso.",
+},
+{
+status:
+400,
+}
+);
+}
+}
+
+export async function DELETE(
+  request: NextRequest
+) {
+  try {
+    const localId =
+      texto(
+        request.nextUrl.searchParams.get(
+          "localId"
+        )
+      );
+
+    const acessoId =
+      texto(
+        request.nextUrl.searchParams.get(
+          "acessoId"
+        )
+      );
+
+    if (!localId) {
+      throw new Error(
+        "Local n?o informado."
+      );
+    }
+
+    if (!acessoId) {
+      throw new Error(
+        "Acesso n?o informado."
+      );
+    }
+
+    const {
+      database,
+    } =
+      await validarGestor(
+        request,
+        localId
+      );
+
+    await database
+      .ref(
+        `acessos-temporarios-v2/${localId}/${acessoId}`
+      )
+      .update({
+        ativo:
+          false,
+
+        revogadoEm:
+          Date.now(),
+
+        atualizadoEm:
+          Date.now(),
+      });
+
+    await registrarHistoricoLocal({
+      database,
+
+      localId,
+
+      tipoLocal:
+        "residencia",
+
+      modulo:
+        "acessos_temporarios",
+
+      acao:
+        "acesso_temporario_revogado",
+
+      entidadeTipo:
+        "acesso_temporario",
+
+      entidadeId:
+        acessoId,
+
+      atorUid:
+        "",
+    });
+
+    return NextResponse.json({
+      sucesso: true,
+      mensagem:
+        "Acesso tempor?rio revogado.",
+    });
+  } catch (erro) {
+    return NextResponse.json(
+      {
+        sucesso: false,
+        mensagem:
+          erro instanceof Error
+            ? erro.message
+            : "N?o foi poss?vel revogar o acesso.",
+      },
+      {
+        status: 400,
+      }
+    );
+  }
+}
+

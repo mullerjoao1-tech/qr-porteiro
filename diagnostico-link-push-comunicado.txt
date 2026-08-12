@@ -1,0 +1,744 @@
+﻿
+  app\acesso-v2\[condominioId]\page.tsx:463:      setDiagnostico("✅ Chamada enviada.");
+  app\acesso-v2\[condominioId]\page.tsx:464:      setMensagem(
+  app\acesso-v2\[condominioId]\page.tsx:465:        `✅ Chamada enviada para ${unidadeNomeAtual}. Aguarde o atendimento.`
+  app\acesso-v2\[condominioId]\page.tsx:466:      );
+  app\acesso-v2\[condominioId]\page.tsx:467:
+> app\acesso-v2\[condominioId]\page.tsx:468:      fetch("/api/enviar-notificacao-v2", {
+  app\acesso-v2\[condominioId]\page.tsx:469:        method: "POST",
+  app\acesso-v2\[condominioId]\page.tsx:470:        headers: {
+  app\acesso-v2\[condominioId]\page.tsx:471:          "Content-Type": "application/json",
+  app\acesso-v2\[condominioId]\page.tsx:472:        },
+  app\acesso-v2\[condominioId]\page.tsx:473:        body: JSON.stringify({
+  app\acesso-v2\[condominioId]\page.tsx:474:          unidadeId: unidadeIdAtual,
+  app\acesso-v2\[condominioId]\page.tsx:475:        }),
+  app\acesso-v2\[condominioId]\page.tsx:476:      })
+  app\acesso-v2\[condominioId]\page.tsx:477:        .then(async (respostaPush) => {
+  app\acesso-v2\[condominioId]\page.tsx:478:          const textoResposta = await respostaPush.text();
+  app\acesso-v2\[condominioId]\page.tsx:479:          let dadosPush: unknown = null;
+  app\acesso-v2\[condominioId]\page.tsx:480:
+  app\acesso-v2\[condominioId]\page.tsx:673:            }),
+  app\acesso-v2\[condominioId]\page.tsx:674:      });
+  app\acesso-v2\[condominioId]\page.tsx:675:
+  app\acesso-v2\[condominioId]\page.tsx:676:      if (!chamadaJaAtiva) {
+  app\acesso-v2\[condominioId]\page.tsx:677:        try {
+> app\acesso-v2\[condominioId]\page.tsx:678:          const respostaPush = await fetch("/api/enviar-notificacao-v2", {
+  app\acesso-v2\[condominioId]\page.tsx:679:            method: "POST",
+  app\acesso-v2\[condominioId]\page.tsx:680:            headers: {
+  app\acesso-v2\[condominioId]\page.tsx:681:              "Content-Type": "application/json",
+  app\acesso-v2\[condominioId]\page.tsx:682:            },
+  app\acesso-v2\[condominioId]\page.tsx:683:            body: JSON.stringify({
+  app\acesso-v2\[condominioId]\page.tsx:684:              unidadeId: unidadeSelecionada.id,
+  app\acesso-v2\[condominioId]\page.tsx:685:            }),
+  app\acesso-v2\[condominioId]\page.tsx:686:          });
+  app\acesso-v2\[condominioId]\page.tsx:687:
+  app\acesso-v2\[condominioId]\page.tsx:688:          const dadosPush = await respostaPush.json();
+  app\acesso-v2\[condominioId]\page.tsx:689:          console.log("RESPOSTA PUSH V2 - ÁUDIO:", dadosPush);
+  app\acesso-v2\[condominioId]\page.tsx:690:        } catch (erroPush) {
+  app\api\enviar-comunicado\route.ts:306:
+  app\api\enviar-comunicado\route.ts:307:    for (const destinatario of destinatarios) {
+  app\api\enviar-comunicado\route.ts:308:      const { unidadeId: unidadeDestino, token } = destinatario;
+  app\api\enviar-comunicado\route.ts:309:
+  app\api\enviar-comunicado\route.ts:310:      const link =
+> app\api\enviar-comunicado\route.ts:311:        `${urlBase}/morador-v2/${encodeURIComponent(unidadeDestino)}` +
+  app\api\enviar-comunicado\route.ts:312:        (comunicadoId
+> app\api\enviar-comunicado\route.ts:313:          ? `?comunicado=${encodeURIComponent(comunicadoId)}`
+  app\api\enviar-comunicado\route.ts:314:          : "");
+  app\api\enviar-comunicado\route.ts:315:
+  app\api\enviar-comunicado\route.ts:316:      try {
+  app\api\enviar-comunicado\route.ts:317:        const resposta = await messaging.send({
+  app\api\enviar-comunicado\route.ts:318:          token,
+  app\api\enviar-comunicado\route.ts:319:          data: {
+  app\api\enviar-comunicado\route.ts:320:            tipo: "comunicado-v2",
+  app\api\enviar-comunicado\route.ts:321:            unidadeId: unidadeDestino,
+  app\api\enviar-comunicado\route.ts:322:            condominioId,
+  app\api\enviar-comunicado\route.ts:323:            comunicadoId,
+  app\api\enviar-comunicado\route.ts:324:            titulo: `📢 ${titulo}`,
+  app\api\enviar-comunicado\route.ts:325:            mensagem:
+  app\api\enviar-comunicado\route.ts:386:
+  app\api\enviar-comunicado\route.ts:387:    if (condominioId && comunicadoId) {
+  app\api\enviar-comunicado\route.ts:388:      await db
+  app\api\enviar-comunicado\route.ts:389:        .ref(`comunicados-v2/${condominioId}/${comunicadoId}`)
+  app\api\enviar-comunicado\route.ts:390:        .update({
+> app\api\enviar-comunicado\route.ts:391:          pushProcessado: true,
+> app\api\enviar-comunicado\route.ts:392:          pushProcessadoEm: Date.now(),
+  app\api\enviar-comunicado\route.ts:393:          totalPushEnviados: enviados,
+  app\api\enviar-comunicado\route.ts:394:          totalPushFalhas: falhas,
+  app\api\enviar-comunicado\route.ts:395:          erroPush:
+  app\api\enviar-comunicado\route.ts:396:            enviados === 0
+  app\api\enviar-comunicado\route.ts:397:              ? "Não foi possível enviar o push para nenhum destinatário."
+  app\api\enviar-comunicado\route.ts:398:              : null,
+  app\api\enviar-comunicado\route.ts:399:        });
+  app\api\enviar-comunicado\route.ts:400:    }
+  app\api\enviar-comunicado\route.ts:401:
+  app\api\enviar-comunicado\route.ts:402:    return NextResponse.json(
+  app\api\enviar-comunicado\route.ts:403:      {
+  app\api\enviar-comunicado\route.ts:404:        ok: enviados > 0,
+  app\api\enviar-notificacao-v2\route.ts:252:        data: {
+  app\api\enviar-notificacao-v2\route.ts:253:  tipo: "teste-push-v2",
+  app\api\enviar-notificacao-v2\route.ts:254:  unidadeId: String(unidadeId),
+  app\api\enviar-notificacao-v2\route.ts:255:  titulo: "🔔 Teste QR Acesso",
+  app\api\enviar-notificacao-v2\route.ts:256:  mensagem: "O push do painel do morador está funcionando.",
+> app\api\enviar-notificacao-v2\route.ts:257:  url: `${urlBase}/morador-v2/${encodeURIComponent(unidadeId)}`,
+  app\api\enviar-notificacao-v2\route.ts:258:},
+  app\api\enviar-notificacao-v2\route.ts:259:        webpush: {
+  app\api\enviar-notificacao-v2\route.ts:260:          headers: {
+  app\api\enviar-notificacao-v2\route.ts:261:            Urgency: "high",
+  app\api\enviar-notificacao-v2\route.ts:262:            TTL: "86400",
+  app\api\enviar-notificacao-v2\route.ts:263:          },
+  app\api\enviar-notificacao-v2\route.ts:264:          fcmOptions: {
+> app\api\enviar-notificacao-v2\route.ts:265:            link: `${urlBase}/morador-v2/${encodeURIComponent(unidadeId)}`,
+  app\api\enviar-notificacao-v2\route.ts:266:          },
+  app\api\enviar-notificacao-v2\route.ts:267:        },
+  app\api\enviar-notificacao-v2\route.ts:268:      });
+  app\api\enviar-notificacao-v2\route.ts:269:
+  app\api\enviar-notificacao-v2\route.ts:270:      return NextResponse.json({
+  app\api\enviar-notificacao-v2\route.ts:271:        ok: true,
+  app\api\enviar-notificacao-v2\route.ts:272:        mensagem: "Push de teste enviado",
+  app\api\enviar-notificacao-v2\route.ts:273:        unidadeId,
+  app\api\enviar-notificacao-v2\route.ts:274:        resposta,
+  app\api\enviar-notificacao-v2\route.ts:275:      });
+  app\api\enviar-notificacao-v2\route.ts:276:    }
+  app\api\enviar-notificacao-v2\route.ts:277:
+  app\api\enviar-notificacao-v2\route.ts:369:  mensagem:
+  app\api\enviar-notificacao-v2\route.ts:370:    mensagem.length > 120
+  app\api\enviar-notificacao-v2\route.ts:371:      ? `${mensagem.slice(0, 117)}...`
+  app\api\enviar-notificacao-v2\route.ts:372:      : mensagem,
+  app\api\enviar-notificacao-v2\route.ts:373:  url:
+> app\api\enviar-notificacao-v2\route.ts:374:    `${urlBase}/morador-v2/${encodeURIComponent(unidadeId)}` +
+> app\api\enviar-notificacao-v2\route.ts:375:    `?comunicado=${encodeURIComponent(comunicadoId)}`,
+  app\api\enviar-notificacao-v2\route.ts:376:},
+  app\api\enviar-notificacao-v2\route.ts:377:            webpush: {
+  app\api\enviar-notificacao-v2\route.ts:378:          headers: {
+  app\api\enviar-notificacao-v2\route.ts:379:            Urgency: "high",
+  app\api\enviar-notificacao-v2\route.ts:380:            TTL: "86400",
+  app\api\enviar-notificacao-v2\route.ts:381:          },
+  app\api\enviar-notificacao-v2\route.ts:382:          fcmOptions: {
+  app\api\enviar-notificacao-v2\route.ts:383:                link:
+> app\api\enviar-notificacao-v2\route.ts:384:                  `${urlBase}/morador-v2/${encodeURIComponent(unidadeId)}` +
+> app\api\enviar-notificacao-v2\route.ts:385:                  `?comunicado=${encodeURIComponent(comunicadoId)}`,
+  app\api\enviar-notificacao-v2\route.ts:386:              },
+  app\api\enviar-notificacao-v2\route.ts:387:            },
+  app\api\enviar-notificacao-v2\route.ts:388:          });
+  app\api\enviar-notificacao-v2\route.ts:389:
+  app\api\enviar-notificacao-v2\route.ts:390:          await db
+  app\api\enviar-notificacao-v2\route.ts:391:            .ref(
+  app\api\enviar-notificacao-v2\route.ts:392:              `comunicados-v2/${condominioId}/${comunicadoId}/enviosPush/${unidadeId}`
+  app\api\enviar-notificacao-v2\route.ts:393:            )
+  app\api\enviar-notificacao-v2\route.ts:394:            .set({
+  app\api\enviar-notificacao-v2\route.ts:395:              unidadeId,
+  app\api\enviar-notificacao-v2\route.ts:396:              enviado: true,
+  app\api\enviar-notificacao-v2\route.ts:397:              enviadoEm: Date.now(),
+  app\api\enviar-notificacao-v2\route.ts:429:      const falhas = resultados.length - enviados;
+  app\api\enviar-notificacao-v2\route.ts:430:
+  app\api\enviar-notificacao-v2\route.ts:431:      await db
+  app\api\enviar-notificacao-v2\route.ts:432:        .ref(`comunicados-v2/${condominioId}/${comunicadoId}`)
+  app\api\enviar-notificacao-v2\route.ts:433:        .update({
+> app\api\enviar-notificacao-v2\route.ts:434:          pushProcessado: true,
+> app\api\enviar-notificacao-v2\route.ts:435:          pushProcessadoEm: Date.now(),
+  app\api\enviar-notificacao-v2\route.ts:436:          totalPushEnviados: enviados,
+  app\api\enviar-notificacao-v2\route.ts:437:          totalPushFalhas: falhas,
+  app\api\enviar-notificacao-v2\route.ts:438:        });
+  app\api\enviar-notificacao-v2\route.ts:439:
+  app\api\enviar-notificacao-v2\route.ts:440:      return NextResponse.json(
+  app\api\enviar-notificacao-v2\route.ts:441:        {
+  app\api\enviar-notificacao-v2\route.ts:442:          ok: enviados > 0,
+  app\api\enviar-notificacao-v2\route.ts:443:          mensagem: "Processamento do comunicado concluído",
+  app\api\enviar-notificacao-v2\route.ts:444:          totalDestinatarios: destinatarios.length,
+  app\api\enviar-notificacao-v2\route.ts:445:          enviados,
+  app\api\enviar-notificacao-v2\route.ts:446:          falhas,
+  app\api\enviar-notificacao-v2\route.ts:447:          resultados,
+  app\api\enviar-notificacao-v2\route.ts:496:  nome: String(nome),
+  app\api\enviar-notificacao-v2\route.ts:497:  motivo: String(motivo),
+  app\api\enviar-notificacao-v2\route.ts:498:  tipo: "chamada-v2",
+  app\api\enviar-notificacao-v2\route.ts:499:  titulo: `🔔 ${nome} está chamando`,
+  app\api\enviar-notificacao-v2\route.ts:500:  mensagem: `Motivo: ${motivo}`,
+> app\api\enviar-notificacao-v2\route.ts:501:  url: `${urlBase}/morador-v2/${encodeURIComponent(unidadeId)}`,
+  app\api\enviar-notificacao-v2\route.ts:502:},
+  app\api\enviar-notificacao-v2\route.ts:503:      webpush: {
+  app\api\enviar-notificacao-v2\route.ts:504:          headers: {
+  app\api\enviar-notificacao-v2\route.ts:505:            Urgency: "high",
+  app\api\enviar-notificacao-v2\route.ts:506:            TTL: "86400",
+  app\api\enviar-notificacao-v2\route.ts:507:          },
+  app\api\enviar-notificacao-v2\route.ts:508:          fcmOptions: {
+> app\api\enviar-notificacao-v2\route.ts:509:          link: `${urlBase}/morador-v2/${encodeURIComponent(unidadeId)}`,
+  app\api\enviar-notificacao-v2\route.ts:510:        },
+  app\api\enviar-notificacao-v2\route.ts:511:      },
+  app\api\enviar-notificacao-v2\route.ts:512:    });
+  app\api\enviar-notificacao-v2\route.ts:513:
+  app\api\enviar-notificacao-v2\route.ts:514:    return NextResponse.json({
+  app\api\enviar-notificacao-v2\route.ts:515:      ok: true,
+  app\api\enviar-notificacao-v2\route.ts:516:      mensagem: "Notificação V2 enviada",
+  app\api\enviar-notificacao-v2\route.ts:517:      resposta,
+  app\api\enviar-notificacao-v2\route.ts:518:    });
+  app\api\enviar-notificacao-v2\route.ts:519:  } catch (erro) {
+  app\api\enviar-notificacao-v2\route.ts:520:    console.error("ERRO PUSH V2:", erro);
+  app\api\enviar-notificacao-v2\route.ts:521:
+  app\api\migracao\residencial-costa\route.ts:165:        links: {
+  app\api\migracao\residencial-costa\route.ts:166:          acesso:
+  app\api\migracao\residencial-costa\route.ts:167:            `/acesso-v2/${LOCAL_ID}`,
+  app\api\migracao\residencial-costa\route.ts:168:
+  app\api\migracao\residencial-costa\route.ts:169:          morador:
+> app\api\migracao\residencial-costa\route.ts:170:            `/morador-v2/${UNIDADE_ID}`,
+  app\api\migracao\residencial-costa\route.ts:171:
+  app\api\migracao\residencial-costa\route.ts:172:          qrPrincipal:
+  app\api\migracao\residencial-costa\route.ts:173:            `/api/qrcode/${LOCAL_ID}`,
+  app\api\migracao\residencial-costa\route.ts:174:
+  app\api\migracao\residencial-costa\route.ts:175:          materialA4:
+  app\api\migracao\residencial-costa\route.ts:176:            `/api/materiais/qrcode/${LOCAL_ID}`,
+  app\api\migracao\residencial-costa\route.ts:177:        },
+  app\api\migracao\residencial-costa\route.ts:178:
+  app\api\migracao\residencial-costa\route.ts:179:        estatisticas: {
+  app\api\migracao\residencial-costa\route.ts:180:          totalUnidades:
+  app\api\migracao\residencial-costa\route.ts:181:            1,
+  app\api\migracao\residencial-costa\route.ts:182:
+  app\api\migracao\residencial-costa\route.ts:272:        testes: {
+  app\api\migracao\residencial-costa\route.ts:273:          acesso:
+  app\api\migracao\residencial-costa\route.ts:274:            `/acesso-v2/${LOCAL_ID}`,
+  app\api\migracao\residencial-costa\route.ts:275:
+  app\api\migracao\residencial-costa\route.ts:276:          morador:
+> app\api\migracao\residencial-costa\route.ts:277:            `/morador-v2/${UNIDADE_ID}`,
+  app\api\migracao\residencial-costa\route.ts:278:
+  app\api\migracao\residencial-costa\route.ts:279:          qr:
+  app\api\migracao\residencial-costa\route.ts:280:            `/api/qrcode/${LOCAL_ID}`,
+  app\api\migracao\residencial-costa\route.ts:281:
+  app\api\migracao\residencial-costa\route.ts:282:          placa:
+  app\api\migracao\residencial-costa\route.ts:283:            `/api/materiais/qrcode/${LOCAL_ID}`,
+  app\api\migracao\residencial-costa\route.ts:284:        },
+  app\api\migracao\residencial-costa\route.ts:285:      },
+  app\api\migracao\residencial-costa\route.ts:286:      {
+  app\api\migracao\residencial-costa\route.ts:287:        status: 201,
+  app\api\migracao\residencial-costa\route.ts:288:      }
+  app\api\migracao\residencial-costa\route.ts:289:    );
+  app\components\dashboard\SeletorPerfilAtivo.tsx:268:
+  app\components\dashboard\SeletorPerfilAtivo.tsx:269:  if (
+  app\components\dashboard\SeletorPerfilAtivo.tsx:270:    unidades.length === 1
+  app\components\dashboard\SeletorPerfilAtivo.tsx:271:  ) {
+  app\components\dashboard\SeletorPerfilAtivo.tsx:272:    router.push(
+> app\components\dashboard\SeletorPerfilAtivo.tsx:273:      `/morador-v2/${unidades[0].slug}`
+  app\components\dashboard\SeletorPerfilAtivo.tsx:274:    );
+  app\components\dashboard\SeletorPerfilAtivo.tsx:275:
+  app\components\dashboard\SeletorPerfilAtivo.tsx:276:    return;
+  app\components\dashboard\SeletorPerfilAtivo.tsx:277:  }
+  app\components\dashboard\SeletorPerfilAtivo.tsx:278:
+  app\components\dashboard\SeletorPerfilAtivo.tsx:279:  setModalUnidadeAberto(
+  app\components\dashboard\SeletorPerfilAtivo.tsx:280:    true
+  app\components\dashboard\SeletorPerfilAtivo.tsx:281:  );
+  app\components\dashboard\SeletorPerfilAtivo.tsx:282:}
+  app\components\dashboard\SeletorPerfilAtivo.tsx:283:
+  app\components\dashboard\SeletorPerfilAtivo.tsx:284:function trocarPerfil(
+  app\components\dashboard\SeletorPerfilAtivo.tsx:285:    perfil: string
+  app\components\dashboard\SeletorPerfilAtivo.tsx:372:    setModalUnidadeAberto(
+  app\components\dashboard\SeletorPerfilAtivo.tsx:373:      false
+  app\components\dashboard\SeletorPerfilAtivo.tsx:374:    );
+  app\components\dashboard\SeletorPerfilAtivo.tsx:375:
+  app\components\dashboard\SeletorPerfilAtivo.tsx:376:    router.push(
+> app\components\dashboard\SeletorPerfilAtivo.tsx:377:      `/morador-v2/${unidade.slug}`
+  app\components\dashboard\SeletorPerfilAtivo.tsx:378:    );
+  app\components\dashboard\SeletorPerfilAtivo.tsx:379:  }
+  app\components\dashboard\SeletorPerfilAtivo.tsx:380:
+  app\components\dashboard\SeletorPerfilAtivo.tsx:381:  return (
+  app\components\dashboard\SeletorPerfilAtivo.tsx:382:    <>
+  app\components\dashboard\SeletorPerfilAtivo.tsx:383:      <section className="rounded-3xl border border-violet-500/30 bg-violet-950/20 p-5">
+  app\components\dashboard\SeletorPerfilAtivo.tsx:384:        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+  app\components\dashboard\SeletorPerfilAtivo.tsx:385:          <div>
+  app\components\dashboard\SeletorPerfilAtivo.tsx:386:            <p className="text-xs font-black uppercase tracking-wider text-violet-300">
+  app\components\dashboard\SeletorPerfilAtivo.tsx:387:              Perfil no contexto atual
+  app\components\dashboard\SeletorPerfilAtivo.tsx:388:            </p>
+  app\components\dashboard\SeletorPerfilAtivo.tsx:389:
+  app\dashboard\condominio\CentralResidencia.tsx:238:    slugResidencia === "muller"
+  app\dashboard\condominio\CentralResidencia.tsx:239:      ? "muller-principal"
+  app\dashboard\condominio\CentralResidencia.tsx:240:      : `${slugResidencia}-principal`;
+  app\dashboard\condominio\CentralResidencia.tsx:241:
+  app\dashboard\condominio\CentralResidencia.tsx:242:  router.push(
+> app\dashboard\condominio\CentralResidencia.tsx:243:    `/morador-v2/${encodeURIComponent(
+  app\dashboard\condominio\CentralResidencia.tsx:244:      unidadeResidencia
+  app\dashboard\condominio\CentralResidencia.tsx:245:    )}`
+  app\dashboard\condominio\CentralResidencia.tsx:246:  );
+  app\dashboard\condominio\CentralResidencia.tsx:247:}
+  app\dashboard\condominio\CentralResidencia.tsx:248:
+  app\dashboard\condominio\CentralResidencia.tsx:249:  return (
+  app\dashboard\condominio\CentralResidencia.tsx:250:    <div className="grid min-h-screen gap-5 bg-slate-950 p-4 lg:grid-cols-[220px_minmax(0,1fr)]">
+  app\dashboard\condominio\CentralResidencia.tsx:251:
+  app\dashboard\condominio\CentralResidencia.tsx:252:      <aside className="rounded-3xl border border-slate-800 bg-slate-900 p-4">
+  app\dashboard\condominio\CentralResidencia.tsx:253:        <div className="mb-5">
+  app\dashboard\condominio\CentralResidencia.tsx:254:          <p className="text-xs font-black uppercase tracking-wider text-cyan-400">
+  app\dashboard\condominio\CentralResidencia.tsx:255:            QR Residencia
+  app\dashboard\implantacao\locais-implantados\page.tsx:21:    tipo: "Condomínio",
+  app\dashboard\implantacao\locais-implantados\page.tsx:22:    ambiente: "Studio",
+  app\dashboard\implantacao\locais-implantados\page.tsx:23:    status: "Ativo",
+  app\dashboard\implantacao\locais-implantados\page.tsx:24:    visitante: "/acesso-v2/residencial-tulipas",
+  app\dashboard\implantacao\locais-implantados\page.tsx:25:    painel: "/dashboard/sindico",
+> app\dashboard\implantacao\locais-implantados\page.tsx:26:    morador: "/morador-v2/residencial-tulipas-bloco-1-ap-11",
+  app\dashboard\implantacao\locais-implantados\page.tsx:27:  },
+  app\dashboard\implantacao\locais-implantados\page.tsx:28:  {
+  app\dashboard\implantacao\locais-implantados\page.tsx:29:    id: "muller",
+  app\dashboard\implantacao\locais-implantados\page.tsx:30:    nome: "Müller",
+  app\dashboard\implantacao\locais-implantados\page.tsx:31:    tipo: "Residência",
+  app\dashboard\implantacao\locais-implantados\page.tsx:32:    ambiente: "Produção",
+  app\dashboard\implantacao\locais-implantados\page.tsx:33:    status: "Ativo",
+  app\dashboard\implantacao\locais-implantados\page.tsx:34:    visitante: "/acesso-v2/muller",
+> app\dashboard\implantacao\locais-implantados\page.tsx:35:    morador: "/morador-v2/muller-principal",
+  app\dashboard\implantacao\locais-implantados\page.tsx:36:  },
+  app\dashboard\implantacao\locais-implantados\page.tsx:37:  {
+  app\dashboard\implantacao\locais-implantados\page.tsx:38:    id: "residencial-costa",
+  app\dashboard\implantacao\locais-implantados\page.tsx:39:    nome: "Residencial Costa",
+  app\dashboard\implantacao\locais-implantados\page.tsx:40:    tipo: "Residência",
+  app\dashboard\implantacao\locais-implantados\page.tsx:41:    ambiente: "Produção",
+  app\dashboard\implantacao\locais-implantados\page.tsx:42:    status: "Ativo",
+  app\dashboard\implantacao\locais-implantados\page.tsx:43:    visitante: "/acesso-v2/residencial-costa",
+> app\dashboard\implantacao\locais-implantados\page.tsx:44:    morador: "/morador-v2/residencial-costa-casa-principal",
+  app\dashboard\implantacao\locais-implantados\page.tsx:45:  },
+  app\dashboard\implantacao\locais-implantados\page.tsx:46:];
+  app\dashboard\implantacao\locais-implantados\page.tsx:47:
+  app\dashboard\implantacao\locais-implantados\page.tsx:48:function CardIndicador({
+  app\dashboard\implantacao\locais-implantados\page.tsx:49:  titulo,
+  app\dashboard\implantacao\locais-implantados\page.tsx:50:  valor,
+  app\dashboard\implantacao\locais-implantados\page.tsx:51:  descricao,
+  app\dashboard\implantacao\locais-implantados\page.tsx:52:}: {
+  app\dashboard\implantacao\locais-implantados\page.tsx:53:  titulo: string;
+  app\dashboard\implantacao\locais-implantados\page.tsx:54:  valor: number;
+  app\dashboard\implantacao\locais-implantados\page.tsx:55:  descricao: string;
+  app\dashboard\implantacao\locais-implantados\page.tsx:56:}) {
+  app\dashboard\implantacao\page.tsx:750:      resultado.local.tipo;
+  app\dashboard\implantacao\page.tsx:751:
+  app\dashboard\implantacao\page.tsx:752:    if (
+  app\dashboard\implantacao\page.tsx:753:      tipo === "residencia"
+  app\dashboard\implantacao\page.tsx:754:    ) {
+> app\dashboard\implantacao\page.tsx:755:      return `/morador-v2/${identificador}-principal`;
+  app\dashboard\implantacao\page.tsx:756:    }
+  app\dashboard\implantacao\page.tsx:757:
+  app\dashboard\implantacao\page.tsx:758:    return `/dashboard`;
+  app\dashboard\implantacao\page.tsx:759:  }
+  app\dashboard\implantacao\page.tsx:760:
+  app\dashboard\implantacao\page.tsx:761:  function abrirPlacaImpressao() {
+  app\dashboard\implantacao\page.tsx:762:    if (
+  app\dashboard\implantacao\page.tsx:763:      typeof window === "undefined" ||
+  app\dashboard\implantacao\page.tsx:764:      !resultado?.local?.slug
+  app\dashboard\implantacao\page.tsx:765:    ) {
+  app\dashboard\implantacao\page.tsx:766:      setErro(
+  app\dashboard\implantacao\page.tsx:767:        "Não foi possível identificar o local para gerar a placa."
+  app\dashboard\morador\page.tsx:263:        slugResidencia === "muller"
+  app\dashboard\morador\page.tsx:264:          ? "muller-principal"
+  app\dashboard\morador\page.tsx:265:          : `${slugResidencia}-principal`;
+  app\dashboard\morador\page.tsx:266:
+  app\dashboard\morador\page.tsx:267:      router.push(
+> app\dashboard\morador\page.tsx:268:        `/morador-v2/${encodeURIComponent(
+  app\dashboard\morador\page.tsx:269:          unidadeResidencia
+  app\dashboard\morador\page.tsx:270:        )}`
+  app\dashboard\morador\page.tsx:271:      );
+  app\dashboard\morador\page.tsx:272:
+  app\dashboard\morador\page.tsx:273:      return;
+  app\dashboard\morador\page.tsx:274:    }
+  app\dashboard\morador\page.tsx:275:
+  app\dashboard\morador\page.tsx:276:    if (!unidadeId) {
+  app\dashboard\morador\page.tsx:277:      alert(
+  app\dashboard\morador\page.tsx:278:        "Nenhuma unidade esta vinculada a este perfil."
+  app\dashboard\morador\page.tsx:279:      );
+  app\dashboard\morador\page.tsx:280:
+  app\dashboard\morador\page.tsx:281:      return;
+  app\dashboard\morador\page.tsx:282:    }
+  app\dashboard\morador\page.tsx:283:
+  app\dashboard\morador\page.tsx:284:    router.push(
+> app\dashboard\morador\page.tsx:285:      `/morador-v2/${encodeURIComponent(
+  app\dashboard\morador\page.tsx:286:        unidadeId
+  app\dashboard\morador\page.tsx:287:      )}`
+  app\dashboard\morador\page.tsx:288:    );
+  app\dashboard\morador\page.tsx:289:  }
+  app\dashboard\morador\page.tsx:290:
+  app\dashboard\morador\page.tsx:291:  async function abrirPortao() {
+  app\dashboard\morador\page.tsx:292:    if (
+  app\dashboard\morador\page.tsx:293:      !podeAbrirPortao ||
+  app\dashboard\morador\page.tsx:294:      abrindoPortao
+  app\dashboard\morador\page.tsx:295:    ) {
+  app\dashboard\morador\page.tsx:296:      return;
+  app\dashboard\morador\page.tsx:297:    }
+  app\dashboard\morador\page.tsx:722:
+  app\dashboard\morador\page.tsx:723:        {podeGerenciarResidencia && identificadorLocalAtual && (
+  app\dashboard\morador\page.tsx:724:          <MateriaisDoLocal
+  app\dashboard\morador\page.tsx:725:            localId={identificadorLocalAtual}
+  app\dashboard\morador\page.tsx:726:            visitante={`/acesso-v2/${identificadorLocalAtual}`}
+> app\dashboard\morador\page.tsx:727:            morador={`/morador-v2/${
+  app\dashboard\morador\page.tsx:728:              identificadorLocalAtual === "muller"
+  app\dashboard\morador\page.tsx:729:                ? "muller-principal"
+  app\dashboard\morador\page.tsx:730:                : `${identificadorLocalAtual}-principal`
+  app\dashboard\morador\page.tsx:731:            }`}
+  app\dashboard\morador\page.tsx:732:            painel="/dashboard/morador"
+  app\dashboard\morador\page.tsx:733:            titulo="QR, placa e links da residência"
+  app\dashboard\morador\page.tsx:734:          />
+  app\dashboard\morador\page.tsx:735:        )}
+  app\dashboard\morador\page.tsx:736:              </>
+  app\dashboard\morador\page.tsx:737:            )}
+  app\dashboard\morador\page.tsx:738:          </div>
+  app\dashboard\morador\page.tsx:739:        </div>
+  app\dashboard\sindico\CentralSindico.tsx:56:  titulo: string;
+  app\dashboard\sindico\CentralSindico.tsx:57:  mensagem: string;
+  app\dashboard\sindico\CentralSindico.tsx:58:  detalhesModelo?: DetalhesModeloComunicacao;
+  app\dashboard\sindico\CentralSindico.tsx:59:  exigeCiencia: boolean;
+  app\dashboard\sindico\CentralSindico.tsx:60:  enviarPush: boolean;
+> app\dashboard\sindico\CentralSindico.tsx:61:  pushProcessado?: boolean;
+  app\dashboard\sindico\CentralSindico.tsx:62:  pushEnviado?: boolean;
+  app\dashboard\sindico\CentralSindico.tsx:63:  pushEnviadoEm?: number;
+  app\dashboard\sindico\CentralSindico.tsx:64:  pushTotalDestinatarios?: number;
+> app\dashboard\sindico\CentralSindico.tsx:65:  pushTotalEnviados?: number;
+  app\dashboard\sindico\CentralSindico.tsx:66:  pushTotalFalhas?: number;
+  app\dashboard\sindico\CentralSindico.tsx:67:  erroPush?: string | null;
+  app\dashboard\sindico\CentralSindico.tsx:68:  registrarHistorico: boolean;
+  app\dashboard\sindico\CentralSindico.tsx:69:  agendado: boolean;
+  app\dashboard\sindico\CentralSindico.tsx:70:  dataAgendamento: string;
+  app\dashboard\sindico\CentralSindico.tsx:71:  status: "enviado" | "agendado";
+  app\dashboard\sindico\CentralSindico.tsx:72:  criadoEm: number;
+  app\dashboard\sindico\CentralSindico.tsx:73:  criadoEmFormatado: string;
+  app\dashboard\sindico\CentralSindico.tsx:74:  enviadoPor: string;
+  app\dashboard\sindico\CentralSindico.tsx:75:  visualizacoes?: Record<
+  app\dashboard\sindico\CentralSindico.tsx:76:    string,
+  app\dashboard\sindico\CentralSindico.tsx:77:    {
+  app\dashboard\sindico\CentralSindico.tsx:1250:          tipoEmergencia,
+  app\dashboard\sindico\CentralSindico.tsx:1251:          orientacaoImediata,
+  app\dashboard\sindico\CentralSindico.tsx:1252:        },
+  app\dashboard\sindico\CentralSindico.tsx:1253:        exigeCiencia: exigirCiencia,
+  app\dashboard\sindico\CentralSindico.tsx:1254:        enviarPush,
+> app\dashboard\sindico\CentralSindico.tsx:1255:        pushProcessado: agendarComunicacao || !enviarPush,
+  app\dashboard\sindico\CentralSindico.tsx:1256:        pushEnviado: false,
+  app\dashboard\sindico\CentralSindico.tsx:1257:        pushTotalDestinatarios: enviarPush
+  app\dashboard\sindico\CentralSindico.tsx:1258:          ? idsUnidadesDestinatarias.length
+  app\dashboard\sindico\CentralSindico.tsx:1259:          : 0,
+> app\dashboard\sindico\CentralSindico.tsx:1260:        pushTotalEnviados: 0,
+  app\dashboard\sindico\CentralSindico.tsx:1261:        pushTotalFalhas: 0,
+  app\dashboard\sindico\CentralSindico.tsx:1262:        erroPush: null,
+  app\dashboard\sindico\CentralSindico.tsx:1263:        registrarHistorico,
+  app\dashboard\sindico\CentralSindico.tsx:1264:        agendado: agendarComunicacao,
+  app\dashboard\sindico\CentralSindico.tsx:1265:        dataAgendamento: agendarComunicacao ? dataAgendamento : "",
+  app\dashboard\sindico\CentralSindico.tsx:1266:        status: agendarComunicacao ? "agendado" : "enviado",
+  app\dashboard\sindico\CentralSindico.tsx:1267:        criadoEm: agora,
+  app\dashboard\sindico\CentralSindico.tsx:1268:        criadoEmFormatado: new Date(agora).toLocaleString("pt-BR"),
+  app\dashboard\sindico\CentralSindico.tsx:1269:        enviadoPor: usuario?.nome || usuario?.email || "Usuário",
+  app\dashboard\sindico\CentralSindico.tsx:1270:      });
+  app\dashboard\sindico\CentralSindico.tsx:1271:
+  app\dashboard\sindico\CentralSindico.tsx:1272:      const comunicadoId = referenciaNovoComunicado.key;
+  app\dashboard\sindico\CentralSindico.tsx:1278:      if (!agendarComunicacao && unidadesDestinatarias.length > 0) {
+  app\dashboard\sindico\CentralSindico.tsx:1279:        const atualizacoesEntrega: Record<string, unknown> = {};
+  app\dashboard\sindico\CentralSindico.tsx:1280:
+  app\dashboard\sindico\CentralSindico.tsx:1281:        unidadesDestinatarias.forEach((unidade) => {
+  app\dashboard\sindico\CentralSindico.tsx:1282:          atualizacoesEntrega[
+> app\dashboard\sindico\CentralSindico.tsx:1283:            `unidades-v2/${unidade.id}/comunicadoAtivo`
+  app\dashboard\sindico\CentralSindico.tsx:1284:          ] = {
+  app\dashboard\sindico\CentralSindico.tsx:1285:            id: comunicadoId,
+  app\dashboard\sindico\CentralSindico.tsx:1286:            condominioId: condominioComunicacaoId,
+  app\dashboard\sindico\CentralSindico.tsx:1287:            condominioNome: condominioSelecionadoParaEnvio.nome,
+  app\dashboard\sindico\CentralSindico.tsx:1288:            unidadeId: unidade.id,
+  app\dashboard\sindico\CentralSindico.tsx:1289:            unidadeNome: unidade.nome,
+  app\dashboard\sindico\CentralSindico.tsx:1290:            bloco: unidade.bloco,
+  app\dashboard\sindico\CentralSindico.tsx:1291:            tipo: tipoComunicacao,
+  app\dashboard\sindico\CentralSindico.tsx:1292:            titulo: tituloComunicacao.trim(),
+  app\dashboard\sindico\CentralSindico.tsx:1293:            mensagem: mensagemComunicacao.trim(),
+  app\dashboard\sindico\CentralSindico.tsx:1294:            detalhesModelo: {
+  app\dashboard\sindico\CentralSindico.tsx:1295:              dataEvento,
+  app\dashboard\sindico\CentralSindico.tsx:1326:          ref(
+  app\dashboard\sindico\CentralSindico.tsx:1327:            db,
+  app\dashboard\sindico\CentralSindico.tsx:1328:            `comunicados-v2/${condominioComunicacaoId}/${comunicadoId}`
+  app\dashboard\sindico\CentralSindico.tsx:1329:          ),
+  app\dashboard\sindico\CentralSindico.tsx:1330:          {
+> app\dashboard\sindico\CentralSindico.tsx:1331:            pushProcessado: true,
+  app\dashboard\sindico\CentralSindico.tsx:1332:            pushEnviado: resultadoPush.totalEnviados > 0,
+  app\dashboard\sindico\CentralSindico.tsx:1333:            pushEnviadoEm:
+  app\dashboard\sindico\CentralSindico.tsx:1334:              resultadoPush.totalEnviados > 0 ? Date.now() : null,
+  app\dashboard\sindico\CentralSindico.tsx:1335:            pushTotalDestinatarios: resultadoPush.totalDestinatarios,
+> app\dashboard\sindico\CentralSindico.tsx:1336:            pushTotalEnviados: resultadoPush.totalEnviados,
+  app\dashboard\sindico\CentralSindico.tsx:1337:            pushTotalFalhas: resultadoPush.totalFalhas,
+  app\dashboard\sindico\CentralSindico.tsx:1338:            erroPush:
+  app\dashboard\sindico\CentralSindico.tsx:1339:              resultadoPush.falhas.length > 0
+  app\dashboard\sindico\CentralSindico.tsx:1340:                ? resultadoPush.falhas.join(" | ")
+  app\dashboard\sindico\CentralSindico.tsx:1341:                : null,
+  app\dashboard\sindico\CentralSindico.tsx:1342:          }
+  app\dashboard\sindico\CentralSindico.tsx:1343:        );
+  app\dashboard\sindico\CentralSindico.tsx:1344:
+  app\dashboard\sindico\CentralSindico.tsx:1345:        mensagemResultadoPush =
+  app\dashboard\sindico\CentralSindico.tsx:1346:          resultadoPush.totalFalhas === 0
+  app\dashboard\sindico\CentralSindico.tsx:1347:            ? ` Push confirmado para ${resultadoPush.totalEnviados} unidade(s).`
+  app\dashboard\sindico\CentralSindico.tsx:1348:            : ` Push confirmado para ${resultadoPush.totalEnviados} unidade(s) e falhou em 
+${resultadoPush.totalFalhas}.`;
+  app\dashboard\sindico\CentralSindico.tsx:1458:    try {
+  app\dashboard\sindico\CentralSindico.tsx:1459:      const agora = Date.now();
+  app\dashboard\sindico\CentralSindico.tsx:1460:      const atualizacoes: Record<string, unknown> = {};
+  app\dashboard\sindico\CentralSindico.tsx:1461:
+  app\dashboard\sindico\CentralSindico.tsx:1462:      idsPendentes.forEach((unidadeId) => {
+> app\dashboard\sindico\CentralSindico.tsx:1463:        atualizacoes[`unidades-v2/${unidadeId}/comunicadoAtivo`] = {
+  app\dashboard\sindico\CentralSindico.tsx:1464:          id: comunicado.id,
+  app\dashboard\sindico\CentralSindico.tsx:1465:          condominioId: comunicado.condominioId,
+  app\dashboard\sindico\CentralSindico.tsx:1466:          condominioNome: comunicado.condominioNome,
+  app\dashboard\sindico\CentralSindico.tsx:1467:          unidadeId,
+  app\dashboard\sindico\CentralSindico.tsx:1468:          unidadeNome: nomeUnidadePorId(unidadeId),
+  app\dashboard\sindico\CentralSindico.tsx:1469:          tipo: comunicado.tipo,
+  app\dashboard\sindico\CentralSindico.tsx:1470:          titulo: comunicado.titulo,
+  app\dashboard\sindico\CentralSindico.tsx:1471:          mensagem: comunicado.mensagem,
+  app\dashboard\sindico\CentralSindico.tsx:1472:          detalhesModelo: comunicado.detalhesModelo || {},
+  app\dashboard\sindico\CentralSindico.tsx:1473:          exigeCiencia: comunicado.exigeCiencia,
+  app\dashboard\sindico\CentralSindico.tsx:1474:          status: "novo",
+  app\dashboard\sindico\CentralSindico.tsx:1475:          criadoEm: comunicado.criadoEm,
+  app\dashboard\sindico\CentralSindico.tsx:1506:          ref(
+  app\dashboard\sindico\CentralSindico.tsx:1507:            db,
+  app\dashboard\sindico\CentralSindico.tsx:1508:            `comunicados-v2/${comunicado.condominioId}/${comunicado.id}`
+  app\dashboard\sindico\CentralSindico.tsx:1509:          ),
+  app\dashboard\sindico\CentralSindico.tsx:1510:          {
+> app\dashboard\sindico\CentralSindico.tsx:1511:            pushProcessado: true,
+  app\dashboard\sindico\CentralSindico.tsx:1512:            pushEnviado: resultadoPush.totalEnviados > 0,
+  app\dashboard\sindico\CentralSindico.tsx:1513:            pushEnviadoEm:
+  app\dashboard\sindico\CentralSindico.tsx:1514:              resultadoPush.totalEnviados > 0 ? Date.now() : null,
+  app\dashboard\sindico\CentralSindico.tsx:1515:            pushTotalDestinatarios: resultadoPush.totalDestinatarios,
+> app\dashboard\sindico\CentralSindico.tsx:1516:            pushTotalEnviados: resultadoPush.totalEnviados,
+  app\dashboard\sindico\CentralSindico.tsx:1517:            pushTotalFalhas: resultadoPush.totalFalhas,
+  app\dashboard\sindico\CentralSindico.tsx:1518:            erroPush:
+  app\dashboard\sindico\CentralSindico.tsx:1519:              resultadoPush.falhas.length > 0
+  app\dashboard\sindico\CentralSindico.tsx:1520:                ? resultadoPush.falhas.join(" | ")
+  app\dashboard\sindico\CentralSindico.tsx:1521:                : null,
+  app\dashboard\sindico\CentralSindico.tsx:1522:          }
+  app\dashboard\sindico\CentralSindico.tsx:1523:        );
+  app\dashboard\sindico\CentralSindico.tsx:1524:
+  app\dashboard\sindico\CentralSindico.tsx:1525:        mensagemResultadoPush =
+  app\dashboard\sindico\CentralSindico.tsx:1526:          resultadoPush.totalFalhas === 0
+  app\dashboard\sindico\CentralSindico.tsx:1527:            ? ` Push confirmado para ${resultadoPush.totalEnviados} unidade(s).`
+  app\dashboard\sindico\CentralSindico.tsx:1528:            : ` Push confirmado para ${resultadoPush.totalEnviados} unidade(s) e falhou em 
+${resultadoPush.totalFalhas}.`;
+  app\dashboard\sindico\CentralSindico.tsx:1555:    try {
+  app\dashboard\sindico\CentralSindico.tsx:1556:      const agora = Date.now();
+  app\dashboard\sindico\CentralSindico.tsx:1557:      const atualizacoesEntrega: Record<string, unknown> = {};
+  app\dashboard\sindico\CentralSindico.tsx:1558:
+  app\dashboard\sindico\CentralSindico.tsx:1559:      unidadesParaReenvio.forEach((unidadeId) => {
+> app\dashboard\sindico\CentralSindico.tsx:1560:        atualizacoesEntrega[`unidades-v2/${unidadeId}/comunicadoAtivo`] = {
+  app\dashboard\sindico\CentralSindico.tsx:1561:          id: comunicado.id,
+  app\dashboard\sindico\CentralSindico.tsx:1562:          condominioId: comunicado.condominioId,
+  app\dashboard\sindico\CentralSindico.tsx:1563:          condominioNome: comunicado.condominioNome,
+  app\dashboard\sindico\CentralSindico.tsx:1564:          unidadeId,
+  app\dashboard\sindico\CentralSindico.tsx:1565:          unidadeNome: nomeUnidadePorId(unidadeId),
+  app\dashboard\sindico\CentralSindico.tsx:1566:          tipo: comunicado.tipo,
+  app\dashboard\sindico\CentralSindico.tsx:1567:          titulo: comunicado.titulo,
+  app\dashboard\sindico\CentralSindico.tsx:1568:          mensagem: comunicado.mensagem,
+  app\dashboard\sindico\CentralSindico.tsx:1569:          detalhesModelo: comunicado.detalhesModelo || {},
+  app\dashboard\sindico\CentralSindico.tsx:1570:          exigeCiencia: comunicado.exigeCiencia,
+  app\dashboard\sindico\CentralSindico.tsx:1571:          status: "novo",
+  app\dashboard\sindico\CentralSindico.tsx:1572:          criadoEm: comunicado.criadoEm,
+  app\dashboard\sindico\CentralSindico.tsx:1598:          db,
+  app\dashboard\sindico\CentralSindico.tsx:1599:          `comunicados-v2/${comunicado.condominioId}/${comunicado.id}`
+  app\dashboard\sindico\CentralSindico.tsx:1600:        ),
+  app\dashboard\sindico\CentralSindico.tsx:1601:        {
+  app\dashboard\sindico\CentralSindico.tsx:1602:          enviarPush: true,
+> app\dashboard\sindico\CentralSindico.tsx:1603:          pushProcessado: true,
+  app\dashboard\sindico\CentralSindico.tsx:1604:          pushEnviado: resultadoPush.totalEnviados > 0,
+  app\dashboard\sindico\CentralSindico.tsx:1605:          pushEnviadoEm:
+  app\dashboard\sindico\CentralSindico.tsx:1606:            resultadoPush.totalEnviados > 0 ? Date.now() : null,
+  app\dashboard\sindico\CentralSindico.tsx:1607:          pushTotalDestinatarios: resultadoPush.totalDestinatarios,
+> app\dashboard\sindico\CentralSindico.tsx:1608:          pushTotalEnviados: resultadoPush.totalEnviados,
+  app\dashboard\sindico\CentralSindico.tsx:1609:          pushTotalFalhas: resultadoPush.totalFalhas,
+  app\dashboard\sindico\CentralSindico.tsx:1610:          erroPush:
+  app\dashboard\sindico\CentralSindico.tsx:1611:            resultadoPush.falhas.length > 0
+  app\dashboard\sindico\CentralSindico.tsx:1612:              ? resultadoPush.falhas.join(" | ")
+  app\dashboard\sindico\CentralSindico.tsx:1613:              : null,
+  app\dashboard\sindico\CentralSindico.tsx:1614:        }
+  app\dashboard\sindico\CentralSindico.tsx:1615:      );
+  app\dashboard\sindico\CentralSindico.tsx:1616:
+  app\dashboard\sindico\CentralSindico.tsx:1617:      if (resultadoPush.totalEnviados === 0) {
+  app\dashboard\sindico\CentralSindico.tsx:1618:        throw new Error(
+  app\dashboard\sindico\CentralSindico.tsx:1619:          "O comunicado voltou para o painel, mas nenhum push foi confirmado."
+  app\dashboard\sindico\CentralSindico.tsx:1620:        );
+  app\dashboard\sindico\CentralSindico.tsx:3884:                            </span>
+  app\dashboard\sindico\CentralSindico.tsx:3885:                          </div>
+  app\dashboard\sindico\CentralSindico.tsx:3886:
+  app\dashboard\sindico\CentralSindico.tsx:3887:                          <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px] 
+font-black">
+  app\dashboard\sindico\CentralSindico.tsx:3888:                            {comunicado.enviarPush === true ? (
+> app\dashboard\sindico\CentralSindico.tsx:3889:                              comunicado.pushProcessado === true ? (
+  app\dashboard\sindico\CentralSindico.tsx:3890:                                comunicado.pushEnviado === true ? (
+  app\dashboard\sindico\CentralSindico.tsx:3891:                                  <span className="rounded-full bg-green-950 px-3 py-1 
+text-green-300">
+> app\dashboard\sindico\CentralSindico.tsx:3892:                                    🔔 Push confirmado: {comunicado.pushTotalEnviados || 0}
+  app\dashboard\sindico\CentralSindico.tsx:3893:                                  </span>
+  app\dashboard\sindico\CentralSindico.tsx:3894:                                ) : (
+  app\dashboard\sindico\CentralSindico.tsx:3895:                                  <span className="rounded-full bg-red-950 px-3 py-1 text-red-300">
+  app\dashboard\sindico\CentralSindico.tsx:3896:                                    ⚠️ Push solicitado, mas não confirmado
+  app\dashboard\sindico\CentralSindico.tsx:3897:                                  </span>
+  app\dashboard\sindico\CentralSindico.tsx:3898:                                )
+  app\dashboard\sindico\CentralSindico.tsx:3899:                              ) : (
+  app\dashboard\sindico\CentralSindico.tsx:3900:                                <span className="rounded-full bg-yellow-950 px-3 py-1 
+text-yellow-300">
+  app\dashboard\sindico\CentralSindico.tsx:3901:                                  ⏳ Push solicitado, aguardando confirmação
+  app\dashboard\sindico\CentralSindico.tsx:3902:                                </span>
+  app\dashboard\sindico\CentralSindico.tsx:3903:                              )
+  app\dashboard\sindico\CentralSindico.tsx:3904:                            ) : comunicado.enviarPush === false ? (
+  app\dashboard\sindico\page.tsx:316:        <MateriaisDoLocal
+  app\dashboard\sindico\page.tsx:317:          localId={localIdMateriais}
+  app\dashboard\sindico\page.tsx:318:          visitante={`/acesso-v2/${slugLocalMateriais}`}
+  app\dashboard\sindico\page.tsx:319:          morador={
+  app\dashboard\sindico\page.tsx:320:            unidadeMoradorMateriais
+> app\dashboard\sindico\page.tsx:321:              ? `/morador-v2/${unidadeMoradorMateriais}`
+  app\dashboard\sindico\page.tsx:322:              : undefined
+  app\dashboard\sindico\page.tsx:323:          }
+  app\dashboard\sindico\page.tsx:324:          painel="/dashboard/sindico"
+  app\dashboard\sindico\page.tsx:325:          titulo="QR, placa e links do condomínio"
+  app\dashboard\sindico\page.tsx:326:        />
+  app\dashboard\sindico\page.tsx:327:      )}
+  app\dashboard\sindico\page.tsx:328:
+  app\dashboard\sindico\page.tsx:329:      <ModalTrocarContexto
+  app\dashboard\sindico\page.tsx:330:        aberto={
+  app\dashboard\sindico\page.tsx:331:          modalContextoAberto
+  app\dashboard\sindico\page.tsx:332:        }
+  app\dashboard\sindico\page.tsx:333:        onFechar={() =>
+  app\morador-v2\[unidadeId]\page.tsx:107:}
+  app\morador-v2\[unidadeId]\page.tsx:108:
+  app\morador-v2\[unidadeId]\page.tsx:109:export default function MoradorV2() {
+  app\morador-v2\[unidadeId]\page.tsx:110:  const params = useParams();
+  app\morador-v2\[unidadeId]\page.tsx:111:  const searchParams = useSearchParams();
+> app\morador-v2\[unidadeId]\page.tsx:112:  const comunicadoIdPeloLink = searchParams.get("comunicado") || "";
+  app\morador-v2\[unidadeId]\page.tsx:113:
+  app\morador-v2\[unidadeId]\page.tsx:114:  const slug = String(
+  app\morador-v2\[unidadeId]\page.tsx:115:    params?.unidadeId ||
+  app\morador-v2\[unidadeId]\page.tsx:116:      params?.slug ||
+  app\morador-v2\[unidadeId]\page.tsx:117:      params?.id ||
+  app\morador-v2\[unidadeId]\page.tsx:118:      params?.unidade ||
+  app\morador-v2\[unidadeId]\page.tsx:119:      "qr1"
+  app\morador-v2\[unidadeId]\page.tsx:120:  );
+  app\morador-v2\[unidadeId]\page.tsx:121:
+  app\morador-v2\[unidadeId]\page.tsx:122:  const [nome, setNome] = useState("Nenhuma solicitação");
+  app\morador-v2\[unidadeId]\page.tsx:123:  const [motivo, setMotivo] = useState("Aguardando visitante");
+  app\morador-v2\[unidadeId]\page.tsx:124:  const [status, setStatus] = useState("Sem chamado ativo");
+  app\morador-v2\[unidadeId]\page.tsx:307:
+  app\morador-v2\[unidadeId]\page.tsx:308:    return () => pararDeOuvirComunicados();
+  app\morador-v2\[unidadeId]\page.tsx:309:  }, [caminhoComunicados]);
+  app\morador-v2\[unidadeId]\page.tsx:310:
+  app\morador-v2\[unidadeId]\page.tsx:311:  useEffect(() => {
+> app\morador-v2\[unidadeId]\page.tsx:312:    if (!comunicadoIdPeloLink || comunicados.length === 0) return;
+  app\morador-v2\[unidadeId]\page.tsx:313:
+> app\morador-v2\[unidadeId]\page.tsx:314:    const comunicadoDoLink = comunicados.find(
+  app\morador-v2\[unidadeId]\page.tsx:315:      (item) => item.id === comunicadoIdPeloLink
+  app\morador-v2\[unidadeId]\page.tsx:316:    );
+  app\morador-v2\[unidadeId]\page.tsx:317:
+  app\morador-v2\[unidadeId]\page.tsx:318:    if (!comunicadoDoLink) return;
+  app\morador-v2\[unidadeId]\page.tsx:319:
+  app\morador-v2\[unidadeId]\page.tsx:320:    abrirComunicado(comunicadoDoLink);
+> app\morador-v2\[unidadeId]\page.tsx:321:  }, [comunicadoIdPeloLink, comunicados]);
+  app\morador-v2\[unidadeId]\page.tsx:322:
+  app\morador-v2\[unidadeId]\page.tsx:323:  async function abrirComunicado(comunicado: ComunicadoMorador) {
+  app\morador-v2\[unidadeId]\page.tsx:324:    setComunicadoAberto(comunicado);
+  app\morador-v2\[unidadeId]\page.tsx:325:
+  app\morador-v2\[unidadeId]\page.tsx:326:    const visualizacaoAtual =
+  app\morador-v2\[unidadeId]\page.tsx:327:      comunicado.visualizacoes?.[slug]?.visualizadoEm;
+  app\morador-v2\[unidadeId]\page.tsx:328:
+  app\morador-v2\[unidadeId]\page.tsx:329:    if (visualizacaoAtual) return;
+  app\morador-v2\[unidadeId]\page.tsx:330:
+  app\morador-v2\[unidadeId]\page.tsx:331:    try {
+  app\morador-v2\[unidadeId]\page.tsx:332:      await update(
+  app\morador-v2\[unidadeId]\page.tsx:333:        ref(
+  app\services\implantacao\motor\GeradorEstrutura.ts:304:        usuarios:
+  app\services\implantacao\motor\GeradorEstrutura.ts:305:          {},
+  app\services\implantacao\motor\GeradorEstrutura.ts:306:
+  app\services\implantacao\motor\GeradorEstrutura.ts:307:        configuracao: {
+  app\services\implantacao\motor\GeradorEstrutura.ts:308:          rotaMorador:
+> app\services\implantacao\motor\GeradorEstrutura.ts:309:            `/morador-v2/${slug}`,
+  app\services\implantacao\motor\GeradorEstrutura.ts:310:        },
+  app\services\implantacao\motor\GeradorEstrutura.ts:311:
+  app\services\implantacao\motor\GeradorEstrutura.ts:312:        criadoEm:
+  app\services\implantacao\motor\GeradorEstrutura.ts:313:          configuracao.criadoEm,
+  app\services\implantacao\motor\GeradorEstrutura.ts:314:
+  app\services\implantacao\motor\GeradorEstrutura.ts:315:        atualizadoEm:
+  app\services\implantacao\motor\GeradorEstrutura.ts:316:          configuracao.criadoEm,
+  app\services\implantacao\motor\GeradorEstrutura.ts:317:      });
+  app\services\implantacao\motor\GeradorEstrutura.ts:318:    }
+  app\services\implantacao\motor\GeradorEstrutura.ts:319:  }
+  app\services\implantacao\motor\GeradorEstrutura.ts:320:
+  app\services\implantacao\motor\GeradorEstrutura.ts:321:  return {
+  app\services\implantacao\motor\GeradorEstruturaCondominio.ts:214:      usuarios:
+  app\services\implantacao\motor\GeradorEstruturaCondominio.ts:215:        {},
+  app\services\implantacao\motor\GeradorEstruturaCondominio.ts:216:
+  app\services\implantacao\motor\GeradorEstruturaCondominio.ts:217:      configuracao: {
+  app\services\implantacao\motor\GeradorEstruturaCondominio.ts:218:        rotaMorador:
+> app\services\implantacao\motor\GeradorEstruturaCondominio.ts:219:          `/morador-v2/${slug}`,
+  app\services\implantacao\motor\GeradorEstruturaCondominio.ts:220:      },
+  app\services\implantacao\motor\GeradorEstruturaCondominio.ts:221:
+  app\services\implantacao\motor\GeradorEstruturaCondominio.ts:222:      criadoEm:
+  app\services\implantacao\motor\GeradorEstruturaCondominio.ts:223:        local.criadoEm,
+  app\services\implantacao\motor\GeradorEstruturaCondominio.ts:224:
+  app\services\implantacao\motor\GeradorEstruturaCondominio.ts:225:      atualizadoEm:
+  app\services\implantacao\motor\GeradorEstruturaCondominio.ts:226:        local.criadoEm,
+  app\services\implantacao\motor\GeradorEstruturaCondominio.ts:227:    });
+  app\services\implantacao\motor\GeradorEstruturaCondominio.ts:228:  }
+  app\services\implantacao\motor\GeradorEstruturaCondominio.ts:229:
+  app\services\implantacao\motor\GeradorEstruturaCondominio.ts:230:  return casas;
+  app\services\implantacao\motor\GeradorEstruturaCondominio.ts:231:}
+  app\services\implantacao\motor\GeradorLinks.ts:101:          );
+  app\services\implantacao\motor\GeradorLinks.ts:102:
+  app\services\implantacao\motor\GeradorLinks.ts:103:        const painelMorador =
+  app\services\implantacao\motor\GeradorLinks.ts:104:          criarLink(
+  app\services\implantacao\motor\GeradorLinks.ts:105:            baseUrlNormalizada,
+> app\services\implantacao\motor\GeradorLinks.ts:106:            `/morador-v2/${contexto.local.slug}/${unidade.slug}`
+  app\services\implantacao\motor\GeradorLinks.ts:107:          );
+  app\services\implantacao\motor\GeradorLinks.ts:108:
+  app\services\implantacao\motor\GeradorLinks.ts:109:        adicionarLink(
+  app\services\implantacao\motor\GeradorLinks.ts:110:          contexto,
+  app\services\implantacao\motor\GeradorLinks.ts:111:          acessoVisitante
+  app\services\implantacao\motor\GeradorLinks.ts:112:        );
+  app\services\implantacao\motor\GeradorLinks.ts:113:
+  app\services\implantacao\motor\GeradorLinks.ts:114:        adicionarLink(
+  app\services\implantacao\motor\GeradorLinks.ts:115:          contexto,
+  app\services\implantacao\motor\GeradorLinks.ts:116:          painelMorador
+  app\services\implantacao\motor\GeradorLinks.ts:117:        );
+  app\services\implantacao\motor\GeradorLinks.ts:118:
+  app\services\implantacao\ImplantadorResidencia.ts:569:        configuracoes: true,
+  app\services\implantacao\ImplantadorResidencia.ts:570:      },
+  app\services\implantacao\ImplantadorResidencia.ts:571:
+  app\services\implantacao\ImplantadorResidencia.ts:572:      urls: {
+  app\services\implantacao\ImplantadorResidencia.ts:573:        painel:
+> app\services\implantacao\ImplantadorResidencia.ts:574:          `/morador-v2/${local.localId}-principal`,
+  app\services\implantacao\ImplantadorResidencia.ts:575:        acesso:
+  app\services\implantacao\ImplantadorResidencia.ts:576:          `/acesso-v2/${local.localSlug}`,
+  app\services\implantacao\ImplantadorResidencia.ts:577:        unidadePrincipal:
+> app\services\implantacao\ImplantadorResidencia.ts:578:          `/morador-v2/${local.localId}-principal`,
+  app\services\implantacao\ImplantadorResidencia.ts:579:        cadastroUniversal:
+  app\services\implantacao\ImplantadorResidencia.ts:580:          "/dashboard",
+  app\services\implantacao\ImplantadorResidencia.ts:581:      },
+  app\services\implantacao\ImplantadorResidencia.ts:582:
+  app\services\implantacao\ImplantadorResidencia.ts:583:      recursosIniciais: {
+  app\services\implantacao\ImplantadorResidencia.ts:584:        qrVisitante: true,
+  app\services\implantacao\ImplantadorResidencia.ts:585:        painelResponsavel: true,
+  app\services\implantacao\ImplantadorResidencia.ts:586:        placaA4: true,
+  app\services\implantacao\ImplantadorResidencia.ts:587:        mensagensTexto: true,
+  app\services\implantacao\ImplantadorResidencia.ts:588:        mensagensAudio: true,
+  app\services\implantacao\ImplantadorResidencia.ts:589:        notificacoesPush: true,
+  app\services\implantacao\ImplantadorResidencia.ts:590:        historicoChamadas: true,
+  app\services\implantacao\ImplantadorResidencia.ts:637:        unidadePrincipalId:
+  app\services\implantacao\ImplantadorResidencia.ts:638:          `${local.localId}-principal`,
+  app\services\implantacao\ImplantadorResidencia.ts:639:        configuracoesChamadasCriadas:
+  app\services\implantacao\ImplantadorResidencia.ts:640:          true,
+  app\services\implantacao\ImplantadorResidencia.ts:641:        painelResponsavel:
+> app\services\implantacao\ImplantadorResidencia.ts:642:          `/morador-v2/${local.localId}-principal`,
+  app\services\implantacao\ImplantadorResidencia.ts:643:        acessoVisitante:
+  app\services\implantacao\ImplantadorResidencia.ts:644:          `/acesso-v2/${local.localSlug}`,
+  app\services\implantacao\ImplantadorResidencia.ts:645:        totalEstruturas:
+  app\services\implantacao\ImplantadorResidencia.ts:646:          estruturasCriadas.length,
+  app\services\implantacao\ImplantadorResidencia.ts:647:      },
+  app\services\implantacao\ImplantadorResidencia.ts:648:    };
+  app\services\implantacao\ImplantadorResidencia.ts:649:  } catch (erro) {
+  app\services\implantacao\ImplantadorResidencia.ts:650:    const mensagemErro =
+  app\services\implantacao\ImplantadorResidencia.ts:651:      erro instanceof Error
+  app\services\implantacao\ImplantadorResidencia.ts:652:        ? erro.message
+  app\services\implantacao\ImplantadorResidencia.ts:653:        : "Erro desconhecido durante a implantação da residência.";
+  app\services\implantacao\ImplantadorResidencia.ts:654:
+  app\services\navigation\ResolverPainelInicial.ts:230:obterPrimeiraUnidade(
+  app\services\navigation\ResolverPainelInicial.ts:231:vinculo
+  app\services\navigation\ResolverPainelInicial.ts:232:);
+  app\services\navigation\ResolverPainelInicial.ts:233:
+  app\services\navigation\ResolverPainelInicial.ts:234:if (unidadeId) {
+> app\services\navigation\ResolverPainelInicial.ts:235:return `/morador-v2/${encodeURIComponent(
+  app\services\navigation\ResolverPainelInicial.ts:236:unidadeId
+  app\services\navigation\ResolverPainelInicial.ts:237:)}`;
+  app\services\navigation\ResolverPainelInicial.ts:238:}
+  app\services\navigation\ResolverPainelInicial.ts:239:
+  app\services\navigation\ResolverPainelInicial.ts:240:return rotaPrimeiroModulo(
+  app\services\navigation\ResolverPainelInicial.ts:241:modulosPermitidos
+  app\services\navigation\ResolverPainelInicial.ts:242:);
+  app\services\navigation\ResolverPainelInicial.ts:243:}
+  app\services\navigation\ResolverPainelInicial.ts:244:
+  app\services\navigation\ResolverPainelInicial.ts:245:  if (
+  app\services\navigation\ResolverPainelInicial.ts:246:possuiPerfil(
+  app\services\navigation\ResolverPainelInicial.ts:247:vinculo,
+
+

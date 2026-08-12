@@ -1,0 +1,212 @@
+{
+  "criadoEm": "2026-08-12T10:56:14.065Z",
+  "joao": {
+    "atualizadoEm": 1786498394875,
+    "condominios": {
+      "muller": {
+        "ativo": true,
+        "atualizadoEm": 1786497847000,
+        "criadoEm": 1785766214207,
+        "localId": "muller",
+        "localNome": "Müller",
+        "localSlug": "muller",
+        "perfilPrincipal": "administrador_master",
+        "perfis": {
+          "administrador_master": true,
+          "morador": true,
+          "proprietario": true
+        },
+        "tipoLocal": "residencia"
+      },
+      "studio": {
+        "ativo": true,
+        "condominioId": "studio",
+        "condominioNome": "QR Acesso Studio",
+        "perfilPrincipal": "administrador-master",
+        "perfis": {
+          "administrador-master": true
+        },
+        "permissoes": {
+          "administradora": true,
+          "airbnb": true,
+          "central-inteligente": true,
+          "comunicados": true,
+          "condominio": true,
+          "configuracoes": true,
+          "dashboard": true,
+          "financeiro": true,
+          "hardware": true,
+          "marketplace": true,
+          "moradores": true,
+          "prestadores": true,
+          "relatorios": true,
+          "security": true,
+          "studio": true,
+          "unidades": true,
+          "usuarios": true
+        }
+      }
+    },
+    "criadoEm": 1784843535913,
+    "email": "mullerjoao1@gmail.com",
+    "locais": {
+      "muller": {
+        "ativo": true,
+        "atualizadoEm": 1786497847000,
+        "criadoEm": 1785766214207,
+        "localId": "muller",
+        "localNome": "Müller",
+        "localSlug": "muller",
+        "perfilPrincipal": "administrador_master",
+        "perfis": {
+          "administrador_master": true,
+          "morador": true,
+          "proprietario": true
+        },
+        "tipoLocal": "residencia"
+      }
+    },
+    "nome": "João Muller",
+    "origem": "assistente-implantacao-qr-core",
+    "precisaTrocarSenha": false,
+    "primeiroAcesso": false,
+    "status": "ativo",
+    "telefone": "41998237178",
+    "uid": "zOsew1mVu4SkMsUcB1xO6rxs0bw1",
+    "ultimoLogin": 1786498394875,
+    "vinculos": {
+      "muller": {
+        "ativo": true,
+        "atualizadoEm": 1785766214207,
+        "criadoEm": 1785766214207,
+        "criadoPorUid": "zOsew1mVu4SkMsUcB1xO6rxs0bw1",
+        "localId": "muller",
+        "localNome": "Müller",
+        "localSlug": "muller",
+        "perfilPrincipal": "sindico",
+        "perfis": {
+          "sindico": true
+        },
+        "permissoes": {
+          "acessarDashboard": true,
+          "editarLocal": true,
+          "gerenciarCameras": true,
+          "gerenciarComunicados": true,
+          "gerenciarConfiguracoes": true,
+          "gerenciarEntregas": true,
+          "gerenciarMoradores": true,
+          "gerenciarPortoes": true,
+          "gerenciarPrestadores": true,
+          "gerenciarVisitantes": true,
+          "visualizarHistorico": true,
+          "visualizarLocal": true
+        },
+        "status": "ativo",
+        "tipoLocal": "residencia",
+        "unidades": {
+          "muller-principal": true
+        },
+        "vinculoId": "muller"
+      }
+    }
+  },
+  "joaoFelipe": {
+    "atualizadoEm": 1786497842080,
+    "condominios": {
+      "muller": {
+        "ativo": true,
+        "atualizadoEm": 1786497842080,
+        "criadoEm": 1786396163400,
+        "localId": "muller",
+        "localNome": "Müller",
+        "localSlug": "muller",
+        "perfilPrincipal": "morador",
+        "perfis": {
+          "morador": true
+        },
+        "tipoLocal": "residencia"
+      }
+    },
+    "cpf": "13265990974",
+    "criadoEm": 1786396162940,
+    "email": "mullerjoaof@gmail.com",
+    "locais": {
+      "muller": {
+        "ativo": true,
+        "atualizadoEm": 1786497842080,
+        "criadoEm": 1786396163400,
+        "localId": "muller",
+        "localNome": "Müller",
+        "localSlug": "muller",
+        "perfilPrincipal": "morador",
+        "perfis": {
+          "morador": true
+        },
+        "tipoLocal": "residencia"
+      }
+    },
+    "nome": "João Felipe Soares Muller",
+    "origem": "residencia-familia",
+    "precisaTrocarSenha": true,
+    "primeiroAcesso": true,
+    "status": "ativo",
+    "telefone": "41988690337",
+    "uid": "3onYrlA6AmTMJgz5k1aOdzL2tLk2",
+    "ultimoLogin": 1786450321845
+  },
+  "fabiano": {
+    "atualizadoEm": 1786498417611,
+    "condominios": {
+      "residencial-tulipas": {
+        "ativo": true,
+        "atualizadoEm": 1786498220271,
+        "criadoEm": 1786108188169,
+        "localId": "residencial-tulipas",
+        "localNome": "Residencial Tulipas",
+        "localSlug": "residencial-tulipas",
+        "perfilPrincipal": "sindico",
+        "perfis": {
+          "central": true,
+          "financeiro": true,
+          "morador": true,
+          "sindico": true
+        },
+        "tipoLocal": "condominio",
+        "unidades": {
+          "residencial-tulipas-bloco-1-ap-11": true
+        }
+      }
+    },
+    "criadoEm": 1785940124114,
+    "email": "fabianopribeiro1978@gmail.com",
+    "locais": {
+      "residencial-tulipas": {
+        "ativo": true,
+        "atualizadoEm": 1786498220271,
+        "criadoEm": 1786108188169,
+        "localId": "residencial-tulipas",
+        "localNome": "Residencial Tulipas",
+        "localSlug": "residencial-tulipas",
+        "perfilPrincipal": "sindico",
+        "perfis": {
+          "central": true,
+          "financeiro": true,
+          "morador": true,
+          "sindico": true
+        },
+        "tipoLocal": "condominio",
+        "unidades": {
+          "residencial-tulipas-bloco-1-ap-11": true
+        }
+      }
+    },
+    "nome": "Fabiano Ribeiro",
+    "origem": "assistente-implantacao-qr-core",
+    "precisaTrocarSenha": true,
+    "primeiroAcesso": true,
+    "status": "ativo",
+    "telefone": "41998278025",
+    "uid": "oXpkBSqWJGdt4B6bWZBlVh0uNPA3",
+    "ultimoLogin": 1786498417611
+  }
+}

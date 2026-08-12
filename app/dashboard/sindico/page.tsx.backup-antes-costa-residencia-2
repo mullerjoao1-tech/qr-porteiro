@@ -1,0 +1,277 @@
+﻿"use client";
+
+import ModalTrocarContexto from "@/app/components/core/dashboard/ModalTrocarContexto";
+
+import SeletorPerfilAtivo from "@/app/components/dashboard/SeletorPerfilAtivo";
+
+
+import { useRouter } from "next/navigation";
+import { useMemo, useState } from "react";
+
+import DashboardAtalhos, {
+  type AtalhoDashboard,
+} from "@/app/components/core/dashboard/DashboardAtalhos";
+import DashboardBase from "@/app/components/core/dashboard/DashboardBase";
+import DashboardCarteira from "@/app/components/core/dashboard/DashboardCarteira";
+import DashboardIndicadores from "@/app/components/core/dashboard/DashboardIndicadores";
+import HeaderDashboard from "@/app/components/core/dashboard/HeaderDashboard";
+import { useAuth } from "@/app/context/AuthContext";
+
+import type { VinculoComPermissoes } from "@/app/services/permissoes";
+
+const ATALHOS_SINDICO: AtalhoDashboard[] = [
+  {
+    id: "condominio",
+    titulo: "Gestão do condomínio",
+    descricao:
+      "Moradores, unidades, comunicados, reservas e operação local.",
+    rota: "/dashboard/condominio",
+    icone: "🏢",
+  },
+  {
+    id: "central",
+    titulo: "Central Inteligente",
+    descricao:
+      "Alertas, ocorrências, prioridades e acompanhamento operacional.",
+    rota: "/dashboard/central-inteligente",
+    icone: "🧠",
+  },
+  {
+    id: "financeiro",
+    titulo: "Financeiro",
+    descricao:
+      "Receitas, despesas, vencimentos e acompanhamento financeiro.",
+    rota: "/dashboard/financeiro",
+    icone: "💰",
+  },
+  {
+    id: "prestadores",
+    titulo: "Prestadores",
+    descricao:
+      "Serviços, parceiros, documentos, histórico e oportunidades.",
+    rota: "/dashboard/marketplace",
+    icone: "🧰",
+  },
+  {
+    id: "hardware",
+    titulo: "Hardware e segurança",
+    descricao:
+      "Câmeras, portões, dispositivos e integrações do local.",
+    rota: "/hardware",
+    icone: "📷",
+  },
+  {
+    id: "implantacao",
+    titulo: "Implantação",
+    descricao:
+      "Acompanhe etapas, configurações e evolução do ambiente.",
+    rota: "/dashboard/implantacao",
+    icone: "🚀",
+  },
+];
+
+function obterNomeLocal(
+  vinculoId: string,
+  vinculo: VinculoComPermissoes
+): string {
+  return (
+    vinculo.localNome ||
+    vinculo.condominioNome ||
+    vinculo.localSlug ||
+    vinculo.condominioSlug ||
+    vinculo.localId ||
+    vinculo.condominioId ||
+    vinculoId
+  );
+}
+
+function obterTipoLocal(
+  vinculo: VinculoComPermissoes
+): string {
+  return (vinculo.tipoLocal || "local")
+    .replaceAll("_", " ")
+    .replaceAll("-", " ");
+}
+
+function obterPerfil(
+  vinculo: VinculoComPermissoes
+): string {
+  const perfil =
+    vinculo.perfilPrincipal ||
+    Object.entries(vinculo.perfis ?? {}).find(
+      ([, ativo]) => ativo === true
+    )?.[0] ||
+    "síndico";
+
+  return perfil
+    .replaceAll("_", " ")
+    .replaceAll("-", " ");
+}
+
+export default function PaginaSindico() {
+  const router = useRouter();
+
+  const [
+    modalContextoAberto,
+    setModalContextoAberto,
+  ] = useState(
+    false
+  );
+
+
+
+  const {
+    usuario,
+    carregando,
+    vinculosAtivos,
+    vinculoSelecionadoId,
+    vinculoSelecionado,
+    selecionarVinculo,
+    selecionarCarteiraGeral,
+  } = useAuth();
+
+  const locaisOrdenados = useMemo(
+    () =>
+      [...vinculosAtivos].sort(
+        ([idA, vinculoA], [idB, vinculoB]) =>
+          obterNomeLocal(idA, vinculoA).localeCompare(
+            obterNomeLocal(idB, vinculoB),
+            "pt-BR"
+          )
+      ),
+    [vinculosAtivos]
+  );
+
+  const nomeContexto = vinculoSelecionado
+    ? obterNomeLocal(
+        vinculoSelecionadoId || "",
+        vinculoSelecionado
+      )
+    : "Carteira Geral";
+
+  console.log(
+  "DEBUG VINCULO SELECIONADO:",
+  vinculoSelecionadoId,
+  vinculoSelecionado
+);
+
+const tipoLocalSelecionado = vinculoSelecionado
+    ? obterTipoLocal(vinculoSelecionado)
+    : undefined;
+
+  const perfilSelecionado = vinculoSelecionado
+    ? obterPerfil(vinculoSelecionado)
+    : undefined;
+
+  function trocarLocal(vinculoId: string) {
+  selecionarVinculo(vinculoId);
+  router.push("/dashboard/condominio");
+}
+
+  function voltarInicio() {
+    router.push("/");
+  }
+
+  if (carregando) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-slate-950 px-4 text-white">
+        <div className="text-center">
+          <div className="mx-auto h-12 w-12 animate-spin rounded-full border-4 border-slate-700 border-t-cyan-400" />
+
+          <p className="mt-4 text-sm font-bold text-slate-300">
+            Carregando painel do síndico...
+          </p>
+        </div>
+      </main>
+    );
+  }
+
+  if (!usuario) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-slate-950 px-4 text-white">
+        <section className="w-full max-w-md rounded-3xl border border-red-500/30 bg-slate-900 p-6 text-center">
+          <h1 className="text-2xl font-black">
+            Acesso não identificado
+          </h1>
+
+          <p className="mt-3 text-sm text-slate-300">
+            Faça login novamente para acessar o painel.
+          </p>
+
+          <button
+            type="button"
+            onClick={voltarInicio}
+            className="mt-6 w-full rounded-2xl bg-cyan-400 px-5 py-3 font-black text-slate-950"
+          >
+            Voltar ao início
+          </button>
+        </section>
+      </main>
+    );
+  }
+
+  return (
+    <DashboardBase textoRodape="QR Acesso Studio • Dashboard modular do síndico">
+      <HeaderDashboard
+        subtitulo="QR Core • Painel do Síndico"
+        nomeUsuario={usuario.nome || "Síndico"}
+        descricao="Acompanhe o local, acesse os módulos permitidos e mantenha tudo importante na palma da mão."
+        nomeContexto={nomeContexto}
+        contextoLocalSelecionado={Boolean(vinculoSelecionado)}
+        tipoLocal={tipoLocalSelecionado}
+        perfil={perfilSelecionado}
+        onSelecionarCarteiraGeral={selecionarCarteiraGeral}
+        onTrocarContexto={voltarInicio}
+      />
+
+      <SeletorPerfilAtivo />
+
+      <DashboardIndicadores
+        totalLocais={vinculosAtivos.length}
+        possuiLocalSelecionado={Boolean(vinculoSelecionado)}
+        perfilAtual={
+          vinculoSelecionado
+            ? obterPerfil(vinculoSelecionado)
+            : "Visão consolidada"
+        }
+        ambiente="Studio"
+      />
+
+      <DashboardAtalhos
+        etiqueta="Acesso rápido"
+        titulo="Módulos do síndico"
+        descricao="Escolha o módulo necessário para continuar a operação."
+        atalhos={ATALHOS_SINDICO}
+      />
+
+      <DashboardCarteira
+        locais={locaisOrdenados}
+        vinculoSelecionadoId={vinculoSelecionadoId}
+        onSelecionar={trocarLocal}
+        obterNomeLocal={obterNomeLocal}
+        obterTipoLocal={obterTipoLocal}
+        obterPerfil={obterPerfil}
+      />
+      <ModalTrocarContexto
+        aberto={
+          modalContextoAberto
+        }
+        onFechar={() =>
+          setModalContextoAberto(
+            false
+          )
+        }
+      />
+
+    </DashboardBase>
+  );
+}
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,758 @@
+"use client";
+
+import {
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+
+import {
+  useRouter,
+} from "next/navigation";
+
+import {
+  onValue,
+  push,
+  ref,
+  set,
+} from "firebase/database";
+
+import {
+  db,
+} from "@/app/services/firebase";
+
+import CentralResidencia from "@/app/dashboard/condominio/CentralResidencia";
+import CentralSindico from "@/app/dashboard/sindico/CentralSindico";
+import Unidades from "@/app/components/dashboard/Unidades";
+
+import {
+  useAuth,
+} from "@/app/context/AuthContext";
+
+type TelaCondominio =
+  | "inicio"
+  | "unidades"
+  | "moradores"
+  | "acessos"
+  | "prestadores"
+  | "agendamentos"
+  | "reservas"
+  | "documentos"
+  | "historico"
+  | "pendentes"
+  | "configuracoes"
+  | "planos"
+  | "contingencia";
+
+type LocalCadastrado = {
+  id: string;
+  nome: string;
+  tipo: string;
+};
+
+type UnidadeCadastrada = {
+  id: string;
+  codigo: string;
+  localId: string;
+  localNome: string;
+  tipo: string;
+  bloco: string;
+  nome: string;
+  modoChamado?: string;
+};
+
+function normalizar(
+  valor?: string
+) {
+  return (valor || "")
+    .trim()
+    .toLowerCase()
+    .replaceAll("-", "_");
+}
+
+function formatarNome(
+  valor: string
+) {
+  return valor
+    .trim()
+    .replace(
+      /\s+/g,
+      " "
+    );
+}
+
+export default function PaginaCondominio() {
+  const router =
+    useRouter();
+
+  const {
+    usuario,
+    carregando,
+    vinculoSelecionado,
+    vinculoSelecionadoId,
+    vinculosAtivos,
+  } = useAuth();
+
+  const [
+    telaAtiva,
+    setTelaAtiva,
+  ] =
+    useState<TelaCondominio>(
+      "inicio"
+    );
+
+  const [
+    locais,
+    setLocais,
+  ] =
+    useState<LocalCadastrado[]>(
+      []
+    );
+
+  const [
+    unidades,
+    setUnidades,
+  ] =
+    useState<UnidadeCadastrada[]>(
+      []
+    );
+
+  const [
+    blocoUnidade,
+    setBlocoUnidade,
+  ] =
+    useState("");
+
+  const [
+    nomeUnidade,
+    setNomeUnidade,
+  ] =
+    useState("");
+
+  const [
+    tipoUnidade,
+    setTipoUnidade,
+  ] =
+    useState(
+      "apartamento"
+    );
+
+  const [
+    modoChamadoUnidade,
+    setModoChamadoUnidade,
+  ] =
+    useState(
+      "familia"
+    );
+
+  const [
+    salvandoUnidade,
+    setSalvandoUnidade,
+  ] =
+    useState(false);
+
+  const tipoLocal =
+    normalizar(
+      vinculoSelecionado
+        ?.tipoLocal
+    );
+
+  const perfilPrincipal =
+    normalizar(
+      vinculoSelecionado
+        ?.perfilPrincipal
+    );
+
+  const perfis =
+    vinculoSelecionado
+      ?.perfis ??
+    {};
+
+  const possuiPerfil = (
+    perfil: string
+  ) => {
+    if (
+      perfilPrincipal ===
+      normalizar(perfil)
+    ) {
+      return true;
+    }
+
+    return Object.entries(
+      perfis
+    ).some(
+      ([nome, ativo]) =>
+        ativo === true &&
+        normalizar(nome) ===
+          normalizar(perfil)
+    );
+  };
+
+  const modoResidencia =
+    tipoLocal ===
+    "residencia";
+
+  const podeGerenciarResidencia =
+    possuiPerfil(
+      "administrador_master"
+    ) ||
+    possuiPerfil(
+      "proprietario"
+    ) ||
+    possuiPerfil(
+      "responsavel"
+    ) ||
+    possuiPerfil(
+      "gestor_local"
+    );
+
+  const vinculoAtual =
+    vinculosAtivos.find(
+      ([id]) =>
+        id === vinculoSelecionadoId
+    )?.[1] ??
+    vinculoSelecionado ??
+    null;
+
+  const identificadorVinculoAtual =
+    (
+      vinculoAtual?.localId ||
+      vinculoAtual?.localSlug ||
+      vinculoAtual?.condominioId ||
+      vinculoAtual?.condominioSlug ||
+      vinculoSelecionadoId ||
+      ""
+    )
+      .trim()
+      .toLowerCase();
+
+  const localAtual =
+    useMemo(
+      () =>
+        locais.find((local) => {
+          const candidatos = [
+            local.id,
+            local.nome,
+            (local as any).slug,
+            (local as any).codigo,
+          ]
+            .filter(Boolean)
+            .map((valor) =>
+              String(valor)
+                .trim()
+                .toLowerCase()
+            );
+
+          return candidatos.includes(
+            identificadorVinculoAtual
+          );
+        }) ?? null,
+      [
+        locais,
+        identificadorVinculoAtual,
+      ]
+    );
+
+  const localIdAtual =
+    localAtual?.id ||
+    vinculoAtual?.localId ||
+    vinculoAtual?.condominioId ||
+    vinculoAtual?.localSlug ||
+    vinculoAtual?.condominioSlug ||
+    vinculoSelecionadoId ||
+    "";
+
+  const nomeLocalAtual =
+    localAtual?.nome ||
+    vinculoAtual?.localNome ||
+    vinculoAtual?.condominioNome ||
+    vinculoAtual?.nomeLocal ||
+    vinculoAtual?.nome ||
+    vinculoAtual?.localSlug ||
+    vinculoAtual?.condominioSlug ||
+    "Condominio";
+
+  useEffect(() => {
+    if (
+      carregando ||
+      !usuario ||
+      !vinculoSelecionado
+    ) {
+      return;
+    }
+
+    if (
+      modoResidencia &&
+      !podeGerenciarResidencia
+    ) {
+      router.replace(
+        "/dashboard/morador"
+      );
+    }
+  }, [
+    carregando,
+    usuario,
+    vinculoSelecionado,
+    modoResidencia,
+    podeGerenciarResidencia,
+    router,
+  ]);
+
+  useEffect(() => {
+    if (modoResidencia) {
+      return;
+    }
+
+    const locaisRef =
+      ref(
+        db,
+        "qrCentral/locais"
+      );
+
+    const parar =
+      onValue(
+        locaisRef,
+        (snapshot) => {
+          const dados =
+            snapshot.val();
+
+          if (!dados) {
+            setLocais([]);
+            return;
+          }
+
+          const lista =
+            Object.entries(
+              dados
+            ).map(
+              ([id, valor]) => ({
+                id,
+                ...(valor as Omit<
+                  LocalCadastrado,
+                  "id"
+                >),
+              })
+            );
+
+          setLocais(
+            lista
+          );
+        }
+      );
+
+    return () =>
+      parar();
+  }, [
+    modoResidencia,
+  ]);
+
+  useEffect(() => {
+    if (modoResidencia) {
+      return;
+    }
+
+    const unidadesRef =
+      ref(
+        db,
+        "qrCentral/unidades"
+      );
+
+    const parar =
+      onValue(
+        unidadesRef,
+        (snapshot) => {
+          const dados =
+            snapshot.val();
+
+          if (!dados) {
+            setUnidades([]);
+            return;
+          }
+
+          const lista =
+            Object.entries(
+              dados
+            ).map(
+              ([id, valor]) => ({
+                id,
+                ...(valor as Omit<
+                  UnidadeCadastrada,
+                  "id"
+                >),
+              })
+            );
+
+          setUnidades(
+            lista
+          );
+        }
+      );
+
+    return () =>
+      parar();
+  }, [
+    modoResidencia,
+  ]);
+
+  async function cadastrarUnidade() {
+    if (!localIdAtual) {
+      alert(
+        "Local nao identificado."
+      );
+      return;
+    }
+
+    const local =
+      localAtual || {
+        id:
+          localIdAtual,
+        nome:
+          nomeLocalAtual,
+        tipo:
+          "condominio",
+      };
+
+    if (
+      !nomeUnidade.trim()
+    ) {
+      alert(
+        "Digite o nome ou numero da unidade."
+      );
+      return;
+    }
+
+    if (
+      !blocoUnidade.trim()
+    ) {
+      alert(
+        "Informe o bloco ou torre."
+      );
+      return;
+    }
+
+    setSalvandoUnidade(
+      true
+    );
+
+    try {
+      const unidadesRef =
+        ref(
+          db,
+          "qrCentral/unidades"
+        );
+
+      const novaUnidadeRef =
+        push(
+          unidadesRef
+        );
+
+      const codigo =
+        `UNI-${String(
+          unidades.length + 1
+        ).padStart(
+          4,
+          "0"
+        )}`;
+
+      await set(
+        novaUnidadeRef,
+        {
+          codigo,
+
+          localId:
+            local.id,
+
+          localNome:
+            local.nome,
+
+          tipoLocal:
+            "condominio",
+
+          bloco:
+            formatarNome(
+              blocoUnidade
+            ),
+
+          nome:
+            formatarNome(
+              nomeUnidade
+            ),
+
+          tipo:
+            tipoUnidade,
+
+          modoChamado:
+            modoChamadoUnidade,
+
+          status:
+            "ativa",
+
+          criadoEm:
+            new Date()
+              .toISOString(),
+        }
+      );
+
+      setBlocoUnidade("");
+      setNomeUnidade("");
+      setTipoUnidade(
+        "apartamento"
+      );
+      setModoChamadoUnidade(
+        "familia"
+      );
+
+      alert(
+        "Unidade cadastrada com sucesso."
+      );
+    } catch (erro) {
+      console.error(
+        erro
+      );
+
+      alert(
+        "Erro ao cadastrar unidade."
+      );
+    } finally {
+      setSalvandoUnidade(
+        false
+      );
+    }
+  }
+
+  if (
+    carregando ||
+    !usuario
+  ) {
+    return null;
+  }
+
+  if (
+    modoResidencia &&
+    !podeGerenciarResidencia
+  ) {
+    return null;
+  }
+
+  if (modoResidencia) {
+    return (
+      <main className="min-h-screen bg-slate-950 text-white">
+        <div className="mx-auto w-full max-w-[1600px] p-3 md:p-6">
+          <CentralResidencia />
+        </div>
+      </main>
+    );
+  }
+
+  return (
+    <main className="min-h-screen bg-slate-950 text-white">
+
+      <aside className="fixed left-4 top-4 z-40 hidden max-h-[calc(100vh-32px)] w-[210px] overflow-y-auto rounded-3xl border border-slate-800 bg-slate-900/95 p-4 shadow-2xl backdrop-blur xl:block">
+
+        <div className="mb-5">
+          <p className="text-[10px] font-black uppercase tracking-[0.18em] text-cyan-400">
+            QR CONDOMINIO
+          </p>
+
+          <p className="mt-2 text-base font-black leading-tight text-white break-words">
+            {nomeLocalAtual}
+          </p>
+        </div>
+
+        <nav className="space-y-2">
+
+          <button
+            type="button"
+            onClick={() =>
+              setTelaAtiva(
+                "inicio"
+              )
+            }
+            className="w-full rounded-2xl bg-cyan-500 px-4 py-3 text-left text-sm font-black text-slate-950 transition hover:bg-cyan-400"
+          >
+            Inicio
+          </button>
+
+          <button
+            type="button"
+            onClick={() =>
+              setTelaAtiva(
+                "unidades"
+              )
+            }
+            className={[
+              "w-full rounded-2xl border px-4 py-3 text-left text-sm font-bold transition",
+              telaAtiva ===
+              "unidades"
+                ? "border-cyan-400 bg-cyan-500 text-slate-950"
+                : "border-slate-700 bg-slate-800 text-slate-100 hover:border-cyan-500 hover:bg-slate-700",
+            ].join(" ")}
+          >
+            Unidades
+          </button>
+
+          {[
+            ["moradores", "Moradores"],
+            ["acessos", "Acessos / Visitantes"],
+            ["prestadores", "Prestadores"],
+            ["agendamentos", "Agendamentos"],
+            ["reservas", "Reservas"],
+            ["documentos", "Documentos / Contratos"],
+            ["historico", "Historico Geral"],
+            ["pendentes", "Pendentes"],
+            ["configuracoes", "Configuracoes"],
+            ["planos", "Planos"],
+            ["contingencia", "Contingencia"],
+          ].map(
+            ([id, titulo]) => (
+              <button
+                key={id}
+                type="button"
+                onClick={() =>
+                  setTelaAtiva(
+                    id as TelaCondominio
+                  )
+                }
+                className={[
+                  "w-full rounded-2xl border px-4 py-3 text-left text-sm font-bold transition",
+                  telaAtiva === id
+                    ? "border-cyan-400 bg-cyan-500 text-slate-950"
+                    : "border-slate-700 bg-slate-800 text-slate-100 hover:border-cyan-500 hover:bg-slate-700",
+                ].join(" ")}
+              >
+                {titulo}
+              </button>
+            )
+          )}
+
+        </nav>
+      </aside>
+
+      <div className="mx-auto w-full max-w-[1600px] p-3 md:p-6 xl:pl-[246px]">
+
+        {telaAtiva ===
+        "unidades" ? (
+
+                    <div className="space-y-4">
+
+          <div className="mb-4 flex justify-end">
+            <button
+              type="button"
+              onClick={() => setTelaAtiva("inicio")}
+              className="rounded-2xl border border-slate-700 bg-slate-800 px-5 py-3 text-sm font-black text-white transition hover:border-cyan-500 hover:bg-slate-700 active:scale-[0.98]"
+            >
+              Voltar ao painel
+            </button>
+          </div>
+
+<Unidades
+            modoChamadoUnidade={
+              modoChamadoUnidade
+            }
+
+            setModoChamadoUnidade={
+              setModoChamadoUnidade
+            }
+
+            locais={
+              locais.filter(
+                (local) =>
+                  local.id ===
+                  localIdAtual
+              )
+            }
+
+            unidades={
+              unidades.filter(
+                (unidade) =>
+                  unidade.localId ===
+                  localIdAtual
+              )
+            }
+
+            localSelecionadoId={
+              localIdAtual
+            }
+
+            setLocalSelecionadoId={() => {
+              // Contexto travado no condom?nio atual.
+            }}
+
+            blocoUnidade={
+              blocoUnidade
+            }
+
+            setBlocoUnidade={
+              setBlocoUnidade
+            }
+
+            nomeUnidade={
+              nomeUnidade
+            }
+
+            setNomeUnidade={
+              setNomeUnidade
+            }
+
+            tipoUnidade={
+              tipoUnidade
+            }
+
+            setTipoUnidade={
+              setTipoUnidade
+            }
+
+            modoCondominio={
+              true
+            }
+
+            cadastrarUnidade={
+              cadastrarUnidade
+            }
+
+            salvandoUnidade={
+              salvandoUnidade
+            }
+          />
+
+        </div>
+
+        ) : telaAtiva ===
+        "inicio" ? (
+
+          <CentralSindico />
+
+        ) : (
+
+          <section className="rounded-3xl border border-slate-800 bg-slate-900 p-6">
+            <p className="text-xs font-black uppercase tracking-wider text-cyan-400">
+              {nomeLocalAtual}
+            </p>
+
+            <h1 className="mt-2 text-3xl font-black text-white">
+              Modulo em preparacao
+            </h1>
+
+            <p className="mt-3 text-sm text-slate-400">
+              Vamos conectar esta area na sequencia.
+            </p>
+
+            <button
+              type="button"
+              onClick={() =>
+                setTelaAtiva(
+                  "inicio"
+                )
+              }
+              className="mt-5 rounded-2xl bg-cyan-500 px-5 py-3 text-sm font-black text-slate-950 hover:bg-cyan-400"
+            >
+              Voltar ao painel
+            </button>
+          </section>
+
+        )}
+
+      </div>
+    </main>
+  );
+}

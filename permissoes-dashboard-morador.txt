@@ -1,0 +1,280 @@
+﻿
+  app\dashboard\morador\page.tsx:136:    .toLowerCase();
+  app\dashboard\morador\page.tsx:137:
+  app\dashboard\morador\page.tsx:138:  const modoMuller =
+  app\dashboard\morador\page.tsx:139:    identificadorLocalAtual === "muller";
+  app\dashboard\morador\page.tsx:140:
+> app\dashboard\morador\page.tsx:141:  const permissoes =
+  app\dashboard\morador\page.tsx:142:    vinculoSelecionado
+> app\dashboard\morador\page.tsx:143:      ?.permissoes ??
+  app\dashboard\morador\page.tsx:144:    {};
+  app\dashboard\morador\page.tsx:145:
+> app\dashboard\morador\page.tsx:146:  const podeReceberChamadas =
+> app\dashboard\morador\page.tsx:147:    permissoes
+> app\dashboard\morador\page.tsx:148:      .receberChamadas ===
+  app\dashboard\morador\page.tsx:149:    true;
+  app\dashboard\morador\page.tsx:150:
+> app\dashboard\morador\page.tsx:151:  const podeAbrirPortao =
+> app\dashboard\morador\page.tsx:152:    permissoes
+  app\dashboard\morador\page.tsx:153:      .abrirPortao ===
+  app\dashboard\morador\page.tsx:154:    true;
+  app\dashboard\morador\page.tsx:155:
+> app\dashboard\morador\page.tsx:156:  const podeVisualizarCameras =
+> app\dashboard\morador\page.tsx:157:    permissoes
+> app\dashboard\morador\page.tsx:158:      .visualizarCameras ===
+  app\dashboard\morador\page.tsx:159:    true;
+  app\dashboard\morador\page.tsx:160:
+> app\dashboard\morador\page.tsx:161:  const podeControlarAlarme =
+> app\dashboard\morador\page.tsx:162:    permissoes
+> app\dashboard\morador\page.tsx:163:      .controlarAlarme ===
+  app\dashboard\morador\page.tsx:164:    true;
+  app\dashboard\morador\page.tsx:165:
+  app\dashboard\morador\page.tsx:166:  const perfilPrincipalNormalizado = (
+  app\dashboard\morador\page.tsx:167:    vinculoSelecionado?.perfilPrincipal ||
+  app\dashboard\morador\page.tsx:168:    ""
+  app\dashboard\morador\page.tsx:169:  )
+  app\dashboard\morador\page.tsx:170:    .trim()
+  app\dashboard\morador\page.tsx:171:    .toLowerCase()
+  app\dashboard\morador\page.tsx:172:    .replaceAll("-", "_");
+  app\dashboard\morador\page.tsx:173:
+  app\dashboard\morador\page.tsx:174:  const podeVoltarSindico =
+  app\dashboard\morador\page.tsx:175:    perfilPrincipalNormalizado === "sindico" ||
+  app\dashboard\morador\page.tsx:231:    }
+  app\dashboard\morador\page.tsx:232:  }
+  app\dashboard\morador\page.tsx:233:
+  app\dashboard\morador\page.tsx:234:  function abrirAtendimentoVisitantes() {
+  app\dashboard\morador\page.tsx:235:    if (
+> app\dashboard\morador\page.tsx:236:      !podeReceberChamadas &&
+  app\dashboard\morador\page.tsx:237:      modoResidencia
+  app\dashboard\morador\page.tsx:238:    ) {
+  app\dashboard\morador\page.tsx:239:      alert(
+  app\dashboard\morador\page.tsx:240:        "Este perfil nao possui permissao para receber chamadas."
+  app\dashboard\morador\page.tsx:241:      );
+  app\dashboard\morador\page.tsx:242:
+  app\dashboard\morador\page.tsx:243:      return;
+  app\dashboard\morador\page.tsx:244:    }
+  app\dashboard\morador\page.tsx:245:
+  app\dashboard\morador\page.tsx:246:
+  app\dashboard\morador\page.tsx:247:if (modoResidencia) {
+  app\dashboard\morador\page.tsx:248:      const slugResidencia =
+  app\dashboard\morador\page.tsx:288:    );
+  app\dashboard\morador\page.tsx:289:  }
+  app\dashboard\morador\page.tsx:290:
+  app\dashboard\morador\page.tsx:291:  async function abrirPortao() {
+  app\dashboard\morador\page.tsx:292:    if (
+> app\dashboard\morador\page.tsx:293:      !podeAbrirPortao ||
+  app\dashboard\morador\page.tsx:294:      abrindoPortao
+  app\dashboard\morador\page.tsx:295:    ) {
+  app\dashboard\morador\page.tsx:296:      return;
+  app\dashboard\morador\page.tsx:297:    }
+  app\dashboard\morador\page.tsx:298:
+  app\dashboard\morador\page.tsx:299:    try {
+  app\dashboard\morador\page.tsx:300:      setAbrindoPortao(
+  app\dashboard\morador\page.tsx:301:        true
+  app\dashboard\morador\page.tsx:302:      );
+  app\dashboard\morador\page.tsx:303:
+  app\dashboard\morador\page.tsx:304:      setStatusPortao(
+  app\dashboard\morador\page.tsx:305:        "\u23F3 Abrindo port\u00e3o..."
+  app\dashboard\morador\page.tsx:602:            Aqui aparecem somente os recursos autorizados pelo respons&aacute;vel da resid&ecirc;ncia.
+  app\dashboard\morador\page.tsx:603:          </p>
+  app\dashboard\morador\page.tsx:604:
+  app\dashboard\morador\page.tsx:605:          <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+  app\dashboard\morador\page.tsx:606:
+> app\dashboard\morador\page.tsx:607:            {podeReceberChamadas && (
+  app\dashboard\morador\page.tsx:608:              <button
+  app\dashboard\morador\page.tsx:609:                type="button"
+  app\dashboard\morador\page.tsx:610:                onClick={
+  app\dashboard\morador\page.tsx:611:                  abrirAtendimentoVisitantes
+  app\dashboard\morador\page.tsx:612:                }
+  app\dashboard\morador\page.tsx:613:                className="rounded-2xl border border-blue-800 bg-blue-950/40 p-4 text-left transition 
+hover:border-blue-500 hover:bg-blue-950 active:scale-[0.98]"
+  app\dashboard\morador\page.tsx:614:              >
+  app\dashboard\morador\page.tsx:615:                <div className="text-3xl">
+  app\dashboard\morador\page.tsx:616:                  &#128276;
+  app\dashboard\morador\page.tsx:617:                </div>
+  app\dashboard\morador\page.tsx:618:
+  app\dashboard\morador\page.tsx:619:                <div className="mt-3 font-black text-white">
+  app\dashboard\morador\page.tsx:624:                  Receba chamadas de quem estiver na entrada.
+  app\dashboard\morador\page.tsx:625:                </div>
+  app\dashboard\morador\page.tsx:626:              </button>
+  app\dashboard\morador\page.tsx:627:            )}
+  app\dashboard\morador\page.tsx:628:
+> app\dashboard\morador\page.tsx:629:            {podeAbrirPortao && (
+  app\dashboard\morador\page.tsx:630:              <button
+  app\dashboard\morador\page.tsx:631:                type="button"
+  app\dashboard\morador\page.tsx:632:                onClick={
+  app\dashboard\morador\page.tsx:633:                  abrirPortao
+  app\dashboard\morador\page.tsx:634:                }
+  app\dashboard\morador\page.tsx:635:                disabled={
+  app\dashboard\morador\page.tsx:636:                  abrindoPortao
+  app\dashboard\morador\page.tsx:637:                }
+  app\dashboard\morador\page.tsx:638:                className="rounded-2xl border border-violet-800 bg-violet-950/40 p-4 text-left transition 
+hover:border-violet-500 hover:bg-violet-950 active:scale-[0.98] disabled:opacity-60"
+  app\dashboard\morador\page.tsx:639:              >
+  app\dashboard\morador\page.tsx:640:                <div className="text-3xl">
+  app\dashboard\morador\page.tsx:641:                  &#128682;
+  app\dashboard\morador\page.tsx:649:                  Acione o port&atilde;o autorizado desta resid&ecirc;ncia.
+  app\dashboard\morador\page.tsx:650:                </div>
+  app\dashboard\morador\page.tsx:651:              </button>
+  app\dashboard\morador\page.tsx:652:            )}
+  app\dashboard\morador\page.tsx:653:
+> app\dashboard\morador\page.tsx:654:            {podeVisualizarCameras && (
+  app\dashboard\morador\page.tsx:655:              <div className="rounded-2xl border border-cyan-800 bg-cyan-950/30 p-4">
+  app\dashboard\morador\page.tsx:656:                <div className="text-3xl">
+  app\dashboard\morador\page.tsx:657:                  &#128247;
+  app\dashboard\morador\page.tsx:658:                </div>
+  app\dashboard\morador\page.tsx:659:
+  app\dashboard\morador\page.tsx:660:                <div className="mt-3 font-black text-white">
+  app\dashboard\morador\page.tsx:661:                  C&acirc;meras
+  app\dashboard\morador\page.tsx:662:                </div>
+  app\dashboard\morador\page.tsx:663:
+  app\dashboard\morador\page.tsx:664:                <div className="mt-1 text-sm text-slate-400">
+  app\dashboard\morador\page.tsx:665:                  Acesso autorizado &agrave;s c&acirc;meras da resid&ecirc;ncia.
+  app\dashboard\morador\page.tsx:666:                </div>
+  app\dashboard\morador\page.tsx:667:              </div>
+  app\dashboard\morador\page.tsx:668:            )}
+  app\dashboard\morador\page.tsx:669:
+> app\dashboard\morador\page.tsx:670:            {podeControlarAlarme && (
+  app\dashboard\morador\page.tsx:671:              <div className="rounded-2xl border border-emerald-800 bg-emerald-950/30 p-4">
+  app\dashboard\morador\page.tsx:672:                <div className="text-3xl">
+  app\dashboard\morador\page.tsx:673:                  &#128680;
+  app\dashboard\morador\page.tsx:674:                </div>
+  app\dashboard\morador\page.tsx:675:
+  app\dashboard\morador\page.tsx:676:                <div className="mt-3 font-black text-white">
+> app\dashboard\morador\page.tsx:677:                  Alarme
+  app\dashboard\morador\page.tsx:678:                </div>
+  app\dashboard\morador\page.tsx:679:
+  app\dashboard\morador\page.tsx:680:                <div className="mt-1 text-sm text-slate-400">
+> app\dashboard\morador\page.tsx:681:                  Controle de alarme autorizado para este perfil.
+  app\dashboard\morador\page.tsx:682:                </div>
+  app\dashboard\morador\page.tsx:683:              </div>
+  app\dashboard\morador\page.tsx:684:            )}
+  app\dashboard\morador\page.tsx:685:          </div>
+  app\dashboard\morador\page.tsx:686:
+> app\dashboard\morador\page.tsx:687:          {!podeReceberChamadas &&
+> app\dashboard\morador\page.tsx:688:            !podeAbrirPortao &&
+> app\dashboard\morador\page.tsx:689:            !podeVisualizarCameras &&
+> app\dashboard\morador\page.tsx:690:            !podeControlarAlarme && (
+  app\dashboard\morador\page.tsx:691:              <div className="mt-5 rounded-2xl border border-dashed border-slate-700 p-8 text-center">
+  app\dashboard\morador\page.tsx:692:                <p className="font-black text-white">
+> app\dashboard\morador\page.tsx:693:                  Nenhum acesso liberado
+  app\dashboard\morador\page.tsx:694:                </p>
+  app\dashboard\morador\page.tsx:695:
+  app\dashboard\morador\page.tsx:696:                <p className="mt-2 text-sm text-slate-500">
+  app\dashboard\morador\page.tsx:697:                  O respons&aacute;vel da resid&ecirc;ncia ainda n&atilde;o liberou recursos para este perfil.
+  app\dashboard\morador\page.tsx:698:                </p>
+  app\dashboard\morador\page.tsx:699:              </div>
+  app\dashboard\morador\page.tsx:700:            )}
+  app\dashboard\morador\page.tsx:701:
+  app\dashboard\morador\page.tsx:702:          {statusPortao && (
+  app\dashboard\morador\page.tsx:703:            <p className="mt-4 rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm font-black 
+text-white">
+  app\dashboard\morador\page.tsx:704:              {statusPortao}
+  app\dashboard\morador\page.tsx:705:            </p>
+  app\dashboard\morador\page.tsx:865:            <p className="text-xs font-black uppercase tracking-wider text-cyan-400">
+  app\dashboard\morador\page.tsx:866:              Meus acessos
+  app\dashboard\morador\page.tsx:867:            </p>
+  app\dashboard\morador\page.tsx:868:
+  app\dashboard\morador\page.tsx:869:            <h2 className="mt-1 text-2xl font-black text-white">
+> app\dashboard\morador\page.tsx:870:              Acesso rápido
+  app\dashboard\morador\page.tsx:871:            </h2>
+  app\dashboard\morador\page.tsx:872:
+  app\dashboard\morador\page.tsx:873:            <p className="mt-2 text-sm text-slate-400">
+  app\dashboard\morador\page.tsx:874:              Aqui aparecem somente os recursos liberados para o seu perfil e sua unidade.
+  app\dashboard\morador\page.tsx:875:            </p>
+  app\dashboard\morador\page.tsx:876:
+  app\dashboard\morador\page.tsx:877:            <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+  app\dashboard\morador\page.tsx:878:
+> app\dashboard\morador\page.tsx:879:              {podeReceberChamadas && (
+  app\dashboard\morador\page.tsx:880:                <button
+  app\dashboard\morador\page.tsx:881:                  type="button"
+  app\dashboard\morador\page.tsx:882:                  onClick={abrirAtendimentoVisitantes}
+  app\dashboard\morador\page.tsx:883:                  className="rounded-2xl border border-blue-800 bg-blue-950/40 p-4 text-left transition 
+hover:border-blue-500 hover:bg-blue-950 active:scale-[0.98]"
+  app\dashboard\morador\page.tsx:884:                >
+  app\dashboard\morador\page.tsx:885:                  <div className="text-3xl">
+  app\dashboard\morador\page.tsx:886:                    🔔
+  app\dashboard\morador\page.tsx:887:                  </div>
+  app\dashboard\morador\page.tsx:888:
+  app\dashboard\morador\page.tsx:889:                  <div className="mt-3 font-black text-white">
+  app\dashboard\morador\page.tsx:890:                    Atendimento de visitantes
+  app\dashboard\morador\page.tsx:891:                  </div>
+  app\dashboard\morador\page.tsx:894:                    Receba chamadas destinadas à sua unidade.
+  app\dashboard\morador\page.tsx:895:                  </div>
+  app\dashboard\morador\page.tsx:896:                </button>
+  app\dashboard\morador\page.tsx:897:              )}
+  app\dashboard\morador\page.tsx:898:
+> app\dashboard\morador\page.tsx:899:              {podeAbrirPortao && (
+  app\dashboard\morador\page.tsx:900:                <button
+  app\dashboard\morador\page.tsx:901:                  type="button"
+  app\dashboard\morador\page.tsx:902:                  onClick={abrirPortao}
+  app\dashboard\morador\page.tsx:903:                  disabled={abrindoPortao}
+  app\dashboard\morador\page.tsx:904:                  className="rounded-2xl border border-violet-800 bg-violet-950/40 p-4 text-left transition 
+hover:border-violet-500 hover:bg-violet-950 active:scale-[0.98] disabled:opacity-60"
+  app\dashboard\morador\page.tsx:905:                >
+  app\dashboard\morador\page.tsx:906:                  <div className="text-3xl">
+  app\dashboard\morador\page.tsx:907:                    🚪
+  app\dashboard\morador\page.tsx:908:                  </div>
+  app\dashboard\morador\page.tsx:909:
+  app\dashboard\morador\page.tsx:910:                  <div className="mt-3 font-black text-white">
+  app\dashboard\morador\page.tsx:911:                    Abrir portão
+  app\dashboard\morador\page.tsx:915:                    Acione o portão autorizado do condomínio.
+  app\dashboard\morador\page.tsx:916:                  </div>
+  app\dashboard\morador\page.tsx:917:                </button>
+  app\dashboard\morador\page.tsx:918:              )}
+  app\dashboard\morador\page.tsx:919:
+> app\dashboard\morador\page.tsx:920:              {podeVisualizarCameras && (
+  app\dashboard\morador\page.tsx:921:                <div className="rounded-2xl border border-cyan-800 bg-cyan-950/30 p-4">
+  app\dashboard\morador\page.tsx:922:                  <div className="text-3xl">
+  app\dashboard\morador\page.tsx:923:                    📷
+  app\dashboard\morador\page.tsx:924:                  </div>
+  app\dashboard\morador\page.tsx:925:
+  app\dashboard\morador\page.tsx:926:                  <div className="mt-3 font-black text-white">
+  app\dashboard\morador\page.tsx:927:                    Câmeras
+  app\dashboard\morador\page.tsx:928:                  </div>
+  app\dashboard\morador\page.tsx:929:
+  app\dashboard\morador\page.tsx:930:                  <div className="mt-1 text-sm text-slate-400">
+  app\dashboard\morador\page.tsx:931:                    Visualize somente as câmeras liberadas para seu perfil.
+  app\dashboard\morador\page.tsx:932:                  </div>
+  app\dashboard\morador\page.tsx:933:                </div>
+  app\dashboard\morador\page.tsx:934:              )}
+  app\dashboard\morador\page.tsx:935:
+> app\dashboard\morador\page.tsx:936:              {podeControlarAlarme && (
+  app\dashboard\morador\page.tsx:937:                <div className="rounded-2xl border border-emerald-800 bg-emerald-950/30 p-4">
+  app\dashboard\morador\page.tsx:938:                  <div className="text-3xl">
+  app\dashboard\morador\page.tsx:939:                    🚨
+  app\dashboard\morador\page.tsx:940:                  </div>
+  app\dashboard\morador\page.tsx:941:
+  app\dashboard\morador\page.tsx:942:                  <div className="mt-3 font-black text-white">
+> app\dashboard\morador\page.tsx:943:                    Alarme
+  app\dashboard\morador\page.tsx:944:                  </div>
+  app\dashboard\morador\page.tsx:945:
+  app\dashboard\morador\page.tsx:946:                  <div className="mt-1 text-sm text-slate-400">
+  app\dashboard\morador\page.tsx:947:                    Controle disponível conforme autorização do condomínio.
+  app\dashboard\morador\page.tsx:948:                  </div>
+  app\dashboard\morador\page.tsx:949:                </div>
+  app\dashboard\morador\page.tsx:950:              )}
+  app\dashboard\morador\page.tsx:951:            </div>
+  app\dashboard\morador\page.tsx:952:
+> app\dashboard\morador\page.tsx:953:            {!podeReceberChamadas &&
+> app\dashboard\morador\page.tsx:954:              !podeAbrirPortao &&
+> app\dashboard\morador\page.tsx:955:              !podeVisualizarCameras &&
+> app\dashboard\morador\page.tsx:956:              !podeControlarAlarme && (
+  app\dashboard\morador\page.tsx:957:                <div className="mt-5 rounded-2xl border border-dashed border-slate-700 p-8 text-center">
+  app\dashboard\morador\page.tsx:958:                  <p className="font-black text-white">
+> app\dashboard\morador\page.tsx:959:                    Nenhum acesso liberado
+  app\dashboard\morador\page.tsx:960:                  </p>
+  app\dashboard\morador\page.tsx:961:
+  app\dashboard\morador\page.tsx:962:                  <p className="mt-2 text-sm text-slate-500">
+  app\dashboard\morador\page.tsx:963:                    O condomínio ainda não liberou recursos para este perfil.
+  app\dashboard\morador\page.tsx:964:                  </p>
+  app\dashboard\morador\page.tsx:965:                </div>
+  app\dashboard\morador\page.tsx:966:              )}
+  app\dashboard\morador\page.tsx:967:
+  app\dashboard\morador\page.tsx:968:            {statusPortao && (
+  app\dashboard\morador\page.tsx:969:              <p className="mt-4 rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm font-black 
+text-white">
+  app\dashboard\morador\page.tsx:970:                {statusPortao}
+  app\dashboard\morador\page.tsx:971:              </p>
+
+

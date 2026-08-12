@@ -1,0 +1,1222 @@
+===== MATERIAL TYPES =====
+export type TipoMaterial =
+  | "a4"
+  | "a5"
+  | "banner"
+  | "display"
+  | "adesivo"
+  | "cartao"
+  | "qr-png"
+  | "qr-svg";
+
+export type SegmentoMaterial =
+  | "condominio"
+  | "residencia"
+  | "empresa"
+  | "beauty"
+  | "barbearia"
+  | "clinica"
+  | "pet"
+  | "restaurante";
+
+export type TemaMaterial =
+  | "clean"
+  | "institucional"
+  | "premium";
+
+export interface DadosMaterial {
+  localId: string;
+  slug: string;
+
+  nome: string;
+  subtitulo?: string;
+
+  segmento: SegmentoMaterial;
+
+  tema?: TemaMaterial;
+
+  cidade?: string;
+  estado?: string;
+
+  telefone?: string;
+  whatsapp?: string;
+  email?: string;
+
+  site?: string;
+  instagram?: string;
+  facebook?: string;
+
+  logo?: string;
+
+  urlQr: string;
+
+  qrBase64?: string;
+
+  corPrimaria?: string;
+  corSecundaria?: string;
+  corTexto?: string;
+
+  observacoes?: string[];
+}
+
+export interface ResultadoMaterial {
+  nomeArquivo: string;
+
+  mimeType: string;
+
+  bytes: Uint8Array;
+}
+
+export interface TemplateMaterial {
+  gerar(
+    dados: DadosMaterial
+  ): Promise<ResultadoMaterial>;
+}
+
+===== MATERIAL BUILDER =====
+import "server-only";
+
+import {
+  PDFDocument,
+  StandardFonts,
+  rgb,
+  type PDFPage,
+  type PDFFont,
+  type RGB,
+} from "pdf-lib";
+
+import QRCode from "qrcode";
+
+import type {
+  DadosMaterial,
+  ResultadoMaterial,
+} from "./MaterialTypes";
+
+export type TamanhoPaginaMaterial =
+  | "a4-retrato"
+  | "a4-paisagem"
+  | "a5-retrato"
+  | "a5-paisagem"
+  | "30x20-paisagem";
+
+export type ConfiguracaoPaginaMaterial = {
+  tamanho:
+    TamanhoPaginaMaterial;
+
+  largura: number;
+
+  altura: number;
+};
+
+export type FontesMaterial = {
+  normal:
+    PDFFont;
+
+  negrito:
+    PDFFont;
+};
+
+export type CoresMaterial = {
+  primaria:
+    RGB;
+
+  secundaria:
+    RGB;
+
+  texto:
+    RGB;
+
+  fundo:
+    RGB;
+
+  branco:
+    RGB;
+
+  cinza:
+    RGB;
+};
+
+export type ContextoMaterial = {
+  pdf:
+    PDFDocument;
+
+  pagina:
+    PDFPage;
+
+  configuracao:
+    ConfiguracaoPaginaMaterial;
+
+  fontes:
+    FontesMaterial;
+
+  cores:
+    CoresMaterial;
+
+  qrPng:
+    Uint8Array;
+};
+
+export type DesenhadorMaterial = (
+  contexto:
+    ContextoMaterial,
+  dados:
+    DadosMaterial
+) => Promise<void> | void;
+
+const TAMANHOS_PAGINA: Record<
+  TamanhoPaginaMaterial,
+  ConfiguracaoPaginaMaterial
+> = {
+  "a4-retrato": {
+    tamanho:
+      "a4-retrato",
+
+    largura:
+      595.28,
+
+    altura:
+      841.89,
+  },
+
+  "a4-paisagem": {
+    tamanho:
+      "a4-paisagem",
+
+    largura:
+      841.89,
+
+    altura:
+      595.28,
+  },
+
+  "a5-retrato": {
+    tamanho:
+      "a5-retrato",
+
+    largura:
+      419.53,
+
+    altura:
+      595.28,
+  },
+
+  "a5-paisagem": {
+    tamanho:
+      "a5-paisagem",
+
+    largura:
+      595.28,
+
+    altura:
+      419.53,
+  },
+  "30x20-paisagem": {
+    tamanho:
+      "30x20-paisagem",
+
+    largura:
+      850.393701,
+
+    altura:
+      566.929134,
+  },
+};
+
+function converterHexParaRgb(
+  valor:
+    string | undefined,
+  fallback:
+    [number, number, number]
+): RGB {
+  if (!valor) {
+    return rgb(
+      fallback[0],
+      fallback[1],
+      fallback[2]
+    );
+  }
+
+  const normalizado =
+    valor
+      .trim()
+      .replace(
+        "#",
+        ""
+      );
+
+  if (
+    !/^[0-9a-fA-F]{6}$/.test(
+      normalizado
+    )
+  ) {
+    return rgb(
+      fallback[0],
+      fallback[1],
+      fallback[2]
+    );
+  }
+
+  const vermelho =
+    Number.parseInt(
+      normalizado.slice(
+        0,
+        2
+      ),
+      16
+    ) / 255;
+
+  const verde =
+    Number.parseInt(
+      normalizado.slice(
+        2,
+        4
+      ),
+      16
+    ) / 255;
+
+  const azul =
+    Number.parseInt(
+      normalizado.slice(
+        4,
+        6
+      ),
+      16
+    ) / 255;
+
+  return rgb(
+    vermelho,
+    verde,
+    azul
+  );
+}
+
+function criarCores(
+  dados:
+    DadosMaterial
+): CoresMaterial {
+  return {
+    primaria:
+      converterHexParaRgb(
+        dados.corPrimaria,
+        [
+          0.03,
+          0.1,
+          0.22,
+        ]
+      ),
+
+    secundaria:
+      converterHexParaRgb(
+        dados.corSecundaria,
+        [
+          0.06,
+          0.36,
+          0.78,
+        ]
+      ),
+
+    texto:
+      converterHexParaRgb(
+        dados.corTexto,
+        [
+          0.05,
+          0.09,
+          0.16,
+        ]
+      ),
+
+    fundo:
+      rgb(
+        0.97,
+        0.98,
+        1
+      ),
+
+    branco:
+      rgb(
+        1,
+        1,
+        1
+      ),
+
+    cinza:
+      rgb(
+        0.35,
+        0.4,
+        0.48
+      ),
+  };
+}
+
+function validarDadosMaterial(
+  dados:
+    DadosMaterial
+): void {
+  if (
+    !dados.localId.trim()
+  ) {
+    throw new Error(
+      "O ID do local não foi informado para gerar o material."
+    );
+  }
+
+  if (
+    !dados.nome.trim()
+  ) {
+    throw new Error(
+      "O nome do local não foi informado para gerar o material."
+    );
+  }
+
+  if (
+    !dados.slug.trim()
+  ) {
+    throw new Error(
+      "O slug do local não foi informado para gerar o material."
+    );
+  }
+
+  if (
+    !dados.urlQr.trim()
+  ) {
+    throw new Error(
+      "A URL do QR não foi informada para gerar o material."
+    );
+  }
+}
+
+function normalizarNomeArquivo(
+  valor:
+    string
+): string {
+  return (
+    valor
+      .trim()
+      .toLowerCase()
+      .normalize(
+        "NFD"
+      )
+      .replace(
+        /[\u0300-\u036f]/g,
+        ""
+      )
+      .replace(
+        /[^a-z0-9-_]/g,
+        "-"
+      )
+      .replace(
+        /-+/g,
+        "-"
+      )
+      .replace(
+        /^-|-$/g,
+        ""
+      ) ||
+    "material"
+  );
+}
+
+async function gerarQrPng(
+  dados:
+    DadosMaterial
+): Promise<Uint8Array> {
+  if (
+    dados.qrBase64
+  ) {
+    const limpo =
+      dados.qrBase64.replace(
+        /^data:image\/png;base64,/,
+        ""
+      );
+
+    return new Uint8Array(
+      Buffer.from(
+        limpo,
+        "base64"
+      )
+    );
+  }
+
+  const buffer =
+    await QRCode.toBuffer(
+      dados.urlQr,
+      {
+        type:
+          "png",
+
+        errorCorrectionLevel:
+          "H",
+
+        margin:
+          3,
+
+        width:
+          1200,
+
+        color: {
+          dark:
+            "#000000",
+
+          light:
+            "#FFFFFF",
+        },
+      }
+    );
+
+  return new Uint8Array(
+    buffer
+  );
+}
+
+export function obterConfiguracaoPagina(
+  tamanho:
+    TamanhoPaginaMaterial
+): ConfiguracaoPaginaMaterial {
+  return {
+    ...TAMANHOS_PAGINA[
+      tamanho
+    ],
+  };
+}
+
+export function centralizarTexto(
+  larguraPagina:
+    number,
+  larguraTexto:
+    number
+): number {
+  return (
+    larguraPagina -
+    larguraTexto
+  ) / 2;
+}
+
+export function limitarTexto(
+  texto:
+    string,
+  limite:
+    number
+): string {
+  const valor =
+    texto.trim();
+
+  if (
+    valor.length <=
+    limite
+  ) {
+    return valor;
+  }
+
+  return (
+    valor.slice(
+      0,
+      Math.max(
+        limite - 3,
+        0
+      )
+    ) + "..."
+  );
+}
+
+export async function criarMaterialPdf(
+  parametros: {
+    dados:
+      DadosMaterial;
+
+    tamanho:
+      TamanhoPaginaMaterial;
+
+    nomeArquivo:
+      string;
+
+    desenhar:
+      DesenhadorMaterial;
+  }
+): Promise<ResultadoMaterial> {
+  validarDadosMaterial(
+    parametros.dados
+  );
+
+  const configuracao =
+    obterConfiguracaoPagina(
+      parametros.tamanho
+    );
+
+  const pdf =
+    await PDFDocument.create();
+
+  const pagina =
+    pdf.addPage([
+      configuracao.largura,
+      configuracao.altura,
+    ]);
+
+  const fontes:
+    FontesMaterial = {
+      normal:
+        await pdf.embedFont(
+          StandardFonts.Helvetica
+        ),
+
+      negrito:
+        await pdf.embedFont(
+          StandardFonts.HelveticaBold
+        ),
+    };
+
+  const qrPng =
+    await gerarQrPng(
+      parametros.dados
+    );
+
+  const contexto:
+    ContextoMaterial = {
+      pdf,
+
+      pagina,
+
+      configuracao,
+
+      fontes,
+
+      cores:
+        criarCores(
+          parametros.dados
+        ),
+
+      qrPng,
+    };
+
+  await parametros.desenhar(
+    contexto,
+    parametros.dados
+  );
+
+  const bytes =
+    await pdf.save();
+
+  return {
+    nomeArquivo:
+      `${normalizarNomeArquivo(
+        parametros.nomeArquivo
+      )}.pdf`,
+
+    mimeType:
+      "application/pdf",
+
+    bytes:
+      new Uint8Array(
+        bytes
+      ),
+  };
+}
+
+===== CONDOMINIO A4 =====
+import "server-only";
+
+import {
+  readFile,
+} from "node:fs/promises";
+
+import {
+  join,
+} from "node:path";
+
+import {
+  rgb,
+} from "pdf-lib";
+
+import type {
+  DadosMaterial,
+  ResultadoMaterial,
+  TemplateMaterial,
+} from "../MaterialTypes";
+
+import {
+  criarMaterialPdf,
+} from "../MaterialBuilder";
+
+const CAMINHO_PLACA_PADRAO = join(
+  process.cwd(),
+  "public",
+  "materiais",
+  "condominio",
+  "placa-condominio-padrao.png"
+);
+
+function obterNomeDestaque(
+  nomeRecebido: string
+): string {
+  return nomeRecebido
+    .trim()
+    .replace(
+      /\s+/g,
+      " "
+    )
+    .toUpperCase();
+}
+
+const template: TemplateMaterial = {
+  async gerar(
+    dados: DadosMaterial
+  ): Promise<ResultadoMaterial> {
+    return criarMaterialPdf({
+      dados,
+
+      tamanho:
+        "30x20-paisagem",
+
+      nomeArquivo:
+        `placa-condominio-${dados.slug}`,
+
+      async desenhar(
+        contexto,
+        dadosMaterial
+      ) {
+        const {
+          pagina,
+          configuracao,
+          fontes,
+          pdf,
+          qrPng,
+        } = contexto;
+
+        const bytesPlaca =
+          await readFile(
+            CAMINHO_PLACA_PADRAO
+          );
+
+        const placa =
+          await pdf.embedPng(
+            bytesPlaca
+          );
+
+        const larguraPagina =
+          configuracao.largura;
+
+        const alturaPagina =
+          configuracao.altura;
+
+        /*
+         * Desenha a arte-base.
+         */
+        pagina.drawImage(
+          placa,
+          {
+            x:
+              0,
+
+            y:
+              0,
+
+            width:
+              larguraPagina,
+
+            height:
+              alturaPagina,
+          }
+        );
+
+        /*
+         * ==========================
+         * ÁREA DO QR
+         * CONFIGURAÇÃO APROVADA
+         * ==========================
+         */
+
+        const areaQr = {
+          tamanho:
+            larguraPagina *
+            0.145,
+
+          x:
+            larguraPagina *
+            0.035,
+
+          y:
+            alturaPagina *
+            0.390,
+        };
+
+        const imagemQr =
+          await pdf.embedPng(
+            qrPng
+          );
+
+        pagina.drawImage(
+          imagemQr,
+          {
+            x:
+              areaQr.x,
+
+            y:
+              areaQr.y,
+
+            width:
+              areaQr.tamanho,
+
+            height:
+              areaQr.tamanho,
+          }
+        );
+
+        /*
+         * ==========================
+         * ÁREA DO NOME
+         * ==========================
+         */
+
+        const areaNome = {
+          x:
+            larguraPagina *
+            0.255,
+
+          y:
+            alturaPagina *
+            0.709,
+
+          largura:
+            larguraPagina *
+            0.475,
+
+          altura:
+            alturaPagina *
+            0.082,
+        };
+
+        const nome =
+          obterNomeDestaque(
+            dadosMaterial.nome
+          );
+
+        /*
+         * Procura automaticamente o maior tamanho
+         * de fonte que cabe dentro da moldura.
+         */
+        const tamanhoMaximo =
+          32;
+
+        const tamanhoMinimo =
+          12;
+
+        const passoReducao =
+          0.2;
+
+        const margemHorizontal =
+          larguraPagina *
+          0.012;
+
+        const larguraDisponivel =
+          areaNome.largura -
+          margemHorizontal *
+          2;
+
+        let tamanhoNome =
+          tamanhoMaximo;
+
+        let larguraNome =
+          fontes.negrito
+            .widthOfTextAtSize(
+              nome,
+              tamanhoNome
+            );
+
+        while (
+          larguraNome >
+            larguraDisponivel &&
+          tamanhoNome >
+            tamanhoMinimo
+        ) {
+          tamanhoNome -=
+            passoReducao;
+
+          larguraNome =
+            fontes.negrito
+              .widthOfTextAtSize(
+                nome,
+                tamanhoNome
+              );
+        }
+
+        /*
+         * Proteção para impedir valor quebrado
+         * por arredondamento de ponto flutuante.
+         */
+        tamanhoNome =
+          Math.max(
+            tamanhoMinimo,
+            Number(
+              tamanhoNome.toFixed(
+                2
+              )
+            )
+          );
+
+        larguraNome =
+          fontes.negrito
+            .widthOfTextAtSize(
+              nome,
+              tamanhoNome
+            );
+
+        /*
+         * Centralização horizontal automática.
+         */
+        const xNome =
+          areaNome.x +
+          (
+            areaNome.largura -
+            larguraNome
+          ) / 2;
+
+        /*
+         * Centralização vertical aprovada.
+         */
+        const yNome =
+          areaNome.y +
+          (
+            areaNome.altura -
+            tamanhoNome
+          ) / 1.5 -
+          1;
+
+        const corNome =
+          rgb(
+            0.00,
+            0.42,
+            0.18
+          );
+
+        /*
+         * Camadas para efeito Extra Bold.
+         */
+        const deslocamentos = [
+          {
+            x:
+              0,
+
+            y:
+              0,
+          },
+
+          {
+            x:
+              0.18,
+
+            y:
+              0,
+          },
+
+          {
+            x:
+              -0.18,
+
+            y:
+              0,
+          },
+
+          {
+            x:
+              0,
+
+            y:
+              0.15,
+          },
+        ];
+
+        for (
+          const deslocamento of
+            deslocamentos
+        ) {
+          pagina.drawText(
+            nome,
+            {
+              x:
+                xNome +
+                deslocamento.x,
+
+              y:
+                yNome +
+                deslocamento.y,
+
+              size:
+                tamanhoNome,
+
+              font:
+                fontes.negrito,
+
+              color:
+                corNome,
+            }
+          );
+        }
+      },
+    });
+  },
+};
+
+export default template;
+
+===== RESIDENCIA A4 =====
+import "server-only";
+
+import {
+  readFile,
+} from "node:fs/promises";
+
+import {
+  join,
+} from "node:path";
+
+import type {
+  DadosMaterial,
+  ResultadoMaterial,
+  TemplateMaterial,
+} from "../MaterialTypes";
+
+import {
+  centralizarTexto,
+  criarMaterialPdf,
+  limitarTexto,
+} from "../MaterialBuilder";
+
+const CAMINHO_PLACA_PADRAO =
+  join(
+    process.cwd(),
+    "public",
+    "materiais",
+    "residencia",
+    "placa-residencia-padrao.png"
+  );
+
+function obterNomeDestaque(
+  nomeRecebido: string
+): string {
+  const nome =
+    nomeRecebido
+      .trim()
+      .replace(
+        /\s+/g,
+        " "
+      );
+
+  const encontrado =
+    nome.match(
+      /^residencial\s+(.+)$/i
+    );
+
+  return limitarTexto(
+    encontrado?.[1]
+      ? encontrado[1].toUpperCase()
+      : nome.toUpperCase(),
+    22
+  );
+}
+
+function calcularTamanhoNome(
+  nome: string
+): number {
+  if (
+    nome.length <= 9
+  ) {
+    return 56;
+  }
+
+  if (
+    nome.length <= 13
+  ) {
+    return 47;
+  }
+
+  if (
+    nome.length <= 17
+  ) {
+    return 39;
+  }
+
+  return 32;
+}
+
+const template:
+  TemplateMaterial = {
+    async gerar(
+      dados: DadosMaterial
+    ): Promise<ResultadoMaterial> {
+      return criarMaterialPdf({
+        dados,
+
+        tamanho:
+          "a4-retrato",
+
+        nomeArquivo:
+          `placa-residencia-${dados.slug}`,
+
+        async desenhar(
+          contexto,
+          dadosMaterial
+        ) {
+          const {
+            pagina,
+            configuracao,
+            fontes,
+            cores,
+            pdf,
+            qrPng,
+          } = contexto;
+
+          const bytesPlaca =
+            await readFile(
+              CAMINHO_PLACA_PADRAO
+            );
+
+          const placa =
+            await pdf.embedPng(
+              bytesPlaca
+            );
+
+          const larguraPagina =
+            configuracao.largura;
+
+          const alturaPagina =
+            configuracao.altura;
+
+          /*
+           * Mantém a proporção original da arte e
+           * encaixa a placa inteira dentro do A4.
+           */
+          const alturaPlaca =
+            alturaPagina -
+            8;
+
+          const larguraPlaca =
+            alturaPlaca *
+            (
+              placa.width /
+              placa.height
+            );
+
+          const xPlaca =
+            (
+              larguraPagina -
+              larguraPlaca
+            ) / 2;
+
+          const yPlaca =
+            (
+              alturaPagina -
+              alturaPlaca
+            ) / 2;
+
+          pagina.drawImage(
+            placa,
+            {
+              x:
+                xPlaca,
+
+              y:
+                yPlaca,
+
+              width:
+                larguraPlaca,
+
+              height:
+                alturaPlaca,
+            }
+          );
+
+          /*
+           * O template já possui o espaço do nome limpo.
+           * Aqui apenas escrevemos o nome real do local.
+           */
+          const nome =
+            obterNomeDestaque(
+              dadosMaterial.nome
+            );
+
+          const tamanhoNome =
+            calcularTamanhoNome(
+              nome
+            );
+
+          const larguraNome =
+            fontes.negrito
+              .widthOfTextAtSize(
+                nome,
+                tamanhoNome
+              );
+
+          pagina.drawText(
+            nome,
+            {
+              x:
+                centralizarTexto(
+                  larguraPagina,
+                  larguraNome
+                ),
+
+              y:
+                yPlaca +
+                alturaPlaca *
+                  0.780,
+
+              size:
+                tamanhoNome,
+
+              font:
+                fontes.negrito,
+
+              color:
+                cores.primaria,
+            }
+          );
+
+          /*
+           * O template já possui a moldura do QR vazia.
+           * Aqui colocamos apenas o QR verdadeiro,
+           * preservando uma margem interna.
+           */
+          const tamanhoQr =
+            larguraPlaca *
+            0.335;
+
+          const xQr =
+            xPlaca +
+            (
+              larguraPlaca -
+              tamanhoQr
+            ) / 1.95;
+
+          const yQr =
+  yPlaca +
+  alturaPlaca *
+      0.435;
+
+          const imagemQr =
+            await pdf.embedPng(
+              qrPng
+            );
+
+          pagina.drawImage(
+            imagemQr,
+            {
+              x:
+                xQr,
+
+              y:
+                yQr,
+
+              width:
+                tamanhoQr,
+
+              height:
+                tamanhoQr,
+            }
+          );
+        },
+      });
+    },
+  };
+
+export default template;
+
+

@@ -350,6 +350,8 @@ export function AuthProvider({
       ]
     );
 
+
+
   const vinculoSelecionado =
     useMemo(
       () => {

@@ -171,13 +171,13 @@ export function resolverPainelInicial({
   }
 
   if (
-    possuiPerfil(
-      vinculo,
-      "sindico"
-    )
-  ) {
-    return "/dashboard/sindico";
-  }
+  possuiPerfil(
+    vinculo,
+    "sindico"
+  )
+) {
+  return "/dashboard/condominio";
+}
 
   if (
     possuiPerfil(
@@ -206,29 +206,63 @@ export function resolverPainelInicial({
     return "/painel-central-v2";
   }
 
+if (
+possuiPerfil(
+vinculo,
+"morador"
+)
+) {
+if (
+tipoLocal ===
+"condominio"
+) {
+return "/dashboard/morador";
+}
+
+if (
+tipoLocal ===
+"residencia"
+) {
+return "/dashboard/morador";
+}
+
+const unidadeId =
+obterPrimeiraUnidade(
+vinculo
+);
+
+if (unidadeId) {
+return `/morador-v2/${encodeURIComponent(
+unidadeId
+)}`;
+}
+
+return rotaPrimeiroModulo(
+modulosPermitidos
+);
+}
+
   if (
-    possuiPerfil(
-      vinculo,
-      "morador"
-    )
-  ) {
-    const unidadeId =
-      obterPrimeiraUnidade(
-        vinculo
-      );
+possuiPerfil(
+vinculo,
+"proprietario"
+) ||
+possuiPerfil(
+vinculo,
+"responsavel"
+)
+) {
+if (
+tipoLocal ===
+"residencia"
+) {
+return "/dashboard/morador";
+}
 
-    if (unidadeId) {
-      return `/morador-v2/${encodeURIComponent(
-        unidadeId
-      )}`;
-    }
+return "/dashboard/condominio";
+}
 
-    return rotaPrimeiroModulo(
-      modulosPermitidos
-    );
-  }
-
-  if (
+if (
     possuiPerfil(
       vinculo,
       "gestor_local"

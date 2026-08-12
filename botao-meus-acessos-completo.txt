@@ -1,0 +1,125 @@
+﻿  }
+}
+
+export default function BotaoMeusAcessos({
+  className,
+}: BotaoMeusAcessosProps) {
+  const router = useRouter();
+
+  const [aberto, setAberto] =
+    useState(false);
+
+  const referencia =
+    useRef<HTMLDivElement | null>(null);
+
+  const {
+    perfilAtivo,
+    perfisDisponiveis,
+    selecionarPerfil,
+  } = usePerfilAtivo();
+
+  const {
+    vinculoSelecionado,
+  } = useAuth();
+
+  useEffect(() => {
+    function fecharAoClicarFora(
+      evento: MouseEvent
+    ) {
+      if (
+        referencia.current &&
+        !referencia.current.contains(
+          evento.target as Node
+        )
+      ) {
+        setAberto(false);
+      }
+    }
+
+    function fecharComEsc(
+      evento: KeyboardEvent
+    ) {
+      if (
+        evento.key === "Escape"
+      ) {
+        setAberto(false);
+      }
+    }
+
+    document.addEventListener(
+      "mousedown",
+      fecharAoClicarFora
+    );
+
+    window.addEventListener(
+      "keydown",
+      fecharComEsc
+    );
+
+    return () => {
+      document.removeEventListener(
+        "mousedown",
+        fecharAoClicarFora
+      );
+
+      window.removeEventListener(
+        "keydown",
+        fecharComEsc
+      );
+    };
+  }, []);
+
+  if (
+    perfisDisponiveis.length <= 1
+  ) {
+    return null;
+  }
+
+  function trocarPerfil(
+    perfil: string
+  ) {
+    const normalizado =
+      normalizarPerfil(
+        perfil
+      );
+
+    selecionarPerfil(
+      normalizado
+    );
+
+    setAberto(false);
+
+    switch (
+      normalizado
+    ) {
+      case "administrador_master":
+        router.push(
+          "/dashboard"
+        );
+        return;
+
+      case "morador":
+      case "inquilino":
+        router.push(
+          "/dashboard/morador"
+        );
+        return;
+
+      case "sindico":
+        router.push(
+          "/dashboard/sindico"
+        );
+        return;
+
+      case "financeiro":
+        router.push(
+          "/dashboard/financeiro"
+        );
+        return;
+
+      case "central":
+        router.push(
+          "/dashboard/central-inteligente"
+        );
+        return;
+

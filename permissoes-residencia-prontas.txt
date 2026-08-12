@@ -1,0 +1,614 @@
+﻿
+  app\api\residencia\acessos-temporarios\route.ts:404:      permissoes: {
+  app\api\residencia\acessos-temporarios\route.ts:405:        abrirPortao:
+  app\api\residencia\acessos-temporarios\route.ts:406:          corpo.permissoes
+  app\api\residencia\acessos-temporarios\route.ts:407:            ?.abrirPortao ===
+  app\api\residencia\acessos-temporarios\route.ts:408:          true,
+  app\api\residencia\acessos-temporarios\route.ts:409:
+> app\api\residencia\acessos-temporarios\route.ts:410:        visualizarCameras:
+  app\api\residencia\acessos-temporarios\route.ts:411:          corpo.permissoes
+> app\api\residencia\acessos-temporarios\route.ts:412:            ?.visualizarCameras ===
+  app\api\residencia\acessos-temporarios\route.ts:413:          true,
+  app\api\residencia\acessos-temporarios\route.ts:414:
+> app\api\residencia\acessos-temporarios\route.ts:415:        controlarAlarme:
+  app\api\residencia\acessos-temporarios\route.ts:416:          corpo.permissoes
+> app\api\residencia\acessos-temporarios\route.ts:417:            ?.controlarAlarme ===
+  app\api\residencia\acessos-temporarios\route.ts:418:          true,
+  app\api\residencia\acessos-temporarios\route.ts:419:      },
+  app\api\residencia\acessos-temporarios\route.ts:420:
+  app\api\residencia\acessos-temporarios\route.ts:421:      ativo:
+  app\api\residencia\acessos-temporarios\route.ts:422:        true,
+  app\api\residencia\acessos-temporarios\route.ts:423:
+  app\api\residencia\acessos-temporarios\route.ts:424:      criadoPor:
+  app\api\residencia\acessos-temporarios\route.ts:425:        gestor.uid,
+  app\api\residencia\acessos-temporarios\route.ts:426:
+  app\api\residencia\acessos-temporarios\route.ts:427:      criadoEm:
+  app\api\residencia\acessos-temporarios\route.ts:428:        agora,
+  app\api\residencia\acessos-temporarios\route.ts:429:
+  app\api\residencia\acessos-temporarios\route.ts:430:      atualizadoEm:
+  app\api\residencia\acessos-temporarios\route.ts:431:        agora,
+  app\api\residencia\acessos-temporarios\route.ts:432:    };
+  app\api\residencia\familia\route.ts:22:  telefone?: string;
+  app\api\residencia\familia\route.ts:23:  cpf?: string;
+  app\api\residencia\familia\route.ts:24:
+  app\api\residencia\familia\route.ts:25:  permissoes?: {
+  app\api\residencia\familia\route.ts:26:    receberChamadas?: boolean;
+  app\api\residencia\familia\route.ts:27:    abrirPortao?: boolean;
+> app\api\residencia\familia\route.ts:28:    visualizarCameras?: boolean;
+> app\api\residencia\familia\route.ts:29:    controlarAlarme?: boolean;
+  app\api\residencia\familia\route.ts:30:  };
+  app\api\residencia\familia\route.ts:31:};
+  app\api\residencia\familia\route.ts:32:
+  app\api\residencia\familia\route.ts:33:type VinculoBanco = {
+  app\api\residencia\familia\route.ts:34:  localId?: string;
+  app\api\residencia\familia\route.ts:35:  localNome?: string;
+  app\api\residencia\familia\route.ts:36:  localSlug?: string;
+  app\api\residencia\familia\route.ts:37:  tipoLocal?: string;
+  app\api\residencia\familia\route.ts:38:
+  app\api\residencia\familia\route.ts:39:  perfilPrincipal?: string;
+  app\api\residencia\familia\route.ts:40:
+  app\api\residencia\familia\route.ts:41:  perfis?: Record<
+  app\api\residencia\familia\route.ts:42:    string,
+  app\api\residencia\familia\route.ts:43:    boolean
+  app\api\residencia\familia\route.ts:44:  >;
+  app\api\residencia\familia\route.ts:252:
+  app\api\residencia\familia\route.ts:253:    abrirPortao:
+  app\api\residencia\familia\route.ts:254:      permissoes
+  app\api\residencia\familia\route.ts:255:        ?.abrirPortao ===
+  app\api\residencia\familia\route.ts:256:      true,
+  app\api\residencia\familia\route.ts:257:
+> app\api\residencia\familia\route.ts:258:    visualizarCameras:
+  app\api\residencia\familia\route.ts:259:      permissoes
+> app\api\residencia\familia\route.ts:260:        ?.visualizarCameras ===
+  app\api\residencia\familia\route.ts:261:      true,
+  app\api\residencia\familia\route.ts:262:
+> app\api\residencia\familia\route.ts:263:    controlarAlarme:
+  app\api\residencia\familia\route.ts:264:      permissoes
+> app\api\residencia\familia\route.ts:265:        ?.controlarAlarme ===
+  app\api\residencia\familia\route.ts:266:      true,
+  app\api\residencia\familia\route.ts:267:
+  app\api\residencia\familia\route.ts:268:    gerenciarMoradores:
+  app\api\residencia\familia\route.ts:269:      false,
+  app\api\residencia\familia\route.ts:270:
+  app\api\residencia\familia\route.ts:271:    gerenciarConfiguracoes:
+  app\api\residencia\familia\route.ts:272:      false,
+  app\api\residencia\familia\route.ts:273:  };
+  app\api\residencia\familia\route.ts:274:}
+  app\api\residencia\familia\route.ts:275:
+  app\api\residencia\familia\route.ts:276:export async function GET(
+  app\api\residencia\familia\route.ts:277:  request: NextRequest
+  app\api\residencia\familia\route.ts:278:) {
+  app\api\residencia\familia\route.ts:279:  try {
+  app\api\residencia\familia\route.ts:280:    const localId =
+  app\api\residencia\familia\route.ts:736:      (await request.json()) as {
+  app\api\residencia\familia\route.ts:737:        localId?: string;
+  app\api\residencia\familia\route.ts:738:        uid?: string;
+  app\api\residencia\familia\route.ts:739:        permissoes?: {
+  app\api\residencia\familia\route.ts:740:          receberChamadas?: boolean;
+  app\api\residencia\familia\route.ts:741:          abrirPortao?: boolean;
+> app\api\residencia\familia\route.ts:742:          visualizarCameras?: boolean;
+> app\api\residencia\familia\route.ts:743:          controlarAlarme?: boolean;
+  app\api\residencia\familia\route.ts:744:        };
+  app\api\residencia\familia\route.ts:745:      };
+  app\api\residencia\familia\route.ts:746:
+  app\api\residencia\familia\route.ts:747:    const localId =
+  app\api\residencia\familia\route.ts:748:      texto(
+  app\api\residencia\familia\route.ts:749:        corpo.localId
+  app\api\residencia\familia\route.ts:750:      );
+  app\api\residencia\familia\route.ts:751:
+  app\api\residencia\familia\route.ts:752:    const uid =
+  app\api\residencia\familia\route.ts:753:      texto(
+  app\api\residencia\familia\route.ts:754:        corpo.uid
+  app\api\residencia\familia\route.ts:755:      );
+  app\api\residencia\familia\route.ts:756:
+  app\api\residencia\familia\route.ts:757:    if (!localId) {
+  app\api\residencia\familia\route.ts:758:      throw new Error(
+  app\dashboard\condominio\FamiliaResidencia.tsx:13:  enviarRecuperacaoSenha,
+  app\dashboard\condominio\FamiliaResidencia.tsx:14:} from "@/app/services/auth/auth";
+  app\dashboard\condominio\FamiliaResidencia.tsx:15:
+  app\dashboard\condominio\FamiliaResidencia.tsx:16:type PermissoesPessoa = {
+  app\dashboard\condominio\FamiliaResidencia.tsx:17:  receberChamadas?: boolean;
+  app\dashboard\condominio\FamiliaResidencia.tsx:18:  abrirPortao?: boolean;
+> app\dashboard\condominio\FamiliaResidencia.tsx:19:  visualizarCameras?: boolean;
+> app\dashboard\condominio\FamiliaResidencia.tsx:20:  controlarAlarme?: boolean;
+  app\dashboard\condominio\FamiliaResidencia.tsx:21:};
+  app\dashboard\condominio\FamiliaResidencia.tsx:22:
+  app\dashboard\condominio\FamiliaResidencia.tsx:23:type PessoaFamilia = {
+  app\dashboard\condominio\FamiliaResidencia.tsx:24:  uid: string;
+  app\dashboard\condominio\FamiliaResidencia.tsx:25:  nome: string;
+  app\dashboard\condominio\FamiliaResidencia.tsx:26:  email: string;
+  app\dashboard\condominio\FamiliaResidencia.tsx:27:  telefone?: string;
+  app\dashboard\condominio\FamiliaResidencia.tsx:28:  perfilPrincipal?: string;
+  app\dashboard\condominio\FamiliaResidencia.tsx:29:  permissoes?: PermissoesPessoa;
+  app\dashboard\condominio\FamiliaResidencia.tsx:30:  ativo?: boolean;
+  app\dashboard\condominio\FamiliaResidencia.tsx:31:};
+  app\dashboard\condominio\FamiliaResidencia.tsx:32:
+  app\dashboard\condominio\FamiliaResidencia.tsx:33:type Props = {
+  app\dashboard\condominio\FamiliaResidencia.tsx:34:  localId: string;
+  app\dashboard\condominio\FamiliaResidencia.tsx:35:  localNome: string;
+  app\dashboard\condominio\FamiliaResidencia.tsx:87:  const [
+  app\dashboard\condominio\FamiliaResidencia.tsx:88:    permissaoAbrirPortao,
+  app\dashboard\condominio\FamiliaResidencia.tsx:89:    setPermissaoAbrirPortao,
+  app\dashboard\condominio\FamiliaResidencia.tsx:90:  ] = useState(false);
+  app\dashboard\condominio\FamiliaResidencia.tsx:91:
+  app\dashboard\condominio\FamiliaResidencia.tsx:92:  const [
+> app\dashboard\condominio\FamiliaResidencia.tsx:93:    permissaoVisualizarCameras,
+> app\dashboard\condominio\FamiliaResidencia.tsx:94:    setPermissaoVisualizarCameras,
+  app\dashboard\condominio\FamiliaResidencia.tsx:95:  ] = useState(false);
+  app\dashboard\condominio\FamiliaResidencia.tsx:96:
+  app\dashboard\condominio\FamiliaResidencia.tsx:97:  const [
+> app\dashboard\condominio\FamiliaResidencia.tsx:98:    permissaoControlarAlarme,
+> app\dashboard\condominio\FamiliaResidencia.tsx:99:    setPermissaoControlarAlarme,
+  app\dashboard\condominio\FamiliaResidencia.tsx:100:  ] = useState(false);
+  app\dashboard\condominio\FamiliaResidencia.tsx:101:
+  app\dashboard\condominio\FamiliaResidencia.tsx:102:  const [
+  app\dashboard\condominio\FamiliaResidencia.tsx:103:    nome,
+  app\dashboard\condominio\FamiliaResidencia.tsx:104:    setNome,
+  app\dashboard\condominio\FamiliaResidencia.tsx:105:  ] =
+  app\dashboard\condominio\FamiliaResidencia.tsx:106:    useState("");
+  app\dashboard\condominio\FamiliaResidencia.tsx:107:
+  app\dashboard\condominio\FamiliaResidencia.tsx:108:  const [
+  app\dashboard\condominio\FamiliaResidencia.tsx:109:    email,
+  app\dashboard\condominio\FamiliaResidencia.tsx:110:    setEmail,
+  app\dashboard\condominio\FamiliaResidencia.tsx:111:  ] =
+  app\dashboard\condominio\FamiliaResidencia.tsx:112:    useState("");
+  app\dashboard\condominio\FamiliaResidencia.tsx:113:
+  app\dashboard\condominio\FamiliaResidencia.tsx:114:  const [
+  app\dashboard\condominio\FamiliaResidencia.tsx:133:    abrirPortao,
+  app\dashboard\condominio\FamiliaResidencia.tsx:134:    setAbrirPortao,
+  app\dashboard\condominio\FamiliaResidencia.tsx:135:  ] =
+  app\dashboard\condominio\FamiliaResidencia.tsx:136:    useState(false);
+  app\dashboard\condominio\FamiliaResidencia.tsx:137:
+  app\dashboard\condominio\FamiliaResidencia.tsx:138:  const [
+> app\dashboard\condominio\FamiliaResidencia.tsx:139:    visualizarCameras,
+> app\dashboard\condominio\FamiliaResidencia.tsx:140:    setVisualizarCameras,
+  app\dashboard\condominio\FamiliaResidencia.tsx:141:  ] =
+  app\dashboard\condominio\FamiliaResidencia.tsx:142:    useState(false);
+  app\dashboard\condominio\FamiliaResidencia.tsx:143:
+  app\dashboard\condominio\FamiliaResidencia.tsx:144:  const [
+> app\dashboard\condominio\FamiliaResidencia.tsx:145:    controlarAlarme,
+> app\dashboard\condominio\FamiliaResidencia.tsx:146:    setControlarAlarme,
+  app\dashboard\condominio\FamiliaResidencia.tsx:147:  ] =
+  app\dashboard\condominio\FamiliaResidencia.tsx:148:    useState(false);
+  app\dashboard\condominio\FamiliaResidencia.tsx:149:
+  app\dashboard\condominio\FamiliaResidencia.tsx:150:  async function obterToken() {
+  app\dashboard\condominio\FamiliaResidencia.tsx:151:    const usuario =
+  app\dashboard\condominio\FamiliaResidencia.tsx:152:      getAuth()
+  app\dashboard\condominio\FamiliaResidencia.tsx:153:        .currentUser;
+  app\dashboard\condominio\FamiliaResidencia.tsx:154:
+  app\dashboard\condominio\FamiliaResidencia.tsx:155:    if (!usuario) {
+  app\dashboard\condominio\FamiliaResidencia.tsx:156:      throw new Error(
+  app\dashboard\condominio\FamiliaResidencia.tsx:157:        "Sess?o n?o encontrada."
+  app\dashboard\condominio\FamiliaResidencia.tsx:158:      );
+  app\dashboard\condominio\FamiliaResidencia.tsx:159:    }
+  app\dashboard\condominio\FamiliaResidencia.tsx:160:
+  app\dashboard\condominio\FamiliaResidencia.tsx:161:    return usuario
+  app\dashboard\condominio\FamiliaResidencia.tsx:170:
+  app\dashboard\condominio\FamiliaResidencia.tsx:171:      const token =
+  app\dashboard\condominio\FamiliaResidencia.tsx:172:        await obterToken();
+  app\dashboard\condominio\FamiliaResidencia.tsx:173:
+  app\dashboard\condominio\FamiliaResidencia.tsx:174:      const resposta =
+  app\dashboard\condominio\FamiliaResidencia.tsx:175:        await fetch(
+> app\dashboard\condominio\FamiliaResidencia.tsx:176:          `/api/residencia/familia?localId=${encodeURIComponent(
+  app\dashboard\condominio\FamiliaResidencia.tsx:177:            localId
+  app\dashboard\condominio\FamiliaResidencia.tsx:178:          )}`,
+  app\dashboard\condominio\FamiliaResidencia.tsx:179:          {
+  app\dashboard\condominio\FamiliaResidencia.tsx:180:            headers: {
+  app\dashboard\condominio\FamiliaResidencia.tsx:181:              Authorization:
+  app\dashboard\condominio\FamiliaResidencia.tsx:182:                `Bearer ${token}`,
+  app\dashboard\condominio\FamiliaResidencia.tsx:183:            },
+  app\dashboard\condominio\FamiliaResidencia.tsx:184:          }
+  app\dashboard\condominio\FamiliaResidencia.tsx:185:        );
+  app\dashboard\condominio\FamiliaResidencia.tsx:186:
+  app\dashboard\condominio\FamiliaResidencia.tsx:187:      const dados =
+  app\dashboard\condominio\FamiliaResidencia.tsx:188:        await resposta.json();
+  app\dashboard\condominio\FamiliaResidencia.tsx:189:
+  app\dashboard\condominio\FamiliaResidencia.tsx:190:      if (
+  app\dashboard\condominio\FamiliaResidencia.tsx:191:        !resposta.ok ||
+  app\dashboard\condominio\FamiliaResidencia.tsx:230:    );
+  app\dashboard\condominio\FamiliaResidencia.tsx:231:
+  app\dashboard\condominio\FamiliaResidencia.tsx:232:    setPermissaoAbrirPortao(
+  app\dashboard\condominio\FamiliaResidencia.tsx:233:      pessoa.permissoes?.abrirPortao === true
+  app\dashboard\condominio\FamiliaResidencia.tsx:234:    );
+  app\dashboard\condominio\FamiliaResidencia.tsx:235:
+> app\dashboard\condominio\FamiliaResidencia.tsx:236:    setPermissaoVisualizarCameras(
+> app\dashboard\condominio\FamiliaResidencia.tsx:237:      pessoa.permissoes?.visualizarCameras === true
+  app\dashboard\condominio\FamiliaResidencia.tsx:238:    );
+  app\dashboard\condominio\FamiliaResidencia.tsx:239:
+> app\dashboard\condominio\FamiliaResidencia.tsx:240:    setPermissaoControlarAlarme(
+> app\dashboard\condominio\FamiliaResidencia.tsx:241:      pessoa.permissoes?.controlarAlarme === true
+  app\dashboard\condominio\FamiliaResidencia.tsx:242:    );
+  app\dashboard\condominio\FamiliaResidencia.tsx:243:  }
+  app\dashboard\condominio\FamiliaResidencia.tsx:244:
+  app\dashboard\condominio\FamiliaResidencia.tsx:245:  async function salvarEdicao() {
+  app\dashboard\condominio\FamiliaResidencia.tsx:246:    if (
+  app\dashboard\condominio\FamiliaResidencia.tsx:247:      !pessoaEditando ||
+  app\dashboard\condominio\FamiliaResidencia.tsx:248:      salvandoEdicao
+  app\dashboard\condominio\FamiliaResidencia.tsx:249:    ) {
+  app\dashboard\condominio\FamiliaResidencia.tsx:250:      return;
+  app\dashboard\condominio\FamiliaResidencia.tsx:251:    }
+  app\dashboard\condominio\FamiliaResidencia.tsx:252:
+  app\dashboard\condominio\FamiliaResidencia.tsx:253:    try {
+  app\dashboard\condominio\FamiliaResidencia.tsx:254:      setSalvandoEdicao(true);
+  app\dashboard\condominio\FamiliaResidencia.tsx:255:
+  app\dashboard\condominio\FamiliaResidencia.tsx:256:      const token =
+  app\dashboard\condominio\FamiliaResidencia.tsx:257:        await obterToken();
+  app\dashboard\condominio\FamiliaResidencia.tsx:258:
+  app\dashboard\condominio\FamiliaResidencia.tsx:259:      const resposta =
+  app\dashboard\condominio\FamiliaResidencia.tsx:260:        await fetch(
+> app\dashboard\condominio\FamiliaResidencia.tsx:261:          "/api/residencia/familia",
+  app\dashboard\condominio\FamiliaResidencia.tsx:262:          {
+  app\dashboard\condominio\FamiliaResidencia.tsx:263:            method: "PATCH",
+  app\dashboard\condominio\FamiliaResidencia.tsx:264:
+  app\dashboard\condominio\FamiliaResidencia.tsx:265:            headers: {
+  app\dashboard\condominio\FamiliaResidencia.tsx:266:              "Content-Type":
+  app\dashboard\condominio\FamiliaResidencia.tsx:267:                "application/json",
+  app\dashboard\condominio\FamiliaResidencia.tsx:268:
+  app\dashboard\condominio\FamiliaResidencia.tsx:269:              Authorization:
+  app\dashboard\condominio\FamiliaResidencia.tsx:270:                `Bearer ${token}`,
+  app\dashboard\condominio\FamiliaResidencia.tsx:271:            },
+  app\dashboard\condominio\FamiliaResidencia.tsx:272:
+  app\dashboard\condominio\FamiliaResidencia.tsx:273:            body:
+  app\dashboard\condominio\FamiliaResidencia.tsx:274:              JSON.stringify({
+  app\dashboard\condominio\FamiliaResidencia.tsx:275:                localId,
+  app\dashboard\condominio\FamiliaResidencia.tsx:276:
+  app\dashboard\condominio\FamiliaResidencia.tsx:281:                  receberChamadas:
+  app\dashboard\condominio\FamiliaResidencia.tsx:282:                    permissaoReceberChamadas,
+  app\dashboard\condominio\FamiliaResidencia.tsx:283:
+  app\dashboard\condominio\FamiliaResidencia.tsx:284:                  abrirPortao:
+  app\dashboard\condominio\FamiliaResidencia.tsx:285:                    permissaoAbrirPortao,
+  app\dashboard\condominio\FamiliaResidencia.tsx:286:
+> app\dashboard\condominio\FamiliaResidencia.tsx:287:                  visualizarCameras:
+> app\dashboard\condominio\FamiliaResidencia.tsx:288:                    permissaoVisualizarCameras,
+  app\dashboard\condominio\FamiliaResidencia.tsx:289:
+> app\dashboard\condominio\FamiliaResidencia.tsx:290:                  controlarAlarme:
+> app\dashboard\condominio\FamiliaResidencia.tsx:291:                    permissaoControlarAlarme,
+  app\dashboard\condominio\FamiliaResidencia.tsx:292:                },
+  app\dashboard\condominio\FamiliaResidencia.tsx:293:              }),
+  app\dashboard\condominio\FamiliaResidencia.tsx:294:          }
+  app\dashboard\condominio\FamiliaResidencia.tsx:295:        );
+  app\dashboard\condominio\FamiliaResidencia.tsx:296:
+  app\dashboard\condominio\FamiliaResidencia.tsx:297:      const dados =
+  app\dashboard\condominio\FamiliaResidencia.tsx:298:        await resposta.json();
+  app\dashboard\condominio\FamiliaResidencia.tsx:299:
+  app\dashboard\condominio\FamiliaResidencia.tsx:300:      if (
+  app\dashboard\condominio\FamiliaResidencia.tsx:301:        !resposta.ok ||
+  app\dashboard\condominio\FamiliaResidencia.tsx:302:        !dados.sucesso
+  app\dashboard\condominio\FamiliaResidencia.tsx:303:      ) {
+  app\dashboard\condominio\FamiliaResidencia.tsx:304:        throw new Error(
+  app\dashboard\condominio\FamiliaResidencia.tsx:305:          dados.mensagem ||
+  app\dashboard\condominio\FamiliaResidencia.tsx:306:          "Erro ao atualizar permissoes."
+  app\dashboard\condominio\FamiliaResidencia.tsx:339:    try {
+  app\dashboard\condominio\FamiliaResidencia.tsx:340:      const token =
+  app\dashboard\condominio\FamiliaResidencia.tsx:341:        await obterToken();
+  app\dashboard\condominio\FamiliaResidencia.tsx:342:
+  app\dashboard\condominio\FamiliaResidencia.tsx:343:      const resposta =
+  app\dashboard\condominio\FamiliaResidencia.tsx:344:        await fetch(
+> app\dashboard\condominio\FamiliaResidencia.tsx:345:          `/api/residencia/familia?localId=${encodeURIComponent(
+  app\dashboard\condominio\FamiliaResidencia.tsx:346:            localId
+  app\dashboard\condominio\FamiliaResidencia.tsx:347:          )}&uid=${encodeURIComponent(
+  app\dashboard\condominio\FamiliaResidencia.tsx:348:            pessoa.uid
+  app\dashboard\condominio\FamiliaResidencia.tsx:349:          )}`,
+  app\dashboard\condominio\FamiliaResidencia.tsx:350:          {
+  app\dashboard\condominio\FamiliaResidencia.tsx:351:            method: "DELETE",
+  app\dashboard\condominio\FamiliaResidencia.tsx:352:
+  app\dashboard\condominio\FamiliaResidencia.tsx:353:            headers: {
+  app\dashboard\condominio\FamiliaResidencia.tsx:354:              Authorization:
+  app\dashboard\condominio\FamiliaResidencia.tsx:355:                `Bearer ${token}`,
+  app\dashboard\condominio\FamiliaResidencia.tsx:356:            },
+  app\dashboard\condominio\FamiliaResidencia.tsx:357:          }
+  app\dashboard\condominio\FamiliaResidencia.tsx:358:        );
+  app\dashboard\condominio\FamiliaResidencia.tsx:359:
+  app\dashboard\condominio\FamiliaResidencia.tsx:360:      const dados =
+  app\dashboard\condominio\FamiliaResidencia.tsx:391:    );
+  app\dashboard\condominio\FamiliaResidencia.tsx:392:
+  app\dashboard\condominio\FamiliaResidencia.tsx:393:    setAbrirPortao(
+  app\dashboard\condominio\FamiliaResidencia.tsx:394:      false
+  app\dashboard\condominio\FamiliaResidencia.tsx:395:    );
+  app\dashboard\condominio\FamiliaResidencia.tsx:396:
+> app\dashboard\condominio\FamiliaResidencia.tsx:397:    setVisualizarCameras(
+  app\dashboard\condominio\FamiliaResidencia.tsx:398:      false
+  app\dashboard\condominio\FamiliaResidencia.tsx:399:    );
+  app\dashboard\condominio\FamiliaResidencia.tsx:400:
+> app\dashboard\condominio\FamiliaResidencia.tsx:401:    setControlarAlarme(
+  app\dashboard\condominio\FamiliaResidencia.tsx:402:      false
+  app\dashboard\condominio\FamiliaResidencia.tsx:403:    );
+  app\dashboard\condominio\FamiliaResidencia.tsx:404:  }
+  app\dashboard\condominio\FamiliaResidencia.tsx:405:
+  app\dashboard\condominio\FamiliaResidencia.tsx:406:  async function salvarPessoa() {
+  app\dashboard\condominio\FamiliaResidencia.tsx:407:    try {
+  app\dashboard\condominio\FamiliaResidencia.tsx:408:      setSalvando(
+  app\dashboard\condominio\FamiliaResidencia.tsx:409:        true
+  app\dashboard\condominio\FamiliaResidencia.tsx:410:      );
+  app\dashboard\condominio\FamiliaResidencia.tsx:411:
+  app\dashboard\condominio\FamiliaResidencia.tsx:412:      const token =
+  app\dashboard\condominio\FamiliaResidencia.tsx:413:        await obterToken();
+  app\dashboard\condominio\FamiliaResidencia.tsx:414:
+  app\dashboard\condominio\FamiliaResidencia.tsx:415:      const resposta =
+  app\dashboard\condominio\FamiliaResidencia.tsx:416:        await fetch(
+> app\dashboard\condominio\FamiliaResidencia.tsx:417:          "/api/residencia/familia",
+  app\dashboard\condominio\FamiliaResidencia.tsx:418:          {
+  app\dashboard\condominio\FamiliaResidencia.tsx:419:            method:
+  app\dashboard\condominio\FamiliaResidencia.tsx:420:              "POST",
+  app\dashboard\condominio\FamiliaResidencia.tsx:421:
+  app\dashboard\condominio\FamiliaResidencia.tsx:422:            headers: {
+  app\dashboard\condominio\FamiliaResidencia.tsx:423:              "Content-Type":
+  app\dashboard\condominio\FamiliaResidencia.tsx:424:                "application/json",
+  app\dashboard\condominio\FamiliaResidencia.tsx:425:
+  app\dashboard\condominio\FamiliaResidencia.tsx:426:              Authorization:
+  app\dashboard\condominio\FamiliaResidencia.tsx:427:                `Bearer ${token}`,
+  app\dashboard\condominio\FamiliaResidencia.tsx:428:            },
+  app\dashboard\condominio\FamiliaResidencia.tsx:429:
+  app\dashboard\condominio\FamiliaResidencia.tsx:430:            body:
+  app\dashboard\condominio\FamiliaResidencia.tsx:431:              JSON.stringify({
+  app\dashboard\condominio\FamiliaResidencia.tsx:432:                localId,
+  app\dashboard\condominio\FamiliaResidencia.tsx:435:                telefone,
+  app\dashboard\condominio\FamiliaResidencia.tsx:436:                cpf,
+  app\dashboard\condominio\FamiliaResidencia.tsx:437:
+  app\dashboard\condominio\FamiliaResidencia.tsx:438:                permissoes: {
+  app\dashboard\condominio\FamiliaResidencia.tsx:439:                  receberChamadas,
+  app\dashboard\condominio\FamiliaResidencia.tsx:440:                  abrirPortao,
+> app\dashboard\condominio\FamiliaResidencia.tsx:441:                  visualizarCameras,
+> app\dashboard\condominio\FamiliaResidencia.tsx:442:                  controlarAlarme,
+  app\dashboard\condominio\FamiliaResidencia.tsx:443:                },
+  app\dashboard\condominio\FamiliaResidencia.tsx:444:              }),
+  app\dashboard\condominio\FamiliaResidencia.tsx:445:          }
+  app\dashboard\condominio\FamiliaResidencia.tsx:446:        );
+  app\dashboard\condominio\FamiliaResidencia.tsx:447:
+  app\dashboard\condominio\FamiliaResidencia.tsx:448:      const dados =
+  app\dashboard\condominio\FamiliaResidencia.tsx:449:        await resposta.json();
+  app\dashboard\condominio\FamiliaResidencia.tsx:450:
+  app\dashboard\condominio\FamiliaResidencia.tsx:451:      if (
+  app\dashboard\condominio\FamiliaResidencia.tsx:452:        !resposta.ok ||
+  app\dashboard\condominio\FamiliaResidencia.tsx:453:        !dados.sucesso
+  app\dashboard\condominio\FamiliaResidencia.tsx:454:      ) {
+  app\dashboard\condominio\FamiliaResidencia.tsx:455:        throw new Error(
+  app\dashboard\condominio\FamiliaResidencia.tsx:456:          dados.mensagem ||
+  app\dashboard\condominio\FamiliaResidencia.tsx:457:          "Erro ao cadastrar pessoa."
+  app\dashboard\condominio\FamiliaResidencia.tsx:651:                        Abre portão
+  app\dashboard\condominio\FamiliaResidencia.tsx:652:                      </span>
+  app\dashboard\condominio\FamiliaResidencia.tsx:653:                    )}
+  app\dashboard\condominio\FamiliaResidencia.tsx:654:
+  app\dashboard\condominio\FamiliaResidencia.tsx:655:                    {pessoa
+  app\dashboard\condominio\FamiliaResidencia.tsx:656:                      .permissoes
+> app\dashboard\condominio\FamiliaResidencia.tsx:657:                      ?.visualizarCameras && (
+  app\dashboard\condominio\FamiliaResidencia.tsx:658:                      <span className="rounded-xl bg-cyan-950 px-3 py-2 text-xs font-bold 
+text-cyan-300">
+  app\dashboard\condominio\FamiliaResidencia.tsx:659:                        Vê câmeras
+  app\dashboard\condominio\FamiliaResidencia.tsx:660:                      </span>
+  app\dashboard\condominio\FamiliaResidencia.tsx:661:                    )}
+  app\dashboard\condominio\FamiliaResidencia.tsx:662:
+  app\dashboard\condominio\FamiliaResidencia.tsx:663:                    {pessoa
+  app\dashboard\condominio\FamiliaResidencia.tsx:664:                      .permissoes
+> app\dashboard\condominio\FamiliaResidencia.tsx:665:                      ?.controlarAlarme && (
+  app\dashboard\condominio\FamiliaResidencia.tsx:666:                      <span className="rounded-xl bg-emerald-950 px-3 py-2 text-xs font-bold 
+text-emerald-300">
+  app\dashboard\condominio\FamiliaResidencia.tsx:667:                        Controla alarme
+  app\dashboard\condominio\FamiliaResidencia.tsx:668:                      </span>
+  app\dashboard\condominio\FamiliaResidencia.tsx:669:                    )}
+  app\dashboard\condominio\FamiliaResidencia.tsx:670:                  </div>
+  app\dashboard\condominio\FamiliaResidencia.tsx:671:                </article>
+  app\dashboard\condominio\FamiliaResidencia.tsx:672:              )
+  app\dashboard\condominio\FamiliaResidencia.tsx:673:            )}
+  app\dashboard\condominio\FamiliaResidencia.tsx:674:          </div>
+  app\dashboard\condominio\FamiliaResidencia.tsx:675:        )}
+  app\dashboard\condominio\FamiliaResidencia.tsx:676:      </section>
+  app\dashboard\condominio\FamiliaResidencia.tsx:677:
+  app\dashboard\condominio\FamiliaResidencia.tsx:678:      {pessoaEditando && (
+  app\dashboard\condominio\FamiliaResidencia.tsx:679:        <div
+  app\dashboard\condominio\FamiliaResidencia.tsx:680:          className="fixed inset-0 z-[230] flex items-center justify-center bg-black/80 p-4"
+  app\dashboard\condominio\FamiliaResidencia.tsx:733:                  alterar:
+  app\dashboard\condominio\FamiliaResidencia.tsx:734:                    setPermissaoAbrirPortao,
+  app\dashboard\condominio\FamiliaResidencia.tsx:735:                },
+  app\dashboard\condominio\FamiliaResidencia.tsx:736:                {
+  app\dashboard\condominio\FamiliaResidencia.tsx:737:                  titulo: "Visualizar cameras",
+  app\dashboard\condominio\FamiliaResidencia.tsx:738:                  valor:
+> app\dashboard\condominio\FamiliaResidencia.tsx:739:                    permissaoVisualizarCameras,
+  app\dashboard\condominio\FamiliaResidencia.tsx:740:                  alterar:
+> app\dashboard\condominio\FamiliaResidencia.tsx:741:                    setPermissaoVisualizarCameras,
+  app\dashboard\condominio\FamiliaResidencia.tsx:742:                },
+  app\dashboard\condominio\FamiliaResidencia.tsx:743:                {
+  app\dashboard\condominio\FamiliaResidencia.tsx:744:                  titulo: "Controlar alarme",
+  app\dashboard\condominio\FamiliaResidencia.tsx:745:                  valor:
+> app\dashboard\condominio\FamiliaResidencia.tsx:746:                    permissaoControlarAlarme,
+  app\dashboard\condominio\FamiliaResidencia.tsx:747:                  alterar:
+> app\dashboard\condominio\FamiliaResidencia.tsx:748:                    setPermissaoControlarAlarme,
+  app\dashboard\condominio\FamiliaResidencia.tsx:749:                },
+  app\dashboard\condominio\FamiliaResidencia.tsx:750:              ].map((item) => (
+  app\dashboard\condominio\FamiliaResidencia.tsx:751:                <label
+  app\dashboard\condominio\FamiliaResidencia.tsx:752:                  key={item.titulo}
+  app\dashboard\condominio\FamiliaResidencia.tsx:753:                  className="flex cursor-pointer items-center justify-between gap-4 rounded-2xl 
+border border-slate-700 bg-slate-800 p-4"
+  app\dashboard\condominio\FamiliaResidencia.tsx:754:                >
+  app\dashboard\condominio\FamiliaResidencia.tsx:755:                  <span className="font-bold text-white">
+  app\dashboard\condominio\FamiliaResidencia.tsx:756:                    {item.titulo}
+  app\dashboard\condominio\FamiliaResidencia.tsx:757:                  </span>
+  app\dashboard\condominio\FamiliaResidencia.tsx:758:
+  app\dashboard\condominio\FamiliaResidencia.tsx:759:                  <input
+  app\dashboard\condominio\FamiliaResidencia.tsx:760:                    type="checkbox"
+  app\dashboard\condominio\FamiliaResidencia.tsx:761:                    checked={item.valor}
+  app\dashboard\condominio\FamiliaResidencia.tsx:762:                    onChange={(evento) =>
+  app\dashboard\condominio\FamiliaResidencia.tsx:763:                      item.alterar(
+  app\dashboard\condominio\FamiliaResidencia.tsx:904:                  },
+  app\dashboard\condominio\FamiliaResidencia.tsx:905:
+  app\dashboard\condominio\FamiliaResidencia.tsx:906:                  {
+  app\dashboard\condominio\FamiliaResidencia.tsx:907:                    titulo:
+  app\dashboard\condominio\FamiliaResidencia.tsx:908:                      "Visualizar câmeras",
+  app\dashboard\condominio\FamiliaResidencia.tsx:909:                    valor:
+> app\dashboard\condominio\FamiliaResidencia.tsx:910:                      visualizarCameras,
+  app\dashboard\condominio\FamiliaResidencia.tsx:911:                    alterar:
+> app\dashboard\condominio\FamiliaResidencia.tsx:912:                      setVisualizarCameras,
+  app\dashboard\condominio\FamiliaResidencia.tsx:913:                  },
+  app\dashboard\condominio\FamiliaResidencia.tsx:914:
+  app\dashboard\condominio\FamiliaResidencia.tsx:915:                  {
+  app\dashboard\condominio\FamiliaResidencia.tsx:916:                    titulo:
+  app\dashboard\condominio\FamiliaResidencia.tsx:917:                      "Controlar alarme",
+  app\dashboard\condominio\FamiliaResidencia.tsx:918:                    valor:
+> app\dashboard\condominio\FamiliaResidencia.tsx:919:                      controlarAlarme,
+  app\dashboard\condominio\FamiliaResidencia.tsx:920:                    alterar:
+> app\dashboard\condominio\FamiliaResidencia.tsx:921:                      setControlarAlarme,
+  app\dashboard\condominio\FamiliaResidencia.tsx:922:                  },
+  app\dashboard\condominio\FamiliaResidencia.tsx:923:                ].map(
+  app\dashboard\condominio\FamiliaResidencia.tsx:924:                  (
+  app\dashboard\condominio\FamiliaResidencia.tsx:925:                    item
+  app\dashboard\condominio\FamiliaResidencia.tsx:926:                  ) => (
+  app\dashboard\condominio\FamiliaResidencia.tsx:927:                    <label
+  app\dashboard\condominio\FamiliaResidencia.tsx:928:                      key={
+  app\dashboard\condominio\FamiliaResidencia.tsx:929:                        item.titulo
+  app\dashboard\condominio\FamiliaResidencia.tsx:930:                      }
+  app\dashboard\condominio\FamiliaResidencia.tsx:931:                      className="flex cursor-pointer items-center justify-between rounded-2xl 
+border border-slate-700 bg-slate-800 p-4"
+  app\dashboard\condominio\FamiliaResidencia.tsx:932:                    >
+  app\dashboard\condominio\FamiliaResidencia.tsx:933:                      <span className="font-bold text-white">
+  app\dashboard\condominio\FamiliaResidencia.tsx:934:                        {
+  app\dashboard\condominio\FamiliaResidencia.tsx:935:                          item.titulo
+  app\dashboard\condominio\FamiliaResidencia.tsx:936:                        }
+  app\dashboard\morador\page.tsx:150:
+  app\dashboard\morador\page.tsx:151:  const podeAbrirPortao =
+  app\dashboard\morador\page.tsx:152:    permissoes
+  app\dashboard\morador\page.tsx:153:      .abrirPortao ===
+  app\dashboard\morador\page.tsx:154:    true;
+  app\dashboard\morador\page.tsx:155:
+> app\dashboard\morador\page.tsx:156:  const podeVisualizarCameras =
+  app\dashboard\morador\page.tsx:157:    permissoes
+> app\dashboard\morador\page.tsx:158:      .visualizarCameras ===
+  app\dashboard\morador\page.tsx:159:    true;
+  app\dashboard\morador\page.tsx:160:
+> app\dashboard\morador\page.tsx:161:  const podeControlarAlarme =
+  app\dashboard\morador\page.tsx:162:    permissoes
+> app\dashboard\morador\page.tsx:163:      .controlarAlarme ===
+  app\dashboard\morador\page.tsx:164:    true;
+  app\dashboard\morador\page.tsx:165:
+  app\dashboard\morador\page.tsx:166:  const perfilPrincipalNormalizado = (
+  app\dashboard\morador\page.tsx:167:    vinculoSelecionado?.perfilPrincipal ||
+  app\dashboard\morador\page.tsx:168:    ""
+  app\dashboard\morador\page.tsx:169:  )
+  app\dashboard\morador\page.tsx:170:    .trim()
+  app\dashboard\morador\page.tsx:171:    .toLowerCase()
+  app\dashboard\morador\page.tsx:172:    .replaceAll("-", "_");
+  app\dashboard\morador\page.tsx:173:
+  app\dashboard\morador\page.tsx:174:  const podeVoltarSindico =
+  app\dashboard\morador\page.tsx:175:    perfilPrincipalNormalizado === "sindico" ||
+  app\dashboard\morador\page.tsx:176:    Object.entries(
+  app\dashboard\morador\page.tsx:177:      vinculoSelecionado?.perfis ?? {}
+  app\dashboard\morador\page.tsx:178:    ).some(
+  app\dashboard\morador\page.tsx:648:                <div className="mt-1 text-sm text-slate-400">
+  app\dashboard\morador\page.tsx:649:                  Acione o port&atilde;o autorizado desta resid&ecirc;ncia.
+  app\dashboard\morador\page.tsx:650:                </div>
+  app\dashboard\morador\page.tsx:651:              </button>
+  app\dashboard\morador\page.tsx:652:            )}
+  app\dashboard\morador\page.tsx:653:
+> app\dashboard\morador\page.tsx:654:            {podeVisualizarCameras && (
+  app\dashboard\morador\page.tsx:655:              <div className="rounded-2xl border border-cyan-800 bg-cyan-950/30 p-4">
+  app\dashboard\morador\page.tsx:656:                <div className="text-3xl">
+  app\dashboard\morador\page.tsx:657:                  &#128247;
+  app\dashboard\morador\page.tsx:658:                </div>
+  app\dashboard\morador\page.tsx:659:
+  app\dashboard\morador\page.tsx:660:                <div className="mt-3 font-black text-white">
+  app\dashboard\morador\page.tsx:661:                  C&acirc;meras
+  app\dashboard\morador\page.tsx:662:                </div>
+  app\dashboard\morador\page.tsx:663:
+  app\dashboard\morador\page.tsx:664:                <div className="mt-1 text-sm text-slate-400">
+  app\dashboard\morador\page.tsx:665:                  Acesso autorizado &agrave;s c&acirc;meras da resid&ecirc;ncia.
+  app\dashboard\morador\page.tsx:666:                </div>
+  app\dashboard\morador\page.tsx:667:              </div>
+  app\dashboard\morador\page.tsx:668:            )}
+  app\dashboard\morador\page.tsx:669:
+> app\dashboard\morador\page.tsx:670:            {podeControlarAlarme && (
+  app\dashboard\morador\page.tsx:671:              <div className="rounded-2xl border border-emerald-800 bg-emerald-950/30 p-4">
+  app\dashboard\morador\page.tsx:672:                <div className="text-3xl">
+  app\dashboard\morador\page.tsx:673:                  &#128680;
+  app\dashboard\morador\page.tsx:674:                </div>
+  app\dashboard\morador\page.tsx:675:
+  app\dashboard\morador\page.tsx:676:                <div className="mt-3 font-black text-white">
+  app\dashboard\morador\page.tsx:677:                  Alarme
+  app\dashboard\morador\page.tsx:678:                </div>
+  app\dashboard\morador\page.tsx:679:
+  app\dashboard\morador\page.tsx:680:                <div className="mt-1 text-sm text-slate-400">
+  app\dashboard\morador\page.tsx:681:                  Controle de alarme autorizado para este perfil.
+  app\dashboard\morador\page.tsx:682:                </div>
+  app\dashboard\morador\page.tsx:683:              </div>
+  app\dashboard\morador\page.tsx:684:            )}
+  app\dashboard\morador\page.tsx:685:          </div>
+  app\dashboard\morador\page.tsx:686:
+  app\dashboard\morador\page.tsx:687:          {!podeReceberChamadas &&
+  app\dashboard\morador\page.tsx:688:            !podeAbrirPortao &&
+> app\dashboard\morador\page.tsx:689:            !podeVisualizarCameras &&
+> app\dashboard\morador\page.tsx:690:            !podeControlarAlarme && (
+  app\dashboard\morador\page.tsx:691:              <div className="mt-5 rounded-2xl border border-dashed border-slate-700 p-8 text-center">
+  app\dashboard\morador\page.tsx:692:                <p className="font-black text-white">
+  app\dashboard\morador\page.tsx:693:                  Nenhum acesso liberado
+  app\dashboard\morador\page.tsx:694:                </p>
+  app\dashboard\morador\page.tsx:695:
+  app\dashboard\morador\page.tsx:696:                <p className="mt-2 text-sm text-slate-500">
+  app\dashboard\morador\page.tsx:697:                  O respons&aacute;vel da resid&ecirc;ncia ainda n&atilde;o liberou recursos para este perfil.
+  app\dashboard\morador\page.tsx:698:                </p>
+  app\dashboard\morador\page.tsx:699:              </div>
+  app\dashboard\morador\page.tsx:700:            )}
+  app\dashboard\morador\page.tsx:701:
+  app\dashboard\morador\page.tsx:702:          {statusPortao && (
+  app\dashboard\morador\page.tsx:703:            <p className="mt-4 rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm font-black 
+text-white">
+  app\dashboard\morador\page.tsx:704:              {statusPortao}
+  app\dashboard\morador\page.tsx:705:            </p>
+  app\dashboard\morador\page.tsx:914:                  <div className="mt-1 text-sm text-slate-400">
+  app\dashboard\morador\page.tsx:915:                    Acione o portão autorizado do condomínio.
+  app\dashboard\morador\page.tsx:916:                  </div>
+  app\dashboard\morador\page.tsx:917:                </button>
+  app\dashboard\morador\page.tsx:918:              )}
+  app\dashboard\morador\page.tsx:919:
+> app\dashboard\morador\page.tsx:920:              {podeVisualizarCameras && (
+  app\dashboard\morador\page.tsx:921:                <div className="rounded-2xl border border-cyan-800 bg-cyan-950/30 p-4">
+  app\dashboard\morador\page.tsx:922:                  <div className="text-3xl">
+  app\dashboard\morador\page.tsx:923:                    📷
+  app\dashboard\morador\page.tsx:924:                  </div>
+  app\dashboard\morador\page.tsx:925:
+  app\dashboard\morador\page.tsx:926:                  <div className="mt-3 font-black text-white">
+  app\dashboard\morador\page.tsx:927:                    Câmeras
+  app\dashboard\morador\page.tsx:928:                  </div>
+  app\dashboard\morador\page.tsx:929:
+  app\dashboard\morador\page.tsx:930:                  <div className="mt-1 text-sm text-slate-400">
+  app\dashboard\morador\page.tsx:931:                    Visualize somente as câmeras liberadas para seu perfil.
+  app\dashboard\morador\page.tsx:932:                  </div>
+  app\dashboard\morador\page.tsx:933:                </div>
+  app\dashboard\morador\page.tsx:934:              )}
+  app\dashboard\morador\page.tsx:935:
+> app\dashboard\morador\page.tsx:936:              {podeControlarAlarme && (
+  app\dashboard\morador\page.tsx:937:                <div className="rounded-2xl border border-emerald-800 bg-emerald-950/30 p-4">
+  app\dashboard\morador\page.tsx:938:                  <div className="text-3xl">
+  app\dashboard\morador\page.tsx:939:                    🚨
+  app\dashboard\morador\page.tsx:940:                  </div>
+  app\dashboard\morador\page.tsx:941:
+  app\dashboard\morador\page.tsx:942:                  <div className="mt-3 font-black text-white">
+  app\dashboard\morador\page.tsx:943:                    Alarme
+  app\dashboard\morador\page.tsx:944:                  </div>
+  app\dashboard\morador\page.tsx:945:
+  app\dashboard\morador\page.tsx:946:                  <div className="mt-1 text-sm text-slate-400">
+  app\dashboard\morador\page.tsx:947:                    Controle disponível conforme autorização do condomínio.
+  app\dashboard\morador\page.tsx:948:                  </div>
+  app\dashboard\morador\page.tsx:949:                </div>
+  app\dashboard\morador\page.tsx:950:              )}
+  app\dashboard\morador\page.tsx:951:            </div>
+  app\dashboard\morador\page.tsx:952:
+  app\dashboard\morador\page.tsx:953:            {!podeReceberChamadas &&
+  app\dashboard\morador\page.tsx:954:              !podeAbrirPortao &&
+> app\dashboard\morador\page.tsx:955:              !podeVisualizarCameras &&
+> app\dashboard\morador\page.tsx:956:              !podeControlarAlarme && (
+  app\dashboard\morador\page.tsx:957:                <div className="mt-5 rounded-2xl border border-dashed border-slate-700 p-8 text-center">
+  app\dashboard\morador\page.tsx:958:                  <p className="font-black text-white">
+  app\dashboard\morador\page.tsx:959:                    Nenhum acesso liberado
+  app\dashboard\morador\page.tsx:960:                  </p>
+  app\dashboard\morador\page.tsx:961:
+  app\dashboard\morador\page.tsx:962:                  <p className="mt-2 text-sm text-slate-500">
+  app\dashboard\morador\page.tsx:963:                    O condomínio ainda não liberou recursos para este perfil.
+  app\dashboard\morador\page.tsx:964:                  </p>
+  app\dashboard\morador\page.tsx:965:                </div>
+  app\dashboard\morador\page.tsx:966:              )}
+  app\dashboard\morador\page.tsx:967:
+  app\dashboard\morador\page.tsx:968:            {statusPortao && (
+  app\dashboard\morador\page.tsx:969:              <p className="mt-4 rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm font-black 
+text-white">
+  app\dashboard\morador\page.tsx:970:                {statusPortao}
+  app\dashboard\morador\page.tsx:971:              </p>
+
+

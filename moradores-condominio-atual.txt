@@ -1,0 +1,120 @@
+﻿          />
+
+        </div>
+
+        ) : telaAtiva ===
+        "moradores" ? (
+
+          <div className="space-y-4">
+
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={() =>
+                  setTelaAtiva(
+                    "inicio"
+                  )
+                }
+                className="rounded-2xl border border-slate-700 bg-slate-800 px-5 py-3 text-sm font-black text-white transition hover:border-cyan-500 hover:bg-slate-700 active:scale-[0.98]"
+              >
+                Voltar ao painel
+              </button>
+            </div>
+
+            {(() => {
+          const ana = moradores.find((morador) =>
+            String(morador.nome || "")
+              .toLowerCase()
+              .includes("ana carolina")
+          );
+
+
+
+          return null;
+        })()}
+
+        <Moradores
+              unidades={
+                unidades.filter(
+                  (unidade) =>
+                    unidade.localId ===
+                    localIdAtual
+                )
+              }
+
+              moradores={
+                moradores.filter(
+                  (morador) =>
+                    unidades.some(
+                      (unidade) =>
+                        unidade.localId ===
+                          localIdAtual &&
+                        unidade.id ===
+                          morador.unidadeId
+                    )
+                )
+              }
+
+              unidadeMoradorId={
+                unidadeMoradorId
+              }
+
+              setUnidadeMoradorId={
+                setUnidadeMoradorId
+              }
+
+              nomeMorador={
+                nomeMorador
+              }
+
+              setNomeMorador={
+                setNomeMorador
+              }
+
+              telefoneMorador={
+                telefoneMorador
+              }
+
+              setTelefoneMorador={
+                setTelefoneMorador
+              }
+
+              prioridadeMorador={
+                prioridadeMorador
+              }
+
+              setPrioridadeMorador={
+                setPrioridadeMorador
+              }
+
+              podeAbrirPortao={
+                podeAbrirPortao
+              }
+
+              setPodeAbrirPortao={
+                setPodeAbrirPortao
+              }
+
+              cadastrarMorador={
+                cadastrarMorador
+              }
+
+              atualizarMorador={
+                atualizarMoradorCadastrado
+              }
+
+              salvandoMorador={
+                salvandoMorador
+              }
+            />
+
+          </div>
+
+        ) : telaAtiva ===
+        "pendentes" ? (
+
+          <div className="space-y-5">
+
+            <div className="flex justify-end">
+              <button
+                type="button"

@@ -1,0 +1,33 @@
+﻿"use client";
+
+import CentralResidencia from "@/app/dashboard/condominio/CentralResidencia";
+import CentralSindico from "@/app/dashboard/sindico/CentralSindico";
+import { useAuth } from "@/app/context/AuthContext";
+
+export default function PaginaCondominio() {
+  const {
+    vinculoSelecionado,
+  } = useAuth();
+
+  const tipoLocal = (
+    vinculoSelecionado?.tipoLocal || ""
+  )
+    .trim()
+    .toLowerCase()
+    .replaceAll("-", "_");
+
+  const modoResidencia =
+    tipoLocal === "residencia";
+
+  return (
+    <main className="min-h-screen bg-slate-950 text-white">
+      <div className="mx-auto w-full max-w-[1600px] p-3 md:p-6">
+        {modoResidencia ? (
+          <CentralResidencia />
+        ) : (
+          <CentralSindico />
+        )}
+      </div>
+    </main>
+  );
+}

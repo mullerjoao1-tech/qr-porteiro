@@ -1,0 +1,234 @@
+﻿
+  app\morador-v2\[unidadeId]\page.tsx:305:      }
+  app\morador-v2\[unidadeId]\page.tsx:306:    );
+  app\morador-v2\[unidadeId]\page.tsx:307:
+  app\morador-v2\[unidadeId]\page.tsx:308:    return () => pararDeOuvirComunicados();
+  app\morador-v2\[unidadeId]\page.tsx:309:  }, [caminhoComunicados]);
+  app\morador-v2\[unidadeId]\page.tsx:310:
+  app\morador-v2\[unidadeId]\page.tsx:311:  useEffect(() => {
+  app\morador-v2\[unidadeId]\page.tsx:312:    if (!comunicadoIdPeloLink || comunicados.length === 0) return;
+  app\morador-v2\[unidadeId]\page.tsx:313:
+  app\morador-v2\[unidadeId]\page.tsx:314:    const comunicadoDoLink = comunicados.find(
+  app\morador-v2\[unidadeId]\page.tsx:315:      (item) => item.id === comunicadoIdPeloLink
+  app\morador-v2\[unidadeId]\page.tsx:316:    );
+  app\morador-v2\[unidadeId]\page.tsx:317:
+  app\morador-v2\[unidadeId]\page.tsx:318:    if (!comunicadoDoLink) return;
+  app\morador-v2\[unidadeId]\page.tsx:319:
+> app\morador-v2\[unidadeId]\page.tsx:320:    abrirComunicado(comunicadoDoLink);
+  app\morador-v2\[unidadeId]\page.tsx:321:  }, [comunicadoIdPeloLink, comunicados]);
+  app\morador-v2\[unidadeId]\page.tsx:322:
+> app\morador-v2\[unidadeId]\page.tsx:323:  async function abrirComunicado(comunicado: ComunicadoMorador) {
+  app\morador-v2\[unidadeId]\page.tsx:324:    setComunicadoAberto(comunicado);
+  app\morador-v2\[unidadeId]\page.tsx:325:
+  app\morador-v2\[unidadeId]\page.tsx:326:    const visualizacaoAtual =
+  app\morador-v2\[unidadeId]\page.tsx:327:      comunicado.visualizacoes?.[slug]?.visualizadoEm;
+  app\morador-v2\[unidadeId]\page.tsx:328:
+  app\morador-v2\[unidadeId]\page.tsx:329:    if (visualizacaoAtual) return;
+  app\morador-v2\[unidadeId]\page.tsx:330:
+  app\morador-v2\[unidadeId]\page.tsx:331:    try {
+  app\morador-v2\[unidadeId]\page.tsx:332:      await update(
+  app\morador-v2\[unidadeId]\page.tsx:333:        ref(
+  app\morador-v2\[unidadeId]\page.tsx:334:          db,
+  app\morador-v2\[unidadeId]\page.tsx:335:          `${caminhoComunicados}/${comunicado.id}/visualizacoes/${slug}`
+  app\morador-v2\[unidadeId]\page.tsx:336:        ),
+  app\morador-v2\[unidadeId]\page.tsx:337:        {
+  app\morador-v2\[unidadeId]\page.tsx:338:          unidadeId: slug,
+  app\morador-v2\[unidadeId]\page.tsx:339:          visualizadoEm: Date.now(),
+  app\morador-v2\[unidadeId]\page.tsx:340:          ciente: comunicado.visualizacoes?.[slug]?.ciente === true,
+  app\morador-v2\[unidadeId]\page.tsx:341:        }
+  app\morador-v2\[unidadeId]\page.tsx:342:      );
+  app\morador-v2\[unidadeId]\page.tsx:343:    } catch (erro) {
+  app\morador-v2\[unidadeId]\page.tsx:344:      console.error("Erro ao registrar visualização:", erro);
+  app\morador-v2\[unidadeId]\page.tsx:345:    }
+  app\morador-v2\[unidadeId]\page.tsx:346:  }
+  app\morador-v2\[unidadeId]\page.tsx:347:
+  app\morador-v2\[unidadeId]\page.tsx:348:  async function confirmarCiencia() {
+  app\morador-v2\[unidadeId]\page.tsx:349:    if (!comunicadoAberto || salvandoCiencia) return;
+  app\morador-v2\[unidadeId]\page.tsx:350:
+  app\morador-v2\[unidadeId]\page.tsx:351:    try {
+  app\morador-v2\[unidadeId]\page.tsx:352:      setSalvandoCiencia(true);
+  app\morador-v2\[unidadeId]\page.tsx:353:
+  app\morador-v2\[unidadeId]\page.tsx:354:      await update(
+  app\morador-v2\[unidadeId]\page.tsx:355:        ref(
+  app\morador-v2\[unidadeId]\page.tsx:356:          db,
+  app\morador-v2\[unidadeId]\page.tsx:357:          `${caminhoComunicados}/${comunicadoAberto.id}/visualizacoes/${slug}`
+  app\morador-v2\[unidadeId]\page.tsx:358:        ),
+  app\morador-v2\[unidadeId]\page.tsx:1458:    },
+  app\morador-v2\[unidadeId]\page.tsx:1459:    {
+  app\morador-v2\[unidadeId]\page.tsx:1460:      texto: "Não estou em casa",
+  app\morador-v2\[unidadeId]\page.tsx:1461:      mensagem: "Não estou em casa no momento.",
+  app\morador-v2\[unidadeId]\page.tsx:1462:      icone: "🏠",
+  app\morador-v2\[unidadeId]\page.tsx:1463:    },
+  app\morador-v2\[unidadeId]\page.tsx:1464:    {
+  app\morador-v2\[unidadeId]\page.tsx:1465:      texto: "Estou indo retirar",
+  app\morador-v2\[unidadeId]\page.tsx:1466:      mensagem: "Estou indo retirar agora.",
+  app\morador-v2\[unidadeId]\page.tsx:1467:      icone: "🚶",
+  app\morador-v2\[unidadeId]\page.tsx:1468:    },
+  app\morador-v2\[unidadeId]\page.tsx:1469:  ];
+  app\morador-v2\[unidadeId]\page.tsx:1470:
+  app\morador-v2\[unidadeId]\page.tsx:1471:  return (
+  app\morador-v2\[unidadeId]\page.tsx:1472:    <main className="min-h-screen bg-slate-950 text-white p-4 relative">
+> app\morador-v2\[unidadeId]\page.tsx:1473:      {comunicadoAberto && (() => {
+  app\morador-v2\[unidadeId]\page.tsx:1474:        const precisaConfirmarCiencia =
+  app\morador-v2\[unidadeId]\page.tsx:1475:          comunicadoAberto.exigeCiencia !== false &&
+  app\morador-v2\[unidadeId]\page.tsx:1476:          comunicadoAberto.exigirCiencia !== false;
+  app\morador-v2\[unidadeId]\page.tsx:1477:
+  app\morador-v2\[unidadeId]\page.tsx:1478:        const detalhes = comunicadoAberto.detalhesModelo || {};
+  app\morador-v2\[unidadeId]\page.tsx:1479:        const temInformacoesRapidas =
+  app\morador-v2\[unidadeId]\page.tsx:1480:          Boolean(detalhes.dataEvento) ||
+  app\morador-v2\[unidadeId]\page.tsx:1481:          Boolean(detalhes.horarioEvento) ||
+  app\morador-v2\[unidadeId]\page.tsx:1482:          Boolean(detalhes.localEvento) ||
+  app\morador-v2\[unidadeId]\page.tsx:1483:          Boolean(detalhes.empresaResponsavel);
+  app\morador-v2\[unidadeId]\page.tsx:1484:
+  app\morador-v2\[unidadeId]\page.tsx:1485:        const ehEmergencia = comunicadoAberto.tipo === "emergencia";
+  app\morador-v2\[unidadeId]\page.tsx:1486:
+  app\morador-v2\[unidadeId]\page.tsx:1487:        return (
+  app\morador-v2\[unidadeId]\page.tsx:1488:          <div className="fixed inset-0 z-[1200] flex items-center justify-center overflow-y-auto 
+bg-black/90 p-4">
+  app\morador-v2\[unidadeId]\page.tsx:1489:            <div
+  app\morador-v2\[unidadeId]\page.tsx:1490:              className={`my-4 w-full max-w-md overflow-hidden rounded-3xl border-2 bg-slate-900 
+shadow-2xl ${
+  app\morador-v2\[unidadeId]\page.tsx:1491:                ehEmergencia ? "border-red-500" : "border-blue-500"
+  app\morador-v2\[unidadeId]\page.tsx:1492:              }`}
+  app\morador-v2\[unidadeId]\page.tsx:1493:            >
+  app\morador-v2\[unidadeId]\page.tsx:1494:              <div
+  app\morador-v2\[unidadeId]\page.tsx:1495:                className={`p-5 ${
+  app\morador-v2\[unidadeId]\page.tsx:1496:                  ehEmergencia
+  app\morador-v2\[unidadeId]\page.tsx:1497:                    ? "bg-gradient-to-r from-red-950 to-slate-900"
+  app\morador-v2\[unidadeId]\page.tsx:1498:                    : "bg-gradient-to-r from-blue-950 to-slate-900"
+  app\morador-v2\[unidadeId]\page.tsx:1499:                }`}
+  app\morador-v2\[unidadeId]\page.tsx:1500:              >
+  app\morador-v2\[unidadeId]\page.tsx:1501:                <div className="flex items-start justify-between gap-4">
+  app\morador-v2\[unidadeId]\page.tsx:1502:                  <div>
+  app\morador-v2\[unidadeId]\page.tsx:1503:                    <p
+  app\morador-v2\[unidadeId]\page.tsx:1504:                      className={`text-xs font-black ${
+  app\morador-v2\[unidadeId]\page.tsx:1505:                        ehEmergencia ? "text-red-300" : "text-blue-300"
+  app\morador-v2\[unidadeId]\page.tsx:1506:                      }`}
+  app\morador-v2\[unidadeId]\page.tsx:1507:                    >
+  app\morador-v2\[unidadeId]\page.tsx:1508:                      {iconeTipoComunicado(comunicadoAberto.tipo)}{" "}
+  app\morador-v2\[unidadeId]\page.tsx:1618:                )}
+  app\morador-v2\[unidadeId]\page.tsx:1619:
+  app\morador-v2\[unidadeId]\page.tsx:1620:                <div className="mt-4 rounded-2xl border border-slate-700 bg-slate-950/70 p-4">
+  app\morador-v2\[unidadeId]\page.tsx:1621:                  <p className="whitespace-pre-wrap text-sm leading-relaxed text-slate-200">
+  app\morador-v2\[unidadeId]\page.tsx:1622:                    {comunicadoAberto.mensagem}
+  app\morador-v2\[unidadeId]\page.tsx:1623:                  </p>
+  app\morador-v2\[unidadeId]\page.tsx:1624:                </div>
+  app\morador-v2\[unidadeId]\page.tsx:1625:
+  app\morador-v2\[unidadeId]\page.tsx:1626:                <p className="mt-4 text-xs text-slate-500">
+  app\morador-v2\[unidadeId]\page.tsx:1627:                  Enviado em {comunicadoAberto.criadoEmFormatado}
+  app\morador-v2\[unidadeId]\page.tsx:1628:                </p>
+  app\morador-v2\[unidadeId]\page.tsx:1629:
+  app\morador-v2\[unidadeId]\page.tsx:1630:                {precisaConfirmarCiencia ? (
+  app\morador-v2\[unidadeId]\page.tsx:1631:                  comunicadoAberto.visualizacoes?.[slug]?.ciente === true ? (
+  app\morador-v2\[unidadeId]\page.tsx:1632:                    <div className="mt-5 rounded-xl border border-green-700 bg-green-950/30 p-4 
+text-center font-black text-green-300">
+> app\morador-v2\[unidadeId]\page.tsx:1633:                      ✅ Ciente registrado
+  app\morador-v2\[unidadeId]\page.tsx:1634:                    </div>
+  app\morador-v2\[unidadeId]\page.tsx:1635:                  ) : (
+  app\morador-v2\[unidadeId]\page.tsx:1636:                    <button
+  app\morador-v2\[unidadeId]\page.tsx:1637:                      type="button"
+  app\morador-v2\[unidadeId]\page.tsx:1638:                      onClick={confirmarCiencia}
+  app\morador-v2\[unidadeId]\page.tsx:1639:                      disabled={salvandoCiencia}
+  app\morador-v2\[unidadeId]\page.tsx:1640:                      className={`mt-5 w-full rounded-2xl py-4 text-lg font-black text-white 
+disabled:bg-slate-600 ${
+  app\morador-v2\[unidadeId]\page.tsx:1641:                        ehEmergencia
+  app\morador-v2\[unidadeId]\page.tsx:1642:                          ? "bg-red-600 hover:bg-red-500"
+  app\morador-v2\[unidadeId]\page.tsx:1643:                          : "bg-green-600 hover:bg-green-500"
+  app\morador-v2\[unidadeId]\page.tsx:1644:                      }`}
+  app\morador-v2\[unidadeId]\page.tsx:1645:                    >
+  app\morador-v2\[unidadeId]\page.tsx:1646:                      {salvandoCiencia
+  app\morador-v2\[unidadeId]\page.tsx:1647:                        ? "Registrando..."
+  app\morador-v2\[unidadeId]\page.tsx:1648:                        : ehEmergencia
+> app\morador-v2\[unidadeId]\page.tsx:1649:                        ? "🚨 Confirmo que li e estou ciente"
+> app\morador-v2\[unidadeId]\page.tsx:1650:                        : "✅ Li e estou ciente"}
+  app\morador-v2\[unidadeId]\page.tsx:1651:                    </button>
+  app\morador-v2\[unidadeId]\page.tsx:1652:                  )
+  app\morador-v2\[unidadeId]\page.tsx:1653:                ) : (
+  app\morador-v2\[unidadeId]\page.tsx:1654:                  <button
+  app\morador-v2\[unidadeId]\page.tsx:1655:                    type="button"
+  app\morador-v2\[unidadeId]\page.tsx:1656:                    onClick={() => setComunicadoAberto(null)}
+  app\morador-v2\[unidadeId]\page.tsx:1657:                    className="mt-5 w-full rounded-2xl bg-blue-600 py-4 font-black text-white"
+  app\morador-v2\[unidadeId]\page.tsx:1658:                  >
+  app\morador-v2\[unidadeId]\page.tsx:1659:                    Fechar
+  app\morador-v2\[unidadeId]\page.tsx:1660:                  </button>
+  app\morador-v2\[unidadeId]\page.tsx:1661:                )}
+  app\morador-v2\[unidadeId]\page.tsx:1662:              </div>
+  app\morador-v2\[unidadeId]\page.tsx:1663:            </div>
+  app\morador-v2\[unidadeId]\page.tsx:1664:          </div>
+  app\morador-v2\[unidadeId]\page.tsx:1665:        );
+  app\morador-v2\[unidadeId]\page.tsx:1666:      })()}
+  app\morador-v2\[unidadeId]\page.tsx:1667:
+  app\morador-v2\[unidadeId]\page.tsx:1668:      {mostrarPopupChamada && (
+  app\morador-v2\[unidadeId]\page.tsx:1669:        <div className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center p-4 
+overflow-y-auto">
+  app\morador-v2\[unidadeId]\page.tsx:1670:          <div className="w-full max-w-md bg-slate-900 border-4 border-green-400 rounded-3xl p-5 
+text-center shadow-2xl my-4">
+  app\morador-v2\[unidadeId]\page.tsx:1671:            <p className="text-6xl mb-3">🚨</p>
+  app\morador-v2\[unidadeId]\page.tsx:1672:
+  app\morador-v2\[unidadeId]\page.tsx:1673:            <h2 className="text-3xl font-black text-green-400 mb-2">
+  app\morador-v2\[unidadeId]\page.tsx:1674:              CHAMADA RECEBIDA
+  app\morador-v2\[unidadeId]\page.tsx:1675:            </h2>
+  app\morador-v2\[unidadeId]\page.tsx:1676:
+  app\morador-v2\[unidadeId]\page.tsx:1677:            <div className="bg-slate-800 rounded-2xl p-4 mt-4 border border-green-500/30">
+  app\morador-v2\[unidadeId]\page.tsx:1678:              <p className="text-2xl font-black text-white">{nome}</p>
+  app\morador-v2\[unidadeId]\page.tsx:1679:              <p className="text-slate-300 mt-2">Motivo: {motivo}</p>
+  app\morador-v2\[unidadeId]\page.tsx:1680:
+  app\morador-v2\[unidadeId]\page.tsx:1681:              {audioVisitante && (
+  app\morador-v2\[unidadeId]\page.tsx:1682:                <div className="mt-4 bg-slate-900 rounded-2xl p-4 border border-blue-500/40">
+  app\morador-v2\[unidadeId]\page.tsx:1683:                  <p className="text-sm text-blue-300 font-bold mb-3">
+  app\morador-v2\[unidadeId]\page.tsx:1684:                    🎙️ Áudio do visitante
+  app\morador-v2\[unidadeId]\page.tsx:1685:                  </p>
+  app\morador-v2\[unidadeId]\page.tsx:1920:
+  app\morador-v2\[unidadeId]\page.tsx:1921:              <span className="rounded-full bg-blue-600 px-3 py-1 text-xs font-black text-white">
+  app\morador-v2\[unidadeId]\page.tsx:1922:                {comunicados.length}
+  app\morador-v2\[unidadeId]\page.tsx:1923:              </span>
+  app\morador-v2\[unidadeId]\page.tsx:1924:            </div>
+  app\morador-v2\[unidadeId]\page.tsx:1925:
+  app\morador-v2\[unidadeId]\page.tsx:1926:            <div className="mt-4 space-y-2">
+  app\morador-v2\[unidadeId]\page.tsx:1927:              {comunicados.slice(0, 3).map((comunicado) => {
+  app\morador-v2\[unidadeId]\page.tsx:1928:                const ciente =
+  app\morador-v2\[unidadeId]\page.tsx:1929:                  comunicado.visualizacoes?.[slug]?.ciente === true;
+  app\morador-v2\[unidadeId]\page.tsx:1930:
+  app\morador-v2\[unidadeId]\page.tsx:1931:                return (
+  app\morador-v2\[unidadeId]\page.tsx:1932:                  <button
+  app\morador-v2\[unidadeId]\page.tsx:1933:                    key={comunicado.id}
+  app\morador-v2\[unidadeId]\page.tsx:1934:                    type="button"
+> app\morador-v2\[unidadeId]\page.tsx:1935:                    onClick={() => abrirComunicado(comunicado)}
+  app\morador-v2\[unidadeId]\page.tsx:1936:                    className="flex w-full items-center justify-between gap-3 rounded-xl bg-slate-900 p-3 
+text-left transition-all hover:bg-slate-800 active:scale-[0.98]"
+  app\morador-v2\[unidadeId]\page.tsx:1937:                  >
+  app\morador-v2\[unidadeId]\page.tsx:1938:                    <div className="min-w-0">
+  app\morador-v2\[unidadeId]\page.tsx:1939:                      <p className="truncate text-sm font-black text-white">
+  app\morador-v2\[unidadeId]\page.tsx:1940:                        {comunicado.tipo === "assembleia"
+  app\morador-v2\[unidadeId]\page.tsx:1941:                          ? "👥"
+  app\morador-v2\[unidadeId]\page.tsx:1942:                          : comunicado.tipo === "manutencao"
+  app\morador-v2\[unidadeId]\page.tsx:1943:                          ? "🛠️"
+  app\morador-v2\[unidadeId]\page.tsx:1944:                          : comunicado.tipo === "emergencia"
+  app\morador-v2\[unidadeId]\page.tsx:1945:                          ? "🚨"
+  app\morador-v2\[unidadeId]\page.tsx:1946:                          : "📢"}{" "}
+  app\morador-v2\[unidadeId]\page.tsx:1947:                        {comunicado.titulo}
+  app\morador-v2\[unidadeId]\page.tsx:1948:                      </p>
+  app\morador-v2\[unidadeId]\page.tsx:1949:
+  app\morador-v2\[unidadeId]\page.tsx:1950:                      <p className="mt-1 truncate text-xs text-slate-400">
+  app\morador-v2\[unidadeId]\page.tsx:1951:                        {comunicado.mensagem}
+  app\morador-v2\[unidadeId]\page.tsx:1952:                      </p>
+  app\morador-v2\[unidadeId]\page.tsx:1953:                    </div>
+  app\morador-v2\[unidadeId]\page.tsx:1954:
+  app\morador-v2\[unidadeId]\page.tsx:1955:                    <span
+  app\morador-v2\[unidadeId]\page.tsx:1956:                      className={`shrink-0 rounded-full px-3 py-1 text-[10px] font-black ${
+  app\morador-v2\[unidadeId]\page.tsx:1957:                        ciente
+  app\morador-v2\[unidadeId]\page.tsx:1958:                          ? "bg-green-950 text-green-300"
+  app\morador-v2\[unidadeId]\page.tsx:1959:                          : "bg-orange-950 text-orange-300"
+  app\morador-v2\[unidadeId]\page.tsx:1960:                      }`}
+  app\morador-v2\[unidadeId]\page.tsx:1961:                    >
+  app\morador-v2\[unidadeId]\page.tsx:1962:                      {ciente ? "CIENTE" : "LER"}
+  app\morador-v2\[unidadeId]\page.tsx:1963:                    </span>
+  app\morador-v2\[unidadeId]\page.tsx:1964:                  </button>
+  app\morador-v2\[unidadeId]\page.tsx:1965:                );
+  app\morador-v2\[unidadeId]\page.tsx:1966:              })}
+  app\morador-v2\[unidadeId]\page.tsx:1967:            </div>
+  app\morador-v2\[unidadeId]\page.tsx:1968:          </div>
+  app\morador-v2\[unidadeId]\page.tsx:1969:        )}
+  app\morador-v2\[unidadeId]\page.tsx:1970:
+
+

@@ -1,0 +1,2526 @@
+﻿
+  app\api\abrir-portao\route.ts:25:  | {
+  app\api\abrir-portao\route.ts:26:      localId: string;
+  app\api\abrir-portao\route.ts:27:      acessoId: string;
+> app\api\abrir-portao\route.ts:28:      atorUid: string;
+  app\api\abrir-portao\route.ts:29:      nome: string;
+  app\api\abrir-portao\route.ts:30:      tipo: string;
+  app\api\abrir-portao\route.ts:31:    }
+  app\api\abrir-portao\route.ts:32:  | null = null;
+  app\api\abrir-portao\route.ts:33:
+  app\api\abrir-portao\route.ts:34:const localIdHistorico =
+  app\api\abrir-portao\route.ts:35:  request.nextUrl.searchParams
+  app\api\abrir-portao\route.ts:36:    .get("localId")
+  app\api\abrir-portao\route.ts:160:    acessoId:
+  app\api\abrir-portao\route.ts:161:      acessoIdHistorico,
+  app\api\abrir-portao\route.ts:162:
+> app\api\abrir-portao\route.ts:163:    atorUid:
+> app\api\abrir-portao\route.ts:164:      usuario.uid,
+  app\api\abrir-portao\route.ts:165:
+  app\api\abrir-portao\route.ts:166:    nome:
+  app\api\abrir-portao\route.ts:167:      acesso.nome || "",
+  app\api\abrir-portao\route.ts:168:
+  app\api\abrir-portao\route.ts:169:    tipo:
+  app\api\abrir-portao\route.ts:170:      acesso.tipo || "",
+  app\api\abrir-portao\route.ts:171:  };
+  app\api\abrir-portao\route.ts:172:}
+  app\api\abrir-portao\route.ts:256:      entidadeId:
+  app\api\abrir-portao\route.ts:257:        contextoAcessoTemporario.acessoId,
+  app\api\abrir-portao\route.ts:258:
+> app\api\abrir-portao\route.ts:259:      atorUid:
+> app\api\abrir-portao\route.ts:260:        contextoAcessoTemporario.atorUid,
+  app\api\abrir-portao\route.ts:261:
+  app\api\abrir-portao\route.ts:262:      dados: {
+  app\api\abrir-portao\route.ts:263:        nome:
+  app\api\abrir-portao\route.ts:264:          contextoAcessoTemporario.nome,
+  app\api\abrir-portao\route.ts:265:
+  app\api\abrir-portao\route.ts:266:        tipo:
+  app\api\abrir-portao\route.ts:267:          contextoAcessoTemporario.tipo,
+  app\api\abrir-portao\route.ts:268:
+  app\api\implantacao\criar-responsavel\route.ts:867:  const snapshot =
+  app\api\implantacao\criar-responsavel\route.ts:868:    await database
+  app\api\implantacao\criar-responsavel\route.ts:869:      .ref(
+> app\api\implantacao\criar-responsavel\route.ts:870:        `usuarios-v2/${tokenDecodificado.uid}`
+  app\api\implantacao\criar-responsavel\route.ts:871:      )
+  app\api\implantacao\criar-responsavel\route.ts:872:      .get();
+  app\api\implantacao\criar-responsavel\route.ts:873:
+  app\api\implantacao\criar-responsavel\route.ts:874:  if (
+  app\api\implantacao\criar-responsavel\route.ts:875:    !snapshot.exists()
+  app\api\implantacao\criar-responsavel\route.ts:876:  ) {
+  app\api\implantacao\criar-responsavel\route.ts:877:    throw new Error(
+  app\api\implantacao\criar-responsavel\route.ts:878:      "O usuário autenticado não possui cadastro no QR Core."
+  app\api\implantacao\criar-responsavel\route.ts:999:  } =
+  app\api\implantacao\criar-responsavel\route.ts:1000:    obterFirebaseAdmin();
+  app\api\implantacao\criar-responsavel\route.ts:1001:
+> app\api\implantacao\criar-responsavel\route.ts:1002:  let uidResponsavel:
+  app\api\implantacao\criar-responsavel\route.ts:1003:    string | null =
+  app\api\implantacao\criar-responsavel\route.ts:1004:      null;
+  app\api\implantacao\criar-responsavel\route.ts:1005:
+  app\api\implantacao\criar-responsavel\route.ts:1006:  let usuarioCriadoNoAuthentication =
+  app\api\implantacao\criar-responsavel\route.ts:1007:    false;
+  app\api\implantacao\criar-responsavel\route.ts:1008:
+  app\api\implantacao\criar-responsavel\route.ts:1009:  let usuarioBancoExistiaAntes =
+  app\api\implantacao\criar-responsavel\route.ts:1010:    false;
+  app\api\implantacao\criar-responsavel\route.ts:1191:
+  app\api\implantacao\criar-responsavel\route.ts:1192:          endereco,
+  app\api\implantacao\criar-responsavel\route.ts:1193:
+> app\api\implantacao\criar-responsavel\route.ts:1194:          criadoPorUid:
+> app\api\implantacao\criar-responsavel\route.ts:1195:            administrador.uid,
+  app\api\implantacao\criar-responsavel\route.ts:1196:
+  app\api\implantacao\criar-responsavel\route.ts:1197:          criadoEm:
+  app\api\implantacao\criar-responsavel\route.ts:1198:            agora,
+  app\api\implantacao\criar-responsavel\route.ts:1199:
+  app\api\implantacao\criar-responsavel\route.ts:1200:          modulos:
+  app\api\implantacao\criar-responsavel\route.ts:1201:            modulosIniciais,
+  app\api\implantacao\criar-responsavel\route.ts:1202:
+  app\api\implantacao\criar-responsavel\route.ts:1203:          estatisticas:
+  app\api\implantacao\criar-responsavel\route.ts:1318:          "assistente-implantacao-qr-core",
+  app\api\implantacao\criar-responsavel\route.ts:1319:      });
+  app\api\implantacao\criar-responsavel\route.ts:1320:
+> app\api\implantacao\criar-responsavel\route.ts:1321:    uidResponsavel =
+> app\api\implantacao\criar-responsavel\route.ts:1322:      resultadoPessoa.uid;
+  app\api\implantacao\criar-responsavel\route.ts:1323:
+  app\api\implantacao\criar-responsavel\route.ts:1324:    usuarioCriadoNoAuthentication =
+  app\api\implantacao\criar-responsavel\route.ts:1325:      resultadoPessoa
+  app\api\implantacao\criar-responsavel\route.ts:1326:        .criadoNoAuthentication;
+  app\api\implantacao\criar-responsavel\route.ts:1327:
+  app\api\implantacao\criar-responsavel\route.ts:1328:    if (
+> app\api\implantacao\criar-responsavel\route.ts:1329:      !uidResponsavel
+  app\api\implantacao\criar-responsavel\route.ts:1330:    ) {
+  app\api\implantacao\criar-responsavel\route.ts:1331:      throw new Error(
+> app\api\implantacao\criar-responsavel\route.ts:1332:        "Não foi possível determinar o UID do responsável."
+  app\api\implantacao\criar-responsavel\route.ts:1333:      );
+  app\api\implantacao\criar-responsavel\route.ts:1334:    }
+  app\api\implantacao\criar-responsavel\route.ts:1335:
+  app\api\implantacao\criar-responsavel\route.ts:1336:    const vinculoUniversal = {
+  app\api\implantacao\criar-responsavel\route.ts:1337:      localId,
+  app\api\implantacao\criar-responsavel\route.ts:1338:
+  app\api\implantacao\criar-responsavel\route.ts:1339:      localNome,
+  app\api\implantacao\criar-responsavel\route.ts:1340:
+  app\api\implantacao\criar-responsavel\route.ts:1383:
+  app\api\implantacao\criar-responsavel\route.ts:1384:    const referenciaUsuarioBanco =
+  app\api\implantacao\criar-responsavel\route.ts:1385:      database.ref(
+> app\api\implantacao\criar-responsavel\route.ts:1386:        `usuarios-v2/${uidResponsavel}`
+  app\api\implantacao\criar-responsavel\route.ts:1387:      );
+  app\api\implantacao\criar-responsavel\route.ts:1388:
+  app\api\implantacao\criar-responsavel\route.ts:1389:    const snapshotUsuarioBanco =
+  app\api\implantacao\criar-responsavel\route.ts:1390:      await referenciaUsuarioBanco
+  app\api\implantacao\criar-responsavel\route.ts:1391:        .get();
+  app\api\implantacao\criar-responsavel\route.ts:1392:
+  app\api\implantacao\criar-responsavel\route.ts:1393:    usuarioBancoExistiaAntes =
+  app\api\implantacao\criar-responsavel\route.ts:1394:      snapshotUsuarioBanco.exists();
+  app\api\implantacao\criar-responsavel\route.ts:1409:      true;
+  app\api\implantacao\criar-responsavel\route.ts:1410:
+  app\api\implantacao\criar-responsavel\route.ts:1411:    const referenciaUsuarioLocal = {
+> app\api\implantacao\criar-responsavel\route.ts:1412:      uid:
+> app\api\implantacao\criar-responsavel\route.ts:1413:        uidResponsavel,
+  app\api\implantacao\criar-responsavel\route.ts:1414:
+  app\api\implantacao\criar-responsavel\route.ts:1415:      nome,
+  app\api\implantacao\criar-responsavel\route.ts:1416:
+  app\api\implantacao\criar-responsavel\route.ts:1417:      email,
+  app\api\implantacao\criar-responsavel\route.ts:1418:
+  app\api\implantacao\criar-responsavel\route.ts:1419:      telefone,
+  app\api\implantacao\criar-responsavel\route.ts:1420:
+  app\api\implantacao\criar-responsavel\route.ts:1421:      cpf:
+  app\api\implantacao\criar-responsavel\route.ts:1442:
+  app\api\implantacao\criar-responsavel\route.ts:1443:    await database
+  app\api\implantacao\criar-responsavel\route.ts:1444:      .ref(
+> app\api\implantacao\criar-responsavel\route.ts:1445:        `locais-v2/${localId}/usuarios/${uidResponsavel}`
+  app\api\implantacao\criar-responsavel\route.ts:1446:      )
+  app\api\implantacao\criar-responsavel\route.ts:1447:      .set(
+  app\api\implantacao\criar-responsavel\route.ts:1448:        referenciaUsuarioLocal
+  app\api\implantacao\criar-responsavel\route.ts:1449:      );
+  app\api\implantacao\criar-responsavel\route.ts:1450:
+  app\api\implantacao\criar-responsavel\route.ts:1451:    await database
+  app\api\implantacao\criar-responsavel\route.ts:1452:      .ref(
+> app\api\implantacao\criar-responsavel\route.ts:1453:        `locais-v2/${localId}/responsaveis/${uidResponsavel}`
+  app\api\implantacao\criar-responsavel\route.ts:1454:      )
+  app\api\implantacao\criar-responsavel\route.ts:1455:      .set({
+> app\api\implantacao\criar-responsavel\route.ts:1456:        uid:
+> app\api\implantacao\criar-responsavel\route.ts:1457:          uidResponsavel,
+  app\api\implantacao\criar-responsavel\route.ts:1458:
+  app\api\implantacao\criar-responsavel\route.ts:1459:        nome,
+  app\api\implantacao\criar-responsavel\route.ts:1460:
+  app\api\implantacao\criar-responsavel\route.ts:1461:        email,
+  app\api\implantacao\criar-responsavel\route.ts:1462:
+  app\api\implantacao\criar-responsavel\route.ts:1463:        telefone,
+  app\api\implantacao\criar-responsavel\route.ts:1464:
+  app\api\implantacao\criar-responsavel\route.ts:1465:        cpf:
+  app\api\implantacao\criar-responsavel\route.ts:1497:        criadoEm:
+  app\api\implantacao\criar-responsavel\route.ts:1498:          agora,
+  app\api\implantacao\criar-responsavel\route.ts:1499:
+> app\api\implantacao\criar-responsavel\route.ts:1500:        criadoPorUid:
+> app\api\implantacao\criar-responsavel\route.ts:1501:          administrador.uid,
+  app\api\implantacao\criar-responsavel\route.ts:1502:
+  app\api\implantacao\criar-responsavel\route.ts:1503:        local: {
+  app\api\implantacao\criar-responsavel\route.ts:1504:          localId,
+  app\api\implantacao\criar-responsavel\route.ts:1505:
+  app\api\implantacao\criar-responsavel\route.ts:1506:          localNome,
+  app\api\implantacao\criar-responsavel\route.ts:1507:
+  app\api\implantacao\criar-responsavel\route.ts:1508:          localSlug,
+  app\api\implantacao\criar-responsavel\route.ts:1509:
+  app\api\implantacao\criar-responsavel\route.ts:1517:        },
+  app\api\implantacao\criar-responsavel\route.ts:1518:
+  app\api\implantacao\criar-responsavel\route.ts:1519:        responsavel: {
+> app\api\implantacao\criar-responsavel\route.ts:1520:          uid:
+> app\api\implantacao\criar-responsavel\route.ts:1521:            uidResponsavel,
+  app\api\implantacao\criar-responsavel\route.ts:1522:
+  app\api\implantacao\criar-responsavel\route.ts:1523:          nome,
+  app\api\implantacao\criar-responsavel\route.ts:1524:
+  app\api\implantacao\criar-responsavel\route.ts:1525:          email,
+  app\api\implantacao\criar-responsavel\route.ts:1526:
+  app\api\implantacao\criar-responsavel\route.ts:1527:          telefone,
+  app\api\implantacao\criar-responsavel\route.ts:1528:
+  app\api\implantacao\criar-responsavel\route.ts:1529:          perfil,
+  app\api\implantacao\criar-responsavel\route.ts:1548:      .update({
+  app\api\implantacao\criar-responsavel\route.ts:1549:        implantacao: {
+  app\api\implantacao\criar-responsavel\route.ts:1550:          status:
+> app\api\implantacao\criar-responsavel\route.ts:1551:            "concluida",
+  app\api\implantacao\criar-responsavel\route.ts:1552:
+  app\api\implantacao\criar-responsavel\route.ts:1553:          estruturasCriadas:
+  app\api\implantacao\criar-responsavel\route.ts:1554:            resultadoSegmento
+  app\api\implantacao\criar-responsavel\route.ts:1555:              .estruturasCriadas,
+  app\api\implantacao\criar-responsavel\route.ts:1556:
+  app\api\implantacao\criar-responsavel\route.ts:1557:          etapas:
+  app\api\implantacao\criar-responsavel\route.ts:1558:            resultadoSegmento
+  app\api\implantacao\criar-responsavel\route.ts:1559:              .etapas,
+  app\api\implantacao\criar-responsavel\route.ts:1560:
+> app\api\implantacao\criar-responsavel\route.ts:1561:          concluidaEm:
+  app\api\implantacao\criar-responsavel\route.ts:1562:            Date.now(),
+  app\api\implantacao\criar-responsavel\route.ts:1563:        },
+  app\api\implantacao\criar-responsavel\route.ts:1564:
+  app\api\implantacao\criar-responsavel\route.ts:1565:        atualizadoEm:
+  app\api\implantacao\criar-responsavel\route.ts:1566:          Date.now(),
+  app\api\implantacao\criar-responsavel\route.ts:1567:      });
+  app\api\implantacao\criar-responsavel\route.ts:1568:
+  app\api\implantacao\criar-responsavel\route.ts:1569:    await database
+  app\api\implantacao\criar-responsavel\route.ts:1572:      )
+  app\api\implantacao\criar-responsavel\route.ts:1573:      .push({
+  app\api\implantacao\criar-responsavel\route.ts:1574:        tipo:
+> app\api\implantacao\criar-responsavel\route.ts:1575:          "implantacao_concluida",
+  app\api\implantacao\criar-responsavel\route.ts:1576:
+  app\api\implantacao\criar-responsavel\route.ts:1577:        localId,
+  app\api\implantacao\criar-responsavel\route.ts:1578:
+  app\api\implantacao\criar-responsavel\route.ts:1579:        localNome,
+  app\api\implantacao\criar-responsavel\route.ts:1580:
+  app\api\implantacao\criar-responsavel\route.ts:1581:        localNomeBase,
+  app\api\implantacao\criar-responsavel\route.ts:1582:
+  app\api\implantacao\criar-responsavel\route.ts:1583:        localNomeExibicao:
+  app\api\implantacao\criar-responsavel\route.ts:1587:
+  app\api\implantacao\criar-responsavel\route.ts:1588:        tipoLocal,
+  app\api\implantacao\criar-responsavel\route.ts:1589:
+> app\api\implantacao\criar-responsavel\route.ts:1590:        usuarioUid:
+> app\api\implantacao\criar-responsavel\route.ts:1591:          uidResponsavel,
+  app\api\implantacao\criar-responsavel\route.ts:1592:
+  app\api\implantacao\criar-responsavel\route.ts:1593:        usuarioNome:
+  app\api\implantacao\criar-responsavel\route.ts:1594:          nome,
+  app\api\implantacao\criar-responsavel\route.ts:1595:
+  app\api\implantacao\criar-responsavel\route.ts:1596:        usuarioEmail:
+  app\api\implantacao\criar-responsavel\route.ts:1597:          email,
+  app\api\implantacao\criar-responsavel\route.ts:1598:
+  app\api\implantacao\criar-responsavel\route.ts:1599:        usuarioCpf:
+  app\api\implantacao\criar-responsavel\route.ts:1665:          resultadoSegmento
+  app\api\implantacao\criar-responsavel\route.ts:1666:            .etapas,
+  app\api\implantacao\criar-responsavel\route.ts:1667:
+> app\api\implantacao\criar-responsavel\route.ts:1668:        criadoPorUid:
+> app\api\implantacao\criar-responsavel\route.ts:1669:          administrador.uid,
+  app\api\implantacao\criar-responsavel\route.ts:1670:
+  app\api\implantacao\criar-responsavel\route.ts:1671:        criadoEm:
+  app\api\implantacao\criar-responsavel\route.ts:1672:          agora,
+  app\api\implantacao\criar-responsavel\route.ts:1673:
+  app\api\implantacao\criar-responsavel\route.ts:1674:        criadoEmFormatado:
+  app\api\implantacao\criar-responsavel\route.ts:1675:          new Date(
+  app\api\implantacao\criar-responsavel\route.ts:1676:            agora
+  app\api\implantacao\criar-responsavel\route.ts:1677:          ).toLocaleString(
+  app\api\implantacao\criar-responsavel\route.ts:1754:        },
+  app\api\implantacao\criar-responsavel\route.ts:1755:
+  app\api\implantacao\criar-responsavel\route.ts:1756:        usuario: {
+> app\api\implantacao\criar-responsavel\route.ts:1757:          uid:
+> app\api\implantacao\criar-responsavel\route.ts:1758:            uidResponsavel,
+  app\api\implantacao\criar-responsavel\route.ts:1759:
+  app\api\implantacao\criar-responsavel\route.ts:1760:          nome,
+  app\api\implantacao\criar-responsavel\route.ts:1761:
+  app\api\implantacao\criar-responsavel\route.ts:1762:          email,
+  app\api\implantacao\criar-responsavel\route.ts:1763:
+  app\api\implantacao\criar-responsavel\route.ts:1764:          telefone,
+  app\api\implantacao\criar-responsavel\route.ts:1765:
+  app\api\implantacao\criar-responsavel\route.ts:1766:          cpf:
+  app\api\implantacao\criar-responsavel\route.ts:1852:    }
+  app\api\implantacao\criar-responsavel\route.ts:1853:
+  app\api\implantacao\criar-responsavel\route.ts:1854:    if (
+> app\api\implantacao\criar-responsavel\route.ts:1855:      uidResponsavel &&
+  app\api\implantacao\criar-responsavel\route.ts:1856:      localIdProcessado
+  app\api\implantacao\criar-responsavel\route.ts:1857:    ) {
+  app\api\implantacao\criar-responsavel\route.ts:1858:      try {
+  app\api\implantacao\criar-responsavel\route.ts:1859:        if (
+  app\api\implantacao\criar-responsavel\route.ts:1860:          vinculosUsuarioGravados
+  app\api\implantacao\criar-responsavel\route.ts:1861:        ) {
+  app\api\implantacao\criar-responsavel\route.ts:1862:          await database
+  app\api\implantacao\criar-responsavel\route.ts:1863:            .ref(
+> app\api\implantacao\criar-responsavel\route.ts:1864:              `usuarios-v2/${uidResponsavel}/locais/${localIdProcessado}`
+  app\api\implantacao\criar-responsavel\route.ts:1865:            )
+  app\api\implantacao\criar-responsavel\route.ts:1866:            .remove();
+  app\api\implantacao\criar-responsavel\route.ts:1867:
+  app\api\implantacao\criar-responsavel\route.ts:1868:          await database
+  app\api\implantacao\criar-responsavel\route.ts:1869:            .ref(
+> app\api\implantacao\criar-responsavel\route.ts:1870:              `usuarios-v2/${uidResponsavel}/condominios/${localIdProcessado}`
+  app\api\implantacao\criar-responsavel\route.ts:1871:            )
+  app\api\implantacao\criar-responsavel\route.ts:1872:            .remove();
+  app\api\implantacao\criar-responsavel\route.ts:1873:        }
+  app\api\implantacao\criar-responsavel\route.ts:1874:
+  app\api\implantacao\criar-responsavel\route.ts:1875:        await database
+  app\api\implantacao\criar-responsavel\route.ts:1876:          .ref(
+> app\api\implantacao\criar-responsavel\route.ts:1877:            `locais-v2/${localIdProcessado}/usuarios/${uidResponsavel}`
+  app\api\implantacao\criar-responsavel\route.ts:1878:          )
+  app\api\implantacao\criar-responsavel\route.ts:1879:          .remove();
+  app\api\implantacao\criar-responsavel\route.ts:1880:
+  app\api\implantacao\criar-responsavel\route.ts:1881:        await database
+  app\api\implantacao\criar-responsavel\route.ts:1882:          .ref(
+> app\api\implantacao\criar-responsavel\route.ts:1883:            `locais-v2/${localIdProcessado}/responsaveis/${uidResponsavel}`
+  app\api\implantacao\criar-responsavel\route.ts:1884:          )
+  app\api\implantacao\criar-responsavel\route.ts:1885:          .remove();
+  app\api\implantacao\criar-responsavel\route.ts:1886:
+  app\api\implantacao\criar-responsavel\route.ts:1887:        if (
+  app\api\implantacao\criar-responsavel\route.ts:1888:          usuarioCriadoNoAuthentication &&
+  app\api\implantacao\criar-responsavel\route.ts:1889:          !usuarioBancoExistiaAntes
+  app\api\implantacao\criar-responsavel\route.ts:1890:        ) {
+  app\api\implantacao\criar-responsavel\route.ts:1891:          await database
+  app\api\implantacao\criar-responsavel\route.ts:1892:            .ref(
+> app\api\implantacao\criar-responsavel\route.ts:1893:              `usuarios-v2/${uidResponsavel}`
+  app\api\implantacao\criar-responsavel\route.ts:1894:            )
+  app\api\implantacao\criar-responsavel\route.ts:1895:            .remove();
+  app\api\implantacao\criar-responsavel\route.ts:1896:        }
+  app\api\implantacao\criar-responsavel\route.ts:1897:      } catch (
+  app\api\implantacao\criar-responsavel\route.ts:1898:        erroBanco
+  app\api\implantacao\criar-responsavel\route.ts:1899:      ) {
+  app\api\implantacao\criar-responsavel\route.ts:1900:        console.error(
+  app\api\implantacao\criar-responsavel\route.ts:1901:          "Erro ao desfazer vínculos do usuário durante rollback:",
+  app\api\implantacao\criar-responsavel\route.ts:1909:        try {
+  app\api\implantacao\criar-responsavel\route.ts:1910:          await auth
+  app\api\implantacao\criar-responsavel\route.ts:1911:            .deleteUser(
+> app\api\implantacao\criar-responsavel\route.ts:1912:              uidResponsavel
+  app\api\implantacao\criar-responsavel\route.ts:1913:            );
+  app\api\implantacao\criar-responsavel\route.ts:1914:        } catch (
+  app\api\implantacao\criar-responsavel\route.ts:1915:          erroAuth
+  app\api\implantacao\criar-responsavel\route.ts:1916:        ) {
+  app\api\implantacao\criar-responsavel\route.ts:1917:          console.error(
+  app\api\implantacao\criar-responsavel\route.ts:1918:            "Erro ao remover usuário novo do Authentication durante rollback:",
+  app\api\implantacao\criar-responsavel\route.ts:1919:            erroAuth
+  app\api\implantacao\criar-responsavel\route.ts:1920:          );
+  app\api\init-admin\route.ts:8:import { getAuth } from "firebase-admin/auth";
+  app\api\init-admin\route.ts:9:import { getDatabase } from "firebase-admin/database";
+  app\api\init-admin\route.ts:10:
+> app\api\init-admin\route.ts:11:const UID_ADMIN = "zOsew1mVu4SkMsUcB1xO6rxs0bw1";
+  app\api\init-admin\route.ts:12:
+  app\api\init-admin\route.ts:13:function obterFirebaseAdmin() {
+  app\api\init-admin\route.ts:14:  if (getApps().length > 0) {
+  app\api\init-admin\route.ts:15:    return getApp();
+  app\api\init-admin\route.ts:16:  }
+  app\api\init-admin\route.ts:17:
+  app\api\init-admin\route.ts:18:  const chaveTexto =
+  app\api\init-admin\route.ts:19:    process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
+  app\api\init-admin\route.ts:56:    const database = getDatabase(app);
+  app\api\init-admin\route.ts:57:
+  app\api\init-admin\route.ts:58:    const usuarioAuthentication =
+> app\api\init-admin\route.ts:59:      await auth.getUser(UID_ADMIN);
+  app\api\init-admin\route.ts:60:
+  app\api\init-admin\route.ts:61:    if (!usuarioAuthentication.email) {
+  app\api\init-admin\route.ts:62:      return NextResponse.json(
+  app\api\init-admin\route.ts:63:        {
+  app\api\init-admin\route.ts:64:          sucesso: false,
+  app\api\init-admin\route.ts:65:          erro:
+  app\api\init-admin\route.ts:66:            "O usuário existe no Authentication, mas não possui e-mail.",
+  app\api\init-admin\route.ts:67:        },
+  app\api\init-admin\route.ts:74:    const agora = Date.now();
+  app\api\init-admin\route.ts:75:
+  app\api\init-admin\route.ts:76:    const usuarioAdmin = {
+> app\api\init-admin\route.ts:77:      uid: UID_ADMIN,
+  app\api\init-admin\route.ts:78:      nome:
+  app\api\init-admin\route.ts:79:        usuarioAuthentication.displayName ||
+  app\api\init-admin\route.ts:80:        "Administrador Studio",
+  app\api\init-admin\route.ts:81:      email: usuarioAuthentication.email,
+  app\api\init-admin\route.ts:82:      telefone: "",
+  app\api\init-admin\route.ts:83:      status: "ativo",
+  app\api\init-admin\route.ts:84:      criadoEm: agora,
+  app\api\init-admin\route.ts:85:      atualizadoEm: agora,
+  app\api\init-admin\route.ts:123:    };
+  app\api\init-admin\route.ts:124:
+  app\api\init-admin\route.ts:125:    await database
+> app\api\init-admin\route.ts:126:      .ref(`usuarios-v2/${UID_ADMIN}`)
+  app\api\init-admin\route.ts:127:      .set(usuarioAdmin);
+  app\api\init-admin\route.ts:128:
+  app\api\init-admin\route.ts:129:    return NextResponse.json({
+  app\api\init-admin\route.ts:130:      sucesso: true,
+  app\api\init-admin\route.ts:131:      mensagem:
+  app\api\init-admin\route.ts:132:        "Administrador Studio criado com sucesso.",
+> app\api\init-admin\route.ts:133:      caminho: `usuarios-v2/${UID_ADMIN}`,
+  app\api\init-admin\route.ts:134:      usuario: {
+> app\api\init-admin\route.ts:135:        uid: UID_ADMIN,
+  app\api\init-admin\route.ts:136:        nome: usuarioAdmin.nome,
+  app\api\init-admin\route.ts:137:        email: usuarioAdmin.email,
+  app\api\init-admin\route.ts:138:        perfil: "administrador-master",
+  app\api\init-admin\route.ts:139:      },
+  app\api\init-admin\route.ts:140:    });
+  app\api\init-admin\route.ts:141:  } catch (erro) {
+  app\api\init-admin\route.ts:142:    console.error(
+  app\api\init-admin\route.ts:143:      "Erro ao inicializar administrador:",
+  app\api\residencia\acessos-temporarios\route.ts:2:
+  app\api\residencia\acessos-temporarios\route.ts:3:import {
+  app\api\residencia\acessos-temporarios\route.ts:4:  randomInt,
+> app\api\residencia\acessos-temporarios\route.ts:5:  randomUUID,
+  app\api\residencia\acessos-temporarios\route.ts:6:} from "node:crypto";
+  app\api\residencia\acessos-temporarios\route.ts:7:
+  app\api\residencia\acessos-temporarios\route.ts:8:import {
+  app\api\residencia\acessos-temporarios\route.ts:9:  NextRequest,
+  app\api\residencia\acessos-temporarios\route.ts:10:  NextResponse,
+  app\api\residencia\acessos-temporarios\route.ts:11:} from "next/server";
+  app\api\residencia\acessos-temporarios\route.ts:12:
+  app\api\residencia\acessos-temporarios\route.ts:13:import {
+  app\api\residencia\acessos-temporarios\route.ts:93:  const snapshot =
+  app\api\residencia\acessos-temporarios\route.ts:94:    await database
+  app\api\residencia\acessos-temporarios\route.ts:95:      .ref(
+> app\api\residencia\acessos-temporarios\route.ts:96:        `usuarios-v2/${decodificado.uid}`
+  app\api\residencia\acessos-temporarios\route.ts:97:      )
+  app\api\residencia\acessos-temporarios\route.ts:98:      .get();
+  app\api\residencia\acessos-temporarios\route.ts:99:
+  app\api\residencia\acessos-temporarios\route.ts:100:  if (!snapshot.exists()) {
+  app\api\residencia\acessos-temporarios\route.ts:101:    throw new Error(
+  app\api\residencia\acessos-temporarios\route.ts:102:      "Usu?rio n?o encontrado."
+  app\api\residencia\acessos-temporarios\route.ts:103:    );
+  app\api\residencia\acessos-temporarios\route.ts:104:  }
+  app\api\residencia\acessos-temporarios\route.ts:154:  }
+  app\api\residencia\acessos-temporarios\route.ts:155:
+  app\api\residencia\acessos-temporarios\route.ts:156:  return {
+> app\api\residencia\acessos-temporarios\route.ts:157:    uid:
+> app\api\residencia\acessos-temporarios\route.ts:158:      decodificado.uid,
+  app\api\residencia\acessos-temporarios\route.ts:159:
+  app\api\residencia\acessos-temporarios\route.ts:160:    database,
+  app\api\residencia\acessos-temporarios\route.ts:161:  };
+  app\api\residencia\acessos-temporarios\route.ts:162:}
+  app\api\residencia\acessos-temporarios\route.ts:163:
+  app\api\residencia\acessos-temporarios\route.ts:164:function gerarPin() {
+  app\api\residencia\acessos-temporarios\route.ts:165:  return String(
+  app\api\residencia\acessos-temporarios\route.ts:166:    randomInt(
+  app\api\residencia\acessos-temporarios\route.ts:378:      );
+  app\api\residencia\acessos-temporarios\route.ts:379:
+  app\api\residencia\acessos-temporarios\route.ts:380:    const id =
+> app\api\residencia\acessos-temporarios\route.ts:381:      randomUUID();
+  app\api\residencia\acessos-temporarios\route.ts:382:
+  app\api\residencia\acessos-temporarios\route.ts:383:    const pin =
+  app\api\residencia\acessos-temporarios\route.ts:384:      gerarPin();
+  app\api\residencia\acessos-temporarios\route.ts:385:
+  app\api\residencia\acessos-temporarios\route.ts:386:    const agora =
+  app\api\residencia\acessos-temporarios\route.ts:387:      Date.now();
+  app\api\residencia\acessos-temporarios\route.ts:388:
+  app\api\residencia\acessos-temporarios\route.ts:389:    const acesso = {
+  app\api\residencia\acessos-temporarios\route.ts:422:        true,
+  app\api\residencia\acessos-temporarios\route.ts:423:
+  app\api\residencia\acessos-temporarios\route.ts:424:      criadoPor:
+> app\api\residencia\acessos-temporarios\route.ts:425:        gestor.uid,
+  app\api\residencia\acessos-temporarios\route.ts:426:
+  app\api\residencia\acessos-temporarios\route.ts:427:      criadoEm:
+  app\api\residencia\acessos-temporarios\route.ts:428:        agora,
+  app\api\residencia\acessos-temporarios\route.ts:429:
+  app\api\residencia\acessos-temporarios\route.ts:430:      atualizadoEm:
+  app\api\residencia\acessos-temporarios\route.ts:431:        agora,
+  app\api\residencia\acessos-temporarios\route.ts:432:    };
+  app\api\residencia\acessos-temporarios\route.ts:433:
+  app\api\residencia\acessos-temporarios\route.ts:460:      entidadeId:
+  app\api\residencia\acessos-temporarios\route.ts:461:        id,
+  app\api\residencia\acessos-temporarios\route.ts:462:
+> app\api\residencia\acessos-temporarios\route.ts:463:      atorUid:
+> app\api\residencia\acessos-temporarios\route.ts:464:        gestor.uid,
+  app\api\residencia\acessos-temporarios\route.ts:465:
+  app\api\residencia\acessos-temporarios\route.ts:466:      dados: {
+  app\api\residencia\acessos-temporarios\route.ts:467:        nome,
+  app\api\residencia\acessos-temporarios\route.ts:468:        tipo:
+  app\api\residencia\acessos-temporarios\route.ts:469:          tipo || "visitante",
+  app\api\residencia\acessos-temporarios\route.ts:470:        inicio,
+  app\api\residencia\acessos-temporarios\route.ts:471:        fim,
+  app\api\residencia\acessos-temporarios\route.ts:472:        permissoes:
+  app\api\residencia\acessos-temporarios\route.ts:569:agora,
+  app\api\residencia\acessos-temporarios\route.ts:570:
+  app\api\residencia\acessos-temporarios\route.ts:571:arquivadoPor:
+> app\api\residencia\acessos-temporarios\route.ts:572:gestor.uid,
+  app\api\residencia\acessos-temporarios\route.ts:573:
+  app\api\residencia\acessos-temporarios\route.ts:574:atualizadoEm:
+  app\api\residencia\acessos-temporarios\route.ts:575:agora,
+  app\api\residencia\acessos-temporarios\route.ts:576:});
+  app\api\residencia\acessos-temporarios\route.ts:577:
+  app\api\residencia\acessos-temporarios\route.ts:578:await registrarHistoricoLocal({
+  app\api\residencia\acessos-temporarios\route.ts:579:database:
+  app\api\residencia\acessos-temporarios\route.ts:580:gestor.database,
+  app\api\residencia\acessos-temporarios\route.ts:596:entidadeId:
+  app\api\residencia\acessos-temporarios\route.ts:597:acessoId,
+  app\api\residencia\acessos-temporarios\route.ts:598:
+> app\api\residencia\acessos-temporarios\route.ts:599:atorUid:
+> app\api\residencia\acessos-temporarios\route.ts:600:gestor.uid,
+  app\api\residencia\acessos-temporarios\route.ts:601:
+  app\api\residencia\acessos-temporarios\route.ts:602:dados: {
+  app\api\residencia\acessos-temporarios\route.ts:603:nome:
+  app\api\residencia\acessos-temporarios\route.ts:604:acesso.nome || "",
+  app\api\residencia\acessos-temporarios\route.ts:605:},
+  app\api\residencia\acessos-temporarios\route.ts:606:});
+  app\api\residencia\acessos-temporarios\route.ts:607:
+  app\api\residencia\acessos-temporarios\route.ts:608:return NextResponse.json({
+  app\api\residencia\acessos-temporarios\route.ts:704:      entidadeId:
+  app\api\residencia\acessos-temporarios\route.ts:705:        acessoId,
+  app\api\residencia\acessos-temporarios\route.ts:706:
+> app\api\residencia\acessos-temporarios\route.ts:707:      atorUid:
+  app\api\residencia\acessos-temporarios\route.ts:708:        "",
+  app\api\residencia\acessos-temporarios\route.ts:709:    });
+  app\api\residencia\acessos-temporarios\route.ts:710:
+  app\api\residencia\acessos-temporarios\route.ts:711:    return NextResponse.json({
+  app\api\residencia\acessos-temporarios\route.ts:712:      sucesso: true,
+  app\api\residencia\acessos-temporarios\route.ts:713:      mensagem:
+  app\api\residencia\acessos-temporarios\route.ts:714:        "Acesso tempor?rio revogado.",
+  app\api\residencia\acessos-temporarios\route.ts:715:    });
+  app\api\residencia\familia\route.ts:59:};
+  app\api\residencia\familia\route.ts:60:
+  app\api\residencia\familia\route.ts:61:type UsuarioBanco = {
+> app\api\residencia\familia\route.ts:62:  uid?: string;
+  app\api\residencia\familia\route.ts:63:  nome?: string;
+  app\api\residencia\familia\route.ts:64:  email?: string;
+  app\api\residencia\familia\route.ts:65:  telefone?: string;
+  app\api\residencia\familia\route.ts:66:  cpf?: string;
+  app\api\residencia\familia\route.ts:67:  status?: string;
+  app\api\residencia\familia\route.ts:68:
+  app\api\residencia\familia\route.ts:69:  locais?: Record<
+  app\api\residencia\familia\route.ts:70:    string,
+  app\api\residencia\familia\route.ts:135:  const snapshot =
+  app\api\residencia\familia\route.ts:136:    await database
+  app\api\residencia\familia\route.ts:137:      .ref(
+> app\api\residencia\familia\route.ts:138:        `usuarios-v2/${decodificado.uid}`
+  app\api\residencia\familia\route.ts:139:      )
+  app\api\residencia\familia\route.ts:140:      .get();
+  app\api\residencia\familia\route.ts:141:
+  app\api\residencia\familia\route.ts:142:  if (!snapshot.exists()) {
+  app\api\residencia\familia\route.ts:143:    throw new Error(
+  app\api\residencia\familia\route.ts:144:      "Usu?rio autenticado n?o encontrado."
+  app\api\residencia\familia\route.ts:145:    );
+  app\api\residencia\familia\route.ts:146:  }
+  app\api\residencia\familia\route.ts:209:  }
+  app\api\residencia\familia\route.ts:210:
+  app\api\residencia\familia\route.ts:211:  return {
+> app\api\residencia\familia\route.ts:212:    uid:
+> app\api\residencia\familia\route.ts:213:      decodificado.uid,
+  app\api\residencia\familia\route.ts:214:
+  app\api\residencia\familia\route.ts:215:    usuario,
+  app\api\residencia\familia\route.ts:216:
+  app\api\residencia\familia\route.ts:217:    vinculo,
+  app\api\residencia\familia\route.ts:218:  };
+  app\api\residencia\familia\route.ts:219:}
+  app\api\residencia\familia\route.ts:220:
+  app\api\residencia\familia\route.ts:221:function criarSenhaProvisoria() {
+  app\api\residencia\familia\route.ts:310:    const snapshot =
+  app\api\residencia\familia\route.ts:311:      await database
+  app\api\residencia\familia\route.ts:312:        .ref(
+> app\api\residencia\familia\route.ts:313:          "usuarios-v2"
+  app\api\residencia\familia\route.ts:314:        )
+  app\api\residencia\familia\route.ts:315:        .get();
+  app\api\residencia\familia\route.ts:316:
+  app\api\residencia\familia\route.ts:317:    if (!snapshot.exists()) {
+  app\api\residencia\familia\route.ts:318:      return NextResponse.json({
+  app\api\residencia\familia\route.ts:319:        sucesso: true,
+  app\api\residencia\familia\route.ts:320:        pessoas: [],
+  app\api\residencia\familia\route.ts:321:      });
+  app\api\residencia\familia\route.ts:351:        )
+  app\api\residencia\familia\route.ts:352:        .map(
+  app\api\residencia\familia\route.ts:353:          ([
+> app\api\residencia\familia\route.ts:354:            uid,
+  app\api\residencia\familia\route.ts:355:            usuario,
+  app\api\residencia\familia\route.ts:356:          ]) => {
+  app\api\residencia\familia\route.ts:357:            const vinculo =
+  app\api\residencia\familia\route.ts:358:              usuario.locais?.[
+  app\api\residencia\familia\route.ts:359:                localId
+  app\api\residencia\familia\route.ts:360:              ];
+  app\api\residencia\familia\route.ts:361:
+  app\api\residencia\familia\route.ts:362:            return {
+> app\api\residencia\familia\route.ts:363:              uid,
+  app\api\residencia\familia\route.ts:364:
+  app\api\residencia\familia\route.ts:365:              nome:
+  app\api\residencia\familia\route.ts:366:                usuario.nome ||
+  app\api\residencia\familia\route.ts:367:                "Pessoa",
+  app\api\residencia\familia\route.ts:368:
+  app\api\residencia\familia\route.ts:369:              email:
+  app\api\residencia\familia\route.ts:370:                usuario.email ||
+  app\api\residencia\familia\route.ts:371:                "",
+  app\api\residencia\familia\route.ts:521:    const agora =
+  app\api\residencia\familia\route.ts:522:      Date.now();
+  app\api\residencia\familia\route.ts:523:
+> app\api\residencia\familia\route.ts:524:    const uid =
+> app\api\residencia\familia\route.ts:525:      resultadoPessoa.uid;
+  app\api\residencia\familia\route.ts:526:
+  app\api\residencia\familia\route.ts:527:    const snapshotLocal =
+  app\api\residencia\familia\route.ts:528:      await database
+  app\api\residencia\familia\route.ts:529:        .ref(
+  app\api\residencia\familia\route.ts:530:          `locais-v2/${localId}`
+  app\api\residencia\familia\route.ts:531:        )
+  app\api\residencia\familia\route.ts:532:        .get();
+  app\api\residencia\familia\route.ts:533:
+  app\api\residencia\familia\route.ts:544:    const snapshotVinculo =
+  app\api\residencia\familia\route.ts:545:      await database
+  app\api\residencia\familia\route.ts:546:        .ref(
+> app\api\residencia\familia\route.ts:547:          `usuarios-v2/${uid}/locais/${localId}`
+  app\api\residencia\familia\route.ts:548:        )
+  app\api\residencia\familia\route.ts:549:        .get();
+  app\api\residencia\familia\route.ts:550:
+  app\api\residencia\familia\route.ts:551:    const vinculoAnterior =
+  app\api\residencia\familia\route.ts:552:      snapshotVinculo.exists()
+  app\api\residencia\familia\route.ts:553:        ? snapshotVinculo.val() as
+  app\api\residencia\familia\route.ts:554:            VinculoBanco
+  app\api\residencia\familia\route.ts:555:        : null;
+  app\api\residencia\familia\route.ts:642:    await database
+  app\api\residencia\familia\route.ts:643:      .ref()
+  app\api\residencia\familia\route.ts:644:      .update({
+> app\api\residencia\familia\route.ts:645:        [`usuarios-v2/${uid}/locais/${localId}`]:
+  app\api\residencia\familia\route.ts:646:          vinculoFinal,
+  app\api\residencia\familia\route.ts:647:
+> app\api\residencia\familia\route.ts:648:        [`usuarios-v2/${uid}/atualizadoEm`]:
+  app\api\residencia\familia\route.ts:649:          agora,
+  app\api\residencia\familia\route.ts:650:
+> app\api\residencia\familia\route.ts:651:        [`convites-v2/${uid}/${localId}`]:
+  app\api\residencia\familia\route.ts:652:          {
+  app\api\residencia\familia\route.ts:653:            localId,
+  app\api\residencia\familia\route.ts:654:
+  app\api\residencia\familia\route.ts:655:            localNome:
+  app\api\residencia\familia\route.ts:656:              vinculoFinal
+  app\api\residencia\familia\route.ts:657:                .localNome,
+  app\api\residencia\familia\route.ts:658:
+  app\api\residencia\familia\route.ts:659:            email,
+  app\api\residencia\familia\route.ts:662:              statusConvite,
+  app\api\residencia\familia\route.ts:663:
+  app\api\residencia\familia\route.ts:664:            criadoPor:
+> app\api\residencia\familia\route.ts:665:              gestor.uid,
+  app\api\residencia\familia\route.ts:666:
+  app\api\residencia\familia\route.ts:667:            criadoEm:
+  app\api\residencia\familia\route.ts:668:              agora,
+  app\api\residencia\familia\route.ts:669:
+  app\api\residencia\familia\route.ts:670:            atualizadoEm:
+  app\api\residencia\familia\route.ts:671:              agora,
+  app\api\residencia\familia\route.ts:672:
+  app\api\residencia\familia\route.ts:673:            emailEnviado:
+  app\api\residencia\familia\route.ts:685:      sucesso:
+  app\api\residencia\familia\route.ts:686:        true,
+  app\api\residencia\familia\route.ts:687:
+> app\api\residencia\familia\route.ts:688:      uid,
+  app\api\residencia\familia\route.ts:689:
+  app\api\residencia\familia\route.ts:690:      reutilizado:
+  app\api\residencia\familia\route.ts:691:        resultadoPessoa
+  app\api\residencia\familia\route.ts:692:          .reutilizado,
+  app\api\residencia\familia\route.ts:693:
+  app\api\residencia\familia\route.ts:694:      encontradoPor:
+  app\api\residencia\familia\route.ts:695:        resultadoPessoa
+  app\api\residencia\familia\route.ts:696:          .encontradoPor,
+  app\api\residencia\familia\route.ts:735:    const corpo =
+  app\api\residencia\familia\route.ts:736:      (await request.json()) as {
+  app\api\residencia\familia\route.ts:737:        localId?: string;
+> app\api\residencia\familia\route.ts:738:        uid?: string;
+  app\api\residencia\familia\route.ts:739:        permissoes?: {
+  app\api\residencia\familia\route.ts:740:          receberChamadas?: boolean;
+  app\api\residencia\familia\route.ts:741:          abrirPortao?: boolean;
+  app\api\residencia\familia\route.ts:742:          visualizarCameras?: boolean;
+  app\api\residencia\familia\route.ts:743:          controlarAlarme?: boolean;
+  app\api\residencia\familia\route.ts:744:        };
+  app\api\residencia\familia\route.ts:745:      };
+  app\api\residencia\familia\route.ts:746:
+  app\api\residencia\familia\route.ts:749:        corpo.localId
+  app\api\residencia\familia\route.ts:750:      );
+  app\api\residencia\familia\route.ts:751:
+> app\api\residencia\familia\route.ts:752:    const uid =
+  app\api\residencia\familia\route.ts:753:      texto(
+> app\api\residencia\familia\route.ts:754:        corpo.uid
+  app\api\residencia\familia\route.ts:755:      );
+  app\api\residencia\familia\route.ts:756:
+  app\api\residencia\familia\route.ts:757:    if (!localId) {
+  app\api\residencia\familia\route.ts:758:      throw new Error(
+  app\api\residencia\familia\route.ts:759:        "Local n?o informado."
+  app\api\residencia\familia\route.ts:760:      );
+  app\api\residencia\familia\route.ts:761:    }
+  app\api\residencia\familia\route.ts:762:
+> app\api\residencia\familia\route.ts:763:    if (!uid) {
+  app\api\residencia\familia\route.ts:764:      throw new Error(
+  app\api\residencia\familia\route.ts:765:        "Pessoa n?o informada."
+  app\api\residencia\familia\route.ts:766:      );
+  app\api\residencia\familia\route.ts:767:    }
+  app\api\residencia\familia\route.ts:768:
+  app\api\residencia\familia\route.ts:769:    await validarGestorResidencia(
+  app\api\residencia\familia\route.ts:770:      request,
+  app\api\residencia\familia\route.ts:771:      localId
+  app\api\residencia\familia\route.ts:779:    const snapshot =
+  app\api\residencia\familia\route.ts:780:      await database
+  app\api\residencia\familia\route.ts:781:        .ref(
+> app\api\residencia\familia\route.ts:782:          `usuarios-v2/${uid}/locais/${localId}`
+  app\api\residencia\familia\route.ts:783:        )
+  app\api\residencia\familia\route.ts:784:        .get();
+  app\api\residencia\familia\route.ts:785:
+  app\api\residencia\familia\route.ts:786:    if (!snapshot.exists()) {
+  app\api\residencia\familia\route.ts:787:      throw new Error(
+  app\api\residencia\familia\route.ts:788:        "V?nculo da pessoa com esta resid?ncia n?o encontrado."
+  app\api\residencia\familia\route.ts:789:      );
+  app\api\residencia\familia\route.ts:790:    }
+  app\api\residencia\familia\route.ts:800:    await database
+  app\api\residencia\familia\route.ts:801:      .ref()
+  app\api\residencia\familia\route.ts:802:      .update({
+> app\api\residencia\familia\route.ts:803:        [`usuarios-v2/${uid}/locais/${localId}/permissoes`]:
+  app\api\residencia\familia\route.ts:804:          permissoes,
+  app\api\residencia\familia\route.ts:805:
+> app\api\residencia\familia\route.ts:806:        [`usuarios-v2/${uid}/locais/${localId}/atualizadoEm`]:
+  app\api\residencia\familia\route.ts:807:          agora,
+  app\api\residencia\familia\route.ts:808:
+> app\api\residencia\familia\route.ts:809:        [`usuarios-v2/${uid}/atualizadoEm`]:
+  app\api\residencia\familia\route.ts:810:          agora,
+  app\api\residencia\familia\route.ts:811:      });
+  app\api\residencia\familia\route.ts:812:
+  app\api\residencia\familia\route.ts:813:    return NextResponse.json({
+  app\api\residencia\familia\route.ts:814:      sucesso: true,
+  app\api\residencia\familia\route.ts:815:      mensagem:
+  app\api\residencia\familia\route.ts:816:        "Permiss?es atualizadas com sucesso.",
+  app\api\residencia\familia\route.ts:817:    });
+  app\api\residencia\familia\route.ts:847:        )
+  app\api\residencia\familia\route.ts:848:      );
+  app\api\residencia\familia\route.ts:849:
+> app\api\residencia\familia\route.ts:850:    const uid =
+  app\api\residencia\familia\route.ts:851:      texto(
+  app\api\residencia\familia\route.ts:852:        request.nextUrl.searchParams.get(
+> app\api\residencia\familia\route.ts:853:          "uid"
+  app\api\residencia\familia\route.ts:854:        )
+  app\api\residencia\familia\route.ts:855:      );
+  app\api\residencia\familia\route.ts:856:
+  app\api\residencia\familia\route.ts:857:    if (!localId) {
+  app\api\residencia\familia\route.ts:858:      throw new Error(
+  app\api\residencia\familia\route.ts:859:        "Local n?o informado."
+  app\api\residencia\familia\route.ts:860:      );
+  app\api\residencia\familia\route.ts:861:    }
+  app\api\residencia\familia\route.ts:862:
+> app\api\residencia\familia\route.ts:863:    if (!uid) {
+  app\api\residencia\familia\route.ts:864:      throw new Error(
+  app\api\residencia\familia\route.ts:865:        "Pessoa n?o informada."
+  app\api\residencia\familia\route.ts:866:      );
+  app\api\residencia\familia\route.ts:867:    }
+  app\api\residencia\familia\route.ts:868:
+  app\api\residencia\familia\route.ts:869:    const gestor =
+  app\api\residencia\familia\route.ts:870:      await validarGestorResidencia(
+  app\api\residencia\familia\route.ts:871:        request,
+  app\api\residencia\familia\route.ts:873:      );
+  app\api\residencia\familia\route.ts:874:
+  app\api\residencia\familia\route.ts:875:    if (
+> app\api\residencia\familia\route.ts:876:      gestor.uid === uid
+  app\api\residencia\familia\route.ts:877:    ) {
+  app\api\residencia\familia\route.ts:878:      throw new Error(
+  app\api\residencia\familia\route.ts:879:        "O respons?vel principal n?o pode remover o pr?prio v?nculo por esta tela."
+  app\api\residencia\familia\route.ts:880:      );
+  app\api\residencia\familia\route.ts:881:    }
+  app\api\residencia\familia\route.ts:882:
+  app\api\residencia\familia\route.ts:883:    const {
+  app\api\residencia\familia\route.ts:884:      database,
+  app\api\residencia\familia\route.ts:891:    await database
+  app\api\residencia\familia\route.ts:892:      .ref()
+  app\api\residencia\familia\route.ts:893:      .update({
+> app\api\residencia\familia\route.ts:894:        [`usuarios-v2/${uid}/locais/${localId}`]:
+  app\api\residencia\familia\route.ts:895:          null,
+  app\api\residencia\familia\route.ts:896:
+> app\api\residencia\familia\route.ts:897:        [`convites-v2/${uid}/${localId}`]:
+  app\api\residencia\familia\route.ts:898:          null,
+  app\api\residencia\familia\route.ts:899:
+> app\api\residencia\familia\route.ts:900:        [`usuarios-v2/${uid}/atualizadoEm`]:
+  app\api\residencia\familia\route.ts:901:          agora,
+  app\api\residencia\familia\route.ts:902:      });
+  app\api\residencia\familia\route.ts:903:
+  app\api\residencia\familia\route.ts:904:    return NextResponse.json({
+  app\api\residencia\familia\route.ts:905:      sucesso: true,
+  app\api\residencia\familia\route.ts:906:      mensagem:
+  app\api\residencia\familia\route.ts:907:        "Acesso desta pessoa ? resid?ncia removido com sucesso.",
+  app\api\residencia\familia\route.ts:908:    });
+  app\api\usuarios\regularizar-acesso\route.ts:8:} from "@/app/services/server/firebaseAdmin";
+  app\api\usuarios\regularizar-acesso\route.ts:9:
+  app\api\usuarios\regularizar-acesso\route.ts:10:type UsuarioBanco = {
+> app\api\usuarios\regularizar-acesso\route.ts:11:  uid?: string;
+  app\api\usuarios\regularizar-acesso\route.ts:12:  nome?: string;
+  app\api\usuarios\regularizar-acesso\route.ts:13:  email?: string;
+  app\api\usuarios\regularizar-acesso\route.ts:14:  telefone?: string;
+  app\api\usuarios\regularizar-acesso\route.ts:15:  cpf?: string;
+  app\api\usuarios\regularizar-acesso\route.ts:16:  status?: string;
+  app\api\usuarios\regularizar-acesso\route.ts:17:
+  app\api\usuarios\regularizar-acesso\route.ts:18:  perfilPrincipal?: string;
+  app\api\usuarios\regularizar-acesso\route.ts:19:
+  app\api\usuarios\regularizar-acesso\route.ts:153:  const snapshot =
+  app\api\usuarios\regularizar-acesso\route.ts:154:    await database
+  app\api\usuarios\regularizar-acesso\route.ts:155:      .ref(
+> app\api\usuarios\regularizar-acesso\route.ts:156:        `usuarios-v2/${tokenDecodificado.uid}`
+  app\api\usuarios\regularizar-acesso\route.ts:157:      )
+  app\api\usuarios\regularizar-acesso\route.ts:158:      .get();
+  app\api\usuarios\regularizar-acesso\route.ts:159:
+  app\api\usuarios\regularizar-acesso\route.ts:160:  if (
+  app\api\usuarios\regularizar-acesso\route.ts:161:    !snapshot.exists()
+  app\api\usuarios\regularizar-acesso\route.ts:162:  ) {
+  app\api\usuarios\regularizar-acesso\route.ts:163:    throw new Error(
+  app\api\usuarios\regularizar-acesso\route.ts:164:      "O usuário autenticado não possui cadastro no QR Core."
+  app\api\usuarios\regularizar-acesso\route.ts:188:  }
+  app\api\usuarios\regularizar-acesso\route.ts:189:
+  app\api\usuarios\regularizar-acesso\route.ts:190:  return {
+> app\api\usuarios\regularizar-acesso\route.ts:191:    uid:
+> app\api\usuarios\regularizar-acesso\route.ts:192:      tokenDecodificado.uid,
+  app\api\usuarios\regularizar-acesso\route.ts:193:    usuario,
+  app\api\usuarios\regularizar-acesso\route.ts:194:  };
+  app\api\usuarios\regularizar-acesso\route.ts:195:}
+  app\api\usuarios\regularizar-acesso\route.ts:196:
+  app\api\usuarios\regularizar-acesso\route.ts:197:function codigoErro(
+  app\api\usuarios\regularizar-acesso\route.ts:198:  erro: unknown
+  app\api\usuarios\regularizar-acesso\route.ts:199:): string {
+  app\api\usuarios\regularizar-acesso\route.ts:200:  if (
+  app\api\usuarios\regularizar-acesso\route.ts:232:      (
+  app\api\usuarios\regularizar-acesso\route.ts:233:        await request.json()
+  app\api\usuarios\regularizar-acesso\route.ts:234:      ) as {
+> app\api\usuarios\regularizar-acesso\route.ts:235:        uid?: unknown;
+  app\api\usuarios\regularizar-acesso\route.ts:236:        senhaProvisoria?: unknown;
+  app\api\usuarios\regularizar-acesso\route.ts:237:      };
+  app\api\usuarios\regularizar-acesso\route.ts:238:
+> app\api\usuarios\regularizar-acesso\route.ts:239:    const uid =
+  app\api\usuarios\regularizar-acesso\route.ts:240:      texto(
+> app\api\usuarios\regularizar-acesso\route.ts:241:        corpo.uid
+  app\api\usuarios\regularizar-acesso\route.ts:242:      );
+  app\api\usuarios\regularizar-acesso\route.ts:243:
+  app\api\usuarios\regularizar-acesso\route.ts:244:    const senhaProvisoria =
+  app\api\usuarios\regularizar-acesso\route.ts:245:      texto(
+  app\api\usuarios\regularizar-acesso\route.ts:246:        corpo.senhaProvisoria
+  app\api\usuarios\regularizar-acesso\route.ts:247:      );
+  app\api\usuarios\regularizar-acesso\route.ts:248:
+> app\api\usuarios\regularizar-acesso\route.ts:249:    if (!uid) {
+  app\api\usuarios\regularizar-acesso\route.ts:250:      return NextResponse.json(
+  app\api\usuarios\regularizar-acesso\route.ts:251:        {
+  app\api\usuarios\regularizar-acesso\route.ts:252:          sucesso:
+  app\api\usuarios\regularizar-acesso\route.ts:253:            false,
+  app\api\usuarios\regularizar-acesso\route.ts:254:          erro:
+> app\api\usuarios\regularizar-acesso\route.ts:255:            "Informe o UID da pessoa.",
+  app\api\usuarios\regularizar-acesso\route.ts:256:        },
+  app\api\usuarios\regularizar-acesso\route.ts:257:        {
+  app\api\usuarios\regularizar-acesso\route.ts:258:          status:
+  app\api\usuarios\regularizar-acesso\route.ts:259:            400,
+  app\api\usuarios\regularizar-acesso\route.ts:260:        }
+  app\api\usuarios\regularizar-acesso\route.ts:261:      );
+  app\api\usuarios\regularizar-acesso\route.ts:262:    }
+  app\api\usuarios\regularizar-acesso\route.ts:263:
+  app\api\usuarios\regularizar-acesso\route.ts:264:    const snapshot =
+  app\api\usuarios\regularizar-acesso\route.ts:265:      await database
+  app\api\usuarios\regularizar-acesso\route.ts:266:        .ref(
+> app\api\usuarios\regularizar-acesso\route.ts:267:          `usuarios-v2/${uid}`
+  app\api\usuarios\regularizar-acesso\route.ts:268:        )
+  app\api\usuarios\regularizar-acesso\route.ts:269:        .get();
+  app\api\usuarios\regularizar-acesso\route.ts:270:
+  app\api\usuarios\regularizar-acesso\route.ts:271:    if (
+  app\api\usuarios\regularizar-acesso\route.ts:272:      !snapshot.exists()
+  app\api\usuarios\regularizar-acesso\route.ts:273:    ) {
+  app\api\usuarios\regularizar-acesso\route.ts:274:      return NextResponse.json(
+  app\api\usuarios\regularizar-acesso\route.ts:275:        {
+  app\api\usuarios\regularizar-acesso\route.ts:276:          sucesso:
+  app\api\usuarios\regularizar-acesso\route.ts:277:            false,
+  app\api\usuarios\regularizar-acesso\route.ts:278:          erro:
+> app\api\usuarios\regularizar-acesso\route.ts:279:            "Pessoa não encontrada em usuarios-v2.",
+> app\api\usuarios\regularizar-acesso\route.ts:280:          uid,
+  app\api\usuarios\regularizar-acesso\route.ts:281:        },
+  app\api\usuarios\regularizar-acesso\route.ts:282:        {
+  app\api\usuarios\regularizar-acesso\route.ts:283:          status:
+  app\api\usuarios\regularizar-acesso\route.ts:284:            404,
+  app\api\usuarios\regularizar-acesso\route.ts:285:        }
+  app\api\usuarios\regularizar-acesso\route.ts:286:      );
+  app\api\usuarios\regularizar-acesso\route.ts:287:    }
+  app\api\usuarios\regularizar-acesso\route.ts:288:
+  app\api\usuarios\regularizar-acesso\route.ts:306:            false,
+  app\api\usuarios\regularizar-acesso\route.ts:307:          erro:
+  app\api\usuarios\regularizar-acesso\route.ts:308:            "A pessoa não possui e-mail cadastrado.",
+> app\api\usuarios\regularizar-acesso\route.ts:309:          uid,
+  app\api\usuarios\regularizar-acesso\route.ts:310:        },
+  app\api\usuarios\regularizar-acesso\route.ts:311:        {
+  app\api\usuarios\regularizar-acesso\route.ts:312:          status:
+  app\api\usuarios\regularizar-acesso\route.ts:313:            400,
+  app\api\usuarios\regularizar-acesso\route.ts:314:        }
+  app\api\usuarios\regularizar-acesso\route.ts:315:      );
+  app\api\usuarios\regularizar-acesso\route.ts:316:    }
+  app\api\usuarios\regularizar-acesso\route.ts:317:
+  app\api\usuarios\regularizar-acesso\route.ts:322:    try {
+  app\api\usuarios\regularizar-acesso\route.ts:323:      usuarioAuth =
+  app\api\usuarios\regularizar-acesso\route.ts:324:        await auth.getUser(
+> app\api\usuarios\regularizar-acesso\route.ts:325:          uid
+  app\api\usuarios\regularizar-acesso\route.ts:326:        );
+  app\api\usuarios\regularizar-acesso\route.ts:327:    } catch (erro) {
+  app\api\usuarios\regularizar-acesso\route.ts:328:      const codigo =
+  app\api\usuarios\regularizar-acesso\route.ts:329:        codigoErro(
+  app\api\usuarios\regularizar-acesso\route.ts:330:          erro
+  app\api\usuarios\regularizar-acesso\route.ts:331:        );
+  app\api\usuarios\regularizar-acesso\route.ts:332:
+  app\api\usuarios\regularizar-acesso\route.ts:333:      if (
+  app\api\usuarios\regularizar-acesso\route.ts:364:
+  app\api\usuarios\regularizar-acesso\route.ts:365:      if (
+  app\api\usuarios\regularizar-acesso\route.ts:366:        usuarioMesmoEmail &&
+> app\api\usuarios\regularizar-acesso\route.ts:367:        usuarioMesmoEmail.uid !==
+> app\api\usuarios\regularizar-acesso\route.ts:368:          uid
+  app\api\usuarios\regularizar-acesso\route.ts:369:      ) {
+  app\api\usuarios\regularizar-acesso\route.ts:370:        return NextResponse.json(
+  app\api\usuarios\regularizar-acesso\route.ts:371:          {
+  app\api\usuarios\regularizar-acesso\route.ts:372:            sucesso:
+  app\api\usuarios\regularizar-acesso\route.ts:373:              false,
+  app\api\usuarios\regularizar-acesso\route.ts:374:
+  app\api\usuarios\regularizar-acesso\route.ts:375:            erro:
+> app\api\usuarios\regularizar-acesso\route.ts:376:              "Já existe um usuário no Firebase Authentication com este e-mail, porém com outro 
+UID.",
+  app\api\usuarios\regularizar-acesso\route.ts:377:
+> app\api\usuarios\regularizar-acesso\route.ts:378:            uidBanco:
+> app\api\usuarios\regularizar-acesso\route.ts:379:              uid,
+  app\api\usuarios\regularizar-acesso\route.ts:380:
+> app\api\usuarios\regularizar-acesso\route.ts:381:            uidAuthentication:
+> app\api\usuarios\regularizar-acesso\route.ts:382:              usuarioMesmoEmail.uid,
+  app\api\usuarios\regularizar-acesso\route.ts:383:
+  app\api\usuarios\regularizar-acesso\route.ts:384:            email,
+  app\api\usuarios\regularizar-acesso\route.ts:385:          },
+  app\api\usuarios\regularizar-acesso\route.ts:386:          {
+  app\api\usuarios\regularizar-acesso\route.ts:387:            status:
+  app\api\usuarios\regularizar-acesso\route.ts:388:              409,
+  app\api\usuarios\regularizar-acesso\route.ts:389:          }
+  app\api\usuarios\regularizar-acesso\route.ts:390:        );
+  app\api\usuarios\regularizar-acesso\route.ts:402:            erro:
+  app\api\usuarios\regularizar-acesso\route.ts:403:              "Para criar o login, informe uma senha provisória com pelo menos 6 caracteres.",
+  app\api\usuarios\regularizar-acesso\route.ts:404:
+> app\api\usuarios\regularizar-acesso\route.ts:405:            uid,
+  app\api\usuarios\regularizar-acesso\route.ts:406:            email,
+  app\api\usuarios\regularizar-acesso\route.ts:407:          },
+  app\api\usuarios\regularizar-acesso\route.ts:408:          {
+  app\api\usuarios\regularizar-acesso\route.ts:409:            status:
+  app\api\usuarios\regularizar-acesso\route.ts:410:              400,
+  app\api\usuarios\regularizar-acesso\route.ts:411:          }
+  app\api\usuarios\regularizar-acesso\route.ts:412:        );
+  app\api\usuarios\regularizar-acesso\route.ts:413:      }
+  app\api\usuarios\regularizar-acesso\route.ts:414:
+  app\api\usuarios\regularizar-acesso\route.ts:415:      usuarioAuth =
+  app\api\usuarios\regularizar-acesso\route.ts:416:        await auth.createUser({
+> app\api\usuarios\regularizar-acesso\route.ts:417:          uid,
+  app\api\usuarios\regularizar-acesso\route.ts:418:          email,
+  app\api\usuarios\regularizar-acesso\route.ts:419:          password:
+  app\api\usuarios\regularizar-acesso\route.ts:420:            senhaProvisoria,
+  app\api\usuarios\regularizar-acesso\route.ts:421:          displayName:
+  app\api\usuarios\regularizar-acesso\route.ts:422:            nome || undefined,
+  app\api\usuarios\regularizar-acesso\route.ts:423:          disabled:
+  app\api\usuarios\regularizar-acesso\route.ts:424:            false,
+  app\api\usuarios\regularizar-acesso\route.ts:425:        });
+  app\api\usuarios\regularizar-acesso\route.ts:443:
+  app\api\usuarios\regularizar-acesso\route.ts:444:      usuarioAuth =
+  app\api\usuarios\regularizar-acesso\route.ts:445:        await auth.updateUser(
+> app\api\usuarios\regularizar-acesso\route.ts:446:          uid,
+  app\api\usuarios\regularizar-acesso\route.ts:447:          atualizacaoAuth
+  app\api\usuarios\regularizar-acesso\route.ts:448:        );
+  app\api\usuarios\regularizar-acesso\route.ts:449:    }
+  app\api\usuarios\regularizar-acesso\route.ts:450:
+  app\api\usuarios\regularizar-acesso\route.ts:451:    const agora =
+  app\api\usuarios\regularizar-acesso\route.ts:452:      Date.now();
+  app\api\usuarios\regularizar-acesso\route.ts:453:
+  app\api\usuarios\regularizar-acesso\route.ts:454:    const atualizacaoBanco: Record<
+  app\api\usuarios\regularizar-acesso\route.ts:455:      string,
+  app\api\usuarios\regularizar-acesso\route.ts:456:      unknown
+  app\api\usuarios\regularizar-acesso\route.ts:457:    > = {
+> app\api\usuarios\regularizar-acesso\route.ts:458:      uid,
+  app\api\usuarios\regularizar-acesso\route.ts:459:      email:
+  app\api\usuarios\regularizar-acesso\route.ts:460:        usuarioAuth.email ??
+  app\api\usuarios\regularizar-acesso\route.ts:461:        email,
+  app\api\usuarios\regularizar-acesso\route.ts:462:      status:
+  app\api\usuarios\regularizar-acesso\route.ts:463:        "ativo",
+  app\api\usuarios\regularizar-acesso\route.ts:464:      atualizadoEm:
+  app\api\usuarios\regularizar-acesso\route.ts:465:        agora,
+  app\api\usuarios\regularizar-acesso\route.ts:466:      authenticationAtivo:
+  app\api\usuarios\regularizar-acesso\route.ts:467:        true,
+> app\api\usuarios\regularizar-acesso\route.ts:468:      authenticationUid:
+> app\api\usuarios\regularizar-acesso\route.ts:469:        usuarioAuth.uid,
+  app\api\usuarios\regularizar-acesso\route.ts:470:    };
+  app\api\usuarios\regularizar-acesso\route.ts:471:
+  app\api\usuarios\regularizar-acesso\route.ts:472:    if (criadoAgora) {
+  app\api\usuarios\regularizar-acesso\route.ts:473:      atualizacaoBanco
+  app\api\usuarios\regularizar-acesso\route.ts:474:        .primeiroAcesso =
+  app\api\usuarios\regularizar-acesso\route.ts:475:        true;
+  app\api\usuarios\regularizar-acesso\route.ts:476:
+  app\api\usuarios\regularizar-acesso\route.ts:477:      atualizacaoBanco
+  app\api\usuarios\regularizar-acesso\route.ts:485:
+  app\api\usuarios\regularizar-acesso\route.ts:486:    await database
+  app\api\usuarios\regularizar-acesso\route.ts:487:      .ref(
+> app\api\usuarios\regularizar-acesso\route.ts:488:        `usuarios-v2/${uid}`
+  app\api\usuarios\regularizar-acesso\route.ts:489:      )
+  app\api\usuarios\regularizar-acesso\route.ts:490:      .update(
+  app\api\usuarios\regularizar-acesso\route.ts:491:        atualizacaoBanco
+  app\api\usuarios\regularizar-acesso\route.ts:492:      );
+  app\api\usuarios\regularizar-acesso\route.ts:493:
+  app\api\usuarios\regularizar-acesso\route.ts:494:    return NextResponse.json(
+  app\api\usuarios\regularizar-acesso\route.ts:495:      {
+  app\api\usuarios\regularizar-acesso\route.ts:496:        sucesso:
+  app\api\usuarios\regularizar-acesso\route.ts:502:            : "O usuário já possuía login. Acesso conferido e mantido ativo.",
+  app\api\usuarios\regularizar-acesso\route.ts:503:
+  app\api\usuarios\regularizar-acesso\route.ts:504:        usuario: {
+> app\api\usuarios\regularizar-acesso\route.ts:505:          uid:
+> app\api\usuarios\regularizar-acesso\route.ts:506:            usuarioAuth.uid,
+  app\api\usuarios\regularizar-acesso\route.ts:507:
+  app\api\usuarios\regularizar-acesso\route.ts:508:          nome:
+  app\api\usuarios\regularizar-acesso\route.ts:509:            usuarioAuth
+  app\api\usuarios\regularizar-acesso\route.ts:510:              .displayName ??
+  app\api\usuarios\regularizar-acesso\route.ts:511:            nome,
+  app\api\usuarios\regularizar-acesso\route.ts:512:
+  app\api\usuarios\regularizar-acesso\route.ts:513:          email:
+  app\api\usuarios\regularizar-acesso\route.ts:514:            usuarioAuth.email ??
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:206:
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:207:    const desligarPessoas =
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:208:      onValue(
+> app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:209:        ref(db, "usuarios-v2"),
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:210:        (snapshot) => {
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:211:          const dados =
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:212:            snapshot.val();
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:213:
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:214:          const lista: Pessoa[] =
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:215:            dados
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:216:              ? Object.entries(dados)
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:217:                  .map(
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:722:      await update(
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:723:        ref(db),
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:724:        {
+> app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:725:          
+[`usuarios-v2/${pessoaSelecionada.id}/locais/${localSelecionado.id}`]:
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:726:            dadosVinculo,
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:727:
+> app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:728:          
+[`usuarios-v2/${pessoaSelecionada.id}/condominios/${localSelecionado.id}`]:
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:729:            dadosVinculo,
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:730:
+> app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:731:          [`usuarios-v2/${pessoaSelecionada.id}/atualizadoEm`]:
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:732:            agora,
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:733:
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:734:          
+[`vinculos-locais-v2/${localSelecionado.id}/${pessoaSelecionada.id}`]:
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:735:            {
+> app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:736:              uid:
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:737:                pessoaSelecionada.id,
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:738:
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:739:              nome:
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:740:                pessoaSelecionada.nome ||
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:741:                "",
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:742:
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:743:              email:
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:744:                pessoaSelecionada.email ||
+  app\components\dashboard\cadastro-universal\PainelPessoas.tsx:54:  id:
+  app\components\dashboard\cadastro-universal\PainelPessoas.tsx:55:    string;
+  app\components\dashboard\cadastro-universal\PainelPessoas.tsx:56:
+> app\components\dashboard\cadastro-universal\PainelPessoas.tsx:57:  uid?:
+  app\components\dashboard\cadastro-universal\PainelPessoas.tsx:58:    string;
+  app\components\dashboard\cadastro-universal\PainelPessoas.tsx:59:
+  app\components\dashboard\cadastro-universal\PainelPessoas.tsx:60:  nome?:
+  app\components\dashboard\cadastro-universal\PainelPessoas.tsx:61:    string;
+  app\components\dashboard\cadastro-universal\PainelPessoas.tsx:62:
+  app\components\dashboard\cadastro-universal\PainelPessoas.tsx:63:  email?:
+  app\components\dashboard\cadastro-universal\PainelPessoas.tsx:64:    string;
+  app\components\dashboard\cadastro-universal\PainelPessoas.tsx:65:
+  app\components\dashboard\cadastro-universal\PainelPessoas.tsx:457:      const referencia =
+  app\components\dashboard\cadastro-universal\PainelPessoas.tsx:458:        ref(
+  app\components\dashboard\cadastro-universal\PainelPessoas.tsx:459:          db,
+> app\components\dashboard\cadastro-universal\PainelPessoas.tsx:460:          "usuarios-v2"
+  app\components\dashboard\cadastro-universal\PainelPessoas.tsx:461:        );
+  app\components\dashboard\cadastro-universal\PainelPessoas.tsx:462:
+  app\components\dashboard\cadastro-universal\PainelPessoas.tsx:463:      const desligar =
+  app\components\dashboard\cadastro-universal\PainelPessoas.tsx:464:        onValue(
+  app\components\dashboard\cadastro-universal\PainelPessoas.tsx:465:          referencia,
+  app\components\dashboard\cadastro-universal\PainelPessoas.tsx:466:          (
+  app\components\dashboard\cadastro-universal\PainelPessoas.tsx:467:            snapshot
+  app\components\dashboard\cadastro-universal\PainelPessoas.tsx:468:          ) => {
+  app\components\dashboard\cadastro-universal\PainelPessoas.tsx:536:            erro
+  app\components\dashboard\cadastro-universal\PainelPessoas.tsx:537:          ) => {
+  app\components\dashboard\cadastro-universal\PainelPessoas.tsx:538:            console.error(
+> app\components\dashboard\cadastro-universal\PainelPessoas.tsx:539:              "Erro ao carregar usuarios-v2:",
+  app\components\dashboard\cadastro-universal\PainelPessoas.tsx:540:              erro
+  app\components\dashboard\cadastro-universal\PainelPessoas.tsx:541:            );
+  app\components\dashboard\cadastro-universal\PainelPessoas.tsx:542:
+  app\components\dashboard\cadastro-universal\PainelPessoas.tsx:543:            setPessoas(
+  app\components\dashboard\cadastro-universal\PainelPessoas.tsx:544:              []
+  app\components\dashboard\cadastro-universal\PainelPessoas.tsx:545:            );
+  app\components\dashboard\cadastro-universal\PainelPessoas.tsx:546:
+  app\components\dashboard\cadastro-universal\PainelPessoas.tsx:547:            setCarregando(
+  app\components\dashboard\cadastro-universal\PainelPessoas.tsx:585:                pessoa.email,
+  app\components\dashboard\cadastro-universal\PainelPessoas.tsx:586:                pessoa.telefone,
+  app\components\dashboard\cadastro-universal\PainelPessoas.tsx:587:                pessoa.cpf,
+> app\components\dashboard\cadastro-universal\PainelPessoas.tsx:588:                pessoa.uid,
+  app\components\dashboard\cadastro-universal\PainelPessoas.tsx:589:                pessoa.id,
+  app\components\dashboard\cadastro-universal\PainelPessoas.tsx:590:                ...perfis,
+  app\components\dashboard\cadastro-universal\PainelPessoas.tsx:591:                ...vinculos.flatMap(
+  app\components\dashboard\cadastro-universal\PainelPessoas.tsx:592:                  (
+  app\components\dashboard\cadastro-universal\PainelPessoas.tsx:593:                    vinculo
+  app\components\dashboard\cadastro-universal\PainelPessoas.tsx:594:                  ) => [
+  app\components\dashboard\cadastro-universal\PainelPessoas.tsx:595:                    vinculo.id,
+  app\components\dashboard\cadastro-universal\PainelPessoas.tsx:596:                    vinculo.dados
+  app\components\dashboard\cadastro-universal\PainelPessoas.tsx:705:
+  app\components\dashboard\cadastro-universal\PainelPessoas.tsx:706:Este cadastro possui 0 vínculos.
+  app\components\dashboard\cadastro-universal\PainelPessoas.tsx:707:
+> app\components\dashboard\cadastro-universal\PainelPessoas.tsx:708:A exclusão removerá a pessoa de usuarios-v2.`
+  app\components\dashboard\cadastro-universal\PainelPessoas.tsx:709:      );
+  app\components\dashboard\cadastro-universal\PainelPessoas.tsx:710:
+  app\components\dashboard\cadastro-universal\PainelPessoas.tsx:711:    if (
+  app\components\dashboard\cadastro-universal\PainelPessoas.tsx:712:      !confirmado
+  app\components\dashboard\cadastro-universal\PainelPessoas.tsx:713:    ) {
+  app\components\dashboard\cadastro-universal\PainelPessoas.tsx:714:      return;
+  app\components\dashboard\cadastro-universal\PainelPessoas.tsx:715:    }
+  app\components\dashboard\cadastro-universal\PainelPessoas.tsx:716:
+  app\components\dashboard\cadastro-universal\PainelPessoas.tsx:722:      await remove(
+  app\components\dashboard\cadastro-universal\PainelPessoas.tsx:723:        ref(
+  app\components\dashboard\cadastro-universal\PainelPessoas.tsx:724:          db,
+> app\components\dashboard\cadastro-universal\PainelPessoas.tsx:725:          `usuarios-v2/${pessoa.id}`
+  app\components\dashboard\cadastro-universal\PainelPessoas.tsx:726:        )
+  app\components\dashboard\cadastro-universal\PainelPessoas.tsx:727:      );
+  app\components\dashboard\cadastro-universal\PainelPessoas.tsx:728:
+  app\components\dashboard\cadastro-universal\PainelPessoas.tsx:729:      if (
+  app\components\dashboard\cadastro-universal\PainelPessoas.tsx:730:        pessoaSelecionada?.id ===
+  app\components\dashboard\cadastro-universal\PainelPessoas.tsx:731:        pessoa.id
+  app\components\dashboard\cadastro-universal\PainelPessoas.tsx:732:      ) {
+  app\components\dashboard\cadastro-universal\PainelPessoas.tsx:733:        setPessoaSelecionada(
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:361:      onValue(
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:362:        ref(
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:363:          db,
+> app\components\dashboard\cadastro-universal\PainelVinculos.tsx:364:          "usuarios-v2"
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:365:        ),
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:366:        (
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:367:          snapshot
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:368:        ) => {
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:369:          const dados =
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:370:            snapshot.val();
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:371:
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:372:          setPessoas(
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:901:        await get(
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:902:          ref(
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:903:            db,
+> app\components\dashboard\cadastro-universal\PainelVinculos.tsx:904:            `usuarios-v2/${vinculo.pessoaId}`
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:905:          )
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:906:        );
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:907:
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:908:      const pessoaAtual =
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:909:        snapshotPessoa.val() as
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:910:          PessoaUniversal | null;
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:911:
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:912:      const chavesEncontradas =
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:962:      chavesEncontradas.forEach(
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:963:        (chave) => {
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:964:          atualizacoes[
+> app\components\dashboard\cadastro-universal\PainelVinculos.tsx:965:            `usuarios-v2/${vinculo.pessoaId}/locais/${chave}`
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:966:          ] = null;
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:967:
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:968:          atualizacoes[
+> app\components\dashboard\cadastro-universal\PainelVinculos.tsx:969:            `usuarios-v2/${vinculo.pessoaId}/condominios/${chave}`
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:970:          ] = null;
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:971:
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:972:          atualizacoes[
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:973:            `vinculos-locais-v2/${chave}/${vinculo.pessoaId}`
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:974:          ] = null;
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:975:        }
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:976:      );
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:977:
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:988:      ] = null;
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:989:
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:990:      atualizacoes[
+> app\components\dashboard\cadastro-universal\PainelVinculos.tsx:991:        `usuarios-v2/${vinculo.pessoaId}/atualizadoEm`
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:992:      ] = Date.now();
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:993:
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:994:      await update(
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:995:        ref(db),
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:996:        atualizacoes
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:997:      );
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:998:    } catch (erro) {
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:999:      console.error(
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1121:      await update(
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1122:        ref(db),
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1123:        {
+> app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1124:          
+[`usuarios-v2/${vinculoEditando.pessoaId}/locais/${vinculoEditando.localId}`]:
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1125:            dadosVinculo,
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1126:
+> app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1127:          
+[`usuarios-v2/${vinculoEditando.pessoaId}/condominios/${vinculoEditando.localId}`]:
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1128:            dadosVinculo,
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1129:
+> app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1130:          [`usuarios-v2/${vinculoEditando.pessoaId}/atualizadoEm`]:
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1131:            agora,
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1132:        }
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1133:      );
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1134:
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1135:      setVinculoEditando(
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1136:        null
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1137:      );
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1138:
+  app\components\dashboard\ResponsaveisUnidade.tsx:28:  id:
+  app\components\dashboard\ResponsaveisUnidade.tsx:29:    string;
+  app\components\dashboard\ResponsaveisUnidade.tsx:30:
+> app\components\dashboard\ResponsaveisUnidade.tsx:31:  uid?:
+  app\components\dashboard\ResponsaveisUnidade.tsx:32:    string;
+  app\components\dashboard\ResponsaveisUnidade.tsx:33:
+  app\components\dashboard\ResponsaveisUnidade.tsx:34:  nome:
+  app\components\dashboard\ResponsaveisUnidade.tsx:35:    string;
+  app\components\dashboard\ResponsaveisUnidade.tsx:36:
+  app\components\dashboard\ResponsaveisUnidade.tsx:37:  email?:
+  app\components\dashboard\ResponsaveisUnidade.tsx:38:    string;
+  app\components\dashboard\ResponsaveisUnidade.tsx:39:
+  app\components\dashboard\ResponsaveisUnidade.tsx:280:                Record<
+  app\components\dashboard\ResponsaveisUnidade.tsx:281:                  string,
+  app\components\dashboard\ResponsaveisUnidade.tsx:282:                  {
+> app\components\dashboard\ResponsaveisUnidade.tsx:283:                    uid?:
+  app\components\dashboard\ResponsaveisUnidade.tsx:284:                      string;
+  app\components\dashboard\ResponsaveisUnidade.tsx:285:
+  app\components\dashboard\ResponsaveisUnidade.tsx:286:                    nome?:
+  app\components\dashboard\ResponsaveisUnidade.tsx:287:                      string;
+  app\components\dashboard\ResponsaveisUnidade.tsx:288:
+  app\components\dashboard\ResponsaveisUnidade.tsx:289:                    email?:
+  app\components\dashboard\ResponsaveisUnidade.tsx:290:                      string;
+  app\components\dashboard\ResponsaveisUnidade.tsx:291:
+  app\components\dashboard\ResponsaveisUnidade.tsx:327:                  ) => ({
+  app\components\dashboard\ResponsaveisUnidade.tsx:328:                    id,
+  app\components\dashboard\ResponsaveisUnidade.tsx:329:
+> app\components\dashboard\ResponsaveisUnidade.tsx:330:                    uid:
+> app\components\dashboard\ResponsaveisUnidade.tsx:331:                      valor.uid,
+  app\components\dashboard\ResponsaveisUnidade.tsx:332:
+  app\components\dashboard\ResponsaveisUnidade.tsx:333:                    nome:
+  app\components\dashboard\ResponsaveisUnidade.tsx:334:                      String(
+  app\components\dashboard\ResponsaveisUnidade.tsx:335:                        valor.nome ||
+  app\components\dashboard\ResponsaveisUnidade.tsx:336:                        valor.email ||
+  app\components\dashboard\ResponsaveisUnidade.tsx:337:                        id
+  app\components\dashboard\ResponsaveisUnidade.tsx:338:                      ),
+  app\components\dashboard\ResponsaveisUnidade.tsx:339:
+  app\components\dashboard\ResponsaveisUnidade.tsx:402:              (
+  app\components\dashboard\ResponsaveisUnidade.tsx:403:                item
+  app\components\dashboard\ResponsaveisUnidade.tsx:404:              ) =>
+> app\components\dashboard\ResponsaveisUnidade.tsx:405:                item.usuarioId
+  app\components\dashboard\ResponsaveisUnidade.tsx:406:            )
+  app\components\dashboard\ResponsaveisUnidade.tsx:407:          );
+  app\components\dashboard\ResponsaveisUnidade.tsx:408:
+  app\components\dashboard\ResponsaveisUnidade.tsx:409:        const termo =
+  app\components\dashboard\ResponsaveisUnidade.tsx:410:          buscaMorador
+  app\components\dashboard\ResponsaveisUnidade.tsx:411:            .trim()
+  app\components\dashboard\ResponsaveisUnidade.tsx:412:            .toLowerCase();
+  app\components\dashboard\ResponsaveisUnidade.tsx:413:
+  app\components\dashboard\ResponsaveisUnidade.tsx:416:            morador
+  app\components\dashboard\ResponsaveisUnidade.tsx:417:          ) => {
+  app\components\dashboard\ResponsaveisUnidade.tsx:418:            const identidade =
+> app\components\dashboard\ResponsaveisUnidade.tsx:419:              morador.uid ||
+  app\components\dashboard\ResponsaveisUnidade.tsx:420:              morador.id;
+  app\components\dashboard\ResponsaveisUnidade.tsx:421:
+  app\components\dashboard\ResponsaveisUnidade.tsx:422:            if (
+  app\components\dashboard\ResponsaveisUnidade.tsx:423:              !editando &&
+  app\components\dashboard\ResponsaveisUnidade.tsx:424:              idsJaVinculados.has(
+  app\components\dashboard\ResponsaveisUnidade.tsx:425:                identidade
+  app\components\dashboard\ResponsaveisUnidade.tsx:426:              )
+  app\components\dashboard\ResponsaveisUnidade.tsx:427:            ) {
+  app\components\dashboard\ResponsaveisUnidade.tsx:439:              morador.email,
+  app\components\dashboard\ResponsaveisUnidade.tsx:440:              morador.telefone,
+  app\components\dashboard\ResponsaveisUnidade.tsx:441:              morador.id,
+> app\components\dashboard\ResponsaveisUnidade.tsx:442:              morador.uid,
+  app\components\dashboard\ResponsaveisUnidade.tsx:443:            ]
+  app\components\dashboard\ResponsaveisUnidade.tsx:444:              .filter(
+  app\components\dashboard\ResponsaveisUnidade.tsx:445:                Boolean
+  app\components\dashboard\ResponsaveisUnidade.tsx:446:              )
+  app\components\dashboard\ResponsaveisUnidade.tsx:447:              .join(
+  app\components\dashboard\ResponsaveisUnidade.tsx:448:                " "
+  app\components\dashboard\ResponsaveisUnidade.tsx:449:              )
+  app\components\dashboard\ResponsaveisUnidade.tsx:450:              .toLowerCase()
+  app\components\dashboard\ResponsaveisUnidade.tsx:504:    );
+  app\components\dashboard\ResponsaveisUnidade.tsx:505:
+  app\components\dashboard\ResponsaveisUnidade.tsx:506:    setMoradorSelecionadoId(
+> app\components\dashboard\ResponsaveisUnidade.tsx:507:      responsavel.usuarioId
+  app\components\dashboard\ResponsaveisUnidade.tsx:508:    );
+  app\components\dashboard\ResponsaveisUnidade.tsx:509:
+  app\components\dashboard\ResponsaveisUnidade.tsx:510:    setPrioridade(
+  app\components\dashboard\ResponsaveisUnidade.tsx:511:      String(
+  app\components\dashboard\ResponsaveisUnidade.tsx:512:        responsavel.prioridade
+  app\components\dashboard\ResponsaveisUnidade.tsx:513:      )
+  app\components\dashboard\ResponsaveisUnidade.tsx:514:    );
+  app\components\dashboard\ResponsaveisUnidade.tsx:515:
+  app\components\dashboard\ResponsaveisUnidade.tsx:570:          [
+  app\components\dashboard\ResponsaveisUnidade.tsx:571:            atualizarPrioridadeResponsavel(
+  app\components\dashboard\ResponsaveisUnidade.tsx:572:              unidadeId,
+> app\components\dashboard\ResponsaveisUnidade.tsx:573:              editando.usuarioId,
+  app\components\dashboard\ResponsaveisUnidade.tsx:574:              prioridadeNumero
+  app\components\dashboard\ResponsaveisUnidade.tsx:575:            ),
+  app\components\dashboard\ResponsaveisUnidade.tsx:576:
+  app\components\dashboard\ResponsaveisUnidade.tsx:577:            atualizarStatusResponsavel(
+  app\components\dashboard\ResponsaveisUnidade.tsx:578:              unidadeId,
+> app\components\dashboard\ResponsaveisUnidade.tsx:579:              editando.usuarioId,
+  app\components\dashboard\ResponsaveisUnidade.tsx:580:              status
+  app\components\dashboard\ResponsaveisUnidade.tsx:581:            ),
+  app\components\dashboard\ResponsaveisUnidade.tsx:582:          ]
+  app\components\dashboard\ResponsaveisUnidade.tsx:583:        );
+  app\components\dashboard\ResponsaveisUnidade.tsx:584:
+  app\components\dashboard\ResponsaveisUnidade.tsx:585:        alert(
+  app\components\dashboard\ResponsaveisUnidade.tsx:586:          "Responsável atualizado com sucesso."
+  app\components\dashboard\ResponsaveisUnidade.tsx:587:        );
+  app\components\dashboard\ResponsaveisUnidade.tsx:603:            item
+  app\components\dashboard\ResponsaveisUnidade.tsx:604:          ) => {
+  app\components\dashboard\ResponsaveisUnidade.tsx:605:            const identidade =
+> app\components\dashboard\ResponsaveisUnidade.tsx:606:              item.uid ||
+  app\components\dashboard\ResponsaveisUnidade.tsx:607:              item.id;
+  app\components\dashboard\ResponsaveisUnidade.tsx:608:
+  app\components\dashboard\ResponsaveisUnidade.tsx:609:            return identidade ===
+  app\components\dashboard\ResponsaveisUnidade.tsx:610:              moradorSelecionadoId;
+  app\components\dashboard\ResponsaveisUnidade.tsx:611:          }
+  app\components\dashboard\ResponsaveisUnidade.tsx:612:        );
+  app\components\dashboard\ResponsaveisUnidade.tsx:613:
+  app\components\dashboard\ResponsaveisUnidade.tsx:614:      if (
+  app\components\dashboard\ResponsaveisUnidade.tsx:621:        return;
+  app\components\dashboard\ResponsaveisUnidade.tsx:622:      }
+  app\components\dashboard\ResponsaveisUnidade.tsx:623:
+> app\components\dashboard\ResponsaveisUnidade.tsx:624:      const usuarioId =
+> app\components\dashboard\ResponsaveisUnidade.tsx:625:        morador.uid ||
+  app\components\dashboard\ResponsaveisUnidade.tsx:626:        morador.id;
+  app\components\dashboard\ResponsaveisUnidade.tsx:627:
+  app\components\dashboard\ResponsaveisUnidade.tsx:628:      await salvarResponsavelVinculado(
+  app\components\dashboard\ResponsaveisUnidade.tsx:629:        {
+> app\components\dashboard\ResponsaveisUnidade.tsx:630:          usuarioId,
+  app\components\dashboard\ResponsaveisUnidade.tsx:631:
+  app\components\dashboard\ResponsaveisUnidade.tsx:632:          unidadeId,
+  app\components\dashboard\ResponsaveisUnidade.tsx:633:
+  app\components\dashboard\ResponsaveisUnidade.tsx:634:          nome:
+  app\components\dashboard\ResponsaveisUnidade.tsx:635:            morador.nome,
+  app\components\dashboard\ResponsaveisUnidade.tsx:636:
+  app\components\dashboard\ResponsaveisUnidade.tsx:637:          telefone:
+  app\components\dashboard\ResponsaveisUnidade.tsx:638:            morador.telefone,
+  app\components\dashboard\ResponsaveisUnidade.tsx:693:    try {
+  app\components\dashboard\ResponsaveisUnidade.tsx:694:      await removerResponsavelVinculado(
+  app\components\dashboard\ResponsaveisUnidade.tsx:695:        unidadeId,
+> app\components\dashboard\ResponsaveisUnidade.tsx:696:        responsavel.usuarioId
+  app\components\dashboard\ResponsaveisUnidade.tsx:697:      );
+  app\components\dashboard\ResponsaveisUnidade.tsx:698:
+  app\components\dashboard\ResponsaveisUnidade.tsx:699:      alert(
+  app\components\dashboard\ResponsaveisUnidade.tsx:700:        "Responsável removido."
+  app\components\dashboard\ResponsaveisUnidade.tsx:701:      );
+  app\components\dashboard\ResponsaveisUnidade.tsx:702:    } catch (
+  app\components\dashboard\ResponsaveisUnidade.tsx:703:      erro
+  app\components\dashboard\ResponsaveisUnidade.tsx:704:    ) {
+  app\components\dashboard\ResponsaveisUnidade.tsx:934:                        morador
+  app\components\dashboard\ResponsaveisUnidade.tsx:935:                      ) => {
+  app\components\dashboard\ResponsaveisUnidade.tsx:936:                        const identidade =
+> app\components\dashboard\ResponsaveisUnidade.tsx:937:                          morador.uid ||
+  app\components\dashboard\ResponsaveisUnidade.tsx:938:                          morador.id;
+  app\components\dashboard\ResponsaveisUnidade.tsx:939:
+  app\components\dashboard\ResponsaveisUnidade.tsx:940:                        return (
+  app\components\dashboard\ResponsaveisUnidade.tsx:941:                          <option
+  app\components\dashboard\ResponsaveisUnidade.tsx:942:                            key={
+  app\components\dashboard\ResponsaveisUnidade.tsx:943:                              identidade
+  app\components\dashboard\ResponsaveisUnidade.tsx:944:                            }
+  app\components\dashboard\ResponsaveisUnidade.tsx:945:                            value={
+  app\context\AuthContext.tsx:17:} from "@/app/services/auth/auth";
+  app\context\AuthContext.tsx:18:
+  app\context\AuthContext.tsx:19:import {
+> app\context\AuthContext.tsx:20:  buscarUsuarioPorUid,
+  app\context\AuthContext.tsx:21:  registrarUltimoLogin,
+  app\context\AuthContext.tsx:22:} from "@/app/services/usuarios";
+  app\context\AuthContext.tsx:23:
+  app\context\AuthContext.tsx:24:import {
+  app\context\AuthContext.tsx:25:  obterVinculo,
+  app\context\AuthContext.tsx:26:  obterVinculosAtivos,
+  app\context\AuthContext.tsx:27:  type VinculoComPermissoes,
+  app\context\AuthContext.tsx:28:} from "@/app/services/permissoes";
+  app\context\AuthContext.tsx:100:  "qr-core:vinculo-selecionado";
+  app\context\AuthContext.tsx:101:
+  app\context\AuthContext.tsx:102:function obterChaveVinculo(
+> app\context\AuthContext.tsx:103:  uid:
+  app\context\AuthContext.tsx:104:    string
+  app\context\AuthContext.tsx:105:): string {
+> app\context\AuthContext.tsx:106:  return `${PREFIXO_CHAVE_VINCULO}:${uid}`;
+  app\context\AuthContext.tsx:107:}
+  app\context\AuthContext.tsx:108:
+  app\context\AuthContext.tsx:109:function lerVinculoSalvo(
+  app\context\AuthContext.tsx:110:  usuario:
+  app\context\AuthContext.tsx:111:    Usuario
+  app\context\AuthContext.tsx:112:): string | null {
+  app\context\AuthContext.tsx:113:  if (
+  app\context\AuthContext.tsx:114:    typeof window ===
+  app\context\AuthContext.tsx:121:    window.localStorage
+  app\context\AuthContext.tsx:122:      .getItem(
+  app\context\AuthContext.tsx:123:        obterChaveVinculo(
+> app\context\AuthContext.tsx:124:          usuario.uid
+  app\context\AuthContext.tsx:125:        )
+  app\context\AuthContext.tsx:126:      )
+  app\context\AuthContext.tsx:127:      ?.trim() ||
+  app\context\AuthContext.tsx:128:    null;
+  app\context\AuthContext.tsx:129:
+  app\context\AuthContext.tsx:130:  if (!vinculoId) {
+  app\context\AuthContext.tsx:131:    return null;
+  app\context\AuthContext.tsx:132:  }
+  app\context\AuthContext.tsx:144:  ) {
+  app\context\AuthContext.tsx:145:    window.localStorage.removeItem(
+  app\context\AuthContext.tsx:146:      obterChaveVinculo(
+> app\context\AuthContext.tsx:147:        usuario.uid
+  app\context\AuthContext.tsx:148:      )
+  app\context\AuthContext.tsx:149:    );
+  app\context\AuthContext.tsx:150:
+  app\context\AuthContext.tsx:151:    return null;
+  app\context\AuthContext.tsx:152:  }
+  app\context\AuthContext.tsx:153:
+  app\context\AuthContext.tsx:154:  return vinculoId;
+  app\context\AuthContext.tsx:155:}
+  app\context\AuthContext.tsx:156:
+  app\context\AuthContext.tsx:157:function salvarVinculoSelecionado(
+> app\context\AuthContext.tsx:158:  uid:
+  app\context\AuthContext.tsx:159:    string,
+  app\context\AuthContext.tsx:160:  vinculoId:
+  app\context\AuthContext.tsx:161:    string
+  app\context\AuthContext.tsx:162:): void {
+  app\context\AuthContext.tsx:163:  if (
+  app\context\AuthContext.tsx:164:    typeof window ===
+  app\context\AuthContext.tsx:165:    "undefined"
+  app\context\AuthContext.tsx:166:  ) {
+  app\context\AuthContext.tsx:169:
+  app\context\AuthContext.tsx:170:  window.localStorage.setItem(
+  app\context\AuthContext.tsx:171:    obterChaveVinculo(
+> app\context\AuthContext.tsx:172:      uid
+  app\context\AuthContext.tsx:173:    ),
+  app\context\AuthContext.tsx:174:    vinculoId
+  app\context\AuthContext.tsx:175:  );
+  app\context\AuthContext.tsx:176:}
+  app\context\AuthContext.tsx:177:
+  app\context\AuthContext.tsx:178:function limparVinculoSelecionado(
+> app\context\AuthContext.tsx:179:  uid:
+  app\context\AuthContext.tsx:180:    string
+  app\context\AuthContext.tsx:181:): void {
+  app\context\AuthContext.tsx:182:  if (
+  app\context\AuthContext.tsx:183:    typeof window ===
+  app\context\AuthContext.tsx:184:    "undefined"
+  app\context\AuthContext.tsx:185:  ) {
+  app\context\AuthContext.tsx:186:    return;
+  app\context\AuthContext.tsx:187:  }
+  app\context\AuthContext.tsx:188:
+  app\context\AuthContext.tsx:189:  window.localStorage.removeItem(
+  app\context\AuthContext.tsx:190:    obterChaveVinculo(
+> app\context\AuthContext.tsx:191:      uid
+  app\context\AuthContext.tsx:192:    )
+  app\context\AuthContext.tsx:193:  );
+  app\context\AuthContext.tsx:194:}
+  app\context\AuthContext.tsx:195:
+  app\context\AuthContext.tsx:196:export function AuthProvider({
+  app\context\AuthContext.tsx:197:  children,
+  app\context\AuthContext.tsx:198:}: {
+  app\context\AuthContext.tsx:199:  children:
+  app\context\AuthContext.tsx:265:     * preservado durante a navegação entre as rotas.
+  app\context\AuthContext.tsx:266:     */
+  app\context\AuthContext.tsx:267:    limparVinculoSelecionado(
+> app\context\AuthContext.tsx:268:      usuarioBanco.uid
+  app\context\AuthContext.tsx:269:    );
+  app\context\AuthContext.tsx:270:
+  app\context\AuthContext.tsx:271:    setVinculoSelecionadoId(
+  app\context\AuthContext.tsx:272:      null
+  app\context\AuthContext.tsx:273:    );
+  app\context\AuthContext.tsx:274:  }
+  app\context\AuthContext.tsx:275:
+  app\context\AuthContext.tsx:276:  useEffect(
+  app\context\AuthContext.tsx:296:              }
+  app\context\AuthContext.tsx:297:
+  app\context\AuthContext.tsx:298:              const usuarioBanco =
+> app\context\AuthContext.tsx:299:                await buscarUsuarioPorUid(
+> app\context\AuthContext.tsx:300:                  firebaseUser.uid
+  app\context\AuthContext.tsx:301:                );
+  app\context\AuthContext.tsx:302:
+  app\context\AuthContext.tsx:303:              definirUsuario(
+  app\context\AuthContext.tsx:304:                usuarioBanco,
+  app\context\AuthContext.tsx:305:                {
+  app\context\AuthContext.tsx:306:                  restaurarVinculo:
+  app\context\AuthContext.tsx:307:                    true,
+  app\context\AuthContext.tsx:308:                }
+  app\context\AuthContext.tsx:312:                usuarioBanco
+  app\context\AuthContext.tsx:313:              ) {
+  app\context\AuthContext.tsx:314:                await registrarUltimoLogin(
+> app\context\AuthContext.tsx:315:                  firebaseUser.uid
+  app\context\AuthContext.tsx:316:                );
+  app\context\AuthContext.tsx:317:              }
+  app\context\AuthContext.tsx:318:            } catch (
+  app\context\AuthContext.tsx:319:              erro
+  app\context\AuthContext.tsx:320:            ) {
+  app\context\AuthContext.tsx:321:              console.error(
+  app\context\AuthContext.tsx:322:                "Erro ao carregar usuário autenticado:",
+  app\context\AuthContext.tsx:323:                erro
+  app\context\AuthContext.tsx:411:    }
+  app\context\AuthContext.tsx:412:
+  app\context\AuthContext.tsx:413:    salvarVinculoSelecionado(
+> app\context\AuthContext.tsx:414:      usuario.uid,
+  app\context\AuthContext.tsx:415:      vinculoId
+  app\context\AuthContext.tsx:416:    );
+  app\context\AuthContext.tsx:417:
+  app\context\AuthContext.tsx:418:    setVinculoSelecionadoId(
+  app\context\AuthContext.tsx:419:      vinculoId
+  app\context\AuthContext.tsx:420:    );
+  app\context\AuthContext.tsx:421:  }
+  app\context\AuthContext.tsx:422:
+  app\context\AuthContext.tsx:423:  function selecionarCarteiraGeral() {
+  app\context\AuthContext.tsx:424:    if (usuario) {
+  app\context\AuthContext.tsx:425:      limparVinculoSelecionado(
+> app\context\AuthContext.tsx:426:        usuario.uid
+  app\context\AuthContext.tsx:427:      );
+  app\context\AuthContext.tsx:428:    }
+  app\context\AuthContext.tsx:429:
+  app\context\AuthContext.tsx:430:    setVinculoSelecionadoId(
+  app\context\AuthContext.tsx:431:      null
+  app\context\AuthContext.tsx:432:    );
+  app\context\AuthContext.tsx:433:  }
+  app\context\AuthContext.tsx:434:
+  app\context\AuthContext.tsx:460:      }
+  app\context\AuthContext.tsx:461:
+  app\context\AuthContext.tsx:462:      const usuarioBanco =
+> app\context\AuthContext.tsx:463:        await buscarUsuarioPorUid(
+> app\context\AuthContext.tsx:464:          resultado.usuario.uid
+  app\context\AuthContext.tsx:465:        );
+  app\context\AuthContext.tsx:466:
+  app\context\AuthContext.tsx:467:      if (
+  app\context\AuthContext.tsx:468:        !usuarioBanco
+  app\context\AuthContext.tsx:469:      ) {
+  app\context\AuthContext.tsx:470:        await sairDaConta();
+  app\context\AuthContext.tsx:471:
+  app\context\AuthContext.tsx:472:        definirUsuario(
+  app\context\AuthContext.tsx:498:      );
+  app\context\AuthContext.tsx:499:
+  app\context\AuthContext.tsx:500:      await registrarUltimoLogin(
+> app\context\AuthContext.tsx:501:        resultado.usuario.uid
+  app\context\AuthContext.tsx:502:      );
+  app\context\AuthContext.tsx:503:    } finally {
+  app\context\AuthContext.tsx:504:      setCarregando(
+  app\context\AuthContext.tsx:505:        false
+  app\context\AuthContext.tsx:506:      );
+  app\context\AuthContext.tsx:507:    }
+  app\context\AuthContext.tsx:508:  }
+  app\context\AuthContext.tsx:509:
+  app\context\AuthContext.tsx:513:    );
+  app\context\AuthContext.tsx:514:
+  app\context\AuthContext.tsx:515:    try {
+> app\context\AuthContext.tsx:516:      const uidAtual =
+> app\context\AuthContext.tsx:517:        usuario?.uid;
+  app\context\AuthContext.tsx:518:
+  app\context\AuthContext.tsx:519:      const resultado =
+  app\context\AuthContext.tsx:520:        await sairDaConta();
+  app\context\AuthContext.tsx:521:
+  app\context\AuthContext.tsx:522:      if (
+  app\context\AuthContext.tsx:523:        !resultado.sucesso
+  app\context\AuthContext.tsx:524:      ) {
+  app\context\AuthContext.tsx:525:        throw new Error(
+  app\context\AuthContext.tsx:528:        );
+  app\context\AuthContext.tsx:529:      }
+  app\context\AuthContext.tsx:530:
+> app\context\AuthContext.tsx:531:      if (uidAtual) {
+  app\context\AuthContext.tsx:532:        limparVinculoSelecionado(
+> app\context\AuthContext.tsx:533:          uidAtual
+  app\context\AuthContext.tsx:534:        );
+  app\context\AuthContext.tsx:535:      }
+  app\context\AuthContext.tsx:536:
+  app\context\AuthContext.tsx:537:      definirUsuario(
+  app\context\AuthContext.tsx:538:        null
+  app\context\AuthContext.tsx:539:      );
+  app\context\AuthContext.tsx:540:    } finally {
+  app\context\AuthContext.tsx:541:      setCarregando(
+  app\context\AuthContext.tsx:569:    }
+  app\context\AuthContext.tsx:570:
+  app\context\AuthContext.tsx:571:    const atualizado =
+> app\context\AuthContext.tsx:572:      await buscarUsuarioPorUid(
+> app\context\AuthContext.tsx:573:        usuario.uid
+  app\context\AuthContext.tsx:574:      );
+  app\context\AuthContext.tsx:575:
+  app\context\AuthContext.tsx:576:    setUsuario(
+  app\context\AuthContext.tsx:577:      atualizado
+  app\context\AuthContext.tsx:578:    );
+  app\context\AuthContext.tsx:579:
+  app\context\AuthContext.tsx:580:    if (!atualizado) {
+  app\context\AuthContext.tsx:581:      limparVinculoSelecionado(
+> app\context\AuthContext.tsx:582:        usuario.uid
+  app\context\AuthContext.tsx:583:      );
+  app\context\AuthContext.tsx:584:
+  app\context\AuthContext.tsx:585:      setVinculoSelecionadoId(
+  app\context\AuthContext.tsx:586:        null
+  app\context\AuthContext.tsx:587:      );
+  app\context\AuthContext.tsx:588:
+  app\context\AuthContext.tsx:589:      return;
+  app\context\AuthContext.tsx:590:    }
+  app\context\AuthContext.tsx:604:          false
+  app\context\AuthContext.tsx:605:      ) {
+  app\context\AuthContext.tsx:606:        limparVinculoSelecionado(
+> app\context\AuthContext.tsx:607:          atualizado.uid
+  app\context\AuthContext.tsx:608:        );
+  app\context\AuthContext.tsx:609:
+  app\context\AuthContext.tsx:610:        setVinculoSelecionadoId(
+  app\context\AuthContext.tsx:611:          null
+  app\context\AuthContext.tsx:612:        );
+  app\context\AuthContext.tsx:613:      }
+  app\context\AuthContext.tsx:614:    }
+  app\context\AuthContext.tsx:615:  }
+  app\context\PerfilAtivoContext.tsx:35:  "qr-core:perfil-ativo";
+  app\context\PerfilAtivoContext.tsx:36:
+  app\context\PerfilAtivoContext.tsx:37:function chavePerfil(
+> app\context\PerfilAtivoContext.tsx:38:  uid: string,
+  app\context\PerfilAtivoContext.tsx:39:  vinculoId: string
+  app\context\PerfilAtivoContext.tsx:40:) {
+> app\context\PerfilAtivoContext.tsx:41:  return `${PREFIXO_CHAVE}:${uid}:${vinculoId}`;
+  app\context\PerfilAtivoContext.tsx:42:}
+  app\context\PerfilAtivoContext.tsx:43:
+  app\context\PerfilAtivoContext.tsx:44:function nomePerfilNormalizado(
+  app\context\PerfilAtivoContext.tsx:45:  valor: string
+  app\context\PerfilAtivoContext.tsx:46:) {
+  app\context\PerfilAtivoContext.tsx:47:  return valor
+  app\context\PerfilAtivoContext.tsx:48:    .trim()
+  app\context\PerfilAtivoContext.tsx:49:    .toLowerCase()
+  app\context\PerfilAtivoContext.tsx:146:
+  app\context\PerfilAtivoContext.tsx:147:    const chave =
+  app\context\PerfilAtivoContext.tsx:148:      chavePerfil(
+> app\context\PerfilAtivoContext.tsx:149:        usuario.uid,
+  app\context\PerfilAtivoContext.tsx:150:        vinculoSelecionadoId
+  app\context\PerfilAtivoContext.tsx:151:      );
+  app\context\PerfilAtivoContext.tsx:152:
+  app\context\PerfilAtivoContext.tsx:153:    const salvo =
+  app\context\PerfilAtivoContext.tsx:154:      typeof window !==
+  app\context\PerfilAtivoContext.tsx:155:      "undefined"
+  app\context\PerfilAtivoContext.tsx:156:        ? window.localStorage
+  app\context\PerfilAtivoContext.tsx:157:            .getItem(
+  app\context\PerfilAtivoContext.tsx:251:    ) {
+  app\context\PerfilAtivoContext.tsx:252:      window.localStorage.setItem(
+  app\context\PerfilAtivoContext.tsx:253:        chavePerfil(
+> app\context\PerfilAtivoContext.tsx:254:          usuario.uid,
+  app\context\PerfilAtivoContext.tsx:255:          vinculoSelecionadoId
+  app\context\PerfilAtivoContext.tsx:256:        ),
+  app\context\PerfilAtivoContext.tsx:257:        normalizado
+  app\context\PerfilAtivoContext.tsx:258:      );
+  app\context\PerfilAtivoContext.tsx:259:    }
+  app\context\PerfilAtivoContext.tsx:260:  }
+  app\context\PerfilAtivoContext.tsx:261:
+  app\context\PerfilAtivoContext.tsx:262:  function possuiPerfil(
+  app\dashboard\condominio\FamiliaResidencia.tsx:21:};
+  app\dashboard\condominio\FamiliaResidencia.tsx:22:
+  app\dashboard\condominio\FamiliaResidencia.tsx:23:type PessoaFamilia = {
+> app\dashboard\condominio\FamiliaResidencia.tsx:24:  uid: string;
+  app\dashboard\condominio\FamiliaResidencia.tsx:25:  nome: string;
+  app\dashboard\condominio\FamiliaResidencia.tsx:26:  email: string;
+  app\dashboard\condominio\FamiliaResidencia.tsx:27:  telefone?: string;
+  app\dashboard\condominio\FamiliaResidencia.tsx:28:  perfilPrincipal?: string;
+  app\dashboard\condominio\FamiliaResidencia.tsx:29:  permissoes?: PermissoesPessoa;
+  app\dashboard\condominio\FamiliaResidencia.tsx:30:  ativo?: boolean;
+  app\dashboard\condominio\FamiliaResidencia.tsx:31:};
+  app\dashboard\condominio\FamiliaResidencia.tsx:32:
+  app\dashboard\condominio\FamiliaResidencia.tsx:274:              JSON.stringify({
+  app\dashboard\condominio\FamiliaResidencia.tsx:275:                localId,
+  app\dashboard\condominio\FamiliaResidencia.tsx:276:
+> app\dashboard\condominio\FamiliaResidencia.tsx:277:                uid:
+> app\dashboard\condominio\FamiliaResidencia.tsx:278:                  pessoaEditando.uid,
+  app\dashboard\condominio\FamiliaResidencia.tsx:279:
+  app\dashboard\condominio\FamiliaResidencia.tsx:280:                permissoes: {
+  app\dashboard\condominio\FamiliaResidencia.tsx:281:                  receberChamadas:
+  app\dashboard\condominio\FamiliaResidencia.tsx:282:                    permissaoReceberChamadas,
+  app\dashboard\condominio\FamiliaResidencia.tsx:283:
+  app\dashboard\condominio\FamiliaResidencia.tsx:284:                  abrirPortao:
+  app\dashboard\condominio\FamiliaResidencia.tsx:285:                    permissaoAbrirPortao,
+  app\dashboard\condominio\FamiliaResidencia.tsx:286:
+  app\dashboard\condominio\FamiliaResidencia.tsx:344:        await fetch(
+  app\dashboard\condominio\FamiliaResidencia.tsx:345:          `/api/residencia/familia?localId=${encodeURIComponent(
+  app\dashboard\condominio\FamiliaResidencia.tsx:346:            localId
+> app\dashboard\condominio\FamiliaResidencia.tsx:347:          )}&uid=${encodeURIComponent(
+> app\dashboard\condominio\FamiliaResidencia.tsx:348:            pessoa.uid
+  app\dashboard\condominio\FamiliaResidencia.tsx:349:          )}`,
+  app\dashboard\condominio\FamiliaResidencia.tsx:350:          {
+  app\dashboard\condominio\FamiliaResidencia.tsx:351:            method: "DELETE",
+  app\dashboard\condominio\FamiliaResidencia.tsx:352:
+  app\dashboard\condominio\FamiliaResidencia.tsx:353:            headers: {
+  app\dashboard\condominio\FamiliaResidencia.tsx:354:              Authorization:
+  app\dashboard\condominio\FamiliaResidencia.tsx:355:                `Bearer ${token}`,
+  app\dashboard\condominio\FamiliaResidencia.tsx:356:            },
+  app\dashboard\condominio\FamiliaResidencia.tsx:579:              ) => (
+  app\dashboard\condominio\FamiliaResidencia.tsx:580:                <article
+  app\dashboard\condominio\FamiliaResidencia.tsx:581:                  key={
+> app\dashboard\condominio\FamiliaResidencia.tsx:582:                    pessoa.uid
+  app\dashboard\condominio\FamiliaResidencia.tsx:583:                  }
+  app\dashboard\condominio\FamiliaResidencia.tsx:584:                  className="rounded-2xl border border-slate-700 bg-slate-800 p-4"
+  app\dashboard\condominio\FamiliaResidencia.tsx:585:                >
+  app\dashboard\condominio\FamiliaResidencia.tsx:586:                  <div className="flex items-start justify-between gap-4">
+  app\dashboard\condominio\FamiliaResidencia.tsx:587:                    <div>
+  app\dashboard\condominio\FamiliaResidencia.tsx:588:                      <h3 className="text-lg font-black text-white">
+  app\dashboard\condominio\FamiliaResidencia.tsx:589:                        {
+  app\dashboard\condominio\FamiliaResidencia.tsx:590:                          pessoa.nome
+  app\dashboard\implantacao\components\PassoResumo.tsx:144:        <div className="mt-3 grid gap-2 text-sm text-slate-300 sm:grid-cols-2">
+  app\dashboard\implantacao\components\PassoResumo.tsx:145:          <p>✅ Criar registro em locais-v2</p>
+  app\dashboard\implantacao\components\PassoResumo.tsx:146:          <p>✅ Criar Firebase Authentication</p>
+> app\dashboard\implantacao\components\PassoResumo.tsx:147:          <p>✅ Criar usuário em usuarios-v2</p>
+  app\dashboard\implantacao\components\PassoResumo.tsx:148:          <p>✅ Criar vínculo universal</p>
+  app\dashboard\implantacao\components\PassoResumo.tsx:149:          <p>✅ Manter vínculo compatível</p>
+  app\dashboard\implantacao\components\PassoResumo.tsx:150:          <p>✅ Aplicar permissões iniciais</p>
+  app\dashboard\implantacao\components\PassoResumo.tsx:151:          <p>✅ Registrar o responsável</p>
+  app\dashboard\implantacao\components\PassoResumo.tsx:152:          <p>✅ Registrar o histórico</p>
+  app\dashboard\implantacao\components\PassoResumo.tsx:153:        </div>
+  app\dashboard\implantacao\components\PassoResumo.tsx:154:      </div>
+  app\dashboard\implantacao\components\PassoResumo.tsx:155:    </section>
+  app\dashboard\implantacao\page.tsx:37:  erro?: string;
+  app\dashboard\implantacao\page.tsx:38:
+  app\dashboard\implantacao\page.tsx:39:  usuario?: {
+> app\dashboard\implantacao\page.tsx:40:    uid: string;
+  app\dashboard\implantacao\page.tsx:41:    nome: string;
+  app\dashboard\implantacao\page.tsx:42:    email: string;
+  app\dashboard\implantacao\page.tsx:43:  };
+  app\dashboard\implantacao\page.tsx:44:
+  app\dashboard\implantacao\page.tsx:45:  local?: {
+  app\dashboard\implantacao\page.tsx:46:    id: string;
+  app\dashboard\implantacao\page.tsx:47:    nome: string;
+  app\dashboard\implantacao\page.tsx:48:    slug: string;
+  app\dashboard\implantacao\page.tsx:898:
+  app\dashboard\implantacao\page.tsx:899:                <p className="mt-2 break-all">
+  app\dashboard\implantacao\page.tsx:900:                  <strong>
+> app\dashboard\implantacao\page.tsx:901:                    UID:
+  app\dashboard\implantacao\page.tsx:902:                  </strong>{" "}
+  app\dashboard\implantacao\page.tsx:903:                  {
+  app\dashboard\implantacao\page.tsx:904:                    resultado.usuario
+> app\dashboard\implantacao\page.tsx:905:                      ?.uid
+  app\dashboard\implantacao\page.tsx:906:                  }
+  app\dashboard\implantacao\page.tsx:907:                </p>
+  app\dashboard\implantacao\page.tsx:908:              </div>
+  app\dashboard\implantacao\page.tsx:909:
+  app\dashboard\implantacao\page.tsx:910:              <section className="mx-auto mt-6 max-w-xl rounded-2xl border border-cyan-500/20 bg-cyan-500/5 
+p-5">
+  app\dashboard\implantacao\page.tsx:911:                <p className="text-xs font-black uppercase tracking-wider text-cyan-400">
+  app\dashboard\implantacao\page.tsx:912:                  QR principal do local
+  app\dashboard\implantacao\page.tsx:913:                </p>
+  app\hardware\services\hardwareService.ts:22:    const agora = Date.now();
+  app\hardware\services\hardwareService.ts:23:
+  app\hardware\services\hardwareService.ts:24:    const hardware: Hardware = {
+> app\hardware\services\hardwareService.ts:25:      id: crypto.randomUUID(),
+  app\hardware\services\hardwareService.ts:26:
+  app\hardware\services\hardwareService.ts:27:      nome: dados.nome,
+  app\hardware\services\hardwareService.ts:28:      descricao: dados.descricao,
+  app\hardware\services\hardwareService.ts:29:
+  app\hardware\services\hardwareService.ts:30:      tipo: dados.tipo,
+  app\hardware\services\hardwareService.ts:31:      ambiente: dados.ambiente ?? "studio",
+  app\hardware\services\hardwareService.ts:32:
+  app\hardware\services\hardwareService.ts:33:      status: "offline",
+  app\hardware\types\hardware.ts:63:  deviceId?: string;
+  app\hardware\types\hardware.ts:64:  localKey?: string;
+  app\hardware\types\hardware.ts:65:  macAddress?: string;
+> app\hardware\types\hardware.ts:66:  serviceUuid?: string;
+> app\hardware\types\hardware.ts:67:  characteristicUuid?: string;
+  app\hardware\types\hardware.ts:68:  pinoEsp32?: number;
+  app\hardware\types\hardware.ts:69:  tempoPulsoMs?: number;
+  app\hardware\types\hardware.ts:70:  normalmenteAberto?: boolean;
+  app\hardware\types\hardware.ts:71:}
+  app\hardware\types\hardware.ts:72:
+  app\hardware\types\hardware.ts:73:export interface LocalizacaoHardware {
+  app\hardware\types\hardware.ts:74:  condominioId?: string;
+  app\hardware\types\hardware.ts:75:  unidadeId?: string;
+  app\services\auth\auth.ts:109:    string
+  app\services\auth\auth.ts:110:): Promise<ResultadoAutenticacao> {
+  app\services\auth\auth.ts:111:  try {
+> app\services\auth\auth.ts:112:    const emailNormalizado =
+  app\services\auth\auth.ts:113:      normalizarEmail(
+  app\services\auth\auth.ts:114:        email
+  app\services\auth\auth.ts:115:      );
+  app\services\auth\auth.ts:116:
+> app\services\auth\auth.ts:117:    if (!emailNormalizado) {
+  app\services\auth\auth.ts:118:      return {
+  app\services\auth\auth.ts:119:        sucesso:
+  app\services\auth\auth.ts:120:          false,
+  app\services\auth\auth.ts:121:
+  app\services\auth\auth.ts:122:        erro:
+  app\services\auth\auth.ts:123:          "Informe o e-mail.",
+  app\services\auth\auth.ts:124:      };
+  app\services\auth\auth.ts:125:    }
+  app\services\auth\auth.ts:137:    const credencial =
+  app\services\auth\auth.ts:138:      await signInWithEmailAndPassword(
+  app\services\auth\auth.ts:139:        auth,
+> app\services\auth\auth.ts:140:        emailNormalizado,
+  app\services\auth\auth.ts:141:        senha
+  app\services\auth\auth.ts:142:      );
+  app\services\auth\auth.ts:143:
+  app\services\auth\auth.ts:144:    return {
+  app\services\auth\auth.ts:145:      sucesso:
+  app\services\auth\auth.ts:146:        true,
+  app\services\auth\auth.ts:147:
+  app\services\auth\auth.ts:148:      usuario:
+  app\services\auth\auth.ts:172:    string
+  app\services\auth\auth.ts:173:): Promise<ResultadoAutenticacao> {
+  app\services\auth\auth.ts:174:  try {
+> app\services\auth\auth.ts:175:    const emailNormalizado =
+  app\services\auth\auth.ts:176:      normalizarEmail(
+  app\services\auth\auth.ts:177:        email
+  app\services\auth\auth.ts:178:      );
+  app\services\auth\auth.ts:179:
+> app\services\auth\auth.ts:180:    if (!emailNormalizado) {
+  app\services\auth\auth.ts:181:      return {
+  app\services\auth\auth.ts:182:        sucesso:
+  app\services\auth\auth.ts:183:          false,
+  app\services\auth\auth.ts:184:
+  app\services\auth\auth.ts:185:        erro:
+  app\services\auth\auth.ts:186:          "Informe o e-mail.",
+  app\services\auth\auth.ts:187:      };
+  app\services\auth\auth.ts:188:    }
+  app\services\auth\auth.ts:203:    const credencial =
+  app\services\auth\auth.ts:204:      await createUserWithEmailAndPassword(
+  app\services\auth\auth.ts:205:        auth,
+> app\services\auth\auth.ts:206:        emailNormalizado,
+  app\services\auth\auth.ts:207:        senha
+  app\services\auth\auth.ts:208:      );
+  app\services\auth\auth.ts:209:
+  app\services\auth\auth.ts:210:    return {
+  app\services\auth\auth.ts:211:      sucesso:
+  app\services\auth\auth.ts:212:        true,
+  app\services\auth\auth.ts:213:
+  app\services\auth\auth.ts:214:      usuario:
+  app\services\auth\auth.ts:264:    string
+  app\services\auth\auth.ts:265:): Promise<ResultadoAutenticacao> {
+  app\services\auth\auth.ts:266:  try {
+> app\services\auth\auth.ts:267:    const emailNormalizado =
+  app\services\auth\auth.ts:268:      normalizarEmail(
+  app\services\auth\auth.ts:269:        email
+  app\services\auth\auth.ts:270:      );
+  app\services\auth\auth.ts:271:
+> app\services\auth\auth.ts:272:    if (!emailNormalizado) {
+  app\services\auth\auth.ts:273:      return {
+  app\services\auth\auth.ts:274:        sucesso:
+  app\services\auth\auth.ts:275:          false,
+  app\services\auth\auth.ts:276:
+  app\services\auth\auth.ts:277:        erro:
+  app\services\auth\auth.ts:278:          "Informe o e-mail.",
+  app\services\auth\auth.ts:279:      };
+  app\services\auth\auth.ts:280:    }
+  app\services\auth\auth.ts:281:
+  app\services\auth\auth.ts:282:    await sendPasswordResetEmail(
+  app\services\auth\auth.ts:283:      auth,
+> app\services\auth\auth.ts:284:      emailNormalizado
+  app\services\auth\auth.ts:285:    );
+  app\services\auth\auth.ts:286:
+  app\services\auth\auth.ts:287:    return {
+  app\services\auth\auth.ts:288:      sucesso:
+  app\services\auth\auth.ts:289:        true,
+  app\services\auth\auth.ts:290:    };
+  app\services\auth\auth.ts:291:  } catch (erro) {
+  app\services\auth\auth.ts:292:    return {
+  app\services\chamadas\MotorEscalonamento.ts:29:  codigo?:
+  app\services\chamadas\MotorEscalonamento.ts:30:    string;
+  app\services\chamadas\MotorEscalonamento.ts:31:
+> app\services\chamadas\MotorEscalonamento.ts:32:  uid?:
+  app\services\chamadas\MotorEscalonamento.ts:33:    string;
+  app\services\chamadas\MotorEscalonamento.ts:34:
+  app\services\chamadas\MotorEscalonamento.ts:35:  nome:
+  app\services\chamadas\MotorEscalonamento.ts:36:    string;
+  app\services\chamadas\MotorEscalonamento.ts:37:
+  app\services\chamadas\MotorEscalonamento.ts:38:  telefone?:
+  app\services\chamadas\MotorEscalonamento.ts:39:    string;
+  app\services\chamadas\MotorEscalonamento.ts:40:
+  app\services\chamadas\MotorEscalonamento.ts:75:  codigo?:
+  app\services\chamadas\MotorEscalonamento.ts:76:    string;
+  app\services\chamadas\MotorEscalonamento.ts:77:
+> app\services\chamadas\MotorEscalonamento.ts:78:  uid?:
+  app\services\chamadas\MotorEscalonamento.ts:79:    string;
+  app\services\chamadas\MotorEscalonamento.ts:80:
+  app\services\chamadas\MotorEscalonamento.ts:81:  nome?:
+  app\services\chamadas\MotorEscalonamento.ts:82:    string;
+  app\services\chamadas\MotorEscalonamento.ts:83:
+  app\services\chamadas\MotorEscalonamento.ts:84:  telefone?:
+  app\services\chamadas\MotorEscalonamento.ts:85:    string;
+  app\services\chamadas\MotorEscalonamento.ts:86:
+  app\services\chamadas\MotorEscalonamento.ts:157:    codigo:
+  app\services\chamadas\MotorEscalonamento.ts:158:      dados.codigo,
+  app\services\chamadas\MotorEscalonamento.ts:159:
+> app\services\chamadas\MotorEscalonamento.ts:160:    uid:
+> app\services\chamadas\MotorEscalonamento.ts:161:      dados.uid,
+  app\services\chamadas\MotorEscalonamento.ts:162:
+  app\services\chamadas\MotorEscalonamento.ts:163:    nome:
+  app\services\chamadas\MotorEscalonamento.ts:164:      String(
+  app\services\chamadas\MotorEscalonamento.ts:165:        dados.nome ||
+  app\services\chamadas\MotorEscalonamento.ts:166:        "Responsável"
+  app\services\chamadas\MotorEscalonamento.ts:167:      ),
+  app\services\chamadas\MotorEscalonamento.ts:168:
+  app\services\chamadas\MotorEscalonamento.ts:169:    telefone:
+  app\services\chamadas\MotorEscalonamento.ts:321:        id:
+  app\services\chamadas\MotorEscalonamento.ts:322:          responsavel.id,
+  app\services\chamadas\MotorEscalonamento.ts:323:
+> app\services\chamadas\MotorEscalonamento.ts:324:        uid:
+> app\services\chamadas\MotorEscalonamento.ts:325:          responsavel.usuarioId,
+  app\services\chamadas\MotorEscalonamento.ts:326:
+  app\services\chamadas\MotorEscalonamento.ts:327:        nome:
+  app\services\chamadas\MotorEscalonamento.ts:328:          responsavel.nome,
+  app\services\chamadas\MotorEscalonamento.ts:329:
+  app\services\chamadas\MotorEscalonamento.ts:330:        telefone:
+  app\services\chamadas\MotorEscalonamento.ts:331:          responsavel.telefone,
+  app\services\chamadas\MotorEscalonamento.ts:332:
+  app\services\chamadas\MotorEscalonamento.ts:333:        unidadeId:
+  app\services\chamadas\MotorEscalonamento.ts:530:      responsavelAtualId:
+  app\services\chamadas\MotorEscalonamento.ts:531:        responsavel.id,
+  app\services\chamadas\MotorEscalonamento.ts:532:
+> app\services\chamadas\MotorEscalonamento.ts:533:      responsavelAtualUid:
+> app\services\chamadas\MotorEscalonamento.ts:534:        responsavel.uid ||
+  app\services\chamadas\MotorEscalonamento.ts:535:        null,
+  app\services\chamadas\MotorEscalonamento.ts:536:
+  app\services\chamadas\MotorEscalonamento.ts:537:      responsavelAtualNome:
+  app\services\chamadas\MotorEscalonamento.ts:538:        responsavel.nome,
+  app\services\chamadas\MotorEscalonamento.ts:539:
+  app\services\chamadas\MotorEscalonamento.ts:540:      responsavelAtualPrioridade:
+  app\services\chamadas\MotorEscalonamento.ts:541:        responsavel.ordemAtendimento,
+  app\services\chamadas\MotorEscalonamento.ts:542:
+  app\services\chamadas\MotorEscalonamento.ts:671:        responsavelAtualId:
+  app\services\chamadas\MotorEscalonamento.ts:672:          null,
+  app\services\chamadas\MotorEscalonamento.ts:673:
+> app\services\chamadas\MotorEscalonamento.ts:674:        responsavelAtualUid:
+  app\services\chamadas\MotorEscalonamento.ts:675:          null,
+  app\services\chamadas\MotorEscalonamento.ts:676:
+  app\services\chamadas\MotorEscalonamento.ts:677:        responsavelAtualNome:
+  app\services\chamadas\MotorEscalonamento.ts:678:          null,
+  app\services\chamadas\MotorEscalonamento.ts:679:
+  app\services\chamadas\MotorEscalonamento.ts:680:        aguardandoResponsavel:
+  app\services\chamadas\MotorEscalonamento.ts:681:          true,
+  app\services\chamadas\MotorEscalonamento.ts:682:
+  app\services\chamadas\MotorEscalonamento.ts:717:      responsavelAtualId:
+  app\services\chamadas\MotorEscalonamento.ts:718:        proximo.id,
+  app\services\chamadas\MotorEscalonamento.ts:719:
+> app\services\chamadas\MotorEscalonamento.ts:720:      responsavelAtualUid:
+> app\services\chamadas\MotorEscalonamento.ts:721:        proximo.uid ||
+  app\services\chamadas\MotorEscalonamento.ts:722:        null,
+  app\services\chamadas\MotorEscalonamento.ts:723:
+  app\services\chamadas\MotorEscalonamento.ts:724:      responsavelAtualNome:
+  app\services\chamadas\MotorEscalonamento.ts:725:        proximo.nome,
+  app\services\chamadas\MotorEscalonamento.ts:726:
+  app\services\chamadas\MotorEscalonamento.ts:727:      responsavelAtualPrioridade:
+  app\services\chamadas\MotorEscalonamento.ts:728:        proximo.ordemAtendimento,
+  app\services\chamadas\MotorEscalonamento.ts:729:
+  app\services\chamadas\MotorEscalonamento.ts:780:      atendidoPorId:
+  app\services\chamadas\MotorEscalonamento.ts:781:        responsavel.id,
+  app\services\chamadas\MotorEscalonamento.ts:782:
+> app\services\chamadas\MotorEscalonamento.ts:783:      atendidoPorUid:
+> app\services\chamadas\MotorEscalonamento.ts:784:        responsavel.uid ||
+  app\services\chamadas\MotorEscalonamento.ts:785:        null,
+  app\services\chamadas\MotorEscalonamento.ts:786:
+  app\services\chamadas\MotorEscalonamento.ts:787:      atendidoPorNome:
+  app\services\chamadas\MotorEscalonamento.ts:788:        responsavel.nome,
+  app\services\chamadas\MotorEscalonamento.ts:789:
+  app\services\chamadas\MotorEscalonamento.ts:790:      atendidoEm:
+  app\services\chamadas\MotorEscalonamento.ts:791:        new Date()
+  app\services\chamadas\MotorEscalonamento.ts:792:          .toISOString(),
+  app\services\chamadas\VinculosResponsaveis.ts:20:  id:
+  app\services\chamadas\VinculosResponsaveis.ts:21:    string;
+  app\services\chamadas\VinculosResponsaveis.ts:22:
+> app\services\chamadas\VinculosResponsaveis.ts:23:  usuarioId:
+  app\services\chamadas\VinculosResponsaveis.ts:24:    string;
+  app\services\chamadas\VinculosResponsaveis.ts:25:
+  app\services\chamadas\VinculosResponsaveis.ts:26:  unidadeId:
+  app\services\chamadas\VinculosResponsaveis.ts:27:    string;
+  app\services\chamadas\VinculosResponsaveis.ts:28:
+  app\services\chamadas\VinculosResponsaveis.ts:29:  nome:
+  app\services\chamadas\VinculosResponsaveis.ts:30:    string;
+  app\services\chamadas\VinculosResponsaveis.ts:31:
+  app\services\chamadas\VinculosResponsaveis.ts:49:};
+  app\services\chamadas\VinculosResponsaveis.ts:50:
+  app\services\chamadas\VinculosResponsaveis.ts:51:type NovoVinculoResponsavel = {
+> app\services\chamadas\VinculosResponsaveis.ts:52:  usuarioId:
+  app\services\chamadas\VinculosResponsaveis.ts:53:    string;
+  app\services\chamadas\VinculosResponsaveis.ts:54:
+  app\services\chamadas\VinculosResponsaveis.ts:55:  unidadeId:
+  app\services\chamadas\VinculosResponsaveis.ts:56:    string;
+  app\services\chamadas\VinculosResponsaveis.ts:57:
+  app\services\chamadas\VinculosResponsaveis.ts:58:  nome:
+  app\services\chamadas\VinculosResponsaveis.ts:59:    string;
+  app\services\chamadas\VinculosResponsaveis.ts:60:
+  app\services\chamadas\VinculosResponsaveis.ts:117:  return {
+  app\services\chamadas\VinculosResponsaveis.ts:118:    id,
+  app\services\chamadas\VinculosResponsaveis.ts:119:
+> app\services\chamadas\VinculosResponsaveis.ts:120:    usuarioId:
+  app\services\chamadas\VinculosResponsaveis.ts:121:      limparTexto(
+> app\services\chamadas\VinculosResponsaveis.ts:122:        valor.usuarioId
+  app\services\chamadas\VinculosResponsaveis.ts:123:      ) ||
+  app\services\chamadas\VinculosResponsaveis.ts:124:      id,
+  app\services\chamadas\VinculosResponsaveis.ts:125:
+  app\services\chamadas\VinculosResponsaveis.ts:126:    unidadeId:
+  app\services\chamadas\VinculosResponsaveis.ts:127:      limparTexto(
+  app\services\chamadas\VinculosResponsaveis.ts:128:        valor.unidadeId
+  app\services\chamadas\VinculosResponsaveis.ts:129:      ) ||
+  app\services\chamadas\VinculosResponsaveis.ts:130:      unidadeId,
+  app\services\chamadas\VinculosResponsaveis.ts:249:  dados:
+  app\services\chamadas\VinculosResponsaveis.ts:250:    NovoVinculoResponsavel
+  app\services\chamadas\VinculosResponsaveis.ts:251:): Promise<void> {
+> app\services\chamadas\VinculosResponsaveis.ts:252:  const usuarioId =
+  app\services\chamadas\VinculosResponsaveis.ts:253:    limparTexto(
+> app\services\chamadas\VinculosResponsaveis.ts:254:      dados.usuarioId
+  app\services\chamadas\VinculosResponsaveis.ts:255:    );
+  app\services\chamadas\VinculosResponsaveis.ts:256:
+  app\services\chamadas\VinculosResponsaveis.ts:257:  const unidadeId =
+  app\services\chamadas\VinculosResponsaveis.ts:258:    limparTexto(
+  app\services\chamadas\VinculosResponsaveis.ts:259:      dados.unidadeId
+  app\services\chamadas\VinculosResponsaveis.ts:260:    );
+  app\services\chamadas\VinculosResponsaveis.ts:261:
+  app\services\chamadas\VinculosResponsaveis.ts:262:  const nome =
+  app\services\chamadas\VinculosResponsaveis.ts:264:      dados.nome
+  app\services\chamadas\VinculosResponsaveis.ts:265:    );
+  app\services\chamadas\VinculosResponsaveis.ts:266:
+> app\services\chamadas\VinculosResponsaveis.ts:267:  if (!usuarioId) {
+  app\services\chamadas\VinculosResponsaveis.ts:268:    throw new Error(
+  app\services\chamadas\VinculosResponsaveis.ts:269:      "O usuário do responsável não foi informado."
+  app\services\chamadas\VinculosResponsaveis.ts:270:    );
+  app\services\chamadas\VinculosResponsaveis.ts:271:  }
+  app\services\chamadas\VinculosResponsaveis.ts:272:
+  app\services\chamadas\VinculosResponsaveis.ts:273:  if (!unidadeId) {
+  app\services\chamadas\VinculosResponsaveis.ts:274:    throw new Error(
+  app\services\chamadas\VinculosResponsaveis.ts:275:      "A unidade não foi informada."
+  app\services\chamadas\VinculosResponsaveis.ts:286:    Date.now();
+  app\services\chamadas\VinculosResponsaveis.ts:287:
+  app\services\chamadas\VinculosResponsaveis.ts:288:  const caminho =
+> app\services\chamadas\VinculosResponsaveis.ts:289:    `unidades-v2/${unidadeId}/responsaveis/${usuarioId}`;
+  app\services\chamadas\VinculosResponsaveis.ts:290:
+  app\services\chamadas\VinculosResponsaveis.ts:291:  const existente =
+  app\services\chamadas\VinculosResponsaveis.ts:292:    await get(
+  app\services\chamadas\VinculosResponsaveis.ts:293:      ref(
+  app\services\chamadas\VinculosResponsaveis.ts:294:        db,
+  app\services\chamadas\VinculosResponsaveis.ts:295:        caminho
+  app\services\chamadas\VinculosResponsaveis.ts:296:      )
+  app\services\chamadas\VinculosResponsaveis.ts:297:    );
+  app\services\chamadas\VinculosResponsaveis.ts:302:      caminho
+  app\services\chamadas\VinculosResponsaveis.ts:303:    ),
+  app\services\chamadas\VinculosResponsaveis.ts:304:    {
+> app\services\chamadas\VinculosResponsaveis.ts:305:      usuarioId,
+  app\services\chamadas\VinculosResponsaveis.ts:306:
+  app\services\chamadas\VinculosResponsaveis.ts:307:      unidadeId,
+  app\services\chamadas\VinculosResponsaveis.ts:308:
+  app\services\chamadas\VinculosResponsaveis.ts:309:      nome,
+  app\services\chamadas\VinculosResponsaveis.ts:310:
+  app\services\chamadas\VinculosResponsaveis.ts:311:      telefone:
+  app\services\chamadas\VinculosResponsaveis.ts:312:        limparTexto(
+  app\services\chamadas\VinculosResponsaveis.ts:313:          dados.telefone
+  app\services\chamadas\VinculosResponsaveis.ts:345:export async function atualizarStatusResponsavel(
+  app\services\chamadas\VinculosResponsaveis.ts:346:  unidadeId:
+  app\services\chamadas\VinculosResponsaveis.ts:347:    string,
+> app\services\chamadas\VinculosResponsaveis.ts:348:  usuarioId:
+  app\services\chamadas\VinculosResponsaveis.ts:349:    string,
+  app\services\chamadas\VinculosResponsaveis.ts:350:  status:
+  app\services\chamadas\VinculosResponsaveis.ts:351:    StatusResponsavelUnidade
+  app\services\chamadas\VinculosResponsaveis.ts:352:): Promise<void> {
+  app\services\chamadas\VinculosResponsaveis.ts:353:  await update(
+  app\services\chamadas\VinculosResponsaveis.ts:354:    ref(
+  app\services\chamadas\VinculosResponsaveis.ts:355:      db,
+> app\services\chamadas\VinculosResponsaveis.ts:356:      `unidades-v2/${unidadeId}/responsaveis/${usuarioId}`
+  app\services\chamadas\VinculosResponsaveis.ts:357:    ),
+  app\services\chamadas\VinculosResponsaveis.ts:358:    {
+  app\services\chamadas\VinculosResponsaveis.ts:359:      status,
+  app\services\chamadas\VinculosResponsaveis.ts:360:
+  app\services\chamadas\VinculosResponsaveis.ts:361:      atualizadoEm:
+  app\services\chamadas\VinculosResponsaveis.ts:362:        Date.now(),
+  app\services\chamadas\VinculosResponsaveis.ts:363:    }
+  app\services\chamadas\VinculosResponsaveis.ts:364:  );
+  app\services\chamadas\VinculosResponsaveis.ts:367:export async function atualizarPrioridadeResponsavel(
+  app\services\chamadas\VinculosResponsaveis.ts:368:  unidadeId:
+  app\services\chamadas\VinculosResponsaveis.ts:369:    string,
+> app\services\chamadas\VinculosResponsaveis.ts:370:  usuarioId:
+  app\services\chamadas\VinculosResponsaveis.ts:371:    string,
+  app\services\chamadas\VinculosResponsaveis.ts:372:  prioridade:
+  app\services\chamadas\VinculosResponsaveis.ts:373:    number
+  app\services\chamadas\VinculosResponsaveis.ts:374:): Promise<void> {
+  app\services\chamadas\VinculosResponsaveis.ts:375:  await update(
+  app\services\chamadas\VinculosResponsaveis.ts:376:    ref(
+  app\services\chamadas\VinculosResponsaveis.ts:377:      db,
+> app\services\chamadas\VinculosResponsaveis.ts:378:      `unidades-v2/${unidadeId}/responsaveis/${usuarioId}`
+  app\services\chamadas\VinculosResponsaveis.ts:379:    ),
+  app\services\chamadas\VinculosResponsaveis.ts:380:    {
+  app\services\chamadas\VinculosResponsaveis.ts:381:      prioridade:
+  app\services\chamadas\VinculosResponsaveis.ts:382:        numeroPrioridade(
+  app\services\chamadas\VinculosResponsaveis.ts:383:          prioridade
+  app\services\chamadas\VinculosResponsaveis.ts:384:        ),
+  app\services\chamadas\VinculosResponsaveis.ts:385:
+  app\services\chamadas\VinculosResponsaveis.ts:386:      atualizadoEm:
+  app\services\chamadas\VinculosResponsaveis.ts:403:
+  app\services\chamadas\VinculosResponsaveis.ts:404:  usuariosOrdenados.forEach(
+  app\services\chamadas\VinculosResponsaveis.ts:405:    (
+> app\services\chamadas\VinculosResponsaveis.ts:406:      usuarioId,
+  app\services\chamadas\VinculosResponsaveis.ts:407:      indice
+  app\services\chamadas\VinculosResponsaveis.ts:408:    ) => {
+  app\services\chamadas\VinculosResponsaveis.ts:409:      alteracoes[
+> app\services\chamadas\VinculosResponsaveis.ts:410:        `unidades-v2/${unidadeId}/responsaveis/${usuarioId}/prioridade`
+  app\services\chamadas\VinculosResponsaveis.ts:411:      ] =
+  app\services\chamadas\VinculosResponsaveis.ts:412:        indice +
+  app\services\chamadas\VinculosResponsaveis.ts:413:        1;
+  app\services\chamadas\VinculosResponsaveis.ts:414:
+  app\services\chamadas\VinculosResponsaveis.ts:415:      alteracoes[
+> app\services\chamadas\VinculosResponsaveis.ts:416:        `unidades-v2/${unidadeId}/responsaveis/${usuarioId}/atualizadoEm`
+  app\services\chamadas\VinculosResponsaveis.ts:417:      ] =
+  app\services\chamadas\VinculosResponsaveis.ts:418:        Date.now();
+  app\services\chamadas\VinculosResponsaveis.ts:419:    }
+  app\services\chamadas\VinculosResponsaveis.ts:420:  );
+  app\services\chamadas\VinculosResponsaveis.ts:421:
+  app\services\chamadas\VinculosResponsaveis.ts:422:  await update(
+  app\services\chamadas\VinculosResponsaveis.ts:423:    ref(
+  app\services\chamadas\VinculosResponsaveis.ts:424:      db
+  app\services\chamadas\VinculosResponsaveis.ts:430:export async function removerResponsavelVinculado(
+  app\services\chamadas\VinculosResponsaveis.ts:431:  unidadeId:
+  app\services\chamadas\VinculosResponsaveis.ts:432:    string,
+> app\services\chamadas\VinculosResponsaveis.ts:433:  usuarioId:
+  app\services\chamadas\VinculosResponsaveis.ts:434:    string
+  app\services\chamadas\VinculosResponsaveis.ts:435:): Promise<void> {
+  app\services\chamadas\VinculosResponsaveis.ts:436:  await remove(
+  app\services\chamadas\VinculosResponsaveis.ts:437:    ref(
+  app\services\chamadas\VinculosResponsaveis.ts:438:      db,
+> app\services\chamadas\VinculosResponsaveis.ts:439:      `unidades-v2/${unidadeId}/responsaveis/${usuarioId}`
+  app\services\chamadas\VinculosResponsaveis.ts:440:    )
+  app\services\chamadas\VinculosResponsaveis.ts:441:  );
+  app\services\chamadas\VinculosResponsaveis.ts:442:}
+  app\services\implantacao\motor\GeradorQrStorage.ts:1:import "server-only";
+  app\services\implantacao\motor\GeradorQrStorage.ts:2:
+  app\services\implantacao\motor\GeradorQrStorage.ts:3:import {
+> app\services\implantacao\motor\GeradorQrStorage.ts:4:  randomUUID,
+  app\services\implantacao\motor\GeradorQrStorage.ts:5:} from "node:crypto";
+  app\services\implantacao\motor\GeradorQrStorage.ts:6:
+  app\services\implantacao\motor\GeradorQrStorage.ts:7:import type {
+  app\services\implantacao\motor\GeradorQrStorage.ts:8:  Storage,
+  app\services\implantacao\motor\GeradorQrStorage.ts:9:} from "firebase-admin/storage";
+  app\services\implantacao\motor\GeradorQrStorage.ts:10:
+  app\services\implantacao\motor\GeradorQrStorage.ts:11:import type {
+  app\services\implantacao\motor\GeradorQrStorage.ts:12:  ImagemQrGerada,
+  app\services\implantacao\motor\GeradorQrStorage.ts:162:    );
+  app\services\implantacao\motor\GeradorQrStorage.ts:163:
+  app\services\implantacao\motor\GeradorQrStorage.ts:164:  const tokenDownload =
+> app\services\implantacao\motor\GeradorQrStorage.ts:165:    randomUUID();
+  app\services\implantacao\motor\GeradorQrStorage.ts:166:
+  app\services\implantacao\motor\GeradorQrStorage.ts:167:  await arquivo.save(
+  app\services\implantacao\motor\GeradorQrStorage.ts:168:    parametros.conteudo,
+  app\services\implantacao\motor\GeradorQrStorage.ts:169:    {
+  app\services\implantacao\motor\GeradorQrStorage.ts:170:      resumable: false,
+  app\services\implantacao\motor\GeradorQrStorage.ts:171:
+  app\services\implantacao\motor\GeradorQrStorage.ts:172:      validation:
+  app\services\implantacao\motor\GeradorQrStorage.ts:173:        "crc32c",
+  app\services\implantacao\motor\PipelineImplantacao.ts:129:    },
+  app\services\implantacao\motor\PipelineImplantacao.ts:130:
+  app\services\implantacao\motor\PipelineImplantacao.ts:131:    responsavel: {
+> app\services\implantacao\motor\PipelineImplantacao.ts:132:      uid:
+> app\services\implantacao\motor\PipelineImplantacao.ts:133:        contextoOriginal.responsavel.uid,
+  app\services\implantacao\motor\PipelineImplantacao.ts:134:
+  app\services\implantacao\motor\PipelineImplantacao.ts:135:      nome:
+  app\services\implantacao\motor\PipelineImplantacao.ts:136:        contextoOriginal.responsavel.nome,
+  app\services\implantacao\motor\PipelineImplantacao.ts:137:
+  app\services\implantacao\motor\PipelineImplantacao.ts:138:      email:
+  app\services\implantacao\motor\PipelineImplantacao.ts:139:        contextoOriginal.responsavel.email,
+  app\services\implantacao\motor\PipelineImplantacao.ts:140:
+  app\services\implantacao\motor\PipelineImplantacao.ts:141:      telefone:
+  app\services\implantacao\ImplantacaoContext.ts:31:  };
+  app\services\implantacao\ImplantacaoContext.ts:32:
+  app\services\implantacao\ImplantacaoContext.ts:33:  responsavel: {
+> app\services\implantacao\ImplantacaoContext.ts:34:    uid: string;
+  app\services\implantacao\ImplantacaoContext.ts:35:
+  app\services\implantacao\ImplantacaoContext.ts:36:    nome: string;
+  app\services\implantacao\ImplantacaoContext.ts:37:
+  app\services\implantacao\ImplantacaoContext.ts:38:    email: string;
+  app\services\implantacao\ImplantacaoContext.ts:39:
+  app\services\implantacao\ImplantacaoContext.ts:40:    telefone?: string;
+  app\services\implantacao\ImplantacaoContext.ts:41:
+  app\services\implantacao\ImplantacaoContext.ts:42:    perfil: string;
+  app\services\implantacao\ImplantadorBeauty.ts:73:        atualizadoEm:
+  app\services\implantacao\ImplantadorBeauty.ts:74:          contexto.criadoEm,
+  app\services\implantacao\ImplantadorBeauty.ts:75:
+> app\services\implantacao\ImplantadorBeauty.ts:76:        responsavelUid:
+> app\services\implantacao\ImplantadorBeauty.ts:77:          contexto.responsavel.uid,
+  app\services\implantacao\ImplantadorBeauty.ts:78:      });
+  app\services\implantacao\ImplantadorBeauty.ts:79:
+  app\services\implantacao\ImplantadorBeauty.ts:80:    estruturasCriadas.push(
+  app\services\implantacao\ImplantadorBeauty.ts:81:      caminhoEstabelecimento
+  app\services\implantacao\ImplantadorBeauty.ts:82:    );
+  app\services\implantacao\ImplantadorBeauty.ts:83:
+  app\services\implantacao\ImplantadorBeauty.ts:84:    etapas[0] = concluirEtapa(
+  app\services\implantacao\ImplantadorBeauty.ts:85:      etapas[0]
+  app\services\implantacao\ImplantadorCondominio.ts:404:          contexto.local.endereco ||
+  app\services\implantacao\ImplantadorCondominio.ts:405:          "",
+  app\services\implantacao\ImplantadorCondominio.ts:406:
+> app\services\implantacao\ImplantadorCondominio.ts:407:        responsavelUid:
+> app\services\implantacao\ImplantadorCondominio.ts:408:          contexto.responsavel.uid,
+  app\services\implantacao\ImplantadorCondominio.ts:409:
+  app\services\implantacao\ImplantadorCondominio.ts:410:        configuracaoSegmento:
+  app\services\implantacao\ImplantadorCondominio.ts:411:          configuracao,
+  app\services\implantacao\ImplantadorCondominio.ts:412:
+> app\services\implantacao\ImplantadorCondominio.ts:413:        criadoPorUid:
+> app\services\implantacao\ImplantadorCondominio.ts:414:          contexto.criadoPorUid,
+  app\services\implantacao\ImplantadorCondominio.ts:415:
+  app\services\implantacao\ImplantadorCondominio.ts:416:        criadoEm:
+  app\services\implantacao\ImplantadorCondominio.ts:417:          contexto.criadoEm,
+  app\services\implantacao\ImplantadorCondominio.ts:418:
+  app\services\implantacao\ImplantadorCondominio.ts:419:        atualizadoEm:
+  app\services\implantacao\ImplantadorCondominio.ts:420:          contexto.criadoEm,
+  app\services\implantacao\ImplantadorCondominio.ts:421:      });
+  app\services\implantacao\ImplantadorCondominio.ts:422:
+  app\services\implantacao\ImplantadorCondominio.ts:558:      .ref(caminhoPipeline)
+  app\services\implantacao\ImplantadorCondominio.ts:559:      .set({
+  app\services\implantacao\ImplantadorCondominio.ts:560:        status:
+> app\services\implantacao\ImplantadorCondominio.ts:561:          "concluido",
+  app\services\implantacao\ImplantadorCondominio.ts:562:
+  app\services\implantacao\ImplantadorCondominio.ts:563:        modo:
+  app\services\implantacao\ImplantadorCondominio.ts:564:          resultadoGeracao.usouPipeline
+  app\services\implantacao\ImplantadorCondominio.ts:565:            ? "pipeline"
+  app\services\implantacao\ImplantadorCondominio.ts:566:            : "fallback-seguro",
+  app\services\implantacao\ImplantadorCondominio.ts:567:
+  app\services\implantacao\ImplantadorCondominio.ts:568:        mensagens:
+  app\services\implantacao\ImplantadorCondominio.ts:569:          resultadoGeracao
+  app\services\implantacao\ImplantadorCondominio.ts:638:        localSlug:
+  app\services\implantacao\ImplantadorCondominio.ts:639:          contexto.local.localSlug,
+  app\services\implantacao\ImplantadorCondominio.ts:640:
+> app\services\implantacao\ImplantadorCondominio.ts:641:        responsavelUid:
+> app\services\implantacao\ImplantadorCondominio.ts:642:          contexto.responsavel.uid,
+  app\services\implantacao\ImplantadorCondominio.ts:643:
+  app\services\implantacao\ImplantadorCondominio.ts:644:        tipoCondominio:
+  app\services\implantacao\ImplantadorCondominio.ts:645:          configuracao.tipoCondominio,
+  app\services\implantacao\ImplantadorCondominio.ts:646:
+  app\services\implantacao\ImplantadorCondominio.ts:647:        status:
+  app\services\implantacao\ImplantadorCondominio.ts:648:          "ativo",
+  app\services\implantacao\ImplantadorCondominio.ts:649:
+  app\services\implantacao\ImplantadorCondominio.ts:650:        motorImplantacao:
+  app\services\implantacao\ImplantadorResidencia.ts:40:): EtapaImplantacao {
+  app\services\implantacao\ImplantadorResidencia.ts:41:  return {
+  app\services\implantacao\ImplantadorResidencia.ts:42:    ...etapa,
+> app\services\implantacao\ImplantadorResidencia.ts:43:    status: "concluida",
+  app\services\implantacao\ImplantadorResidencia.ts:44:    mensagem,
+> app\services\implantacao\ImplantadorResidencia.ts:45:    concluidoEm: Date.now(),
+  app\services\implantacao\ImplantadorResidencia.ts:46:  };
+  app\services\implantacao\ImplantadorResidencia.ts:47:}
+  app\services\implantacao\ImplantadorResidencia.ts:48:
+  app\services\implantacao\ImplantadorResidencia.ts:49:function falharEtapa(
+  app\services\implantacao\ImplantadorResidencia.ts:50:  etapa: EtapaImplantacao,
+  app\services\implantacao\ImplantadorResidencia.ts:51:  mensagem: string
+  app\services\implantacao\ImplantadorResidencia.ts:52:): EtapaImplantacao {
+  app\services\implantacao\ImplantadorResidencia.ts:53:  return {
+  app\services\implantacao\ImplantadorResidencia.ts:54:    ...etapa,
+  app\services\implantacao\ImplantadorResidencia.ts:55:    status: "falhou",
+  app\services\implantacao\ImplantadorResidencia.ts:56:    mensagem,
+> app\services\implantacao\ImplantadorResidencia.ts:57:    concluidoEm: Date.now(),
+  app\services\implantacao\ImplantadorResidencia.ts:58:  };
+  app\services\implantacao\ImplantadorResidencia.ts:59:}
+  app\services\implantacao\ImplantadorResidencia.ts:60:
+  app\services\implantacao\ImplantadorResidencia.ts:61:function obterConfiguracaoResidencia(
+  app\services\implantacao\ImplantadorResidencia.ts:62:  contexto: ContextoImplantacao
+  app\services\implantacao\ImplantadorResidencia.ts:63:): ConfiguracaoResidencia {
+  app\services\implantacao\ImplantadorResidencia.ts:64:  if (
+  app\services\implantacao\ImplantadorResidencia.ts:65:    contexto.configuracaoSegmento.tipo !==
+  app\services\implantacao\ImplantadorResidencia.ts:148:    const {
+  app\services\implantacao\ImplantadorResidencia.ts:149:      database,
+  app\services\implantacao\ImplantadorResidencia.ts:150:      criadoEm,
+> app\services\implantacao\ImplantadorResidencia.ts:151:      criadoPorUid,
+  app\services\implantacao\ImplantadorResidencia.ts:152:      local,
+  app\services\implantacao\ImplantadorResidencia.ts:153:      responsavel,
+  app\services\implantacao\ImplantadorResidencia.ts:154:    } = contexto;
+  app\services\implantacao\ImplantadorResidencia.ts:155:
+  app\services\implantacao\ImplantadorResidencia.ts:156:    const permissoesResponsavel =
+  app\services\implantacao\ImplantadorResidencia.ts:157:      criarPermissoesResponsavel();
+  app\services\implantacao\ImplantadorResidencia.ts:158:
+  app\services\implantacao\ImplantadorResidencia.ts:159:    const perfilResponsavel =
+  app\services\implantacao\ImplantadorResidencia.ts:187:      ativo: true,
+  app\services\implantacao\ImplantadorResidencia.ts:188:      ...enderecoCompleto,
+  app\services\implantacao\ImplantadorResidencia.ts:189:      criadoEm,
+> app\services\implantacao\ImplantadorResidencia.ts:190:      criadoPorUid,
+  app\services\implantacao\ImplantadorResidencia.ts:191:      atualizadoEm: criadoEm,
+  app\services\implantacao\ImplantadorResidencia.ts:192:
+  app\services\implantacao\ImplantadorResidencia.ts:193:      responsaveis: {
+> app\services\implantacao\ImplantadorResidencia.ts:194:        [responsavel.uid]: {
+> app\services\implantacao\ImplantadorResidencia.ts:195:          uid: responsavel.uid,
+  app\services\implantacao\ImplantadorResidencia.ts:196:          nome: responsavel.nome,
+  app\services\implantacao\ImplantadorResidencia.ts:197:          email: responsavel.email,
+  app\services\implantacao\ImplantadorResidencia.ts:198:          telefone:
+  app\services\implantacao\ImplantadorResidencia.ts:199:            responsavel.telefone ?? "",
+  app\services\implantacao\ImplantadorResidencia.ts:200:          perfil: perfilResponsavel,
+  app\services\implantacao\ImplantadorResidencia.ts:201:          ativo: true,
+  app\services\implantacao\ImplantadorResidencia.ts:202:          criadoEm,
+  app\services\implantacao\ImplantadorResidencia.ts:203:          atualizadoEm: criadoEm,
+  app\services\implantacao\ImplantadorResidencia.ts:205:      },
+  app\services\implantacao\ImplantadorResidencia.ts:206:
+  app\services\implantacao\ImplantadorResidencia.ts:207:      implantacao: {
+> app\services\implantacao\ImplantadorResidencia.ts:208:        status: "concluida",
+  app\services\implantacao\ImplantadorResidencia.ts:209:        tipoImplantacao: "residencia",
+  app\services\implantacao\ImplantadorResidencia.ts:210:        implantadoEm: criadoEm,
+> app\services\implantacao\ImplantadorResidencia.ts:211:        implantadoPorUid:
+> app\services\implantacao\ImplantadorResidencia.ts:212:          criadoPorUid,
+  app\services\implantacao\ImplantadorResidencia.ts:213:      },
+  app\services\implantacao\ImplantadorResidencia.ts:214:    };
+  app\services\implantacao\ImplantadorResidencia.ts:215:
+  app\services\implantacao\ImplantadorResidencia.ts:216:    estruturasCriadas.push(
+  app\services\implantacao\ImplantadorResidencia.ts:217:      `locais-v2/${local.localId}`
+  app\services\implantacao\ImplantadorResidencia.ts:218:    );
+  app\services\implantacao\ImplantadorResidencia.ts:219:
+  app\services\implantacao\ImplantadorResidencia.ts:220:    estruturasCriadas.push(
+> app\services\implantacao\ImplantadorResidencia.ts:221:      `locais-v2/${local.localId}/responsaveis/${responsavel.uid}`
+  app\services\implantacao\ImplantadorResidencia.ts:222:    );
+  app\services\implantacao\ImplantadorResidencia.ts:223:
+  app\services\implantacao\ImplantadorResidencia.ts:224:    etapas[1] = concluirEtapa(
+  app\services\implantacao\ImplantadorResidencia.ts:225:      etapas[1],
+  app\services\implantacao\ImplantadorResidencia.ts:226:      "Cadastro principal do local preparado."
+  app\services\implantacao\ImplantadorResidencia.ts:227:    );
+  app\services\implantacao\ImplantadorResidencia.ts:228:
+  app\services\implantacao\ImplantadorResidencia.ts:229:    etapas[2] = iniciarEtapa(
+  app\services\implantacao\ImplantadorResidencia.ts:240:      slug: local.localSlug,
+  app\services\implantacao\ImplantadorResidencia.ts:241:      status: "ativo",
+  app\services\implantacao\ImplantadorResidencia.ts:242:      ativo: true,
+> app\services\implantacao\ImplantadorResidencia.ts:243:      responsavelUid:
+> app\services\implantacao\ImplantadorResidencia.ts:244:        responsavel.uid,
+  app\services\implantacao\ImplantadorResidencia.ts:245:      configuracao,
+  app\services\implantacao\ImplantadorResidencia.ts:246:      ...enderecoCompleto,
+  app\services\implantacao\ImplantadorResidencia.ts:247:      criadoEm,
+> app\services\implantacao\ImplantadorResidencia.ts:248:      criadoPorUid,
+  app\services\implantacao\ImplantadorResidencia.ts:249:      atualizadoEm: criadoEm,
+  app\services\implantacao\ImplantadorResidencia.ts:250:
+  app\services\implantacao\ImplantadorResidencia.ts:251:      unidades: {
+  app\services\implantacao\ImplantadorResidencia.ts:252:        principal: {
+  app\services\implantacao\ImplantadorResidencia.ts:253:          id: "principal",
+  app\services\implantacao\ImplantadorResidencia.ts:254:          localId: local.localId,
+  app\services\implantacao\ImplantadorResidencia.ts:255:          condominioId: local.localId,
+  app\services\implantacao\ImplantadorResidencia.ts:256:          localNome: local.localNome,
+  app\services\implantacao\ImplantadorResidencia.ts:260:          bloco: "",
+  app\services\implantacao\ImplantadorResidencia.ts:261:          status: "ativa",
+  app\services\implantacao\ImplantadorResidencia.ts:262:          ativo: true,
+> app\services\implantacao\ImplantadorResidencia.ts:263:          responsavelUid:
+> app\services\implantacao\ImplantadorResidencia.ts:264:            responsavel.uid,
+  app\services\implantacao\ImplantadorResidencia.ts:265:          criadoEm,
+  app\services\implantacao\ImplantadorResidencia.ts:266:          atualizadoEm: criadoEm,
+  app\services\implantacao\ImplantadorResidencia.ts:267:        },
+  app\services\implantacao\ImplantadorResidencia.ts:268:      },
+  app\services\implantacao\ImplantadorResidencia.ts:269:    };
+  app\services\implantacao\ImplantadorResidencia.ts:270:
+  app\services\implantacao\ImplantadorResidencia.ts:271:    estruturasCriadas.push(
+  app\services\implantacao\ImplantadorResidencia.ts:272:      `residencias-v2/${local.localId}`
+  app\services\implantacao\ImplantadorResidencia.ts:301:      modoChamado: "familia",
+  app\services\implantacao\ImplantadorResidencia.ts:302:      status: "ativa",
+  app\services\implantacao\ImplantadorResidencia.ts:303:      ativo: true,
+> app\services\implantacao\ImplantadorResidencia.ts:304:      responsavelUid:
+> app\services\implantacao\ImplantadorResidencia.ts:305:        responsavel.uid,
+  app\services\implantacao\ImplantadorResidencia.ts:306:      criadoEm:
+  app\services\implantacao\ImplantadorResidencia.ts:307:        new Date(criadoEm).toISOString(),
+  app\services\implantacao\ImplantadorResidencia.ts:308:      atualizadoEm:
+  app\services\implantacao\ImplantadorResidencia.ts:309:        new Date(criadoEm).toISOString(),
+  app\services\implantacao\ImplantadorResidencia.ts:310:    };
+  app\services\implantacao\ImplantadorResidencia.ts:311:
+  app\services\implantacao\ImplantadorResidencia.ts:312:    estruturasCriadas.push(
+  app\services\implantacao\ImplantadorResidencia.ts:313:      `unidades-v2/${local.localId}-principal`
+  app\services\implantacao\ImplantadorResidencia.ts:324:    );
+  app\services\implantacao\ImplantadorResidencia.ts:325:
+  app\services\implantacao\ImplantadorResidencia.ts:326:    atualizacoes[
+> app\services\implantacao\ImplantadorResidencia.ts:327:      `usuarios-v2/${responsavel.uid}/vinculos/${local.localId}`
+  app\services\implantacao\ImplantadorResidencia.ts:328:    ] = {
+  app\services\implantacao\ImplantadorResidencia.ts:329:      vinculoId: local.localId,
+  app\services\implantacao\ImplantadorResidencia.ts:330:      localId: local.localId,
+  app\services\implantacao\ImplantadorResidencia.ts:331:      localNome: local.localNome,
+  app\services\implantacao\ImplantadorResidencia.ts:332:      localSlug: local.localSlug,
+  app\services\implantacao\ImplantadorResidencia.ts:333:      tipoLocal: "residencia",
+  app\services\implantacao\ImplantadorResidencia.ts:334:      ativo: true,
+  app\services\implantacao\ImplantadorResidencia.ts:335:      status: "ativo",
+  app\services\implantacao\ImplantadorResidencia.ts:345:          true,
+  app\services\implantacao\ImplantadorResidencia.ts:346:      },
+  app\services\implantacao\ImplantadorResidencia.ts:347:      criadoEm,
+> app\services\implantacao\ImplantadorResidencia.ts:348:      criadoPorUid,
+  app\services\implantacao\ImplantadorResidencia.ts:349:      atualizadoEm: criadoEm,
+  app\services\implantacao\ImplantadorResidencia.ts:350:    };
+  app\services\implantacao\ImplantadorResidencia.ts:351:
+  app\services\implantacao\ImplantadorResidencia.ts:352:    atualizacoes[
+> app\services\implantacao\ImplantadorResidencia.ts:353:      `vinculos-locais-v2/${local.localId}/${responsavel.uid}`
+  app\services\implantacao\ImplantadorResidencia.ts:354:    ] = {
+> app\services\implantacao\ImplantadorResidencia.ts:355:      uid: responsavel.uid,
+  app\services\implantacao\ImplantadorResidencia.ts:356:      nome: responsavel.nome,
+  app\services\implantacao\ImplantadorResidencia.ts:357:      email: responsavel.email,
+  app\services\implantacao\ImplantadorResidencia.ts:358:      telefone:
+  app\services\implantacao\ImplantadorResidencia.ts:359:        responsavel.telefone ?? "",
+  app\services\implantacao\ImplantadorResidencia.ts:360:      perfil:
+  app\services\implantacao\ImplantadorResidencia.ts:361:        perfilResponsavel,
+  app\services\implantacao\ImplantadorResidencia.ts:362:      ativo: true,
+  app\services\implantacao\ImplantadorResidencia.ts:363:      status: "ativo",
+  app\services\implantacao\ImplantadorResidencia.ts:366:      permissoes:
+  app\services\implantacao\ImplantadorResidencia.ts:367:        permissoesResponsavel,
+  app\services\implantacao\ImplantadorResidencia.ts:368:      criadoEm,
+> app\services\implantacao\ImplantadorResidencia.ts:369:      criadoPorUid,
+  app\services\implantacao\ImplantadorResidencia.ts:370:      atualizadoEm: criadoEm,
+  app\services\implantacao\ImplantadorResidencia.ts:371:    };
+  app\services\implantacao\ImplantadorResidencia.ts:372:
+  app\services\implantacao\ImplantadorResidencia.ts:373:    estruturasCriadas.push(
+> app\services\implantacao\ImplantadorResidencia.ts:374:      `usuarios-v2/${responsavel.uid}/vinculos/${local.localId}`
+  app\services\implantacao\ImplantadorResidencia.ts:375:    );
+  app\services\implantacao\ImplantadorResidencia.ts:376:
+  app\services\implantacao\ImplantadorResidencia.ts:377:    estruturasCriadas.push(
+> app\services\implantacao\ImplantadorResidencia.ts:378:      `vinculos-locais-v2/${local.localId}/${responsavel.uid}`
+  app\services\implantacao\ImplantadorResidencia.ts:379:    );
+  app\services\implantacao\ImplantadorResidencia.ts:380:
+  app\services\implantacao\ImplantadorResidencia.ts:381:    etapas[4] = concluirEtapa(
+  app\services\implantacao\ImplantadorResidencia.ts:382:      etapas[4],
+  app\services\implantacao\ImplantadorResidencia.ts:383:      "Responsável vinculado à residência."
+  app\services\implantacao\ImplantadorResidencia.ts:384:    );
+  app\services\implantacao\ImplantadorResidencia.ts:385:
+  app\services\implantacao\ImplantadorResidencia.ts:386:    etapas[5] = iniciarEtapa(
+  app\services\implantacao\ImplantadorResidencia.ts:528:      },
+  app\services\implantacao\ImplantadorResidencia.ts:529:
+  app\services\implantacao\ImplantadorResidencia.ts:530:      criadoEm,
+> app\services\implantacao\ImplantadorResidencia.ts:531:      criadoPorUid,
+  app\services\implantacao\ImplantadorResidencia.ts:532:      atualizadoEm: criadoEm,
+  app\services\implantacao\ImplantadorResidencia.ts:533:    };
+  app\services\implantacao\ImplantadorResidencia.ts:534:
+  app\services\implantacao\ImplantadorResidencia.ts:535:    estruturasCriadas.push(
+  app\services\implantacao\ImplantadorResidencia.ts:536:      `configuracoes-chamadas-v2/${local.localId}`
+  app\services\implantacao\ImplantadorResidencia.ts:537:    );
+  app\services\implantacao\ImplantadorResidencia.ts:538:
+  app\services\implantacao\ImplantadorResidencia.ts:539:    atualizacoes[
+  app\services\implantacao\ImplantadorResidencia.ts:594:        `${local.localId}-principal`,
+  app\services\implantacao\ImplantadorResidencia.ts:595:
+  app\services\implantacao\ImplantadorResidencia.ts:596:      criadoEm,
+> app\services\implantacao\ImplantadorResidencia.ts:597:      criadoPorUid,
+  app\services\implantacao\ImplantadorResidencia.ts:598:      atualizadoEm: criadoEm,
+  app\services\implantacao\ImplantadorResidencia.ts:599:    };
+  app\services\implantacao\ImplantadorResidencia.ts:600:
+  app\services\implantacao\ImplantadorResidencia.ts:601:    estruturasCriadas.push(
+  app\services\implantacao\ImplantadorResidencia.ts:602:      `configuracoes-locais-v2/${local.localId}`
+  app\services\implantacao\ImplantadorResidencia.ts:603:    );
+  app\services\implantacao\ImplantadorResidencia.ts:604:
+  app\services\implantacao\ImplantadorResidencia.ts:605:    etapas[5] = concluirEtapa(
+  app\services\implantacao\ImplantadorResidencia.ts:631:      detalhes: {
+  app\services\implantacao\ImplantadorResidencia.ts:632:        localId: local.localId,
+  app\services\implantacao\ImplantadorResidencia.ts:633:        localSlug: local.localSlug,
+> app\services\implantacao\ImplantadorResidencia.ts:634:        responsavelUid:
+> app\services\implantacao\ImplantadorResidencia.ts:635:          responsavel.uid,
+  app\services\implantacao\ImplantadorResidencia.ts:636:        unidadePrincipalCriada: true,
+  app\services\implantacao\ImplantadorResidencia.ts:637:        unidadePrincipalId:
+  app\services\implantacao\ImplantadorResidencia.ts:638:          `${local.localId}-principal`,
+  app\services\implantacao\ImplantadorResidencia.ts:639:        configuracoesChamadasCriadas:
+  app\services\implantacao\ImplantadorResidencia.ts:640:          true,
+  app\services\implantacao\ImplantadorResidencia.ts:641:        painelResponsavel:
+  app\services\implantacao\ImplantadorResidencia.ts:642:          `/morador-v2/${local.localId}-principal`,
+  app\services\implantacao\ImplantadorResidencia.ts:643:        acessoVisitante:
+  app\services\implantacao\ImplantadorUniversal.ts:90:export type ContextoImplantacao = {
+  app\services\implantacao\ImplantadorUniversal.ts:91:  database: Database;
+  app\services\implantacao\ImplantadorUniversal.ts:92:  criadoEm: number;
+> app\services\implantacao\ImplantadorUniversal.ts:93:  criadoPorUid: string;
+  app\services\implantacao\ImplantadorUniversal.ts:94:
+  app\services\implantacao\ImplantadorUniversal.ts:95:  local: {
+  app\services\implantacao\ImplantadorUniversal.ts:96:    localId: string;
+  app\services\implantacao\ImplantadorUniversal.ts:97:    localNome: string;
+  app\services\implantacao\ImplantadorUniversal.ts:98:    localSlug: string;
+  app\services\implantacao\ImplantadorUniversal.ts:99:    tipoLocal: TipoLocalImplantacao;
+  app\services\implantacao\ImplantadorUniversal.ts:100:    cidade?: string;
+  app\services\implantacao\ImplantadorUniversal.ts:101:    estado?: string;
+  app\services\implantacao\ImplantadorUniversal.ts:103:  };
+  app\services\implantacao\ImplantadorUniversal.ts:104:
+  app\services\implantacao\ImplantadorUniversal.ts:105:  responsavel: {
+> app\services\implantacao\ImplantadorUniversal.ts:106:    uid: string;
+  app\services\implantacao\ImplantadorUniversal.ts:107:    nome: string;
+  app\services\implantacao\ImplantadorUniversal.ts:108:    email: string;
+  app\services\implantacao\ImplantadorUniversal.ts:109:    telefone?: string;
+  app\services\implantacao\ImplantadorUniversal.ts:110:    perfil: string;
+  app\services\implantacao\ImplantadorUniversal.ts:111:  };
+  app\services\implantacao\ImplantadorUniversal.ts:112:
+  app\services\implantacao\ImplantadorUniversal.ts:113:  configuracaoSegmento: ConfiguracaoSegmentoImplantacao;
+  app\services\implantacao\ImplantadorUniversal.ts:114:};
+  app\services\implantacao\ImplantadorUniversal.ts:119:  status:
+  app\services\implantacao\ImplantadorUniversal.ts:120:    | "pendente"
+  app\services\implantacao\ImplantadorUniversal.ts:121:    | "executando"
+> app\services\implantacao\ImplantadorUniversal.ts:122:    | "concluida"
+  app\services\implantacao\ImplantadorUniversal.ts:123:    | "falhou";
+  app\services\implantacao\ImplantadorUniversal.ts:124:  mensagem?: string;
+  app\services\implantacao\ImplantadorUniversal.ts:125:  iniciadoEm?: number;
+> app\services\implantacao\ImplantadorUniversal.ts:126:  concluidoEm?: number;
+  app\services\implantacao\ImplantadorUniversal.ts:127:};
+  app\services\implantacao\ImplantadorUniversal.ts:128:
+  app\services\implantacao\ImplantadorUniversal.ts:129:export type ResultadoImplantadorSegmento = {
+  app\services\implantacao\ImplantadorUniversal.ts:130:  sucesso: boolean;
+  app\services\implantacao\ImplantadorUniversal.ts:131:  tipoLocal: TipoLocalImplantacao;
+  app\services\implantacao\ImplantadorUniversal.ts:132:  estruturasCriadas: string[];
+  app\services\implantacao\ImplantadorUniversal.ts:133:  etapas: EtapaImplantacao[];
+  app\services\implantacao\ImplantadorUniversal.ts:134:  mensagem: string;
+  app\services\implantacao\ImplantadorUniversal.ts:175:): EtapaImplantacao {
+  app\services\implantacao\ImplantadorUniversal.ts:176:  return {
+  app\services\implantacao\ImplantadorUniversal.ts:177:    ...etapa,
+> app\services\implantacao\ImplantadorUniversal.ts:178:    status: "concluida",
+  app\services\implantacao\ImplantadorUniversal.ts:179:    mensagem,
+> app\services\implantacao\ImplantadorUniversal.ts:180:    concluidoEm: Date.now(),
+  app\services\implantacao\ImplantadorUniversal.ts:181:  };
+  app\services\implantacao\ImplantadorUniversal.ts:182:}
+  app\services\implantacao\ImplantadorUniversal.ts:183:
+  app\services\implantacao\ImplantadorUniversal.ts:184:export function falharEtapa(
+  app\services\implantacao\ImplantadorUniversal.ts:185:  etapa: EtapaImplantacao,
+  app\services\implantacao\ImplantadorUniversal.ts:186:  mensagem: string
+  app\services\implantacao\ImplantadorUniversal.ts:187:): EtapaImplantacao {
+  app\services\implantacao\ImplantadorUniversal.ts:188:  return {
+  app\services\implantacao\ImplantadorUniversal.ts:189:    ...etapa,
+  app\services\implantacao\ImplantadorUniversal.ts:190:    status: "falhou",
+  app\services\implantacao\ImplantadorUniversal.ts:191:    mensagem,
+> app\services\implantacao\ImplantadorUniversal.ts:192:    concluidoEm: Date.now(),
+  app\services\implantacao\ImplantadorUniversal.ts:193:  };
+  app\services\implantacao\ImplantadorUniversal.ts:194:}
+  app\services\implantacao\ImplantadorUniversal.ts:195:
+  app\services\implantacao\ImplantadorUniversal.ts:196:export function normalizarSlugLocal(
+  app\services\implantacao\ImplantadorUniversal.ts:197:  valor: string
+  app\services\implantacao\ImplantadorUniversal.ts:198:): string {
+  app\services\implantacao\ImplantadorUniversal.ts:199:  return valor
+  app\services\implantacao\ImplantadorUniversal.ts:200:    .trim()
+  app\services\implantacao\ImplantadorUniversal.ts:231:  const localSlug =
+  app\services\implantacao\ImplantadorUniversal.ts:232:    contexto.local.localSlug.trim();
+  app\services\implantacao\ImplantadorUniversal.ts:233:
+> app\services\implantacao\ImplantadorUniversal.ts:234:  const criadoPorUid =
+> app\services\implantacao\ImplantadorUniversal.ts:235:    contexto.criadoPorUid.trim();
+  app\services\implantacao\ImplantadorUniversal.ts:236:
+> app\services\implantacao\ImplantadorUniversal.ts:237:  const responsavelUid =
+> app\services\implantacao\ImplantadorUniversal.ts:238:    contexto.responsavel.uid.trim();
+  app\services\implantacao\ImplantadorUniversal.ts:239:
+  app\services\implantacao\ImplantadorUniversal.ts:240:  const responsavelNome =
+  app\services\implantacao\ImplantadorUniversal.ts:241:    contexto.responsavel.nome.trim();
+  app\services\implantacao\ImplantadorUniversal.ts:242:
+  app\services\implantacao\ImplantadorUniversal.ts:243:  const responsavelEmail =
+  app\services\implantacao\ImplantadorUniversal.ts:244:    contexto.responsavel.email.trim();
+  app\services\implantacao\ImplantadorUniversal.ts:245:
+  app\services\implantacao\ImplantadorUniversal.ts:246:  if (!localId) {
+  app\services\implantacao\ImplantadorUniversal.ts:261:    );
+  app\services\implantacao\ImplantadorUniversal.ts:262:  }
+  app\services\implantacao\ImplantadorUniversal.ts:263:
+> app\services\implantacao\ImplantadorUniversal.ts:264:  if (!criadoPorUid) {
+  app\services\implantacao\ImplantadorUniversal.ts:265:    throw new Error(
+> app\services\implantacao\ImplantadorUniversal.ts:266:      "UID de quem está implantando não informado."
+  app\services\implantacao\ImplantadorUniversal.ts:267:    );
+  app\services\implantacao\ImplantadorUniversal.ts:268:  }
+  app\services\implantacao\ImplantadorUniversal.ts:269:
+> app\services\implantacao\ImplantadorUniversal.ts:270:  if (!responsavelUid) {
+  app\services\implantacao\ImplantadorUniversal.ts:271:    throw new Error(
+> app\services\implantacao\ImplantadorUniversal.ts:272:      "UID do responsável não informado."
+  app\services\implantacao\ImplantadorUniversal.ts:273:    );
+  app\services\implantacao\ImplantadorUniversal.ts:274:  }
+  app\services\implantacao\ImplantadorUniversal.ts:275:
+  app\services\implantacao\ImplantadorUniversal.ts:276:  if (!responsavelNome) {
+  app\services\implantacao\ImplantadorUniversal.ts:277:    throw new Error(
+  app\services\implantacao\ImplantadorUniversal.ts:278:      "Nome do responsável não informado."
+  app\services\implantacao\ImplantadorUniversal.ts:279:    );
+  app\services\implantacao\ImplantadorUniversal.ts:280:  }
+  app\services\locais\CadastroUniversal.ts:94:  endereco:
+  app\services\locais\CadastroUniversal.ts:95:    string;
+  app\services\locais\CadastroUniversal.ts:96:
+> app\services\locais\CadastroUniversal.ts:97:  criadoPorUid:
+  app\services\locais\CadastroUniversal.ts:98:    string;
+  app\services\locais\CadastroUniversal.ts:99:
+  app\services\locais\CadastroUniversal.ts:100:  criadoEm:
+  app\services\locais\CadastroUniversal.ts:101:    number;
+  app\services\locais\CadastroUniversal.ts:102:
+  app\services\locais\CadastroUniversal.ts:103:  modulos:
+  app\services\locais\CadastroUniversal.ts:104:    ModulosLocal;
+  app\services\locais\CadastroUniversal.ts:105:
+  app\services\locais\CadastroUniversal.ts:152:  criadoEm?:
+  app\services\locais\CadastroUniversal.ts:153:    number;
+  app\services\locais\CadastroUniversal.ts:154:
+> app\services\locais\CadastroUniversal.ts:155:  criadoPorUid?:
+  app\services\locais\CadastroUniversal.ts:156:    string;
+  app\services\locais\CadastroUniversal.ts:157:
+  app\services\locais\CadastroUniversal.ts:158:  modulos?:
+  app\services\locais\CadastroUniversal.ts:159:    ModulosLocal;
+  app\services\locais\CadastroUniversal.ts:160:
+  app\services\locais\CadastroUniversal.ts:161:  estatisticas?:
+  app\services\locais\CadastroUniversal.ts:162:    EstatisticasLocal;
+  app\services\locais\CadastroUniversal.ts:163:
+  app\services\locais\CadastroUniversal.ts:336:  endereco:
+  app\services\locais\CadastroUniversal.ts:337:    string;
+  app\services\locais\CadastroUniversal.ts:338:
+> app\services\locais\CadastroUniversal.ts:339:  criadoPorUid:
+  app\services\locais\CadastroUniversal.ts:340:    string;
+  app\services\locais\CadastroUniversal.ts:341:} {
+  app\services\locais\CadastroUniversal.ts:342:  const localId =
+  app\services\locais\CadastroUniversal.ts:343:    texto(
+  app\services\locais\CadastroUniversal.ts:344:      dados.localId
+  app\services\locais\CadastroUniversal.ts:345:    );
+  app\services\locais\CadastroUniversal.ts:346:
+  app\services\locais\CadastroUniversal.ts:347:  const nome =
+  app\services\locais\CadastroUniversal.ts:379:      dados.endereco
+  app\services\locais\CadastroUniversal.ts:380:    );
+  app\services\locais\CadastroUniversal.ts:381:
+> app\services\locais\CadastroUniversal.ts:382:  const criadoPorUid =
+  app\services\locais\CadastroUniversal.ts:383:    texto(
+> app\services\locais\CadastroUniversal.ts:384:      dados.criadoPorUid
+  app\services\locais\CadastroUniversal.ts:385:    );
+  app\services\locais\CadastroUniversal.ts:386:
+  app\services\locais\CadastroUniversal.ts:387:  if (!localId) {
+  app\services\locais\CadastroUniversal.ts:388:    throw new Error(
+  app\services\locais\CadastroUniversal.ts:389:      "LocalId não informado no Cadastro Universal."
+  app\services\locais\CadastroUniversal.ts:390:    );
+  app\services\locais\CadastroUniversal.ts:391:  }
+  app\services\locais\CadastroUniversal.ts:392:
+  app\services\locais\CadastroUniversal.ts:423:    );
+  app\services\locais\CadastroUniversal.ts:424:  }
+  app\services\locais\CadastroUniversal.ts:425:
+> app\services\locais\CadastroUniversal.ts:426:  if (!criadoPorUid) {
+  app\services\locais\CadastroUniversal.ts:427:    throw new Error(
+
+

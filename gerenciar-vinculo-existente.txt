@@ -1,0 +1,175 @@
+﻿
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:1036:        </section>
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:1037:
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:1038:        {perfis.length > 0 && (
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:1039:          <section className="mt-6">
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:1040:            <p className="text-xs font-black text-slate-400">
+> app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:1041:              PERFIL PADRÃO AO ENTRAR
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:1042:            </p>
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:1043:
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:1044:            <div className="mt-3 space-y-2">
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:1045:              {perfis.map(
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:1046:                (perfil) => (
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:1047:                  <label
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:1048:                    key={perfil}
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:1049:                    className="flex cursor-pointer items-center gap-3 
+rounded-xl border border-blue-900 bg-blue-950/20 p-3"
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:1050:                  >
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:1051:                    <input
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:1052:                      type="radio"
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:1053:                      name="novo-vinculo-perfil"
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:1054:                      checked={
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:1055:                        perfilPadrao ===
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:1056:                        perfil
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:1057:                      }
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:1058:                      onChange={() =>
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:1059:                        setPerfilPadrao(
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:1060:                          perfil
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:1061:                        )
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:1175:            className="rounded-xl bg-green-600 py-3 font-black text-white 
+disabled:cursor-not-allowed disabled:opacity-40"
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:1176:          >
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:1177:            {salvando
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:1178:              ? "Salvando..."
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:1179:              : jaExiste
+> app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:1180:                ? "💾 Atualizar vínculo"
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:1181:                : "🔗 Criar vínculo"}
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:1182:          </button>
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:1183:        </div>
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:1184:      </div>
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:1185:    </div>
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:1186:  );
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:1187:}
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:1188:
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:1189:
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:1190:
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:1191:
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:1192:
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:1193:
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:1194:
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:1195:
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1141:      );
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1142:    } catch (
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1143:      erro
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1144:    ) {
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1145:      console.error(
+> app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1146:        "Erro ao salvar vínculo:",
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1147:        erro
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1148:      );
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1149:
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1150:      alert(
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1151:        "Não foi possível salvar o vínculo."
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1152:      );
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1153:    } finally {
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1154:      setSalvando(
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1155:        false
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1156:      );
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1157:    }
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1158:  }
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1159:
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1160:  const totalAtivos =
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1161:    vinculos.filter(
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1162:      (
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1163:        item
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1164:      ) =>
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1165:        item.ativo
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1166:    ).length;
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1467:                      vinculo
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1468:                    )
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1469:                  }
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1470:                  className="mt-5 w-full rounded-xl bg-violet-600 px-4 py-3 
+font-black text-white"
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1471:                >
+> app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1472:                  Gerenciar vínculo
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1473:                </button>
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1474:              </article>
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1475:            )
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1476:          )}
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1477:        </section>
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1478:      )}
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1479:
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1480:      <NovoVinculoModal
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1481:        aberto={novoVinculoAberto}
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1482:        onClose={() =>
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1483:          setNovoVinculoAberto(false)
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1484:        }
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1485:      />
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1486:
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1487:      {vinculoEditando && (
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1488:        <div className="fixed inset-0 z-[210] flex items-center justify-center 
+bg-black/80 p-3">
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1489:          <div className="max-h-[94vh] w-full max-w-2xl overflow-y-auto 
+rounded-3xl border border-violet-700 bg-slate-900 p-5">
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1490:            <div className="flex items-start justify-between">
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1491:              <div>
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1492:                <p className="text-xs font-black text-violet-300">
+> app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1493:                  🔗 GERENCIAR VÍNCULO
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1494:                </p>
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1495:
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1496:                <h3 className="mt-2 text-2xl font-black">
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1497:                  {vinculoEditando.pessoaNome}
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1498:                </h3>
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1499:
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1500:                <p className="mt-1 text-slate-400">
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1501:                  {vinculoEditando.localNome}
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1502:                </p>
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1503:              </div>
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1504:
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1505:              <button
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1506:                type="button"
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1507:                onClick={() =>
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1508:                  !salvando &&
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1509:                  setVinculoEditando(
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1510:                    null
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1511:                  )
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1512:                }
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1513:                className="h-11 w-11 rounded-xl bg-slate-800 font-black"
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1558:              </div>
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1559:            </section>
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1560:
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1561:            <section className="mt-6">
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1562:              <p className="text-xs font-black text-slate-400">
+> app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1563:                PERFIL PADRÃO AO ENTRAR
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1564:              </p>
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1565:
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1566:              <div className="mt-3 space-y-2">
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1567:                {perfisEditando.map(
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1568:                  (
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1569:                    perfil
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1570:                  ) => (
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1571:                    <label
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1572:                      key={
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1573:                        perfil
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1574:                      }
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1575:                      className="flex cursor-pointer items-center gap-3 
+rounded-xl border border-blue-900 bg-blue-950/20 p-3"
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1576:                    >
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1577:                      <input
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1578:                        type="radio"
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1579:                        name="perfil-principal"
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1580:                        checked={
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1581:                          perfilPrincipalEditando ===
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1582:                          perfil
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1583:                        }
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1713:                }
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1714:                className="rounded-xl bg-green-600 py-3 font-black text-white 
+disabled:opacity-50"
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1715:              >
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1716:                {salvando
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1717:                  ? "Salvando..."
+> app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1718:                  : "💾 Salvar vínculo"}
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1719:              </button>
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1720:            </div>
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1721:          </div>
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1722:        </div>
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1723:      )}
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1724:    </div>
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1725:  );
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1726:}
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1727:
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1728:
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1729:
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1730:
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1731:
+
+

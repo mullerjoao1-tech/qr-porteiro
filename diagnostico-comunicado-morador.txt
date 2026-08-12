@@ -1,0 +1,390 @@
+﻿
+  app\acesso-v2\[condominioId]\page.tsx:837:                      ),
+  app\acesso-v2\[condominioId]\page.tsx:838:                      {
+  app\acesso-v2\[condominioId]\page.tsx:839:                        visualizadoPeloVisitante: true,
+> app\acesso-v2\[condominioId]\page.tsx:840:                        mensagemVisualizada: true,
+  app\acesso-v2\[condominioId]\page.tsx:841:                        audioOuvidoPeloVisitante: true,
+  app\acesso-v2\[condominioId]\page.tsx:842:                        audioOuvidoEm: Date.now(),
+  app\acesso-v2\[condominioId]\page.tsx:843:                      }
+  app\acesso-v2\[condominioId]\page.tsx:844:                    );
+  app\acesso-v2\[condominioId]\page.tsx:845:                  }}
+  app\acesso-v2\[condominioId]\page.tsx:846:                />
+  app\acesso-v2\[condominioId]\page.tsx:847:              </div>
+  app\acesso-v2\[condominioId]\page.tsx:848:            )}
+  app\components\core\morador\AtendimentoVisitantesMorador.tsx:947:            setVisitanteVisualizou(
+  app\components\core\morador\AtendimentoVisitantesMorador.tsx:948:              dados.visitanteVisualizou ===
+  app\components\core\morador\AtendimentoVisitantesMorador.tsx:949:                true ||
+> app\components\core\morador\AtendimentoVisitantesMorador.tsx:950:              dados.mensagemVisualizada ===
+  app\components\core\morador\AtendimentoVisitantesMorador.tsx:951:                true ||
+  app\components\core\morador\AtendimentoVisitantesMorador.tsx:952:              dados.visualizadoPeloVisitante ===
+  app\components\core\morador\AtendimentoVisitantesMorador.tsx:953:                true
+  app\components\core\morador\AtendimentoVisitantesMorador.tsx:954:            );
+  app\components\core\morador\AtendimentoVisitantesMorador.tsx:955:
+  app\components\core\morador\AtendimentoVisitantesMorador.tsx:956:            const mensagens =
+  app\components\core\morador\AtendimentoVisitantesMorador.tsx:957:              ordenarMensagens(
+  app\components\core\morador\AtendimentoVisitantesMorador.tsx:958:                dados.mensagens
+  app\components\core\morador\AtendimentoVisitantesMorador.tsx:1332:        visitanteVisualizou:
+  app\components\core\morador\AtendimentoVisitantesMorador.tsx:1333:          false,
+  app\components\core\morador\AtendimentoVisitantesMorador.tsx:1334:
+> app\components\core\morador\AtendimentoVisitantesMorador.tsx:1335:        mensagemVisualizada:
+  app\components\core\morador\AtendimentoVisitantesMorador.tsx:1336:          false,
+  app\components\core\morador\AtendimentoVisitantesMorador.tsx:1337:
+  app\components\core\morador\AtendimentoVisitantesMorador.tsx:1338:        visualizadoPeloVisitante:
+  app\components\core\morador\AtendimentoVisitantesMorador.tsx:1339:          false,
+  app\components\core\morador\AtendimentoVisitantesMorador.tsx:1340:
+  app\components\core\morador\AtendimentoVisitantesMorador.tsx:1341:        enviadoEm:
+  app\components\core\morador\AtendimentoVisitantesMorador.tsx:1342:          Date.now(),
+  app\components\core\morador\AtendimentoVisitantesMorador.tsx:1343:
+  app\components\core\morador\AtendimentoVisitantesMorador.tsx:1518:          visitanteVisualizou:
+  app\components\core\morador\AtendimentoVisitantesMorador.tsx:1519:            false,
+  app\components\core\morador\AtendimentoVisitantesMorador.tsx:1520:
+> app\components\core\morador\AtendimentoVisitantesMorador.tsx:1521:          mensagemVisualizada:
+  app\components\core\morador\AtendimentoVisitantesMorador.tsx:1522:            false,
+  app\components\core\morador\AtendimentoVisitantesMorador.tsx:1523:
+  app\components\core\morador\AtendimentoVisitantesMorador.tsx:1524:          visualizadoPeloVisitante:
+  app\components\core\morador\AtendimentoVisitantesMorador.tsx:1525:            false,
+  app\components\core\morador\AtendimentoVisitantesMorador.tsx:1526:
+  app\components\core\morador\AtendimentoVisitantesMorador.tsx:1527:          ultimaAtividade:
+  app\components\core\morador\AtendimentoVisitantesMorador.tsx:1528:            Date.now(),
+  app\components\core\morador\AtendimentoVisitantesMorador.tsx:1529:
+  app\dashboard\sindico\CentralSindico.tsx:56:  titulo: string;
+  app\dashboard\sindico\CentralSindico.tsx:57:  mensagem: string;
+  app\dashboard\sindico\CentralSindico.tsx:58:  detalhesModelo?: DetalhesModeloComunicacao;
+> app\dashboard\sindico\CentralSindico.tsx:59:  exigeCiencia: boolean;
+  app\dashboard\sindico\CentralSindico.tsx:60:  enviarPush: boolean;
+  app\dashboard\sindico\CentralSindico.tsx:61:  pushProcessado?: boolean;
+  app\dashboard\sindico\CentralSindico.tsx:62:  pushEnviado?: boolean;
+  app\dashboard\sindico\CentralSindico.tsx:63:  pushEnviadoEm?: number;
+  app\dashboard\sindico\CentralSindico.tsx:64:  pushTotalDestinatarios?: number;
+  app\dashboard\sindico\CentralSindico.tsx:65:  pushTotalEnviados?: number;
+  app\dashboard\sindico\CentralSindico.tsx:66:  pushTotalFalhas?: number;
+  app\dashboard\sindico\CentralSindico.tsx:67:  erroPush?: string | null;
+  app\dashboard\sindico\CentralSindico.tsx:614:  const [impactoPrevisto, setImpactoPrevisto] = useState("");
+  app\dashboard\sindico\CentralSindico.tsx:615:  const [tipoEmergencia, setTipoEmergencia] = useState("");
+  app\dashboard\sindico\CentralSindico.tsx:616:  const [orientacaoImediata, setOrientacaoImediata] = useState("");
+> app\dashboard\sindico\CentralSindico.tsx:617:  const [exigirCiencia, setExigirCiencia] = useState(true);
+  app\dashboard\sindico\CentralSindico.tsx:618:  const [enviarPush, setEnviarPush] = useState(false);
+  app\dashboard\sindico\CentralSindico.tsx:619:  const [registrarHistorico, setRegistrarHistorico] = useState(true);
+  app\dashboard\sindico\CentralSindico.tsx:620:  const [agendarComunicacao, setAgendarComunicacao] = useState(false);
+  app\dashboard\sindico\CentralSindico.tsx:621:  const [dataAgendamento, setDataAgendamento] = useState("");
+  app\dashboard\sindico\CentralSindico.tsx:622:  const [popupComunicadosEnviadosAberto, setPopupComunicadosEnviadosAberto] =
+  app\dashboard\sindico\CentralSindico.tsx:623:    useState(false);
+  app\dashboard\sindico\CentralSindico.tsx:624:  const [comunicadosEnviados, setComunicadosEnviados] = useState<
+  app\dashboard\sindico\CentralSindico.tsx:625:    ComunicadoSalvo[]
+  app\dashboard\sindico\CentralSindico.tsx:998:    limparCamposDoModelo();
+  app\dashboard\sindico\CentralSindico.tsx:999:
+  app\dashboard\sindico\CentralSindico.tsx:1000:    if (tipo === "emergencia") {
+> app\dashboard\sindico\CentralSindico.tsx:1001:      setExigirCiencia(true);
+  app\dashboard\sindico\CentralSindico.tsx:1002:    }
+  app\dashboard\sindico\CentralSindico.tsx:1003:  }
+  app\dashboard\sindico\CentralSindico.tsx:1004:
+  app\dashboard\sindico\CentralSindico.tsx:1005:  function abrirComunicacao(tipo: TipoComunicacao = "comunicado") {
+  app\dashboard\sindico\CentralSindico.tsx:1006:    selecionarTipoComunicacao(tipo);
+  app\dashboard\sindico\CentralSindico.tsx:1007:    setCondominioComunicacaoId(
+  app\dashboard\sindico\CentralSindico.tsx:1008:      contextoAtual === "carteira-geral" ? "" : contextoAtual
+  app\dashboard\sindico\CentralSindico.tsx:1009:    );
+  app\dashboard\sindico\CentralSindico.tsx:1010:    setDestinatarioComunicacao("");
+  app\dashboard\sindico\CentralSindico.tsx:1011:    setUnidadeComunicacaoId("");
+  app\dashboard\sindico\CentralSindico.tsx:1012:    setBlocoComunicacao("");
+> app\dashboard\sindico\CentralSindico.tsx:1013:    setExigirCiencia(true);
+  app\dashboard\sindico\CentralSindico.tsx:1014:    setEnviarPush(false);
+  app\dashboard\sindico\CentralSindico.tsx:1015:    setRegistrarHistorico(true);
+  app\dashboard\sindico\CentralSindico.tsx:1016:    setAgendarComunicacao(false);
+  app\dashboard\sindico\CentralSindico.tsx:1017:    setDataAgendamento("");
+  app\dashboard\sindico\CentralSindico.tsx:1018:    setPopupComunicacaoAberto(true);
+  app\dashboard\sindico\CentralSindico.tsx:1019:  }
+  app\dashboard\sindico\CentralSindico.tsx:1020:
+  app\dashboard\sindico\CentralSindico.tsx:1021:  function fecharComunicacao() {
+  app\dashboard\sindico\CentralSindico.tsx:1072:          "mantenha a calma, evite a área afetada e aguarde novas orientações"
+  app\dashboard\sindico\CentralSindico.tsx:1073:        }.\n\nLeia atentamente e confirme que está ciente.`
+  app\dashboard\sindico\CentralSindico.tsx:1074:      );
+> app\dashboard\sindico\CentralSindico.tsx:1075:      setExigirCiencia(true);
+  app\dashboard\sindico\CentralSindico.tsx:1076:      return;
+  app\dashboard\sindico\CentralSindico.tsx:1077:    }
+  app\dashboard\sindico\CentralSindico.tsx:1078:
+  app\dashboard\sindico\CentralSindico.tsx:1079:    setTituloComunicacao("Comunicado aos moradores");
+  app\dashboard\sindico\CentralSindico.tsx:1080:    setMensagemComunicacao(
+  app\dashboard\sindico\CentralSindico.tsx:1081:      "Olá! Temos uma informação importante para compartilhar com os moradores. Leia o comunicado 
+abaixo e confirme que está ciente."
+  app\dashboard\sindico\CentralSindico.tsx:1082:    );
+  app\dashboard\sindico\CentralSindico.tsx:1083:  }
+  app\dashboard\sindico\CentralSindico.tsx:1250:          tipoEmergencia,
+  app\dashboard\sindico\CentralSindico.tsx:1251:          orientacaoImediata,
+  app\dashboard\sindico\CentralSindico.tsx:1252:        },
+> app\dashboard\sindico\CentralSindico.tsx:1253:        exigeCiencia: exigirCiencia,
+  app\dashboard\sindico\CentralSindico.tsx:1254:        enviarPush,
+  app\dashboard\sindico\CentralSindico.tsx:1255:        pushProcessado: agendarComunicacao || !enviarPush,
+  app\dashboard\sindico\CentralSindico.tsx:1256:        pushEnviado: false,
+  app\dashboard\sindico\CentralSindico.tsx:1257:        pushTotalDestinatarios: enviarPush
+  app\dashboard\sindico\CentralSindico.tsx:1258:          ? idsUnidadesDestinatarias.length
+  app\dashboard\sindico\CentralSindico.tsx:1259:          : 0,
+  app\dashboard\sindico\CentralSindico.tsx:1260:        pushTotalEnviados: 0,
+  app\dashboard\sindico\CentralSindico.tsx:1261:        pushTotalFalhas: 0,
+  app\dashboard\sindico\CentralSindico.tsx:1280:
+  app\dashboard\sindico\CentralSindico.tsx:1281:        unidadesDestinatarias.forEach((unidade) => {
+  app\dashboard\sindico\CentralSindico.tsx:1282:          atualizacoesEntrega[
+> app\dashboard\sindico\CentralSindico.tsx:1283:            `unidades-v2/${unidade.id}/comunicadoAtivo`
+  app\dashboard\sindico\CentralSindico.tsx:1284:          ] = {
+  app\dashboard\sindico\CentralSindico.tsx:1285:            id: comunicadoId,
+  app\dashboard\sindico\CentralSindico.tsx:1286:            condominioId: condominioComunicacaoId,
+  app\dashboard\sindico\CentralSindico.tsx:1287:            condominioNome: condominioSelecionadoParaEnvio.nome,
+  app\dashboard\sindico\CentralSindico.tsx:1288:            unidadeId: unidade.id,
+  app\dashboard\sindico\CentralSindico.tsx:1289:            unidadeNome: unidade.nome,
+  app\dashboard\sindico\CentralSindico.tsx:1290:            bloco: unidade.bloco,
+  app\dashboard\sindico\CentralSindico.tsx:1291:            tipo: tipoComunicacao,
+  app\dashboard\sindico\CentralSindico.tsx:1301:              tipoEmergencia,
+  app\dashboard\sindico\CentralSindico.tsx:1302:              orientacaoImediata,
+  app\dashboard\sindico\CentralSindico.tsx:1303:            },
+> app\dashboard\sindico\CentralSindico.tsx:1304:            exigeCiencia: exigirCiencia,
+  app\dashboard\sindico\CentralSindico.tsx:1305:            status: "novo",
+  app\dashboard\sindico\CentralSindico.tsx:1306:            criadoEm: agora,
+  app\dashboard\sindico\CentralSindico.tsx:1307:            criadoEmFormatado: new Date(agora).toLocaleString("pt-BR"),
+  app\dashboard\sindico\CentralSindico.tsx:1308:            enviadoPor: usuario?.nome || usuario?.email || "Usuário",
+  app\dashboard\sindico\CentralSindico.tsx:1309:          };
+  app\dashboard\sindico\CentralSindico.tsx:1310:        });
+  app\dashboard\sindico\CentralSindico.tsx:1311:
+  app\dashboard\sindico\CentralSindico.tsx:1312:        await update(ref(db), atualizacoesEntrega);
+  app\dashboard\sindico\CentralSindico.tsx:1460:      const atualizacoes: Record<string, unknown> = {};
+  app\dashboard\sindico\CentralSindico.tsx:1461:
+  app\dashboard\sindico\CentralSindico.tsx:1462:      idsPendentes.forEach((unidadeId) => {
+> app\dashboard\sindico\CentralSindico.tsx:1463:        atualizacoes[`unidades-v2/${unidadeId}/comunicadoAtivo`] = {
+  app\dashboard\sindico\CentralSindico.tsx:1464:          id: comunicado.id,
+  app\dashboard\sindico\CentralSindico.tsx:1465:          condominioId: comunicado.condominioId,
+  app\dashboard\sindico\CentralSindico.tsx:1466:          condominioNome: comunicado.condominioNome,
+  app\dashboard\sindico\CentralSindico.tsx:1467:          unidadeId,
+  app\dashboard\sindico\CentralSindico.tsx:1468:          unidadeNome: nomeUnidadePorId(unidadeId),
+  app\dashboard\sindico\CentralSindico.tsx:1469:          tipo: comunicado.tipo,
+  app\dashboard\sindico\CentralSindico.tsx:1470:          titulo: comunicado.titulo,
+  app\dashboard\sindico\CentralSindico.tsx:1471:          mensagem: comunicado.mensagem,
+  app\dashboard\sindico\CentralSindico.tsx:1472:          detalhesModelo: comunicado.detalhesModelo || {},
+> app\dashboard\sindico\CentralSindico.tsx:1473:          exigeCiencia: comunicado.exigeCiencia,
+  app\dashboard\sindico\CentralSindico.tsx:1474:          status: "novo",
+  app\dashboard\sindico\CentralSindico.tsx:1475:          criadoEm: comunicado.criadoEm,
+  app\dashboard\sindico\CentralSindico.tsx:1476:          criadoEmFormatado: comunicado.criadoEmFormatado,
+  app\dashboard\sindico\CentralSindico.tsx:1477:          reenviadoEm: agora,
+  app\dashboard\sindico\CentralSindico.tsx:1478:          reenviadoEmFormatado: new Date(agora).toLocaleString("pt-BR"),
+  app\dashboard\sindico\CentralSindico.tsx:1479:          enviadoPor: comunicado.enviadoPor,
+  app\dashboard\sindico\CentralSindico.tsx:1480:        };
+  app\dashboard\sindico\CentralSindico.tsx:1481:      });
+  app\dashboard\sindico\CentralSindico.tsx:1557:      const atualizacoesEntrega: Record<string, unknown> = {};
+  app\dashboard\sindico\CentralSindico.tsx:1558:
+  app\dashboard\sindico\CentralSindico.tsx:1559:      unidadesParaReenvio.forEach((unidadeId) => {
+> app\dashboard\sindico\CentralSindico.tsx:1560:        atualizacoesEntrega[`unidades-v2/${unidadeId}/comunicadoAtivo`] = {
+  app\dashboard\sindico\CentralSindico.tsx:1561:          id: comunicado.id,
+  app\dashboard\sindico\CentralSindico.tsx:1562:          condominioId: comunicado.condominioId,
+  app\dashboard\sindico\CentralSindico.tsx:1563:          condominioNome: comunicado.condominioNome,
+  app\dashboard\sindico\CentralSindico.tsx:1564:          unidadeId,
+  app\dashboard\sindico\CentralSindico.tsx:1565:          unidadeNome: nomeUnidadePorId(unidadeId),
+  app\dashboard\sindico\CentralSindico.tsx:1566:          tipo: comunicado.tipo,
+  app\dashboard\sindico\CentralSindico.tsx:1567:          titulo: comunicado.titulo,
+  app\dashboard\sindico\CentralSindico.tsx:1568:          mensagem: comunicado.mensagem,
+  app\dashboard\sindico\CentralSindico.tsx:1569:          detalhesModelo: comunicado.detalhesModelo || {},
+> app\dashboard\sindico\CentralSindico.tsx:1570:          exigeCiencia: comunicado.exigeCiencia,
+  app\dashboard\sindico\CentralSindico.tsx:1571:          status: "novo",
+  app\dashboard\sindico\CentralSindico.tsx:1572:          criadoEm: comunicado.criadoEm,
+  app\dashboard\sindico\CentralSindico.tsx:1573:          criadoEmFormatado: comunicado.criadoEmFormatado,
+  app\dashboard\sindico\CentralSindico.tsx:1574:          reenviadoEm: agora,
+  app\dashboard\sindico\CentralSindico.tsx:1575:          reenviadoEmFormatado: new Date(agora).toLocaleString("pt-BR"),
+  app\dashboard\sindico\CentralSindico.tsx:1576:          enviadoPor: comunicado.enviadoPor,
+  app\dashboard\sindico\CentralSindico.tsx:1577:        };
+  app\dashboard\sindico\CentralSindico.tsx:1578:      });
+  app\dashboard\sindico\CentralSindico.tsx:1628:            : "")
+  app\dashboard\sindico\CentralSindico.tsx:1629:      );
+  app\dashboard\sindico\CentralSindico.tsx:1630:    } catch (erro) {
+> app\dashboard\sindico\CentralSindico.tsx:1631:      console.error("Erro ao reenviar comunicado:", erro);
+  app\dashboard\sindico\CentralSindico.tsx:1632:      alert(
+  app\dashboard\sindico\CentralSindico.tsx:1633:        erro instanceof Error
+  app\dashboard\sindico\CentralSindico.tsx:1634:          ? erro.message
+  app\dashboard\sindico\CentralSindico.tsx:1635:          : "Não foi possível reenviar o comunicado."
+  app\dashboard\sindico\CentralSindico.tsx:1636:      );
+  app\dashboard\sindico\CentralSindico.tsx:1637:    }
+  app\dashboard\sindico\CentralSindico.tsx:1638:  }
+  app\dashboard\sindico\CentralSindico.tsx:1639:
+  app\dashboard\sindico\CentralSindico.tsx:3586:                <label className="flex cursor-pointer items-start gap-3 rounded-xl border 
+border-green-800 bg-green-950/20 p-4">
+  app\dashboard\sindico\CentralSindico.tsx:3587:                  <input
+  app\dashboard\sindico\CentralSindico.tsx:3588:                    type="checkbox"
+> app\dashboard\sindico\CentralSindico.tsx:3589:                    checked={exigirCiencia}
+  app\dashboard\sindico\CentralSindico.tsx:3590:                    onChange={(event) =>
+> app\dashboard\sindico\CentralSindico.tsx:3591:                      setExigirCiencia(event.target.checked)
+  app\dashboard\sindico\CentralSindico.tsx:3592:                    }
+  app\dashboard\sindico\CentralSindico.tsx:3593:                    className="mt-1"
+  app\dashboard\sindico\CentralSindico.tsx:3594:                  />
+  app\dashboard\sindico\CentralSindico.tsx:3595:
+  app\dashboard\sindico\CentralSindico.tsx:3596:                  <span>
+  app\dashboard\sindico\CentralSindico.tsx:3597:                    <span className="block font-black text-green-300">
+> app\dashboard\sindico\CentralSindico.tsx:3598:                      ✅ Exigir “Li e estou ciente”
+  app\dashboard\sindico\CentralSindico.tsx:3599:                    </span>
+  app\dashboard\sindico\CentralSindico.tsx:3600:
+  app\dashboard\sindico\CentralSindico.tsx:3601:                    <span className="mt-1 block text-xs leading-relaxed text-slate-400">
+  app\dashboard\sindico\CentralSindico.tsx:3602:                      Registra quem visualizou, a data, o horário e quem
+  app\dashboard\sindico\CentralSindico.tsx:3603:                      confirmou ciência. Não significa concordância com o
+  app\dashboard\sindico\CentralSindico.tsx:3604:                      conteúdo.
+  app\dashboard\sindico\CentralSindico.tsx:3605:                    </span>
+  app\dashboard\sindico\CentralSindico.tsx:3606:                  </span>
+  app\dashboard\sindico\CentralSindico.tsx:3660:                        "A mensagem escrita aparecerá aqui para conferência antes do envio."}
+  app\dashboard\sindico\CentralSindico.tsx:3661:                    </p>
+  app\dashboard\sindico\CentralSindico.tsx:3662:
+> app\dashboard\sindico\CentralSindico.tsx:3663:                    {exigirCiencia && (
+  app\dashboard\sindico\CentralSindico.tsx:3664:                      <div className="mt-4 rounded-xl bg-green-600 px-4 py-3 text-center text-sm 
+font-black text-white">
+> app\dashboard\sindico\CentralSindico.tsx:3665:                        ✅ Li e estou ciente
+  app\dashboard\sindico\CentralSindico.tsx:3666:                      </div>
+  app\dashboard\sindico\CentralSindico.tsx:3667:                    )}
+  app\dashboard\sindico\CentralSindico.tsx:3668:                  </div>
+  app\dashboard\sindico\CentralSindico.tsx:3669:                </div>
+  app\dashboard\sindico\CentralSindico.tsx:3670:
+  app\dashboard\sindico\CentralSindico.tsx:3671:                <div className="rounded-2xl border border-cyan-800 bg-cyan-950/20 p-4">
+  app\dashboard\sindico\CentralSindico.tsx:3672:                  <p className="text-xs font-bold text-cyan-300">
+  app\dashboard\sindico\CentralSindico.tsx:3673:                    ACOMPANHAMENTO APÓS O ENVIO
+  app\morador-v2\[unidadeId]\page.tsx:50:    tipoEmergencia?: string;
+  app\morador-v2\[unidadeId]\page.tsx:51:    orientacaoImediata?: string;
+  app\morador-v2\[unidadeId]\page.tsx:52:  };
+> app\morador-v2\[unidadeId]\page.tsx:53:  exigeCiencia?: boolean;
+> app\morador-v2\[unidadeId]\page.tsx:54:  exigirCiencia?: boolean;
+  app\morador-v2\[unidadeId]\page.tsx:55:  status: "enviado" | "agendado";
+  app\morador-v2\[unidadeId]\page.tsx:56:  criadoEm: number;
+  app\morador-v2\[unidadeId]\page.tsx:57:  criadoEmFormatado: string;
+  app\morador-v2\[unidadeId]\page.tsx:58:  visualizacoes?: Record<
+  app\morador-v2\[unidadeId]\page.tsx:59:    string,
+  app\morador-v2\[unidadeId]\page.tsx:60:    {
+  app\morador-v2\[unidadeId]\page.tsx:61:      unidadeId: string;
+  app\morador-v2\[unidadeId]\page.tsx:62:      visualizadoEm?: number;
+  app\morador-v2\[unidadeId]\page.tsx:148:  const [comunicados, setComunicados] = useState<ComunicadoMorador[]>([]);
+  app\morador-v2\[unidadeId]\page.tsx:149:  const [comunicadoAberto, setComunicadoAberto] =
+  app\morador-v2\[unidadeId]\page.tsx:150:    useState<ComunicadoMorador | null>(null);
+> app\morador-v2\[unidadeId]\page.tsx:151:  const [salvandoCiencia, setSalvandoCiencia] = useState(false);
+  app\morador-v2\[unidadeId]\page.tsx:152:
+  app\morador-v2\[unidadeId]\page.tsx:153:  const intervaloSomRef = useRef<NodeJS.Timeout | null>(null);
+  app\morador-v2\[unidadeId]\page.tsx:154:  const finalizacaoAutoRef = useRef<NodeJS.Timeout | null>(null);
+  app\morador-v2\[unidadeId]\page.tsx:155:  const ultimaCapturaCameraRef = useRef("");
+  app\morador-v2\[unidadeId]\page.tsx:156:  const ultimoAudioPopupRef = useRef("");
+  app\morador-v2\[unidadeId]\page.tsx:157:  const toqueSilenciadoPorAudioRef = useRef(false);
+  app\morador-v2\[unidadeId]\page.tsx:158:  const idChamadaAtualRef = useRef("");
+  app\morador-v2\[unidadeId]\page.tsx:159:  const audioContextRef = useRef<AudioContext | null>(null);
+  app\morador-v2\[unidadeId]\page.tsx:345:    }
+  app\morador-v2\[unidadeId]\page.tsx:346:  }
+  app\morador-v2\[unidadeId]\page.tsx:347:
+> app\morador-v2\[unidadeId]\page.tsx:348:  async function confirmarCiencia() {
+> app\morador-v2\[unidadeId]\page.tsx:349:    if (!comunicadoAberto || salvandoCiencia) return;
+  app\morador-v2\[unidadeId]\page.tsx:350:
+  app\morador-v2\[unidadeId]\page.tsx:351:    try {
+> app\morador-v2\[unidadeId]\page.tsx:352:      setSalvandoCiencia(true);
+  app\morador-v2\[unidadeId]\page.tsx:353:
+  app\morador-v2\[unidadeId]\page.tsx:354:      await update(
+  app\morador-v2\[unidadeId]\page.tsx:355:        ref(
+  app\morador-v2\[unidadeId]\page.tsx:356:          db,
+  app\morador-v2\[unidadeId]\page.tsx:357:          `${caminhoComunicados}/${comunicadoAberto.id}/visualizacoes/${slug}`
+  app\morador-v2\[unidadeId]\page.tsx:358:        ),
+  app\morador-v2\[unidadeId]\page.tsx:359:        {
+  app\morador-v2\[unidadeId]\page.tsx:360:          unidadeId: slug,
+  app\morador-v2\[unidadeId]\page.tsx:372:      console.error("Erro ao registrar ciência:", erro);
+  app\morador-v2\[unidadeId]\page.tsx:373:      alert("Não foi possível registrar sua ciência.");
+  app\morador-v2\[unidadeId]\page.tsx:374:    } finally {
+> app\morador-v2\[unidadeId]\page.tsx:375:      setSalvandoCiencia(false);
+  app\morador-v2\[unidadeId]\page.tsx:376:    }
+  app\morador-v2\[unidadeId]\page.tsx:377:  }
+  app\morador-v2\[unidadeId]\page.tsx:378:
+  app\morador-v2\[unidadeId]\page.tsx:379:  useEffect(() => {
+  app\morador-v2\[unidadeId]\page.tsx:380:    const referenciaStatus = ref(db, caminhoStatus);
+  app\morador-v2\[unidadeId]\page.tsx:381:
+  app\morador-v2\[unidadeId]\page.tsx:382:    const pararDeOuvirStatus = onValue(referenciaStatus, (snapshot) => {
+  app\morador-v2\[unidadeId]\page.tsx:383:      const dados = snapshot.val();
+  app\morador-v2\[unidadeId]\page.tsx:485:      }
+  app\morador-v2\[unidadeId]\page.tsx:486:      setVisitanteVisualizou(
+  app\morador-v2\[unidadeId]\page.tsx:487:        dados.visitanteVisualizou === true ||
+> app\morador-v2\[unidadeId]\page.tsx:488:          dados.mensagemVisualizada === true ||
+  app\morador-v2\[unidadeId]\page.tsx:489:          dados.visualizadoPeloVisitante === true
+  app\morador-v2\[unidadeId]\page.tsx:490:      );
+  app\morador-v2\[unidadeId]\page.tsx:491:
+  app\morador-v2\[unidadeId]\page.tsx:492:      const mensagensOrdenadas = ordenarMensagens(dados.mensagens);
+  app\morador-v2\[unidadeId]\page.tsx:493:      setMensagensConversa(mensagensOrdenadas);
+  app\morador-v2\[unidadeId]\page.tsx:494:
+  app\morador-v2\[unidadeId]\page.tsx:495:      const ultimoAudioVisitante = [...mensagensOrdenadas]
+  app\morador-v2\[unidadeId]\page.tsx:496:        .reverse()
+  app\morador-v2\[unidadeId]\page.tsx:943:      mensagemResponsavel: mensagem,
+  app\morador-v2\[unidadeId]\page.tsx:944:      notificar: false,
+  app\morador-v2\[unidadeId]\page.tsx:945:      visitanteVisualizou: false,
+> app\morador-v2\[unidadeId]\page.tsx:946:      mensagemVisualizada: false,
+  app\morador-v2\[unidadeId]\page.tsx:947:      visualizadoPeloVisitante: false,
+  app\morador-v2\[unidadeId]\page.tsx:948:      enviadoEm: Date.now(),
+  app\morador-v2\[unidadeId]\page.tsx:949:      ultimaAtividade: Date.now(),
+  app\morador-v2\[unidadeId]\page.tsx:950:      atendidoEm: new Date().toISOString(),
+  app\morador-v2\[unidadeId]\page.tsx:951:    });
+  app\morador-v2\[unidadeId]\page.tsx:952:
+  app\morador-v2\[unidadeId]\page.tsx:953:    await registrarMensagemConversa({
+  app\morador-v2\[unidadeId]\page.tsx:954:      autor: "morador",
+  app\morador-v2\[unidadeId]\page.tsx:1086:        mensagemResponsavel: "",
+  app\morador-v2\[unidadeId]\page.tsx:1087:        visualizadoPeloVisitante: false,
+  app\morador-v2\[unidadeId]\page.tsx:1088:        visitanteVisualizou: false,
+> app\morador-v2\[unidadeId]\page.tsx:1089:        mensagemVisualizada: false,
+  app\morador-v2\[unidadeId]\page.tsx:1090:        enviadoEm: Date.now(),
+  app\morador-v2\[unidadeId]\page.tsx:1091:        ultimaAtividade: Date.now(),
+  app\morador-v2\[unidadeId]\page.tsx:1092:        atendidoEm: new Date().toISOString(),
+  app\morador-v2\[unidadeId]\page.tsx:1093:      });
+  app\morador-v2\[unidadeId]\page.tsx:1094:
+  app\morador-v2\[unidadeId]\page.tsx:1095:      await registrarMensagemConversa({
+  app\morador-v2\[unidadeId]\page.tsx:1096:        autor: "morador",
+  app\morador-v2\[unidadeId]\page.tsx:1097:        tipo: "audio",
+  app\morador-v2\[unidadeId]\page.tsx:1471:  return (
+  app\morador-v2\[unidadeId]\page.tsx:1472:    <main className="min-h-screen bg-slate-950 text-white p-4 relative">
+  app\morador-v2\[unidadeId]\page.tsx:1473:      {comunicadoAberto && (() => {
+> app\morador-v2\[unidadeId]\page.tsx:1474:        const precisaConfirmarCiencia =
+> app\morador-v2\[unidadeId]\page.tsx:1475:          comunicadoAberto.exigeCiencia !== false &&
+> app\morador-v2\[unidadeId]\page.tsx:1476:          comunicadoAberto.exigirCiencia !== false;
+  app\morador-v2\[unidadeId]\page.tsx:1477:
+  app\morador-v2\[unidadeId]\page.tsx:1478:        const detalhes = comunicadoAberto.detalhesModelo || {};
+  app\morador-v2\[unidadeId]\page.tsx:1479:        const temInformacoesRapidas =
+  app\morador-v2\[unidadeId]\page.tsx:1480:          Boolean(detalhes.dataEvento) ||
+  app\morador-v2\[unidadeId]\page.tsx:1481:          Boolean(detalhes.horarioEvento) ||
+  app\morador-v2\[unidadeId]\page.tsx:1482:          Boolean(detalhes.localEvento) ||
+  app\morador-v2\[unidadeId]\page.tsx:1483:          Boolean(detalhes.empresaResponsavel);
+  app\morador-v2\[unidadeId]\page.tsx:1484:
+  app\morador-v2\[unidadeId]\page.tsx:1627:                  Enviado em {comunicadoAberto.criadoEmFormatado}
+  app\morador-v2\[unidadeId]\page.tsx:1628:                </p>
+  app\morador-v2\[unidadeId]\page.tsx:1629:
+> app\morador-v2\[unidadeId]\page.tsx:1630:                {precisaConfirmarCiencia ? (
+  app\morador-v2\[unidadeId]\page.tsx:1631:                  comunicadoAberto.visualizacoes?.[slug]?.ciente === true ? (
+  app\morador-v2\[unidadeId]\page.tsx:1632:                    <div className="mt-5 rounded-xl border border-green-700 bg-green-950/30 p-4 
+text-center font-black text-green-300">
+  app\morador-v2\[unidadeId]\page.tsx:1633:                      ✅ Ciente registrado
+  app\morador-v2\[unidadeId]\page.tsx:1634:                    </div>
+  app\morador-v2\[unidadeId]\page.tsx:1635:                  ) : (
+  app\morador-v2\[unidadeId]\page.tsx:1636:                    <button
+  app\morador-v2\[unidadeId]\page.tsx:1637:                      type="button"
+> app\morador-v2\[unidadeId]\page.tsx:1638:                      onClick={confirmarCiencia}
+> app\morador-v2\[unidadeId]\page.tsx:1639:                      disabled={salvandoCiencia}
+  app\morador-v2\[unidadeId]\page.tsx:1640:                      className={`mt-5 w-full rounded-2xl py-4 text-lg font-black text-white 
+disabled:bg-slate-600 ${
+  app\morador-v2\[unidadeId]\page.tsx:1641:                        ehEmergencia
+  app\morador-v2\[unidadeId]\page.tsx:1642:                          ? "bg-red-600 hover:bg-red-500"
+  app\morador-v2\[unidadeId]\page.tsx:1643:                          : "bg-green-600 hover:bg-green-500"
+  app\morador-v2\[unidadeId]\page.tsx:1644:                      }`}
+  app\morador-v2\[unidadeId]\page.tsx:1645:                    >
+> app\morador-v2\[unidadeId]\page.tsx:1646:                      {salvandoCiencia
+  app\morador-v2\[unidadeId]\page.tsx:1647:                        ? "Registrando..."
+  app\morador-v2\[unidadeId]\page.tsx:1648:                        : ehEmergencia
+> app\morador-v2\[unidadeId]\page.tsx:1649:                        ? "🚨 Confirmo que li e estou ciente"
+> app\morador-v2\[unidadeId]\page.tsx:1650:                        : "✅ Li e estou ciente"}
+  app\morador-v2\[unidadeId]\page.tsx:1651:                    </button>
+  app\morador-v2\[unidadeId]\page.tsx:1652:                  )
+  app\morador-v2\[unidadeId]\page.tsx:1653:                ) : (
+  app\morador-v2\[unidadeId]\page.tsx:1654:                  <button
+  app\morador-v2\[unidadeId]\page.tsx:1655:                    type="button"
+  app\morador-v2\[unidadeId]\page.tsx:1656:                    onClick={() => setComunicadoAberto(null)}
+  app\morador-v2\[unidadeId]\page.tsx:1657:                    className="mt-5 w-full rounded-2xl bg-blue-600 py-4 font-black text-white"
+  app\morador-v2\[unidadeId]\page.tsx:1658:                  >
+  app\services\implantacao\ImplantadorCondominio.ts:500:        notificacoes: {
+  app\services\implantacao\ImplantadorCondominio.ts:501:          pushAtivo: true,
+  app\services\implantacao\ImplantadorCondominio.ts:502:
+> app\services\implantacao\ImplantadorCondominio.ts:503:          exigirCienciaComunicados:
+  app\services\implantacao\ImplantadorCondominio.ts:504:            configuracao.possuiComunicados,
+  app\services\implantacao\ImplantadorCondominio.ts:505:        },
+  app\services\implantacao\ImplantadorCondominio.ts:506:
+  app\services\implantacao\ImplantadorCondominio.ts:507:        status:
+  app\services\implantacao\ImplantadorCondominio.ts:508:          "configuracao-inicial",
+  app\services\implantacao\ImplantadorCondominio.ts:509:
+  app\services\implantacao\ImplantadorCondominio.ts:510:        criadoEm:
+  app\services\implantacao\ImplantadorCondominio.ts:511:          contexto.criadoEm,
+
+

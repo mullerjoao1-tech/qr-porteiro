@@ -1,0 +1,270 @@
+﻿        await get(
+          ref(
+            db,
+            `usuarios-v2/${vinculo.pessoaId}`
+          )
+        );
+
+      const pessoaAtual =
+        snapshotPessoa.val() as
+          PessoaUniversal | null;
+
+      const chavesEncontradas =
+        new Set<string>();
+
+      const procurar = (
+        origem?: Record<
+          string,
+          VinculoUsuario
+        >
+      ) => {
+        Object.entries(
+          origem || {}
+        ).forEach(
+          ([chave, dados]) => {
+            if (
+              chave === vinculo.localId ||
+              chave === vinculo.localSlug ||
+              dados.localId === vinculo.localId ||
+              dados.localSlug === vinculo.localSlug
+            ) {
+              chavesEncontradas.add(
+                chave
+              );
+            }
+          }
+        );
+      };
+
+      procurar(
+        pessoaAtual?.locais
+      );
+
+      procurar(
+        pessoaAtual?.condominios
+      );
+
+      chavesEncontradas.add(
+        vinculo.localId
+      );
+
+      if (vinculo.localSlug) {
+        chavesEncontradas.add(
+          vinculo.localSlug
+        );
+      }
+
+      const atualizacoes: Record<
+        string,
+        unknown
+      > = {};
+
+      chavesEncontradas.forEach(
+        (chave) => {
+          atualizacoes[
+            `usuarios-v2/${vinculo.pessoaId}/locais/${chave}`
+          ] = null;
+
+          atualizacoes[
+            `usuarios-v2/${vinculo.pessoaId}/condominios/${chave}`
+          ] = null;
+
+          atualizacoes[
+            `vinculos-locais-v2/${chave}/${vinculo.pessoaId}`
+          ] = null;
+        }
+      );
+
+      atualizacoes[
+        `vinculos-locais-v2/${vinculo.localId}/${vinculo.pessoaId}`
+      ] = null;
+
+      atualizacoes[
+        `locais-v2/${vinculo.localId}/usuarios/${vinculo.pessoaId}`
+      ] = null;
+
+      atualizacoes[
+        `locais-v2/${vinculo.localId}/responsaveis/${vinculo.pessoaId}`
+      ] = null;
+
+      atualizacoes[
+        `usuarios-v2/${vinculo.pessoaId}/atualizadoEm`
+      ] = Date.now();
+
+      await update(
+        ref(db),
+        atualizacoes
+      );
+    } catch (erro) {
+      console.error(
+        "Erro ao excluir vínculo:",
+        erro
+      );
+
+      alert(
+        "Não foi possível excluir o vínculo."
+      );
+    } finally {
+      setExcluindoVinculoId(
+        null
+      );
+    }
+  }
+
+
+  async function salvarVinculo() {
+    if (
+      !vinculoEditando ||
+      salvando
+    ) {
+      return;
+    }
+
+    if (
+      perfisEditando.length ===
+      0
+    ) {
+      alert(
+        "Selecione pelo menos um perfil."
+      );
+
+      return;
+    }
+
+    if (
+      !perfisEditando.includes(
+        perfilPrincipalEditando
+      )
+    ) {
+      alert(
+        "O perfil padrão precisa estar entre os perfis selecionados."
+      );
+
+      return;
+    }
+
+    const agora =
+      Date.now();
+
+    const perfisObjeto:
+      Record<
+        string,
+        boolean
+      > = {};
+
+    perfisEditando.forEach(
+      (
+        perfil
+      ) => {
+        perfisObjeto[
+          perfil
+        ] =
+          true;
+      }
+    );
+
+    const unidadesObjeto:
+      Record<
+        string,
+        boolean
+      > = {};
+
+    unidadesEditando.forEach(
+      (
+        unidadeId
+      ) => {
+        unidadesObjeto[
+          unidadeId
+        ] =
+          true;
+      }
+    );
+
+    const dadosVinculo = {
+      localId:
+        vinculoEditando.localId,
+
+      localNome:
+        vinculoEditando.localNome,
+
+      localSlug:
+        vinculoEditando.localSlug,
+
+      tipoLocal:
+        vinculoEditando.tipoLocal,
+
+      perfilPrincipal:
+        perfilPrincipalEditando,
+
+      perfis:
+        perfisObjeto,
+
+      unidades:
+        unidadesObjeto,
+
+      ativo:
+        ativoEditando,
+
+      criadoEm:
+        vinculoEditando.criadoEm ||
+        agora,
+
+      atualizadoEm:
+        agora,
+    };
+
+    try {
+      setSalvando(
+        true
+      );
+
+      await update(
+        ref(db),
+        {
+          [`usuarios-v2/${vinculoEditando.pessoaId}/locais/${vinculoEditando.localId}`]:
+            dadosVinculo,
+
+          [`usuarios-v2/${vinculoEditando.pessoaId}/condominios/${vinculoEditando.localId}`]:
+            dadosVinculo,
+
+          [`usuarios-v2/${vinculoEditando.pessoaId}/atualizadoEm`]:
+            agora,
+        }
+      );
+
+      setVinculoEditando(
+        null
+      );
+
+      alert(
+        "Vínculo atualizado com sucesso."
+      );
+    } catch (
+      erro
+    ) {
+      console.error(
+        "Erro ao salvar vínculo:",
+        erro
+      );
+
+      alert(
+        "Não foi possível salvar o vínculo."
+      );
+    } finally {
+      setSalvando(
+        false
+      );
+    }
+  }
+
+  const totalAtivos =
+    vinculos.filter(
+      (
+        item
+      ) =>
+        item.ativo
+    ).length;
+
+  const pessoasVinculadas =
+    new Set(
+      vinculos.map(

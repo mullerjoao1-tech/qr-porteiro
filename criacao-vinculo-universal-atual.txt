@@ -1,0 +1,210 @@
+﻿
+            url:
+              urlsOficiais.placaA4,
+
+            ativo:
+              true,
+
+            geradoSobDemanda:
+              true,
+
+            atualizadoEm:
+              agora,
+          },
+        },
+
+        atualizadoEm:
+          agora,
+      });
+
+    const resultadoPessoa =
+      await buscarOuCriarPessoaUniversal({
+        auth,
+
+        database,
+
+        nome,
+
+        email,
+
+        telefone,
+
+        cpf,
+
+        senhaProvisoria:
+          senhaProvisoriaInformada,
+
+        origem:
+          "assistente-implantacao-qr-core",
+      });
+
+    uidResponsavel =
+      resultadoPessoa.uid;
+
+    usuarioCriadoNoAuthentication =
+      resultadoPessoa
+        .criadoNoAuthentication;
+
+    if (
+      !uidResponsavel
+    ) {
+      throw new Error(
+        "NÃ£o foi possÃ­vel determinar o UID do responsÃ¡vel."
+      );
+    }
+
+    const vinculoUniversal = {
+      localId,
+
+      localNome,
+
+      localNomeBase,
+
+      localNomeExibicao:
+        localNome,
+
+      localSlug,
+
+      tipoLocal,
+
+      condominioId:
+        localId,
+
+      condominioNome:
+        localNome,
+
+      condominioSlug:
+        localSlug,
+
+      perfilPrincipal:
+        perfil,
+
+      perfis: {
+        [perfil]:
+          true,
+      },
+
+      unidades:
+        {},
+
+      permissoes: {
+        ...PERMISSOES_SINDICO,
+      },
+
+      ativo:
+        true,
+
+      criadoEm:
+        agora,
+
+      atualizadoEm:
+        agora,
+    };
+
+    const referenciaUsuarioBanco =
+      database.ref(
+        `usuarios-v2/${uidResponsavel}`
+      );
+
+    const snapshotUsuarioBanco =
+      await referenciaUsuarioBanco
+        .get();
+
+    usuarioBancoExistiaAntes =
+      snapshotUsuarioBanco.exists();
+
+    await referenciaUsuarioBanco
+      .update({
+        atualizadoEm:
+          agora,
+
+        [`locais/${localId}`]:
+          vinculoUniversal,
+
+        [`condominios/${localId}`]:
+          vinculoUniversal,
+      });
+
+    vinculosUsuarioGravados =
+      true;
+
+    const referenciaUsuarioLocal = {
+      uid:
+        uidResponsavel,
+
+      nome,
+
+      email,
+
+      telefone,
+
+      cpf:
+        cpf ||
+        null,
+
+      perfilPrincipal:
+        perfil,
+
+      perfis: {
+        [perfil]:
+          true,
+      },
+
+      ativo:
+        true,
+
+      criadoEm:
+        agora,
+
+      atualizadoEm:
+        agora,
+    };
+
+    await database
+      .ref(
+        `locais-v2/${localId}/usuarios/${uidResponsavel}`
+      )
+      .set(
+        referenciaUsuarioLocal
+      );
+
+    await database
+      .ref(
+        `locais-v2/${localId}/responsaveis/${uidResponsavel}`
+      )
+      .set({
+        uid:
+          uidResponsavel,
+
+        nome,
+
+        email,
+
+        telefone,
+
+        cpf:
+          cpf ||
+          null,
+
+        perfil,
+
+        ativo:
+          true,
+
+        criadoEm:
+          agora,
+
+        atualizadoEm:
+          agora,
+      });
+
+    await database
+      .ref(
+        `locais-v2/${localId}/estatisticas`
+      )
+      .update({
+        totalUsuarios:
+          1,
+
+        atualizadoEm:
+          agora,

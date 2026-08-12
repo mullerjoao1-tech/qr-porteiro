@@ -1,0 +1,227 @@
+﻿===== IMPORTS =====
+"use client";
+
+import {
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+
+import {
+  useRouter,
+} from "next/navigation";
+
+import {
+  onValue,
+  push,
+  ref,
+  set,
+update,
+} from "firebase/database";
+
+import {
+  db,
+} from "@/app/services/firebase";
+
+import CentralResidencia from "@/app/dashboard/condominio/CentralResidencia";
+import CentralSindico from "@/app/dashboard/sindico/CentralSindico";
+import Unidades from "@/app/components/dashboard/Unidades";
+import Moradores from "@/app/components/dashboard/Moradores";
+import AtualizacaoPendenteModal from "@/app/dashboard/AtualizacaoPendenteModal";
+import MateriaisDoLocal from "@/app/components/core/dashboard/MateriaisDoLocal";
+
+import {
+  useAuth,
+} from "@/app/context/AuthContext";
+
+type TelaCondominio =
+  | "inicio"
+  | "unidades"
+  | "moradores"
+  | "acessos"
+  | "prestadores"
+  | "agendamentos"
+  | "reservas"
+  | "documentos"
+  | "historico"
+  | "pendentes"
+  | "configuracoes"
+  | "materiais"
+  | "planos"
+  | "contingencia";
+
+type LocalCadastrado = {
+  id: string;
+  nome: string;
+  tipo: string;
+};
+
+type UnidadeCadastrada = {
+  id: string;
+  codigo: string;
+  localId: string;
+  localNome: string;
+  tipo: string;
+  bloco: string;
+  nome: string;
+  modoChamado?: string;
+};
+
+type MoradorCadastrado = {
+  id: string;
+  codigo: string;
+  nome: string;
+  telefone: string;
+email?: string;
+  unidadeId: string;
+  unidadeNome: string;
+  prioridade: number;
+  podeAbrirPortao: boolean;
+recebeChamadas?: boolean;
+  status: string;
+
+===== CARREGAMENTO DOS MORADORES =====
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:190:  const [
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:191:    salvandoUnidade,
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:192:    setSalvandoUnidade,
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:193:  ] =
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:194:    useState(false);
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:195:
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:196:  const [
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:197:    moradores,
+> C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:198:    setMoradores,
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:199:  ] =
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:200:    useState<MoradorCadastrado[]>(
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:201:      []
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:202:    );
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:203:
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:204:  const [
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:205:    unidadeMoradorId,
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:206:    setUnidadeMoradorId,
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:207:  ] =
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:208:    useState("");
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:209:
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:210:  const [
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:211:    nomeMorador,
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:212:    setNomeMorador,
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:213:  ] =
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:214:    useState("");
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:215:
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:216:  const [
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:217:    telefoneMorador,
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:218:    setTelefoneMorador,
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:549:  useEffect(() => {
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:550:    if (modoResidencia) {
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:551:      return;
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:552:    }
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:553:
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:554:    const moradoresRef =
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:555:      ref(
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:556:        db,
+> C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:557:        "qrCentral/moradores"
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:558:      );
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:559:
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:560:    const parar =
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:561:      onValue(
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:562:        moradoresRef,
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:563:        (snapshot) => {
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:564:          const dados =
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:565:            snapshot.val();
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:566:
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:567:          if (!dados) {
+> C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:568:            setMoradores([]);
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:569:            return;
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:570:          }
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:571:
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:572:          const lista =
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:573:            Object.entries(
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:574:              dados
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:575:            ).map(
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:576:              ([id, valor]) => ({
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:577:                id,
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:578:                ...(valor as Omit<
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:579:                  MoradorCadastrado,
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:580:                  "id"
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:581:                >),
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:582:              })
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:583:            );
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:584:
+> C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:585:          setMoradores(
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:586:            lista
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:587:          );
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:588:        }
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:589:      );
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:590:
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:591:    return () =>
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:592:      parar();
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:593:  }, [
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:594:    modoResidencia,
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:595:  ]);
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:596:
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:597:  useEffect(() => {
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:598:    if (modoResidencia) {
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:599:      return;
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:600:    }
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:601:
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:602:    const referencia =
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:603:      ref(
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:604:        db,
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:605:        "qrCentral/atualizacoesCadastrais"
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:803:    setSalvandoMorador(
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:804:      true
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:805:    );
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:806:
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:807:    try {
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:808:      const moradoresRef =
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:809:        ref(
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:810:          db,
+> C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:811:          "qrCentral/moradores"
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:812:        );
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:813:
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:814:      const novoMoradorRef =
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:815:        push(
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:816:          moradoresRef
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:817:        );
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:818:
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:819:      const codigo =
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:820:        `MOR-${String(
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:821:          moradores.length + 1
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:822:        ).padStart(
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:823:          4,
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:824:          "0"
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:825:        )}`;
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:826:
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:827:      const unidadeNome =
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:828:        `${unidade.localNome} - ${
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:829:          unidade.bloco
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:830:            ? `${unidade.bloco} - `
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:831:            : ""
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:943:    throw new Error(
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:944:      "Informe o telefone do morador."
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:945:    );
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:946:  }
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:947:
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:948:  await update(
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:949:    ref(
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:950:      db,
+> C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:951:      `qrCentral/moradores/${moradorId}`
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:952:    ),
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:953:    {
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:954:      nome:
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:955:        formatarNome(nome),
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:956:
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:957:      telefone,
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:958:
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:959:      email:
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:960:        dados.email?.trim() || "",
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:961:
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:962:      prioridade:
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:963:        Number(dados.prioridade),
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:964:
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:965:      ordemAtendimento:
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:966:        Number(dados.prioridade),
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:967:
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:968:      recebeChamadas:
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:969:        dados.recebeChamadas,
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:970:
+  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:971:      podeAbrirPortao:

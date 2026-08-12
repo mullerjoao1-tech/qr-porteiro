@@ -1,0 +1,1215 @@
+﻿
+  app\morador-v2\[unidadeId]\page.tsx:1:"use client";
+  app\morador-v2\[unidadeId]\page.tsx:2:
+  app\morador-v2\[unidadeId]\page.tsx:3:import { useEffect, useRef, useState } from "react";
+  app\morador-v2\[unidadeId]\page.tsx:4:import { useParams, useSearchParams } from "next/navigation";
+  app\morador-v2\[unidadeId]\page.tsx:5:import { getToken } from "firebase/messaging";
+  app\morador-v2\[unidadeId]\page.tsx:6:import { ref, onValue, update, remove, push, set, get } from "firebase/database";
+  app\morador-v2\[unidadeId]\page.tsx:7:import { db, messagingPromise } from "../../services/firebase";
+  app\morador-v2\[unidadeId]\page.tsx:8:import { useLocalAtual } from "@/app/hooks/useLocalAtual";
+  app\morador-v2\[unidadeId]\page.tsx:9:import {
+  app\morador-v2\[unidadeId]\page.tsx:10:  listarResponsaveisDaUnidade,
+  app\morador-v2\[unidadeId]\page.tsx:11:  recusarEEncaminhar,
+  app\morador-v2\[unidadeId]\page.tsx:12:  registrarAtendimentoDoResponsavel,
+  app\morador-v2\[unidadeId]\page.tsx:13:} from "@/app/services/chamadas/MotorEscalonamento";
+> app\morador-v2\[unidadeId]\page.tsx:14:type MensagemConversa = {
+  app\morador-v2\[unidadeId]\page.tsx:15:  id?: string;
+  app\morador-v2\[unidadeId]\page.tsx:16:  autor: "visitante" | "morador";
+  app\morador-v2\[unidadeId]\page.tsx:17:  tipo: "texto" | "audio";
+  app\morador-v2\[unidadeId]\page.tsx:18:  texto?: string;
+  app\morador-v2\[unidadeId]\page.tsx:19:  audioBase64?: string;
+  app\morador-v2\[unidadeId]\page.tsx:20:  criadoEm: number;
+  app\morador-v2\[unidadeId]\page.tsx:21:};
+  app\morador-v2\[unidadeId]\page.tsx:22:
+  app\morador-v2\[unidadeId]\page.tsx:23:type ComunicadoMorador = {
+  app\morador-v2\[unidadeId]\page.tsx:24:  id: string;
+  app\morador-v2\[unidadeId]\page.tsx:25:  condominioId: string;
+  app\morador-v2\[unidadeId]\page.tsx:26:  condominioNome: string;
+  app\morador-v2\[unidadeId]\page.tsx:27:  tipo: "comunicado" | "assembleia" | "manutencao" | "emergencia";
+  app\morador-v2\[unidadeId]\page.tsx:28:  destinatario?:
+  app\morador-v2\[unidadeId]\page.tsx:29:    | "unidade"
+  app\morador-v2\[unidadeId]\page.tsx:30:    | "bloco"
+  app\morador-v2\[unidadeId]\page.tsx:31:    | "moradores"
+  app\morador-v2\[unidadeId]\page.tsx:32:    | "proprietarios"
+  app\morador-v2\[unidadeId]\page.tsx:33:    | "inquilinos"
+  app\morador-v2\[unidadeId]\page.tsx:34:    | "conselho"
+  app\morador-v2\[unidadeId]\page.tsx:35:    | "administradora"
+  app\morador-v2\[unidadeId]\page.tsx:36:    | "zeladoria"
+  app\morador-v2\[unidadeId]\page.tsx:37:    | "portaria";
+  app\morador-v2\[unidadeId]\page.tsx:38:  unidadeId?: string;
+  app\morador-v2\[unidadeId]\page.tsx:39:  blocoSelecionado?: string;
+  app\morador-v2\[unidadeId]\page.tsx:40:  unidadesDestinatarias?: string[];
+  app\morador-v2\[unidadeId]\page.tsx:41:  titulo: string;
+> app\morador-v2\[unidadeId]\page.tsx:42:  mensagem: string;
+  app\morador-v2\[unidadeId]\page.tsx:43:  detalhesModelo?: {
+  app\morador-v2\[unidadeId]\page.tsx:44:    dataEvento?: string;
+  app\morador-v2\[unidadeId]\page.tsx:45:    horarioEvento?: string;
+  app\morador-v2\[unidadeId]\page.tsx:46:    localEvento?: string;
+  app\morador-v2\[unidadeId]\page.tsx:47:    pauta?: string;
+  app\morador-v2\[unidadeId]\page.tsx:48:    empresaResponsavel?: string;
+  app\morador-v2\[unidadeId]\page.tsx:49:    impactoPrevisto?: string;
+  app\morador-v2\[unidadeId]\page.tsx:50:    tipoEmergencia?: string;
+  app\morador-v2\[unidadeId]\page.tsx:51:    orientacaoImediata?: string;
+  app\morador-v2\[unidadeId]\page.tsx:52:  };
+  app\morador-v2\[unidadeId]\page.tsx:53:  exigeCiencia?: boolean;
+  app\morador-v2\[unidadeId]\page.tsx:54:  exigirCiencia?: boolean;
+  app\morador-v2\[unidadeId]\page.tsx:55:  status: "enviado" | "agendado";
+  app\morador-v2\[unidadeId]\page.tsx:56:  criadoEm: number;
+  app\morador-v2\[unidadeId]\page.tsx:57:  criadoEmFormatado: string;
+  app\morador-v2\[unidadeId]\page.tsx:58:  visualizacoes?: Record<
+  app\morador-v2\[unidadeId]\page.tsx:59:    string,
+  app\morador-v2\[unidadeId]\page.tsx:60:    {
+  app\morador-v2\[unidadeId]\page.tsx:61:      unidadeId: string;
+  app\morador-v2\[unidadeId]\page.tsx:62:      visualizadoEm?: number;
+  app\morador-v2\[unidadeId]\page.tsx:63:      ciente?: boolean;
+  app\morador-v2\[unidadeId]\page.tsx:64:      cienteEm?: number;
+  app\morador-v2\[unidadeId]\page.tsx:65:    }
+  app\morador-v2\[unidadeId]\page.tsx:66:  >;
+  app\morador-v2\[unidadeId]\page.tsx:67:};
+  app\morador-v2\[unidadeId]\page.tsx:68:
+  app\morador-v2\[unidadeId]\page.tsx:69:function blobParaBase64(blob: Blob): Promise<string> {
+  app\morador-v2\[unidadeId]\page.tsx:70:  return new Promise((resolve, reject) => {
+  app\morador-v2\[unidadeId]\page.tsx:71:    const reader = new FileReader();
+  app\morador-v2\[unidadeId]\page.tsx:72:    reader.onloadend = () => resolve(reader.result as string);
+  app\morador-v2\[unidadeId]\page.tsx:73:    reader.onerror = reject;
+  app\morador-v2\[unidadeId]\page.tsx:74:    reader.readAsDataURL(blob);
+  app\morador-v2\[unidadeId]\page.tsx:75:  });
+  app\morador-v2\[unidadeId]\page.tsx:76:}
+  app\morador-v2\[unidadeId]\page.tsx:77:
+> app\morador-v2\[unidadeId]\page.tsx:78:function ordenarMensagens(mensagens?: Record<string, MensagemConversa>) {
+  app\morador-v2\[unidadeId]\page.tsx:79:  if (!mensagens) return [];
+  app\morador-v2\[unidadeId]\page.tsx:80:
+  app\morador-v2\[unidadeId]\page.tsx:81:  return Object.entries(mensagens)
+> app\morador-v2\[unidadeId]\page.tsx:82:    .map(([id, mensagem]) => ({ id, ...mensagem }))
+  app\morador-v2\[unidadeId]\page.tsx:83:    .sort((a, b) => (a.criadoEm || 0) - (b.criadoEm || 0));
+  app\morador-v2\[unidadeId]\page.tsx:84:}
+  app\morador-v2\[unidadeId]\page.tsx:85:
+  app\morador-v2\[unidadeId]\page.tsx:86:function formatarDataComunicado(data?: string) {
+  app\morador-v2\[unidadeId]\page.tsx:87:  if (!data) return "";
+  app\morador-v2\[unidadeId]\page.tsx:88:
+  app\morador-v2\[unidadeId]\page.tsx:89:  const [ano, mes, dia] = data.split("-");
+  app\morador-v2\[unidadeId]\page.tsx:90:  if (!ano || !mes || !dia) return data;
+  app\morador-v2\[unidadeId]\page.tsx:91:
+  app\morador-v2\[unidadeId]\page.tsx:92:  return `${dia}/${mes}/${ano}`;
+  app\morador-v2\[unidadeId]\page.tsx:93:}
+  app\morador-v2\[unidadeId]\page.tsx:94:
+  app\morador-v2\[unidadeId]\page.tsx:95:function iconeTipoComunicado(tipo: ComunicadoMorador["tipo"]) {
+  app\morador-v2\[unidadeId]\page.tsx:96:  if (tipo === "assembleia") return "👥";
+  app\morador-v2\[unidadeId]\page.tsx:97:  if (tipo === "manutencao") return "🛠️";
+  app\morador-v2\[unidadeId]\page.tsx:98:  if (tipo === "emergencia") return "🚨";
+  app\morador-v2\[unidadeId]\page.tsx:99:  return "📢";
+  app\morador-v2\[unidadeId]\page.tsx:100:}
+  app\morador-v2\[unidadeId]\page.tsx:101:
+  app\morador-v2\[unidadeId]\page.tsx:102:function textoTipoComunicado(tipo: ComunicadoMorador["tipo"]) {
+  app\morador-v2\[unidadeId]\page.tsx:103:  if (tipo === "assembleia") return "ASSEMBLEIA";
+  app\morador-v2\[unidadeId]\page.tsx:104:  if (tipo === "manutencao") return "MANUTENÇÃO";
+  app\morador-v2\[unidadeId]\page.tsx:105:  if (tipo === "emergencia") return "EMERGÊNCIA";
+  app\morador-v2\[unidadeId]\page.tsx:106:  return "COMUNICADO";
+  app\morador-v2\[unidadeId]\page.tsx:107:}
+  app\morador-v2\[unidadeId]\page.tsx:108:
+  app\morador-v2\[unidadeId]\page.tsx:109:export default function MoradorV2() {
+  app\morador-v2\[unidadeId]\page.tsx:110:  const params = useParams();
+  app\morador-v2\[unidadeId]\page.tsx:111:  const searchParams = useSearchParams();
+  app\morador-v2\[unidadeId]\page.tsx:112:  const comunicadoIdPeloLink = searchParams.get("comunicado") || "";
+  app\morador-v2\[unidadeId]\page.tsx:113:
+  app\morador-v2\[unidadeId]\page.tsx:114:  const slug = String(
+  app\morador-v2\[unidadeId]\page.tsx:115:    params?.unidadeId ||
+  app\morador-v2\[unidadeId]\page.tsx:116:      params?.slug ||
+  app\morador-v2\[unidadeId]\page.tsx:117:      params?.id ||
+  app\morador-v2\[unidadeId]\page.tsx:118:      params?.unidade ||
+  app\morador-v2\[unidadeId]\page.tsx:119:      "qr1"
+  app\morador-v2\[unidadeId]\page.tsx:120:  );
+  app\morador-v2\[unidadeId]\page.tsx:121:
+  app\morador-v2\[unidadeId]\page.tsx:122:  const [nome, setNome] = useState("Nenhuma solicitação");
+  app\morador-v2\[unidadeId]\page.tsx:123:  const [motivo, setMotivo] = useState("Aguardando visitante");
+  app\morador-v2\[unidadeId]\page.tsx:124:  const [status, setStatus] = useState("Sem chamado ativo");
+  app\morador-v2\[unidadeId]\page.tsx:125:  const [horaChamada, setHoraChamada] = useState("");
+  app\morador-v2\[unidadeId]\page.tsx:126:  const [modo, setModo] = useState("");
+> app\morador-v2\[unidadeId]\page.tsx:127:  const [mensagemResponsavel, setMensagemResponsavel] = useState("");
+  app\morador-v2\[unidadeId]\page.tsx:128:  const [historicoLista, setHistoricoLista] = useState<any[]>([]);
+  app\morador-v2\[unidadeId]\page.tsx:129:  const [avisoAuto, setAvisoAuto] = useState("");
+  app\morador-v2\[unidadeId]\page.tsx:130:  const [online, setOnline] = useState(true);
+  app\morador-v2\[unidadeId]\page.tsx:131:  const [fotoCameraAtual, setFotoCameraAtual] = useState("");
+  app\morador-v2\[unidadeId]\page.tsx:132:  const [fotoCameraAtualizadaEm, setFotoCameraAtualizadaEm] = useState(Date.now());
+  app\morador-v2\[unidadeId]\page.tsx:133:  const [capturandoCamera, setCapturandoCamera] = useState(false);
+  app\morador-v2\[unidadeId]\page.tsx:134:  const [abrindoPortao, setAbrindoPortao] = useState(false);
+  app\morador-v2\[unidadeId]\page.tsx:135:  const [statusPortao, setStatusPortao] = useState("");
+  app\morador-v2\[unidadeId]\page.tsx:136:  const [visitanteVisualizou, setVisitanteVisualizou] = useState(false);
+  app\morador-v2\[unidadeId]\page.tsx:137:  const [audioVisitante, setAudioVisitante] = useState("");
+> app\morador-v2\[unidadeId]\page.tsx:138:  const [mensagensConversa, setMensagensConversa] = useState<MensagemConversa[]>([]);
+  app\morador-v2\[unidadeId]\page.tsx:139:  const [gravandoAudioMorador, setGravandoAudioMorador] = useState(false);
+  app\morador-v2\[unidadeId]\page.tsx:140:  const [audioRespostaBlob, setAudioRespostaBlob] = useState<Blob | null>(null);
+  app\morador-v2\[unidadeId]\page.tsx:141:  const [enviandoAudioMorador, setEnviandoAudioMorador] = useState(false);
+  app\morador-v2\[unidadeId]\page.tsx:142:  const [popupAtendimentoAberto, setPopupAtendimentoAberto] = useState(false);
+  app\morador-v2\[unidadeId]\page.tsx:143:  const [mostrarHistorico, setMostrarHistorico] = useState(false);
+  app\morador-v2\[unidadeId]\page.tsx:144:  const [mostrarCameraGrande, setMostrarCameraGrande] = useState(false);
+  app\morador-v2\[unidadeId]\page.tsx:145:  const [audioPopup, setAudioPopup] = useState<{ titulo: string; audio: string } | null>(null);
+  app\morador-v2\[unidadeId]\page.tsx:146:  const [installPrompt, setInstallPrompt] = useState<any>(null);
+  app\morador-v2\[unidadeId]\page.tsx:147:  const [appInstalavel, setAppInstalavel] = useState(false);
+  app\morador-v2\[unidadeId]\page.tsx:148:  const [comunicados, setComunicados] = useState<ComunicadoMorador[]>([]);
+  app\morador-v2\[unidadeId]\page.tsx:149:  const [comunicadoAberto, setComunicadoAberto] =
+  app\morador-v2\[unidadeId]\page.tsx:150:    useState<ComunicadoMorador | null>(null);
+  app\morador-v2\[unidadeId]\page.tsx:151:  const [salvandoCiencia, setSalvandoCiencia] = useState(false);
+  app\morador-v2\[unidadeId]\page.tsx:152:
+  app\morador-v2\[unidadeId]\page.tsx:153:  const intervaloSomRef = useRef<NodeJS.Timeout | null>(null);
+  app\morador-v2\[unidadeId]\page.tsx:154:  const finalizacaoAutoRef = useRef<NodeJS.Timeout | null>(null);
+  app\morador-v2\[unidadeId]\page.tsx:155:  const ultimaCapturaCameraRef = useRef("");
+  app\morador-v2\[unidadeId]\page.tsx:156:  const ultimoAudioPopupRef = useRef("");
+  app\morador-v2\[unidadeId]\page.tsx:157:  const toqueSilenciadoPorAudioRef = useRef(false);
+  app\morador-v2\[unidadeId]\page.tsx:158:  const idChamadaAtualRef = useRef("");
+  app\morador-v2\[unidadeId]\page.tsx:159:  const audioContextRef = useRef<AudioContext | null>(null);
+  app\morador-v2\[unidadeId]\page.tsx:160:  const ultimaChamadaAtivaRef = useRef(false);
+  app\morador-v2\[unidadeId]\page.tsx:161:  const ultimaChamadaDadosRef = useRef<any>(null);
+  app\morador-v2\[unidadeId]\page.tsx:162:  const mediaRecorderMoradorRef = useRef<MediaRecorder | null>(null);
+  app\morador-v2\[unidadeId]\page.tsx:163:  const audioChunksMoradorRef = useRef<Blob[]>([]);
+  app\morador-v2\[unidadeId]\page.tsx:164:
+  app\morador-v2\[unidadeId]\page.tsx:165:  function identificarCondominioPeloSlug(unidadeSlug: string) {
+  app\morador-v2\[unidadeId]\page.tsx:166:    const valor = unidadeSlug.toLowerCase();
+  app\morador-v2\[unidadeId]\page.tsx:167:
+  app\morador-v2\[unidadeId]\page.tsx:168:    if (valor.includes("residencial-costa")) {
+  app\morador-v2\[unidadeId]\page.tsx:169:      return "residencial-costa";
+  app\morador-v2\[unidadeId]\page.tsx:170:    }
+  app\morador-v2\[unidadeId]\page.tsx:171:
+  app\morador-v2\[unidadeId]\page.tsx:172:    if (valor.includes("tulipas")) return "cnd-tulipas";
+  app\morador-v2\[unidadeId]\page.tsx:173:    if (valor.includes("flores")) return "cnd-flores";
+  app\morador-v2\[unidadeId]\page.tsx:433:          );
+  app\morador-v2\[unidadeId]\page.tsx:434:          await salvarHistoricoComDados(
+  app\morador-v2\[unidadeId]\page.tsx:435:            "Cancelada pelo visitante",
+  app\morador-v2\[unidadeId]\page.tsx:436:            ultimaChamadaDadosRef.current
+  app\morador-v2\[unidadeId]\page.tsx:437:          );
+  app\morador-v2\[unidadeId]\page.tsx:438:        }
+  app\morador-v2\[unidadeId]\page.tsx:439:
+  app\morador-v2\[unidadeId]\page.tsx:440:        ultimaChamadaAtivaRef.current = false;
+  app\morador-v2\[unidadeId]\page.tsx:441:        ultimaChamadaDadosRef.current = null;
+  app\morador-v2\[unidadeId]\page.tsx:442:
+  app\morador-v2\[unidadeId]\page.tsx:443:        setNome("Nenhuma solicitação");
+  app\morador-v2\[unidadeId]\page.tsx:444:        setMotivo("Aguardando visitante");
+  app\morador-v2\[unidadeId]\page.tsx:445:        setStatus("Sem chamado ativo");
+  app\morador-v2\[unidadeId]\page.tsx:446:        setHoraChamada("");
+  app\morador-v2\[unidadeId]\page.tsx:447:        setModo("");
+> app\morador-v2\[unidadeId]\page.tsx:448:        setMensagemResponsavel("");
+  app\morador-v2\[unidadeId]\page.tsx:449:        setVisitanteVisualizou(false);
+  app\morador-v2\[unidadeId]\page.tsx:450:        setAudioVisitante("");
+  app\morador-v2\[unidadeId]\page.tsx:451:        ultimoAudioPopupRef.current = "";
+  app\morador-v2\[unidadeId]\page.tsx:452:        setAudioPopup(null);
+  app\morador-v2\[unidadeId]\page.tsx:453:        setMensagensConversa([]);
+  app\morador-v2\[unidadeId]\page.tsx:454:        setAudioRespostaBlob(null);
+  app\morador-v2\[unidadeId]\page.tsx:455:        setAvisoAuto("");
+  app\morador-v2\[unidadeId]\page.tsx:456:        setPopupAtendimentoAberto(false);
+  app\morador-v2\[unidadeId]\page.tsx:457:        toqueSilenciadoPorAudioRef.current = false;
+  app\morador-v2\[unidadeId]\page.tsx:458:        idChamadaAtualRef.current = "";
+  app\morador-v2\[unidadeId]\page.tsx:459:        pararToqueContinuo();
+  app\morador-v2\[unidadeId]\page.tsx:460:        return;
+  app\morador-v2\[unidadeId]\page.tsx:461:      }
+  app\morador-v2\[unidadeId]\page.tsx:462:
+  app\morador-v2\[unidadeId]\page.tsx:463:      ultimaChamadaAtivaRef.current = true;
+  app\morador-v2\[unidadeId]\page.tsx:464:      ultimaChamadaDadosRef.current = dados;
+  app\morador-v2\[unidadeId]\page.tsx:465:
+  app\morador-v2\[unidadeId]\page.tsx:466:      setNome(dados.nome || "Nenhuma solicitação");
+  app\morador-v2\[unidadeId]\page.tsx:467:      setMotivo(dados.motivo || "Aguardando visitante");
+  app\morador-v2\[unidadeId]\page.tsx:468:      setStatus(dados.status || "Sem chamado ativo");
+  app\morador-v2\[unidadeId]\page.tsx:469:      setHoraChamada(
+  app\morador-v2\[unidadeId]\page.tsx:470:        dados.criadoEm ? new Date(dados.criadoEm).toLocaleString("pt-BR") : ""
+  app\morador-v2\[unidadeId]\page.tsx:471:      );
+  app\morador-v2\[unidadeId]\page.tsx:472:      setModo(dados.modo || "");
+> app\morador-v2\[unidadeId]\page.tsx:473:      setMensagemResponsavel(dados.mensagemResponsavel || "");
+  app\morador-v2\[unidadeId]\page.tsx:474:
+  app\morador-v2\[unidadeId]\page.tsx:475:      const idChamadaAtual =
+  app\morador-v2\[unidadeId]\page.tsx:476:        String(dados.criadoEm || "") ||
+  app\morador-v2\[unidadeId]\page.tsx:477:        `${dados.nome || ""}-${dados.motivo || ""}`;
+  app\morador-v2\[unidadeId]\page.tsx:478:
+  app\morador-v2\[unidadeId]\page.tsx:479:      if (
+  app\morador-v2\[unidadeId]\page.tsx:480:        idChamadaAtual &&
+  app\morador-v2\[unidadeId]\page.tsx:481:        idChamadaAtualRef.current !== idChamadaAtual
+  app\morador-v2\[unidadeId]\page.tsx:482:      ) {
+  app\morador-v2\[unidadeId]\page.tsx:483:        idChamadaAtualRef.current = idChamadaAtual;
+  app\morador-v2\[unidadeId]\page.tsx:484:        toqueSilenciadoPorAudioRef.current = false;
+  app\morador-v2\[unidadeId]\page.tsx:485:      }
+  app\morador-v2\[unidadeId]\page.tsx:486:      setVisitanteVisualizou(
+  app\morador-v2\[unidadeId]\page.tsx:487:        dados.visitanteVisualizou === true ||
+> app\morador-v2\[unidadeId]\page.tsx:488:          dados.mensagemVisualizada === true ||
+  app\morador-v2\[unidadeId]\page.tsx:489:          dados.visualizadoPeloVisitante === true
+  app\morador-v2\[unidadeId]\page.tsx:490:      );
+  app\morador-v2\[unidadeId]\page.tsx:491:
+  app\morador-v2\[unidadeId]\page.tsx:492:      const mensagensOrdenadas = ordenarMensagens(dados.mensagens);
+  app\morador-v2\[unidadeId]\page.tsx:493:      setMensagensConversa(mensagensOrdenadas);
+  app\morador-v2\[unidadeId]\page.tsx:494:
+  app\morador-v2\[unidadeId]\page.tsx:495:      const ultimoAudioVisitante = [...mensagensOrdenadas]
+  app\morador-v2\[unidadeId]\page.tsx:496:        .reverse()
+  app\morador-v2\[unidadeId]\page.tsx:497:        .find(
+  app\morador-v2\[unidadeId]\page.tsx:498:          (item) =>
+  app\morador-v2\[unidadeId]\page.tsx:499:            item.autor === "visitante" &&
+  app\morador-v2\[unidadeId]\page.tsx:500:            item.tipo === "audio" &&
+  app\morador-v2\[unidadeId]\page.tsx:501:            Boolean(item.audioBase64)
+  app\morador-v2\[unidadeId]\page.tsx:502:        );
+  app\morador-v2\[unidadeId]\page.tsx:503:
+  app\morador-v2\[unidadeId]\page.tsx:504:      const audioVisitanteAtual = ultimoAudioVisitante?.audioBase64 || dados.audioBase64 || "";
+  app\morador-v2\[unidadeId]\page.tsx:505:      setAudioVisitante(audioVisitanteAtual);
+  app\morador-v2\[unidadeId]\page.tsx:506:
+  app\morador-v2\[unidadeId]\page.tsx:507:      if (audioVisitanteAtual && ultimoAudioPopupRef.current !== audioVisitanteAtual) {
+  app\morador-v2\[unidadeId]\page.tsx:508:        ultimoAudioPopupRef.current = audioVisitanteAtual;
+  app\morador-v2\[unidadeId]\page.tsx:509:
+  app\morador-v2\[unidadeId]\page.tsx:510:        setAudioPopup({
+  app\morador-v2\[unidadeId]\page.tsx:511:          titulo: "🎙️ Novo áudio do visitante",
+  app\morador-v2\[unidadeId]\page.tsx:512:          audio: audioVisitanteAtual,
+  app\morador-v2\[unidadeId]\page.tsx:513:        });
+  app\morador-v2\[unidadeId]\page.tsx:514:      }
+  app\morador-v2\[unidadeId]\page.tsx:515:
+  app\morador-v2\[unidadeId]\page.tsx:516:      if (dados.status === "Encerrado") {
+  app\morador-v2\[unidadeId]\page.tsx:517:        ultimaChamadaAtivaRef.current = false;
+  app\morador-v2\[unidadeId]\page.tsx:518:        ultimaChamadaDadosRef.current = null;
+  app\morador-v2\[unidadeId]\page.tsx:519:
+  app\morador-v2\[unidadeId]\page.tsx:520:        pararToqueContinuo();
+  app\morador-v2\[unidadeId]\page.tsx:521:        setPopupAtendimentoAberto(false);
+  app\morador-v2\[unidadeId]\page.tsx:522:        setAvisoAuto("Atendimento encerrado. Limpando em instantes.");
+  app\morador-v2\[unidadeId]\page.tsx:523:        return;
+  app\morador-v2\[unidadeId]\page.tsx:646:    if (dados.status === "Em atendimento") {
+  app\morador-v2\[unidadeId]\page.tsx:647:      tempoLimite = TEMPO_EM_ATENDIMENTO;
+  app\morador-v2\[unidadeId]\page.tsx:648:      dataBase =
+  app\morador-v2\[unidadeId]\page.tsx:649:        dados.ultimaAtividade ||
+  app\morador-v2\[unidadeId]\page.tsx:650:        dados.atendidoEm ||
+  app\morador-v2\[unidadeId]\page.tsx:651:        dados.criadoEm;
+  app\morador-v2\[unidadeId]\page.tsx:652:    }
+  app\morador-v2\[unidadeId]\page.tsx:653:
+  app\morador-v2\[unidadeId]\page.tsx:654:    if (!dataBase) return;
+  app\morador-v2\[unidadeId]\page.tsx:655:
+  app\morador-v2\[unidadeId]\page.tsx:656:    const inicio = new Date(dataBase).getTime();
+  app\morador-v2\[unidadeId]\page.tsx:657:    const tempoPassado = agora - inicio;
+  app\morador-v2\[unidadeId]\page.tsx:658:    const tempoRestante = tempoLimite - tempoPassado;
+  app\morador-v2\[unidadeId]\page.tsx:659:
+  app\morador-v2\[unidadeId]\page.tsx:660:    if (tempoRestante <= 0) {
+> app\morador-v2\[unidadeId]\page.tsx:661:      finalizarAutomaticamente();
+  app\morador-v2\[unidadeId]\page.tsx:662:      return;
+  app\morador-v2\[unidadeId]\page.tsx:663:    }
+  app\morador-v2\[unidadeId]\page.tsx:664:
+  app\morador-v2\[unidadeId]\page.tsx:665:    const minutos = Math.ceil(tempoRestante / 60000);
+  app\morador-v2\[unidadeId]\page.tsx:666:    setAvisoAuto(`Finalização automática em até ${minutos} min.`);
+  app\morador-v2\[unidadeId]\page.tsx:667:
+  app\morador-v2\[unidadeId]\page.tsx:668:    finalizacaoAutoRef.current = setTimeout(() => {
+> app\morador-v2\[unidadeId]\page.tsx:669:      finalizarAutomaticamente();
+  app\morador-v2\[unidadeId]\page.tsx:670:    }, tempoRestante);
+  app\morador-v2\[unidadeId]\page.tsx:671:  }
+  app\morador-v2\[unidadeId]\page.tsx:672:
+> app\morador-v2\[unidadeId]\page.tsx:673:  async function finalizarAutomaticamente() {
+  app\morador-v2\[unidadeId]\page.tsx:674:    pararToqueContinuo();
+  app\morador-v2\[unidadeId]\page.tsx:675:    limparFinalizacaoAutomatica();
+  app\morador-v2\[unidadeId]\page.tsx:676:
+  app\morador-v2\[unidadeId]\page.tsx:677:    const timeoutAguardando = status === "Aguardando atendimento";
+  app\morador-v2\[unidadeId]\page.tsx:678:
+  app\morador-v2\[unidadeId]\page.tsx:679:    ultimaChamadaAtivaRef.current = false;
+  app\morador-v2\[unidadeId]\page.tsx:680:    setPopupAtendimentoAberto(false);
+  app\morador-v2\[unidadeId]\page.tsx:681:    setStatus("Encerrado");
+  app\morador-v2\[unidadeId]\page.tsx:682:    setAvisoAuto("Atendimento encerrado. Limpando em instantes.");
+  app\morador-v2\[unidadeId]\page.tsx:683:
+  app\morador-v2\[unidadeId]\page.tsx:684:    try {
+  app\morador-v2\[unidadeId]\page.tsx:685:      await update(ref(db, caminhoFirebase), {
+  app\morador-v2\[unidadeId]\page.tsx:686:        status: "Encerrado",
+> app\morador-v2\[unidadeId]\page.tsx:687:        mensagemResponsavel: timeoutAguardando
+  app\morador-v2\[unidadeId]\page.tsx:688:          ? "Tempo de espera esgotado."
+  app\morador-v2\[unidadeId]\page.tsx:689:          : "ATENDIMENTO_ENCERRADO",
+  app\morador-v2\[unidadeId]\page.tsx:690:        notificar: false,
+  app\morador-v2\[unidadeId]\page.tsx:691:        encerradoEm: new Date().toISOString(),
+  app\morador-v2\[unidadeId]\page.tsx:692:      });
+  app\morador-v2\[unidadeId]\page.tsx:693:    } catch (erro) {
+  app\morador-v2\[unidadeId]\page.tsx:694:      console.error("Erro ao encerrar chamada automaticamente:", erro);
+  app\morador-v2\[unidadeId]\page.tsx:695:    }
+  app\morador-v2\[unidadeId]\page.tsx:696:
+  app\morador-v2\[unidadeId]\page.tsx:697:    ultimaChamadaDadosRef.current = null;
+  app\morador-v2\[unidadeId]\page.tsx:698:    setAudioVisitante("");
+  app\morador-v2\[unidadeId]\page.tsx:699:    setMensagensConversa([]);
+  app\morador-v2\[unidadeId]\page.tsx:700:    setAudioRespostaBlob(null);
+  app\morador-v2\[unidadeId]\page.tsx:701:
+  app\morador-v2\[unidadeId]\page.tsx:702:    void Promise.allSettled([
+  app\morador-v2\[unidadeId]\page.tsx:703:      registrarAnalytics("timeout"),
+  app\morador-v2\[unidadeId]\page.tsx:704:      registrarLog(
+  app\morador-v2\[unidadeId]\page.tsx:705:        "timeout_atendimento",
+  app\morador-v2\[unidadeId]\page.tsx:706:        "Chamada finalizada automaticamente"
+  app\morador-v2\[unidadeId]\page.tsx:707:      ),
+  app\morador-v2\[unidadeId]\page.tsx:708:      salvarHistorico(timeoutAguardando ? "Não atendida" : "Automática"),
+  app\morador-v2\[unidadeId]\page.tsx:709:    ]);
+  app\morador-v2\[unidadeId]\page.tsx:710:
+  app\morador-v2\[unidadeId]\page.tsx:711:    setTimeout(() => {
+  app\morador-v2\[unidadeId]\page.tsx:712:      void remove(ref(db, caminhoFirebase)).catch((erro) => {
+  app\morador-v2\[unidadeId]\page.tsx:713:        console.error("Erro ao limpar chamada encerrada:", erro);
+  app\morador-v2\[unidadeId]\page.tsx:714:      });
+  app\morador-v2\[unidadeId]\page.tsx:715:    }, 2000);
+  app\morador-v2\[unidadeId]\page.tsx:716:  }
+  app\morador-v2\[unidadeId]\page.tsx:717:
+  app\morador-v2\[unidadeId]\page.tsx:718:  function limparFinalizacaoAutomatica() {
+  app\morador-v2\[unidadeId]\page.tsx:719:    if (finalizacaoAutoRef.current) {
+  app\morador-v2\[unidadeId]\page.tsx:720:      clearTimeout(finalizacaoAutoRef.current);
+  app\morador-v2\[unidadeId]\page.tsx:721:      finalizacaoAutoRef.current = null;
+  app\morador-v2\[unidadeId]\page.tsx:722:    }
+  app\morador-v2\[unidadeId]\page.tsx:723:  }
+  app\morador-v2\[unidadeId]\page.tsx:724:
+> app\morador-v2\[unidadeId]\page.tsx:725:  async function atenderSolicitacao() {
+  app\morador-v2\[unidadeId]\page.tsx:726:  if (status === "Sem chamado ativo") {
+> app\morador-v2\[unidadeId]\page.tsx:727:    alert("Não existe chamada ativa para atender.");
+  app\morador-v2\[unidadeId]\page.tsx:728:    return;
+  app\morador-v2\[unidadeId]\page.tsx:729:  }
+  app\morador-v2\[unidadeId]\page.tsx:730:
+  app\morador-v2\[unidadeId]\page.tsx:731:  if (status === "Em atendimento") {
+  app\morador-v2\[unidadeId]\page.tsx:732:    alert("Esta chamada já está em atendimento.");
+  app\morador-v2\[unidadeId]\page.tsx:733:    return;
+  app\morador-v2\[unidadeId]\page.tsx:734:  }
+  app\morador-v2\[unidadeId]\page.tsx:735:
+  app\morador-v2\[unidadeId]\page.tsx:736:  setPopupAtendimentoAberto(false);
+  app\morador-v2\[unidadeId]\page.tsx:737:  pararToqueContinuo();
+  app\morador-v2\[unidadeId]\page.tsx:738:
+  app\morador-v2\[unidadeId]\page.tsx:739:  try {
+  app\morador-v2\[unidadeId]\page.tsx:740:    const chamadaSnapshot =
+  app\morador-v2\[unidadeId]\page.tsx:741:      await get(
+  app\morador-v2\[unidadeId]\page.tsx:742:        ref(
+  app\morador-v2\[unidadeId]\page.tsx:743:          db,
+  app\morador-v2\[unidadeId]\page.tsx:744:          caminhoFirebase
+  app\morador-v2\[unidadeId]\page.tsx:745:        )
+  app\morador-v2\[unidadeId]\page.tsx:746:      );
+  app\morador-v2\[unidadeId]\page.tsx:747:
+  app\morador-v2\[unidadeId]\page.tsx:748:    const chamadaAtual =
+  app\morador-v2\[unidadeId]\page.tsx:749:      chamadaSnapshot.val() || {};
+  app\morador-v2\[unidadeId]\page.tsx:750:
+  app\morador-v2\[unidadeId]\page.tsx:751:    const responsavelAtualId =
+  app\morador-v2\[unidadeId]\page.tsx:752:      String(
+  app\morador-v2\[unidadeId]\page.tsx:753:        chamadaAtual.responsavelAtualId ||
+  app\morador-v2\[unidadeId]\page.tsx:754:        ""
+  app\morador-v2\[unidadeId]\page.tsx:755:      );
+  app\morador-v2\[unidadeId]\page.tsx:756:
+  app\morador-v2\[unidadeId]\page.tsx:757:    /*
+  app\morador-v2\[unidadeId]\page.tsx:758:     * Enquanto ainda não houver responsável individual
+  app\morador-v2\[unidadeId]\page.tsx:759:     * definido na chamada, preserva o funcionamento atual.
+  app\morador-v2\[unidadeId]\page.tsx:760:     */
+  app\morador-v2\[unidadeId]\page.tsx:761:    if (!responsavelAtualId) {
+  app\morador-v2\[unidadeId]\page.tsx:762:      await update(
+  app\morador-v2\[unidadeId]\page.tsx:811:
+  app\morador-v2\[unidadeId]\page.tsx:812:    void Promise.allSettled([
+  app\morador-v2\[unidadeId]\page.tsx:813:      registrarAnalytics(
+  app\morador-v2\[unidadeId]\page.tsx:814:        "atendida"
+  app\morador-v2\[unidadeId]\page.tsx:815:      ),
+  app\morador-v2\[unidadeId]\page.tsx:816:
+  app\morador-v2\[unidadeId]\page.tsx:817:      registrarLog(
+  app\morador-v2\[unidadeId]\page.tsx:818:        "chamada_atendida",
+  app\morador-v2\[unidadeId]\page.tsx:819:        responsavelAtualId
+  app\morador-v2\[unidadeId]\page.tsx:820:          ? `Chamada atendida pelo responsável ${responsavelAtualId}`
+  app\morador-v2\[unidadeId]\page.tsx:821:          : "Chamada atendida pelo painel"
+  app\morador-v2\[unidadeId]\page.tsx:822:      ),
+  app\morador-v2\[unidadeId]\page.tsx:823:    ]);
+  app\morador-v2\[unidadeId]\page.tsx:824:  } catch (erro) {
+  app\morador-v2\[unidadeId]\page.tsx:825:    console.error(
+> app\morador-v2\[unidadeId]\page.tsx:826:      "Erro ao atender chamada:",
+  app\morador-v2\[unidadeId]\page.tsx:827:      erro
+  app\morador-v2\[unidadeId]\page.tsx:828:    );
+  app\morador-v2\[unidadeId]\page.tsx:829:
+  app\morador-v2\[unidadeId]\page.tsx:830:    alert(
+  app\morador-v2\[unidadeId]\page.tsx:831:      erro instanceof Error
+  app\morador-v2\[unidadeId]\page.tsx:832:        ? erro.message
+  app\morador-v2\[unidadeId]\page.tsx:833:        : "Não foi possível confirmar o atendimento."
+  app\morador-v2\[unidadeId]\page.tsx:834:    );
+  app\morador-v2\[unidadeId]\page.tsx:835:  }
+  app\morador-v2\[unidadeId]\page.tsx:836:}
+> app\morador-v2\[unidadeId]\page.tsx:837:async function naoPossoAtender() {
+  app\morador-v2\[unidadeId]\page.tsx:838:  if (
+  app\morador-v2\[unidadeId]\page.tsx:839:    status ===
+  app\morador-v2\[unidadeId]\page.tsx:840:    "Sem chamado ativo"
+  app\morador-v2\[unidadeId]\page.tsx:841:  ) {
+  app\morador-v2\[unidadeId]\page.tsx:842:    alert(
+  app\morador-v2\[unidadeId]\page.tsx:843:      "Não existe chamada ativa."
+  app\morador-v2\[unidadeId]\page.tsx:844:    );
+  app\morador-v2\[unidadeId]\page.tsx:845:
+  app\morador-v2\[unidadeId]\page.tsx:846:    return;
+  app\morador-v2\[unidadeId]\page.tsx:847:  }
+  app\morador-v2\[unidadeId]\page.tsx:848:
+  app\morador-v2\[unidadeId]\page.tsx:849:  pararToqueContinuo();
+  app\morador-v2\[unidadeId]\page.tsx:850:  setPopupAtendimentoAberto(
+  app\morador-v2\[unidadeId]\page.tsx:851:    false
+  app\morador-v2\[unidadeId]\page.tsx:852:  );
+  app\morador-v2\[unidadeId]\page.tsx:853:
+  app\morador-v2\[unidadeId]\page.tsx:854:  try {
+  app\morador-v2\[unidadeId]\page.tsx:855:    const chamadaSnapshot =
+  app\morador-v2\[unidadeId]\page.tsx:856:      await get(
+  app\morador-v2\[unidadeId]\page.tsx:857:        ref(
+  app\morador-v2\[unidadeId]\page.tsx:858:          db,
+  app\morador-v2\[unidadeId]\page.tsx:859:          caminhoFirebase
+  app\morador-v2\[unidadeId]\page.tsx:860:        )
+  app\morador-v2\[unidadeId]\page.tsx:861:      );
+  app\morador-v2\[unidadeId]\page.tsx:862:
+  app\morador-v2\[unidadeId]\page.tsx:863:    const chamadaAtual =
+  app\morador-v2\[unidadeId]\page.tsx:864:      chamadaSnapshot.val() || {};
+  app\morador-v2\[unidadeId]\page.tsx:865:
+  app\morador-v2\[unidadeId]\page.tsx:866:    const responsavelAtualId =
+  app\morador-v2\[unidadeId]\page.tsx:867:      String(
+  app\morador-v2\[unidadeId]\page.tsx:868:        chamadaAtual.responsavelAtualId ||
+  app\morador-v2\[unidadeId]\page.tsx:869:        ""
+  app\morador-v2\[unidadeId]\page.tsx:870:      );
+  app\morador-v2\[unidadeId]\page.tsx:871:
+  app\morador-v2\[unidadeId]\page.tsx:872:    if (!responsavelAtualId) {
+  app\morador-v2\[unidadeId]\page.tsx:878:        true
+  app\morador-v2\[unidadeId]\page.tsx:879:      );
+  app\morador-v2\[unidadeId]\page.tsx:880:
+  app\morador-v2\[unidadeId]\page.tsx:881:      return;
+  app\morador-v2\[unidadeId]\page.tsx:882:    }
+  app\morador-v2\[unidadeId]\page.tsx:883:
+  app\morador-v2\[unidadeId]\page.tsx:884:    const resultado =
+  app\morador-v2\[unidadeId]\page.tsx:885:      await recusarEEncaminhar(
+  app\morador-v2\[unidadeId]\page.tsx:886:        slug,
+  app\morador-v2\[unidadeId]\page.tsx:887:        caminhoFirebase,
+  app\morador-v2\[unidadeId]\page.tsx:888:        responsavelAtualId
+  app\morador-v2\[unidadeId]\page.tsx:889:      );
+  app\morador-v2\[unidadeId]\page.tsx:890:
+  app\morador-v2\[unidadeId]\page.tsx:891:    await registrarLog(
+  app\morador-v2\[unidadeId]\page.tsx:892:      "chamada_recusada",
+> app\morador-v2\[unidadeId]\page.tsx:893:      `Responsável ${responsavelAtualId} informou que não pode atender.`
+  app\morador-v2\[unidadeId]\page.tsx:894:    );
+  app\morador-v2\[unidadeId]\page.tsx:895:
+  app\morador-v2\[unidadeId]\page.tsx:896:    if (
+  app\morador-v2\[unidadeId]\page.tsx:897:      resultado.sucesso &&
+  app\morador-v2\[unidadeId]\page.tsx:898:      resultado.responsavel
+  app\morador-v2\[unidadeId]\page.tsx:899:    ) {
+  app\morador-v2\[unidadeId]\page.tsx:900:      alert(
+  app\morador-v2\[unidadeId]\page.tsx:901:        `Chamada encaminhada para ${resultado.responsavel.nome}.`
+  app\morador-v2\[unidadeId]\page.tsx:902:      );
+  app\morador-v2\[unidadeId]\page.tsx:903:
+  app\morador-v2\[unidadeId]\page.tsx:904:      return;
+  app\morador-v2\[unidadeId]\page.tsx:905:    }
+  app\morador-v2\[unidadeId]\page.tsx:906:
+  app\morador-v2\[unidadeId]\page.tsx:907:    alert(
+  app\morador-v2\[unidadeId]\page.tsx:908:      resultado.motivo ||
+  app\morador-v2\[unidadeId]\page.tsx:909:      "Não existe outro responsável disponível no momento."
+  app\morador-v2\[unidadeId]\page.tsx:910:    );
+  app\morador-v2\[unidadeId]\page.tsx:911:  } catch (erro) {
+  app\morador-v2\[unidadeId]\page.tsx:912:    console.error(
+  app\morador-v2\[unidadeId]\page.tsx:913:      "Erro ao encaminhar chamada:",
+  app\morador-v2\[unidadeId]\page.tsx:914:      erro
+  app\morador-v2\[unidadeId]\page.tsx:915:    );
+  app\morador-v2\[unidadeId]\page.tsx:916:
+  app\morador-v2\[unidadeId]\page.tsx:917:    setPopupAtendimentoAberto(
+  app\morador-v2\[unidadeId]\page.tsx:918:      true
+  app\morador-v2\[unidadeId]\page.tsx:919:    );
+  app\morador-v2\[unidadeId]\page.tsx:920:
+  app\morador-v2\[unidadeId]\page.tsx:921:    alert(
+  app\morador-v2\[unidadeId]\page.tsx:922:      erro instanceof Error
+  app\morador-v2\[unidadeId]\page.tsx:923:        ? erro.message
+  app\morador-v2\[unidadeId]\page.tsx:924:        : "Não foi possível encaminhar a chamada."
+  app\morador-v2\[unidadeId]\page.tsx:925:    );
+  app\morador-v2\[unidadeId]\page.tsx:926:  }
+  app\morador-v2\[unidadeId]\page.tsx:927:}
+> app\morador-v2\[unidadeId]\page.tsx:928:  async function enviarMensagemRapida(mensagem: string) {
+  app\morador-v2\[unidadeId]\page.tsx:929:    if (status === "Sem chamado ativo") {
+  app\morador-v2\[unidadeId]\page.tsx:930:      alert("Não existe chamada ativa para responder.");
+  app\morador-v2\[unidadeId]\page.tsx:931:      return;
+  app\morador-v2\[unidadeId]\page.tsx:932:    }
+  app\morador-v2\[unidadeId]\page.tsx:933:
+  app\morador-v2\[unidadeId]\page.tsx:934:    if (status !== "Em atendimento") {
+  app\morador-v2\[unidadeId]\page.tsx:935:      alert("Atenda a chamada antes de responder.");
+  app\morador-v2\[unidadeId]\page.tsx:936:      return;
+  app\morador-v2\[unidadeId]\page.tsx:937:    }
+  app\morador-v2\[unidadeId]\page.tsx:938:
+> app\morador-v2\[unidadeId]\page.tsx:939:    await registrarLog("mensagem_rapida", "Mensagem enviada: " + mensagem);
+  app\morador-v2\[unidadeId]\page.tsx:940:
+  app\morador-v2\[unidadeId]\page.tsx:941:    await update(ref(db, caminhoFirebase), {
+  app\morador-v2\[unidadeId]\page.tsx:942:      status: "Em atendimento",
+> app\morador-v2\[unidadeId]\page.tsx:943:      mensagemResponsavel: mensagem,
+  app\morador-v2\[unidadeId]\page.tsx:944:      notificar: false,
+  app\morador-v2\[unidadeId]\page.tsx:945:      visitanteVisualizou: false,
+> app\morador-v2\[unidadeId]\page.tsx:946:      mensagemVisualizada: false,
+  app\morador-v2\[unidadeId]\page.tsx:947:      visualizadoPeloVisitante: false,
+  app\morador-v2\[unidadeId]\page.tsx:948:      enviadoEm: Date.now(),
+  app\morador-v2\[unidadeId]\page.tsx:949:      ultimaAtividade: Date.now(),
+  app\morador-v2\[unidadeId]\page.tsx:950:      atendidoEm: new Date().toISOString(),
+  app\morador-v2\[unidadeId]\page.tsx:951:    });
+  app\morador-v2\[unidadeId]\page.tsx:952:
+> app\morador-v2\[unidadeId]\page.tsx:953:    await registrarMensagemConversa({
+  app\morador-v2\[unidadeId]\page.tsx:954:      autor: "morador",
+  app\morador-v2\[unidadeId]\page.tsx:955:      tipo: "texto",
+> app\morador-v2\[unidadeId]\page.tsx:956:      texto: mensagem,
+  app\morador-v2\[unidadeId]\page.tsx:957:    });
+  app\morador-v2\[unidadeId]\page.tsx:958:
+> app\morador-v2\[unidadeId]\page.tsx:959:    setMensagemResponsavel(mensagem);
+  app\morador-v2\[unidadeId]\page.tsx:960:    setVisitanteVisualizou(false);
+  app\morador-v2\[unidadeId]\page.tsx:961:    pararToqueContinuo();
+  app\morador-v2\[unidadeId]\page.tsx:962:  }
+  app\morador-v2\[unidadeId]\page.tsx:963:
+> app\morador-v2\[unidadeId]\page.tsx:964:  async function registrarMensagemConversa(
+> app\morador-v2\[unidadeId]\page.tsx:965:    dados: Omit<MensagemConversa, "criadoEm">
+  app\morador-v2\[unidadeId]\page.tsx:966:  ) {
+  app\morador-v2\[unidadeId]\page.tsx:967:    if (status === "Sem chamado ativo") return;
+  app\morador-v2\[unidadeId]\page.tsx:968:
+> app\morador-v2\[unidadeId]\page.tsx:969:    const idMensagem = String(Date.now());
+  app\morador-v2\[unidadeId]\page.tsx:970:
+> app\morador-v2\[unidadeId]\page.tsx:971:    await set(ref(db, `${caminhoFirebase}/mensagens/${idMensagem}`), {
+  app\morador-v2\[unidadeId]\page.tsx:972:      ...dados,
+  app\morador-v2\[unidadeId]\page.tsx:973:      criadoEm: Date.now(),
+  app\morador-v2\[unidadeId]\page.tsx:974:    });
+  app\morador-v2\[unidadeId]\page.tsx:975:
+  app\morador-v2\[unidadeId]\page.tsx:976:    await update(ref(db, caminhoFirebase), {
+  app\morador-v2\[unidadeId]\page.tsx:977:      ultimaAtividade: Date.now(),
+  app\morador-v2\[unidadeId]\page.tsx:978:      enviadoEm: Date.now(),
+  app\morador-v2\[unidadeId]\page.tsx:979:    });
+  app\morador-v2\[unidadeId]\page.tsx:980:  }
+  app\morador-v2\[unidadeId]\page.tsx:981:
+  app\morador-v2\[unidadeId]\page.tsx:982:  async function iniciarGravacaoMorador() {
+  app\morador-v2\[unidadeId]\page.tsx:983:    if (status === "Sem chamado ativo") {
+  app\morador-v2\[unidadeId]\page.tsx:984:      alert("Não existe chamada ativa para responder.");
+  app\morador-v2\[unidadeId]\page.tsx:985:      return;
+  app\morador-v2\[unidadeId]\page.tsx:986:    }
+  app\morador-v2\[unidadeId]\page.tsx:987:
+  app\morador-v2\[unidadeId]\page.tsx:988:    if (status !== "Em atendimento") {
+> app\morador-v2\[unidadeId]\page.tsx:989:      alert("Atenda a chamada antes de gravar resposta.");
+  app\morador-v2\[unidadeId]\page.tsx:990:      return;
+  app\morador-v2\[unidadeId]\page.tsx:991:    }
+  app\morador-v2\[unidadeId]\page.tsx:992:
+  app\morador-v2\[unidadeId]\page.tsx:993:    try {
+  app\morador-v2\[unidadeId]\page.tsx:994:      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  app\morador-v2\[unidadeId]\page.tsx:995:      const recorder = new MediaRecorder(stream);
+  app\morador-v2\[unidadeId]\page.tsx:996:
+  app\morador-v2\[unidadeId]\page.tsx:997:      audioChunksMoradorRef.current = [];
+  app\morador-v2\[unidadeId]\page.tsx:998:
+  app\morador-v2\[unidadeId]\page.tsx:999:      recorder.ondataavailable = (event) => {
+  app\morador-v2\[unidadeId]\page.tsx:1000:        if (event.data.size > 0) {
+  app\morador-v2\[unidadeId]\page.tsx:1001:          audioChunksMoradorRef.current.push(event.data);
+  app\morador-v2\[unidadeId]\page.tsx:1002:        }
+  app\morador-v2\[unidadeId]\page.tsx:1003:      };
+  app\morador-v2\[unidadeId]\page.tsx:1004:
+  app\morador-v2\[unidadeId]\page.tsx:1005:      recorder.onstop = () => {
+  app\morador-v2\[unidadeId]\page.tsx:1006:        /*
+  app\morador-v2\[unidadeId]\page.tsx:1007:         * Usa o formato real produzido pelo navegador.
+> app\morador-v2\[unidadeId]\page.tsx:1008:         * Firefox normalmente pode gravar em audio/ogg,
+  app\morador-v2\[unidadeId]\page.tsx:1009:         * enquanto Chrome costuma usar audio/webm.
+  app\morador-v2\[unidadeId]\page.tsx:1010:         * Forçar audio/webm em todos os navegadores pode
+  app\morador-v2\[unidadeId]\page.tsx:1011:         * fazer o áudio chegar sem som no aparelho visitante.
+  app\morador-v2\[unidadeId]\page.tsx:1012:         */
+  app\morador-v2\[unidadeId]\page.tsx:1013:        const tipoAudio =
+  app\morador-v2\[unidadeId]\page.tsx:1014:          recorder.mimeType ||
+  app\morador-v2\[unidadeId]\page.tsx:1015:          audioChunksMoradorRef.current[0]?.type ||
+  app\morador-v2\[unidadeId]\page.tsx:1016:          "audio/webm";
+  app\morador-v2\[unidadeId]\page.tsx:1017:
+  app\morador-v2\[unidadeId]\page.tsx:1018:        const blob = new Blob(
+  app\morador-v2\[unidadeId]\page.tsx:1019:          audioChunksMoradorRef.current,
+  app\morador-v2\[unidadeId]\page.tsx:1020:          {
+  app\morador-v2\[unidadeId]\page.tsx:1021:            type: tipoAudio,
+  app\morador-v2\[unidadeId]\page.tsx:1022:          }
+  app\morador-v2\[unidadeId]\page.tsx:1023:        );
+  app\morador-v2\[unidadeId]\page.tsx:1024:
+  app\morador-v2\[unidadeId]\page.tsx:1025:        setAudioRespostaBlob(blob);
+  app\morador-v2\[unidadeId]\page.tsx:1026:        setGravandoAudioMorador(false);
+  app\morador-v2\[unidadeId]\page.tsx:1027:        stream
+  app\morador-v2\[unidadeId]\page.tsx:1028:          .getTracks()
+  app\morador-v2\[unidadeId]\page.tsx:1029:          .forEach((track) =>
+  app\morador-v2\[unidadeId]\page.tsx:1030:            track.stop()
+  app\morador-v2\[unidadeId]\page.tsx:1031:          );
+  app\morador-v2\[unidadeId]\page.tsx:1032:      };
+  app\morador-v2\[unidadeId]\page.tsx:1033:
+  app\morador-v2\[unidadeId]\page.tsx:1034:      mediaRecorderMoradorRef.current = recorder;
+  app\morador-v2\[unidadeId]\page.tsx:1035:      recorder.start();
+  app\morador-v2\[unidadeId]\page.tsx:1036:      setAudioRespostaBlob(null);
+  app\morador-v2\[unidadeId]\page.tsx:1037:      setGravandoAudioMorador(true);
+  app\morador-v2\[unidadeId]\page.tsx:1038:
+  app\morador-v2\[unidadeId]\page.tsx:1039:      setTimeout(() => {
+  app\morador-v2\[unidadeId]\page.tsx:1040:        if (recorder.state === "recording") {
+  app\morador-v2\[unidadeId]\page.tsx:1041:          pararGravacaoMorador();
+  app\morador-v2\[unidadeId]\page.tsx:1042:        }
+  app\morador-v2\[unidadeId]\page.tsx:1043:      }, 15000);
+  app\morador-v2\[unidadeId]\page.tsx:1054:      mediaRecorderMoradorRef.current.state === "recording"
+  app\morador-v2\[unidadeId]\page.tsx:1055:    ) {
+  app\morador-v2\[unidadeId]\page.tsx:1056:      mediaRecorderMoradorRef.current.stop();
+  app\morador-v2\[unidadeId]\page.tsx:1057:    } else {
+  app\morador-v2\[unidadeId]\page.tsx:1058:      setGravandoAudioMorador(false);
+  app\morador-v2\[unidadeId]\page.tsx:1059:    }
+  app\morador-v2\[unidadeId]\page.tsx:1060:  }
+  app\morador-v2\[unidadeId]\page.tsx:1061:
+  app\morador-v2\[unidadeId]\page.tsx:1062:  async function enviarAudioMorador() {
+  app\morador-v2\[unidadeId]\page.tsx:1063:    if (status === "Sem chamado ativo") {
+  app\morador-v2\[unidadeId]\page.tsx:1064:      alert("Não existe chamada ativa para responder.");
+  app\morador-v2\[unidadeId]\page.tsx:1065:      return;
+  app\morador-v2\[unidadeId]\page.tsx:1066:    }
+  app\morador-v2\[unidadeId]\page.tsx:1067:
+  app\morador-v2\[unidadeId]\page.tsx:1068:    if (status !== "Em atendimento") {
+> app\morador-v2\[unidadeId]\page.tsx:1069:      alert("Atenda a chamada antes de enviar áudio.");
+  app\morador-v2\[unidadeId]\page.tsx:1070:      return;
+  app\morador-v2\[unidadeId]\page.tsx:1071:    }
+  app\morador-v2\[unidadeId]\page.tsx:1072:
+  app\morador-v2\[unidadeId]\page.tsx:1073:    if (!audioRespostaBlob) {
+  app\morador-v2\[unidadeId]\page.tsx:1074:      alert("Grave um áudio antes de enviar.");
+  app\morador-v2\[unidadeId]\page.tsx:1075:      return;
+  app\morador-v2\[unidadeId]\page.tsx:1076:    }
+  app\morador-v2\[unidadeId]\page.tsx:1077:
+  app\morador-v2\[unidadeId]\page.tsx:1078:    try {
+  app\morador-v2\[unidadeId]\page.tsx:1079:      setEnviandoAudioMorador(true);
+  app\morador-v2\[unidadeId]\page.tsx:1080:
+  app\morador-v2\[unidadeId]\page.tsx:1081:      const audioBase64 = await blobParaBase64(audioRespostaBlob);
+  app\morador-v2\[unidadeId]\page.tsx:1082:
+  app\morador-v2\[unidadeId]\page.tsx:1083:      await update(ref(db, caminhoFirebase), {
+  app\morador-v2\[unidadeId]\page.tsx:1084:        status: "Em atendimento",
+  app\morador-v2\[unidadeId]\page.tsx:1085:        notificar: false,
+> app\morador-v2\[unidadeId]\page.tsx:1086:        mensagemResponsavel: "",
+  app\morador-v2\[unidadeId]\page.tsx:1087:        visualizadoPeloVisitante: false,
+  app\morador-v2\[unidadeId]\page.tsx:1088:        visitanteVisualizou: false,
+> app\morador-v2\[unidadeId]\page.tsx:1089:        mensagemVisualizada: false,
+  app\morador-v2\[unidadeId]\page.tsx:1090:        enviadoEm: Date.now(),
+  app\morador-v2\[unidadeId]\page.tsx:1091:        ultimaAtividade: Date.now(),
+  app\morador-v2\[unidadeId]\page.tsx:1092:        atendidoEm: new Date().toISOString(),
+  app\morador-v2\[unidadeId]\page.tsx:1093:      });
+  app\morador-v2\[unidadeId]\page.tsx:1094:
+> app\morador-v2\[unidadeId]\page.tsx:1095:      await registrarMensagemConversa({
+  app\morador-v2\[unidadeId]\page.tsx:1096:        autor: "morador",
+  app\morador-v2\[unidadeId]\page.tsx:1097:        tipo: "audio",
+  app\morador-v2\[unidadeId]\page.tsx:1098:        audioBase64,
+  app\morador-v2\[unidadeId]\page.tsx:1099:      });
+  app\morador-v2\[unidadeId]\page.tsx:1100:
+  app\morador-v2\[unidadeId]\page.tsx:1101:      await registrarLog("audio_morador", "Morador enviou áudio ao visitante");
+  app\morador-v2\[unidadeId]\page.tsx:1102:
+  app\morador-v2\[unidadeId]\page.tsx:1103:      setAudioRespostaBlob(null);
+  app\morador-v2\[unidadeId]\page.tsx:1104:      pararToqueContinuo();
+  app\morador-v2\[unidadeId]\page.tsx:1105:    } catch (erro) {
+  app\morador-v2\[unidadeId]\page.tsx:1106:      console.error(erro);
+> app\morador-v2\[unidadeId]\page.tsx:1107:      alert("Erro ao enviar áudio.");
+  app\morador-v2\[unidadeId]\page.tsx:1108:    } finally {
+  app\morador-v2\[unidadeId]\page.tsx:1109:      setEnviandoAudioMorador(false);
+  app\morador-v2\[unidadeId]\page.tsx:1110:    }
+  app\morador-v2\[unidadeId]\page.tsx:1111:  }
+  app\morador-v2\[unidadeId]\page.tsx:1112:
+  app\morador-v2\[unidadeId]\page.tsx:1113:  async function limparHistorico() {
+  app\morador-v2\[unidadeId]\page.tsx:1114:    const confirmar = window.confirm(
+  app\morador-v2\[unidadeId]\page.tsx:1115:      "Tem certeza que deseja limpar todo o histórico?"
+  app\morador-v2\[unidadeId]\page.tsx:1116:    );
+  app\morador-v2\[unidadeId]\page.tsx:1117:
+  app\morador-v2\[unidadeId]\page.tsx:1118:    if (!confirmar) return;
+  app\morador-v2\[unidadeId]\page.tsx:1119:
+  app\morador-v2\[unidadeId]\page.tsx:1120:    await remove(ref(db, caminhoHistorico));
+  app\morador-v2\[unidadeId]\page.tsx:1121:    setHistoricoLista([]);
+  app\morador-v2\[unidadeId]\page.tsx:1122:    alert("Histórico limpo com sucesso.");
+  app\morador-v2\[unidadeId]\page.tsx:1123:  }
+  app\morador-v2\[unidadeId]\page.tsx:1124:
+> app\morador-v2\[unidadeId]\page.tsx:1125:  async function finalizarSolicitacao() {
+  app\morador-v2\[unidadeId]\page.tsx:1126:    if (status === "Sem chamado ativo") {
+> app\morador-v2\[unidadeId]\page.tsx:1127:      alert("Não existe chamada ativa para finalizar.");
+  app\morador-v2\[unidadeId]\page.tsx:1128:      return;
+  app\morador-v2\[unidadeId]\page.tsx:1129:    }
+  app\morador-v2\[unidadeId]\page.tsx:1130:
+  app\morador-v2\[unidadeId]\page.tsx:1131:    limparFinalizacaoAutomatica();
+  app\morador-v2\[unidadeId]\page.tsx:1132:    pararToqueContinuo();
+  app\morador-v2\[unidadeId]\page.tsx:1133:
+  app\morador-v2\[unidadeId]\page.tsx:1134:    ultimaChamadaAtivaRef.current = false;
+  app\morador-v2\[unidadeId]\page.tsx:1135:    setPopupAtendimentoAberto(false);
+  app\morador-v2\[unidadeId]\page.tsx:1136:    setStatus("Encerrado");
+  app\morador-v2\[unidadeId]\page.tsx:1137:    setAvisoAuto("Atendimento encerrado. Limpando em instantes.");
+  app\morador-v2\[unidadeId]\page.tsx:1138:
+  app\morador-v2\[unidadeId]\page.tsx:1139:    try {
+  app\morador-v2\[unidadeId]\page.tsx:1140:      await update(ref(db, caminhoFirebase), {
+  app\morador-v2\[unidadeId]\page.tsx:1141:        status: "Encerrado",
+> app\morador-v2\[unidadeId]\page.tsx:1142:        mensagemResponsavel: "ATENDIMENTO_ENCERRADO",
+  app\morador-v2\[unidadeId]\page.tsx:1143:        notificar: false,
+  app\morador-v2\[unidadeId]\page.tsx:1144:        encerradoEm: new Date().toISOString(),
+  app\morador-v2\[unidadeId]\page.tsx:1145:      });
+  app\morador-v2\[unidadeId]\page.tsx:1146:    } catch (erro) {
+> app\morador-v2\[unidadeId]\page.tsx:1147:      console.error("Erro ao finalizar chamada:", erro);
+> app\morador-v2\[unidadeId]\page.tsx:1148:      alert("Não foi possível finalizar o atendimento.");
+  app\morador-v2\[unidadeId]\page.tsx:1149:      return;
+  app\morador-v2\[unidadeId]\page.tsx:1150:    }
+  app\morador-v2\[unidadeId]\page.tsx:1151:
+  app\morador-v2\[unidadeId]\page.tsx:1152:    ultimaChamadaDadosRef.current = null;
+  app\morador-v2\[unidadeId]\page.tsx:1153:
+  app\morador-v2\[unidadeId]\page.tsx:1154:    void Promise.allSettled([
+  app\morador-v2\[unidadeId]\page.tsx:1155:      registrarAnalytics("finalizada"),
+  app\morador-v2\[unidadeId]\page.tsx:1156:      registrarLog(
+  app\morador-v2\[unidadeId]\page.tsx:1157:        "chamada_finalizada",
+  app\morador-v2\[unidadeId]\page.tsx:1158:        "Chamada finalizada manualmente"
+  app\morador-v2\[unidadeId]\page.tsx:1159:      ),
+  app\morador-v2\[unidadeId]\page.tsx:1160:      salvarHistorico("Manual"),
+  app\morador-v2\[unidadeId]\page.tsx:1161:    ]);
+  app\morador-v2\[unidadeId]\page.tsx:1162:
+  app\morador-v2\[unidadeId]\page.tsx:1163:    setTimeout(() => {
+  app\morador-v2\[unidadeId]\page.tsx:1164:      void remove(ref(db, caminhoFirebase)).catch((erro) => {
+  app\morador-v2\[unidadeId]\page.tsx:1165:        console.error("Erro ao limpar chamada encerrada:", erro);
+  app\morador-v2\[unidadeId]\page.tsx:1166:      });
+  app\morador-v2\[unidadeId]\page.tsx:1167:    }, 2000);
+  app\morador-v2\[unidadeId]\page.tsx:1168:  }
+  app\morador-v2\[unidadeId]\page.tsx:1169:
+  app\morador-v2\[unidadeId]\page.tsx:1170:  function tocarBip() {
+  app\morador-v2\[unidadeId]\page.tsx:1171:    try {
+  app\morador-v2\[unidadeId]\page.tsx:1172:      const AudioContextClass =
+  app\morador-v2\[unidadeId]\page.tsx:1173:        window.AudioContext || (window as any).webkitAudioContext;
+  app\morador-v2\[unidadeId]\page.tsx:1174:
+  app\morador-v2\[unidadeId]\page.tsx:1175:      if (!audioContextRef.current) {
+  app\morador-v2\[unidadeId]\page.tsx:1176:        audioContextRef.current = new AudioContextClass();
+  app\morador-v2\[unidadeId]\page.tsx:1177:      }
+  app\morador-v2\[unidadeId]\page.tsx:1178:
+  app\morador-v2\[unidadeId]\page.tsx:1179:      const audioContext = audioContextRef.current;
+  app\morador-v2\[unidadeId]\page.tsx:1180:
+  app\morador-v2\[unidadeId]\page.tsx:1181:      if (audioContext.state === "suspended") {
+  app\morador-v2\[unidadeId]\page.tsx:1182:        audioContext.resume();
+  app\morador-v2\[unidadeId]\page.tsx:1183:      }
+  app\morador-v2\[unidadeId]\page.tsx:1347:
+  app\morador-v2\[unidadeId]\page.tsx:1348:      await registrarLog(
+  app\morador-v2\[unidadeId]\page.tsx:1349:        "push_token_salvo",
+  app\morador-v2\[unidadeId]\page.tsx:1350:        "Token de notificação salvo com sucesso"
+  app\morador-v2\[unidadeId]\page.tsx:1351:      );
+  app\morador-v2\[unidadeId]\page.tsx:1352:
+  app\morador-v2\[unidadeId]\page.tsx:1353:      alert("Notificações ativadas com sucesso!");
+  app\morador-v2\[unidadeId]\page.tsx:1354:    } catch (erro: any) {
+  app\morador-v2\[unidadeId]\page.tsx:1355:      console.error("Erro completo ao ativar notificações:", erro);
+  app\morador-v2\[unidadeId]\page.tsx:1356:
+  app\morador-v2\[unidadeId]\page.tsx:1357:      const codigo =
+  app\morador-v2\[unidadeId]\page.tsx:1358:        erro?.code ||
+  app\morador-v2\[unidadeId]\page.tsx:1359:        erro?.name ||
+  app\morador-v2\[unidadeId]\page.tsx:1360:        "erro-desconhecido";
+  app\morador-v2\[unidadeId]\page.tsx:1361:
+> app\morador-v2\[unidadeId]\page.tsx:1362:      const mensagemErro =
+  app\morador-v2\[unidadeId]\page.tsx:1363:        erro?.message ||
+  app\morador-v2\[unidadeId]\page.tsx:1364:        String(erro);
+  app\morador-v2\[unidadeId]\page.tsx:1365:
+  app\morador-v2\[unidadeId]\page.tsx:1366:      await registrarLog(
+  app\morador-v2\[unidadeId]\page.tsx:1367:        "push_erro_token",
+> app\morador-v2\[unidadeId]\page.tsx:1368:        `Código: ${codigo} | Mensagem: ${mensagemErro}`
+  app\morador-v2\[unidadeId]\page.tsx:1369:      );
+  app\morador-v2\[unidadeId]\page.tsx:1370:
+  app\morador-v2\[unidadeId]\page.tsx:1371:      alert(
+  app\morador-v2\[unidadeId]\page.tsx:1372:        `Não foi possível ativar as notificações.
+  app\morador-v2\[unidadeId]\page.tsx:1373:
+  app\morador-v2\[unidadeId]\page.tsx:1374:Código: ${codigo}
+> app\morador-v2\[unidadeId]\page.tsx:1375:Mensagem: ${mensagemErro}`
+  app\morador-v2\[unidadeId]\page.tsx:1376:      );
+  app\morador-v2\[unidadeId]\page.tsx:1377:    }
+  app\morador-v2\[unidadeId]\page.tsx:1378:  }
+  app\morador-v2\[unidadeId]\page.tsx:1379:
+  app\morador-v2\[unidadeId]\page.tsx:1380:  useEffect(() => {
+  app\morador-v2\[unidadeId]\page.tsx:1381:    function prepararInstalacao(evento: any) {
+  app\morador-v2\[unidadeId]\page.tsx:1382:      evento.preventDefault();
+  app\morador-v2\[unidadeId]\page.tsx:1383:      setInstallPrompt(evento);
+  app\morador-v2\[unidadeId]\page.tsx:1384:      setAppInstalavel(true);
+  app\morador-v2\[unidadeId]\page.tsx:1385:    }
+  app\morador-v2\[unidadeId]\page.tsx:1386:
+  app\morador-v2\[unidadeId]\page.tsx:1387:    function appInstalado() {
+  app\morador-v2\[unidadeId]\page.tsx:1388:      setInstallPrompt(null);
+  app\morador-v2\[unidadeId]\page.tsx:1389:      setAppInstalavel(false);
+  app\morador-v2\[unidadeId]\page.tsx:1390:    }
+  app\morador-v2\[unidadeId]\page.tsx:1391:
+  app\morador-v2\[unidadeId]\page.tsx:1392:    window.addEventListener("beforeinstallprompt", prepararInstalacao);
+  app\morador-v2\[unidadeId]\page.tsx:1393:    window.addEventListener("appinstalled", appInstalado);
+  app\morador-v2\[unidadeId]\page.tsx:1394:
+  app\morador-v2\[unidadeId]\page.tsx:1395:    return () => {
+  app\morador-v2\[unidadeId]\page.tsx:1396:      window.removeEventListener("beforeinstallprompt", prepararInstalacao);
+  app\morador-v2\[unidadeId]\page.tsx:1397:      window.removeEventListener("appinstalled", appInstalado);
+  app\morador-v2\[unidadeId]\page.tsx:1398:    };
+  app\morador-v2\[unidadeId]\page.tsx:1399:  }, []);
+  app\morador-v2\[unidadeId]\page.tsx:1400:
+  app\morador-v2\[unidadeId]\page.tsx:1401:  async function instalarApp() {
+  app\morador-v2\[unidadeId]\page.tsx:1402:    if (!installPrompt) {
+  app\morador-v2\[unidadeId]\page.tsx:1403:      alert(
+  app\morador-v2\[unidadeId]\page.tsx:1404:        "Se o botão não abrir a instalação automaticamente, use o menu do navegador e procure por 
+'Instalar app' ou 'Adicionar à tela inicial'."
+  app\morador-v2\[unidadeId]\page.tsx:1405:      );
+  app\morador-v2\[unidadeId]\page.tsx:1406:      return;
+  app\morador-v2\[unidadeId]\page.tsx:1407:    }
+  app\morador-v2\[unidadeId]\page.tsx:1408:
+  app\morador-v2\[unidadeId]\page.tsx:1409:    try {
+  app\morador-v2\[unidadeId]\page.tsx:1410:      await installPrompt.prompt();
+  app\morador-v2\[unidadeId]\page.tsx:1431:  }
+  app\morador-v2\[unidadeId]\page.tsx:1432:
+  app\morador-v2\[unidadeId]\page.tsx:1433:  function abrirAudioVisitanteGrande() {
+  app\morador-v2\[unidadeId]\page.tsx:1434:    if (!audioVisitante) return;
+  app\morador-v2\[unidadeId]\page.tsx:1435:
+  app\morador-v2\[unidadeId]\page.tsx:1436:    silenciarToqueAoOuvirAudio();
+  app\morador-v2\[unidadeId]\page.tsx:1437:    setAudioPopup({
+  app\morador-v2\[unidadeId]\page.tsx:1438:      titulo: "🎙️ Áudio do visitante",
+  app\morador-v2\[unidadeId]\page.tsx:1439:      audio: audioVisitante,
+  app\morador-v2\[unidadeId]\page.tsx:1440:    });
+  app\morador-v2\[unidadeId]\page.tsx:1441:  }
+  app\morador-v2\[unidadeId]\page.tsx:1442:
+  app\morador-v2\[unidadeId]\page.tsx:1443:  const respostasRapidas = [
+  app\morador-v2\[unidadeId]\page.tsx:1444:    {
+  app\morador-v2\[unidadeId]\page.tsx:1445:      texto: "Aguarde um momento",
+> app\morador-v2\[unidadeId]\page.tsx:1446:      mensagem: "Aguarde um momento, por favor.",
+  app\morador-v2\[unidadeId]\page.tsx:1447:      icone: "💬",
+  app\morador-v2\[unidadeId]\page.tsx:1448:    },
+  app\morador-v2\[unidadeId]\page.tsx:1449:    {
+  app\morador-v2\[unidadeId]\page.tsx:1450:      texto: "Já estou descendo",
+> app\morador-v2\[unidadeId]\page.tsx:1451:      mensagem: "Olá, entendi. Já estou descendo.",
+  app\morador-v2\[unidadeId]\page.tsx:1452:      icone: "🚶",
+  app\morador-v2\[unidadeId]\page.tsx:1453:    },
+  app\morador-v2\[unidadeId]\page.tsx:1454:    {
+  app\morador-v2\[unidadeId]\page.tsx:1455:      texto: "Pode deixar na portaria",
+> app\morador-v2\[unidadeId]\page.tsx:1456:      mensagem: "Pode deixar na portaria, obrigado.",
+  app\morador-v2\[unidadeId]\page.tsx:1457:      icone: "📦",
+  app\morador-v2\[unidadeId]\page.tsx:1458:    },
+  app\morador-v2\[unidadeId]\page.tsx:1459:    {
+  app\morador-v2\[unidadeId]\page.tsx:1460:      texto: "Não estou em casa",
+> app\morador-v2\[unidadeId]\page.tsx:1461:      mensagem: "Não estou em casa no momento.",
+  app\morador-v2\[unidadeId]\page.tsx:1462:      icone: "🏠",
+  app\morador-v2\[unidadeId]\page.tsx:1463:    },
+  app\morador-v2\[unidadeId]\page.tsx:1464:    {
+  app\morador-v2\[unidadeId]\page.tsx:1465:      texto: "Estou indo retirar",
+> app\morador-v2\[unidadeId]\page.tsx:1466:      mensagem: "Estou indo retirar agora.",
+  app\morador-v2\[unidadeId]\page.tsx:1467:      icone: "🚶",
+  app\morador-v2\[unidadeId]\page.tsx:1468:    },
+  app\morador-v2\[unidadeId]\page.tsx:1469:  ];
+  app\morador-v2\[unidadeId]\page.tsx:1470:
+  app\morador-v2\[unidadeId]\page.tsx:1471:  return (
+  app\morador-v2\[unidadeId]\page.tsx:1472:    <main className="min-h-screen bg-slate-950 text-white p-4 relative">
+  app\morador-v2\[unidadeId]\page.tsx:1473:      {comunicadoAberto && (() => {
+  app\morador-v2\[unidadeId]\page.tsx:1474:        const precisaConfirmarCiencia =
+  app\morador-v2\[unidadeId]\page.tsx:1475:          comunicadoAberto.exigeCiencia !== false &&
+  app\morador-v2\[unidadeId]\page.tsx:1476:          comunicadoAberto.exigirCiencia !== false;
+  app\morador-v2\[unidadeId]\page.tsx:1477:
+  app\morador-v2\[unidadeId]\page.tsx:1478:        const detalhes = comunicadoAberto.detalhesModelo || {};
+  app\morador-v2\[unidadeId]\page.tsx:1479:        const temInformacoesRapidas =
+  app\morador-v2\[unidadeId]\page.tsx:1480:          Boolean(detalhes.dataEvento) ||
+  app\morador-v2\[unidadeId]\page.tsx:1481:          Boolean(detalhes.horarioEvento) ||
+  app\morador-v2\[unidadeId]\page.tsx:1482:          Boolean(detalhes.localEvento) ||
+  app\morador-v2\[unidadeId]\page.tsx:1483:          Boolean(detalhes.empresaResponsavel);
+  app\morador-v2\[unidadeId]\page.tsx:1484:
+  app\morador-v2\[unidadeId]\page.tsx:1485:        const ehEmergencia = comunicadoAberto.tipo === "emergencia";
+  app\morador-v2\[unidadeId]\page.tsx:1486:
+  app\morador-v2\[unidadeId]\page.tsx:1487:        return (
+  app\morador-v2\[unidadeId]\page.tsx:1488:          <div className="fixed inset-0 z-[1200] flex items-center justify-center overflow-y-auto 
+bg-black/90 p-4">
+  app\morador-v2\[unidadeId]\page.tsx:1489:            <div
+  app\morador-v2\[unidadeId]\page.tsx:1490:              className={`my-4 w-full max-w-md overflow-hidden rounded-3xl border-2 bg-slate-900 
+shadow-2xl ${
+  app\morador-v2\[unidadeId]\page.tsx:1491:                ehEmergencia ? "border-red-500" : "border-blue-500"
+  app\morador-v2\[unidadeId]\page.tsx:1492:              }`}
+  app\morador-v2\[unidadeId]\page.tsx:1493:            >
+  app\morador-v2\[unidadeId]\page.tsx:1494:              <div
+  app\morador-v2\[unidadeId]\page.tsx:1495:                className={`p-5 ${
+  app\morador-v2\[unidadeId]\page.tsx:1496:                  ehEmergencia
+  app\morador-v2\[unidadeId]\page.tsx:1497:                    ? "bg-gradient-to-r from-red-950 to-slate-900"
+  app\morador-v2\[unidadeId]\page.tsx:1498:                    : "bg-gradient-to-r from-blue-950 to-slate-900"
+  app\morador-v2\[unidadeId]\page.tsx:1499:                }`}
+  app\morador-v2\[unidadeId]\page.tsx:1500:              >
+  app\morador-v2\[unidadeId]\page.tsx:1501:                <div className="flex items-start justify-between gap-4">
+  app\morador-v2\[unidadeId]\page.tsx:1607:                )}
+  app\morador-v2\[unidadeId]\page.tsx:1608:
+  app\morador-v2\[unidadeId]\page.tsx:1609:                {detalhes.orientacaoImediata && (
+  app\morador-v2\[unidadeId]\page.tsx:1610:                  <div className="mt-4 rounded-2xl border border-red-700 bg-red-950/40 p-4">
+  app\morador-v2\[unidadeId]\page.tsx:1611:                    <p className="text-xs font-black text-red-300">
+  app\morador-v2\[unidadeId]\page.tsx:1612:                      ⚡ ORIENTAÇÃO IMEDIATA
+  app\morador-v2\[unidadeId]\page.tsx:1613:                    </p>
+  app\morador-v2\[unidadeId]\page.tsx:1614:                    <p className="mt-2 whitespace-pre-wrap text-sm font-bold leading-relaxed text-white">
+  app\morador-v2\[unidadeId]\page.tsx:1615:                      {detalhes.orientacaoImediata}
+  app\morador-v2\[unidadeId]\page.tsx:1616:                    </p>
+  app\morador-v2\[unidadeId]\page.tsx:1617:                  </div>
+  app\morador-v2\[unidadeId]\page.tsx:1618:                )}
+  app\morador-v2\[unidadeId]\page.tsx:1619:
+  app\morador-v2\[unidadeId]\page.tsx:1620:                <div className="mt-4 rounded-2xl border border-slate-700 bg-slate-950/70 p-4">
+  app\morador-v2\[unidadeId]\page.tsx:1621:                  <p className="whitespace-pre-wrap text-sm leading-relaxed text-slate-200">
+> app\morador-v2\[unidadeId]\page.tsx:1622:                    {comunicadoAberto.mensagem}
+  app\morador-v2\[unidadeId]\page.tsx:1623:                  </p>
+  app\morador-v2\[unidadeId]\page.tsx:1624:                </div>
+  app\morador-v2\[unidadeId]\page.tsx:1625:
+  app\morador-v2\[unidadeId]\page.tsx:1626:                <p className="mt-4 text-xs text-slate-500">
+  app\morador-v2\[unidadeId]\page.tsx:1627:                  Enviado em {comunicadoAberto.criadoEmFormatado}
+  app\morador-v2\[unidadeId]\page.tsx:1628:                </p>
+  app\morador-v2\[unidadeId]\page.tsx:1629:
+  app\morador-v2\[unidadeId]\page.tsx:1630:                {precisaConfirmarCiencia ? (
+  app\morador-v2\[unidadeId]\page.tsx:1631:                  comunicadoAberto.visualizacoes?.[slug]?.ciente === true ? (
+  app\morador-v2\[unidadeId]\page.tsx:1632:                    <div className="mt-5 rounded-xl border border-green-700 bg-green-950/30 p-4 
+text-center font-black text-green-300">
+  app\morador-v2\[unidadeId]\page.tsx:1633:                      ✅ Ciente registrado
+  app\morador-v2\[unidadeId]\page.tsx:1634:                    </div>
+  app\morador-v2\[unidadeId]\page.tsx:1635:                  ) : (
+  app\morador-v2\[unidadeId]\page.tsx:1636:                    <button
+  app\morador-v2\[unidadeId]\page.tsx:1637:                      type="button"
+  app\morador-v2\[unidadeId]\page.tsx:1638:                      onClick={confirmarCiencia}
+  app\morador-v2\[unidadeId]\page.tsx:1639:                      disabled={salvandoCiencia}
+  app\morador-v2\[unidadeId]\page.tsx:1640:                      className={`mt-5 w-full rounded-2xl py-4 text-lg font-black text-white 
+disabled:bg-slate-600 ${
+  app\morador-v2\[unidadeId]\page.tsx:1641:                        ehEmergencia
+  app\morador-v2\[unidadeId]\page.tsx:1642:                          ? "bg-red-600 hover:bg-red-500"
+  app\morador-v2\[unidadeId]\page.tsx:1643:                          : "bg-green-600 hover:bg-green-500"
+  app\morador-v2\[unidadeId]\page.tsx:1644:                      }`}
+  app\morador-v2\[unidadeId]\page.tsx:1645:                    >
+  app\morador-v2\[unidadeId]\page.tsx:1646:                      {salvandoCiencia
+  app\morador-v2\[unidadeId]\page.tsx:1647:                        ? "Registrando..."
+  app\morador-v2\[unidadeId]\page.tsx:1648:                        : ehEmergencia
+  app\morador-v2\[unidadeId]\page.tsx:1649:                        ? "🚨 Confirmo que li e estou ciente"
+  app\morador-v2\[unidadeId]\page.tsx:1650:                        : "✅ Li e estou ciente"}
+  app\morador-v2\[unidadeId]\page.tsx:1651:                    </button>
+  app\morador-v2\[unidadeId]\page.tsx:1652:                  )
+  app\morador-v2\[unidadeId]\page.tsx:1653:                ) : (
+  app\morador-v2\[unidadeId]\page.tsx:1654:                  <button
+  app\morador-v2\[unidadeId]\page.tsx:1655:                    type="button"
+  app\morador-v2\[unidadeId]\page.tsx:1656:                    onClick={() => setComunicadoAberto(null)}
+  app\morador-v2\[unidadeId]\page.tsx:1657:                    className="mt-5 w-full rounded-2xl bg-blue-600 py-4 font-black text-white"
+  app\morador-v2\[unidadeId]\page.tsx:1705:                📷 Câmera do portão
+  app\morador-v2\[unidadeId]\page.tsx:1706:              </p>
+  app\morador-v2\[unidadeId]\page.tsx:1707:
+  app\morador-v2\[unidadeId]\page.tsx:1708:              {fotoCameraAtual ? (
+  app\morador-v2\[unidadeId]\page.tsx:1709:                <img
+  app\morador-v2\[unidadeId]\page.tsx:1710:                  src={`${fotoCameraAtual}?t=${fotoCameraAtualizadaEm}`}
+  app\morador-v2\[unidadeId]\page.tsx:1711:                  alt="Câmera do portão"
+  app\morador-v2\[unidadeId]\page.tsx:1712:                  className="w-full rounded-xl border border-slate-600"
+  app\morador-v2\[unidadeId]\page.tsx:1713:                />
+  app\morador-v2\[unidadeId]\page.tsx:1714:              ) : (
+  app\morador-v2\[unidadeId]\page.tsx:1715:                <p className="text-slate-400 text-sm">Capturando imagem...</p>
+  app\morador-v2\[unidadeId]\page.tsx:1716:              )}
+  app\morador-v2\[unidadeId]\page.tsx:1717:            </div>
+  app\morador-v2\[unidadeId]\page.tsx:1718:
+  app\morador-v2\[unidadeId]\page.tsx:1719:            <button
+> app\morador-v2\[unidadeId]\page.tsx:1720:              onClick={atenderSolicitacao}
+  app\morador-v2\[unidadeId]\page.tsx:1721:              className="w-full mt-5 bg-green-500 hover:bg-green-400 text-black text-xl font-black py-4 
+rounded-2xl"
+  app\morador-v2\[unidadeId]\page.tsx:1722:            >
+> app\morador-v2\[unidadeId]\page.tsx:1723:              ✅ ATENDER AGORA
+  app\morador-v2\[unidadeId]\page.tsx:1724:            </button>
+  app\morador-v2\[unidadeId]\page.tsx:1725:<button
+  app\morador-v2\[unidadeId]\page.tsx:1726:  type="button"
+> app\morador-v2\[unidadeId]\page.tsx:1727:  onClick={naoPossoAtender}
+  app\morador-v2\[unidadeId]\page.tsx:1728:  className="w-full mt-3 rounded-2xl bg-blue-600 py-4 text-lg font-black text-white transition-all 
+hover:bg-blue-500 active:scale-95"
+  app\morador-v2\[unidadeId]\page.tsx:1729:>
+> app\morador-v2\[unidadeId]\page.tsx:1730:  🔵 NÃO POSSO ATENDER
+  app\morador-v2\[unidadeId]\page.tsx:1731:</button>
+  app\morador-v2\[unidadeId]\page.tsx:1732:            <div className="mt-4 bg-slate-800 border border-yellow-500/40 rounded-2xl p-3">
+  app\morador-v2\[unidadeId]\page.tsx:1733:              <p className="text-yellow-300 text-sm font-bold">
+> app\morador-v2\[unidadeId]\page.tsx:1734:                Ouça o áudio e veja a câmera. Para responder, clique em ATENDER AGORA.
+  app\morador-v2\[unidadeId]\page.tsx:1735:              </p>
+  app\morador-v2\[unidadeId]\page.tsx:1736:            </div>
+  app\morador-v2\[unidadeId]\page.tsx:1737:           
+  app\morador-v2\[unidadeId]\page.tsx:1738:                      </div>
+  app\morador-v2\[unidadeId]\page.tsx:1739:        </div>
+  app\morador-v2\[unidadeId]\page.tsx:1740:      )}
+  app\morador-v2\[unidadeId]\page.tsx:1741:
+  app\morador-v2\[unidadeId]\page.tsx:1742:      {audioPopup && (
+  app\morador-v2\[unidadeId]\page.tsx:1743:        <div className="fixed inset-0 z-[999] bg-black/95 flex items-center justify-center p-4">
+  app\morador-v2\[unidadeId]\page.tsx:1744:          <div className="w-full max-w-md bg-slate-900 border-4 border-blue-400 rounded-3xl p-5 
+text-center shadow-2xl">
+  app\morador-v2\[unidadeId]\page.tsx:1745:            <p className="text-6xl mb-3">🎙️</p>
+  app\morador-v2\[unidadeId]\page.tsx:1746:            <h2 className="text-2xl font-black text-blue-300 mb-4">
+  app\morador-v2\[unidadeId]\page.tsx:1747:              {audioPopup.titulo}
+  app\morador-v2\[unidadeId]\page.tsx:1748:            </h2>
+  app\morador-v2\[unidadeId]\page.tsx:1749:
+  app\morador-v2\[unidadeId]\page.tsx:1750:            <div className="bg-slate-800 rounded-2xl p-4 border border-blue-500/40">
+  app\morador-v2\[unidadeId]\page.tsx:1751:              <audio
+  app\morador-v2\[unidadeId]\page.tsx:1752:                controls
+  app\morador-v2\[unidadeId]\page.tsx:1753:                className="w-full"
+  app\morador-v2\[unidadeId]\page.tsx:1754:                src={audioPopup.audio}
+  app\morador-v2\[unidadeId]\page.tsx:1755:                onPointerDown={silenciarToqueAoOuvirAudio}
+  app\morador-v2\[unidadeId]\page.tsx:1756:                onTouchStart={silenciarToqueAoOuvirAudio}
+  app\morador-v2\[unidadeId]\page.tsx:1757:                onClick={silenciarToqueAoOuvirAudio}
+  app\morador-v2\[unidadeId]\page.tsx:1758:                onPlay={silenciarToqueAoOuvirAudio}
+  app\morador-v2\[unidadeId]\page.tsx:1759:                onPlaying={silenciarToqueAoOuvirAudio}
+  app\morador-v2\[unidadeId]\page.tsx:1760:              />
+  app\morador-v2\[unidadeId]\page.tsx:1761:            </div>
+  app\morador-v2\[unidadeId]\page.tsx:1762:
+  app\morador-v2\[unidadeId]\page.tsx:1763:            <button
+  app\morador-v2\[unidadeId]\page.tsx:1764:              onClick={() => {
+  app\morador-v2\[unidadeId]\page.tsx:1765:                silenciarToqueAoOuvirAudio();
+  app\morador-v2\[unidadeId]\page.tsx:1766:                setAudioPopup(null);
+  app\morador-v2\[unidadeId]\page.tsx:1767:              }}
+  app\morador-v2\[unidadeId]\page.tsx:1768:              className="w-full mt-5 bg-blue-600 hover:bg-blue-500 text-white font-black py-4 rounded-2xl"
+  app\morador-v2\[unidadeId]\page.tsx:1769:            >
+  app\morador-v2\[unidadeId]\page.tsx:1936:                    className="flex w-full items-center justify-between gap-3 rounded-xl bg-slate-900 p-3 
+text-left transition-all hover:bg-slate-800 active:scale-[0.98]"
+  app\morador-v2\[unidadeId]\page.tsx:1937:                  >
+  app\morador-v2\[unidadeId]\page.tsx:1938:                    <div className="min-w-0">
+  app\morador-v2\[unidadeId]\page.tsx:1939:                      <p className="truncate text-sm font-black text-white">
+  app\morador-v2\[unidadeId]\page.tsx:1940:                        {comunicado.tipo === "assembleia"
+  app\morador-v2\[unidadeId]\page.tsx:1941:                          ? "👥"
+  app\morador-v2\[unidadeId]\page.tsx:1942:                          : comunicado.tipo === "manutencao"
+  app\morador-v2\[unidadeId]\page.tsx:1943:                          ? "🛠️"
+  app\morador-v2\[unidadeId]\page.tsx:1944:                          : comunicado.tipo === "emergencia"
+  app\morador-v2\[unidadeId]\page.tsx:1945:                          ? "🚨"
+  app\morador-v2\[unidadeId]\page.tsx:1946:                          : "📢"}{" "}
+  app\morador-v2\[unidadeId]\page.tsx:1947:                        {comunicado.titulo}
+  app\morador-v2\[unidadeId]\page.tsx:1948:                      </p>
+  app\morador-v2\[unidadeId]\page.tsx:1949:
+  app\morador-v2\[unidadeId]\page.tsx:1950:                      <p className="mt-1 truncate text-xs text-slate-400">
+> app\morador-v2\[unidadeId]\page.tsx:1951:                        {comunicado.mensagem}
+  app\morador-v2\[unidadeId]\page.tsx:1952:                      </p>
+  app\morador-v2\[unidadeId]\page.tsx:1953:                    </div>
+  app\morador-v2\[unidadeId]\page.tsx:1954:
+  app\morador-v2\[unidadeId]\page.tsx:1955:                    <span
+  app\morador-v2\[unidadeId]\page.tsx:1956:                      className={`shrink-0 rounded-full px-3 py-1 text-[10px] font-black ${
+  app\morador-v2\[unidadeId]\page.tsx:1957:                        ciente
+  app\morador-v2\[unidadeId]\page.tsx:1958:                          ? "bg-green-950 text-green-300"
+  app\morador-v2\[unidadeId]\page.tsx:1959:                          : "bg-orange-950 text-orange-300"
+  app\morador-v2\[unidadeId]\page.tsx:1960:                      }`}
+  app\morador-v2\[unidadeId]\page.tsx:1961:                    >
+  app\morador-v2\[unidadeId]\page.tsx:1962:                      {ciente ? "CIENTE" : "LER"}
+  app\morador-v2\[unidadeId]\page.tsx:1963:                    </span>
+  app\morador-v2\[unidadeId]\page.tsx:1964:                  </button>
+  app\morador-v2\[unidadeId]\page.tsx:1965:                );
+  app\morador-v2\[unidadeId]\page.tsx:1966:              })}
+  app\morador-v2\[unidadeId]\page.tsx:1967:            </div>
+  app\morador-v2\[unidadeId]\page.tsx:1968:          </div>
+  app\morador-v2\[unidadeId]\page.tsx:1969:        )}
+  app\morador-v2\[unidadeId]\page.tsx:1970:
+  app\morador-v2\[unidadeId]\page.tsx:1971:        <div className="grid grid-cols-2 gap-3 mt-5">
+  app\morador-v2\[unidadeId]\page.tsx:1972:          <button
+  app\morador-v2\[unidadeId]\page.tsx:1973:            onClick={tocarBip}
+  app\morador-v2\[unidadeId]\page.tsx:1974:            className="bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold py-3 rounded-2xl"
+  app\morador-v2\[unidadeId]\page.tsx:1975:          >
+  app\morador-v2\[unidadeId]\page.tsx:1976:            🔊 Testar Som
+  app\morador-v2\[unidadeId]\page.tsx:1977:          </button>
+  app\morador-v2\[unidadeId]\page.tsx:1978:
+  app\morador-v2\[unidadeId]\page.tsx:1979:          <button
+  app\morador-v2\[unidadeId]\page.tsx:1980:            onClick={ativarNotificacoes}
+  app\morador-v2\[unidadeId]\page.tsx:1981:            className="bg-yellow-500 hover:bg-yellow-400 text-black text-sm font-bold py-3 rounded-2xl"
+  app\morador-v2\[unidadeId]\page.tsx:1982:          >
+  app\morador-v2\[unidadeId]\page.tsx:1983:            🔔 Notificações
+  app\morador-v2\[unidadeId]\page.tsx:1984:          </button>
+  app\morador-v2\[unidadeId]\page.tsx:1985:        </div>
+  app\morador-v2\[unidadeId]\page.tsx:1986:
+  app\morador-v2\[unidadeId]\page.tsx:2061:            Modo: {modo === "porteiro" ? "Portaria" : "Direto para morador"}
+  app\morador-v2\[unidadeId]\page.tsx:2062:          </p>
+  app\morador-v2\[unidadeId]\page.tsx:2063:
+  app\morador-v2\[unidadeId]\page.tsx:2064:          <p className="text-sm text-yellow-400 mt-2">Status: {status}</p>
+  app\morador-v2\[unidadeId]\page.tsx:2065:
+  app\morador-v2\[unidadeId]\page.tsx:2066:          {horaChamada && (
+  app\morador-v2\[unidadeId]\page.tsx:2067:            <p className="text-sm text-blue-300 mt-2">Horário: {horaChamada}</p>
+  app\morador-v2\[unidadeId]\page.tsx:2068:          )}
+  app\morador-v2\[unidadeId]\page.tsx:2069:
+  app\morador-v2\[unidadeId]\page.tsx:2070:          {avisoAuto && (
+  app\morador-v2\[unidadeId]\page.tsx:2071:            <p className="text-sm text-orange-300 mt-2">⏱ {avisoAuto}</p>
+  app\morador-v2\[unidadeId]\page.tsx:2072:          )}
+  app\morador-v2\[unidadeId]\page.tsx:2073:
+  app\morador-v2\[unidadeId]\page.tsx:2074:          {aguardandoAtendimento && (
+  app\morador-v2\[unidadeId]\page.tsx:2075:            <button
+> app\morador-v2\[unidadeId]\page.tsx:2076:              onClick={atenderSolicitacao}
+  app\morador-v2\[unidadeId]\page.tsx:2077:              className="w-full mt-4 bg-green-500 hover:bg-green-400 text-black font-black py-3 
+rounded-2xl"
+  app\morador-v2\[unidadeId]\page.tsx:2078:            >
+> app\morador-v2\[unidadeId]\page.tsx:2079:              ✅ ATENDER
+  app\morador-v2\[unidadeId]\page.tsx:2080:            </button>
+  app\morador-v2\[unidadeId]\page.tsx:2081:          )}
+  app\morador-v2\[unidadeId]\page.tsx:2082:
+  app\morador-v2\[unidadeId]\page.tsx:2083:          {atendimentoEmAndamento ? (
+  app\morador-v2\[unidadeId]\page.tsx:2084:            <div className="mt-4 bg-slate-900 border border-slate-700 rounded-2xl p-4">
+  app\morador-v2\[unidadeId]\page.tsx:2085:              <h3 className="font-bold text-blue-300 mb-3">💬 Respostas rápidas</h3>
+  app\morador-v2\[unidadeId]\page.tsx:2086:
+  app\morador-v2\[unidadeId]\page.tsx:2087:              {respostasRapidas.map((item) => (
+  app\morador-v2\[unidadeId]\page.tsx:2088:                <button
+  app\morador-v2\[unidadeId]\page.tsx:2089:                  key={item.texto}
+> app\morador-v2\[unidadeId]\page.tsx:2090:                  onClick={() => enviarMensagemRapida(item.mensagem)}
+  app\morador-v2\[unidadeId]\page.tsx:2091:                  className="w-full mb-2 last:mb-0 bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 
+rounded-2xl"
+  app\morador-v2\[unidadeId]\page.tsx:2092:                >
+  app\morador-v2\[unidadeId]\page.tsx:2093:                  {item.icone} {item.texto}
+  app\morador-v2\[unidadeId]\page.tsx:2094:                </button>
+  app\morador-v2\[unidadeId]\page.tsx:2095:              ))}
+  app\morador-v2\[unidadeId]\page.tsx:2096:
+> app\morador-v2\[unidadeId]\page.tsx:2097:              {mensagemResponsavel && (
+  app\morador-v2\[unidadeId]\page.tsx:2098:                <div className="mt-4 bg-slate-800 rounded-xl p-3 border border-slate-700">
+  app\morador-v2\[unidadeId]\page.tsx:2099:                  <p className="text-sm text-green-400 font-bold">
+> app\morador-v2\[unidadeId]\page.tsx:2100:                    Última mensagem enviada:
+  app\morador-v2\[unidadeId]\page.tsx:2101:                  </p>
+> app\morador-v2\[unidadeId]\page.tsx:2102:                  <p className="text-sm text-white mt-1">{mensagemResponsavel}</p>
+  app\morador-v2\[unidadeId]\page.tsx:2103:
+  app\morador-v2\[unidadeId]\page.tsx:2104:                  <p
+  app\morador-v2\[unidadeId]\page.tsx:2105:                    className={
+  app\morador-v2\[unidadeId]\page.tsx:2106:                      visitanteVisualizou
+  app\morador-v2\[unidadeId]\page.tsx:2107:                        ? "text-xs text-green-400 mt-2 font-bold"
+  app\morador-v2\[unidadeId]\page.tsx:2108:                        : "text-xs text-yellow-400 mt-2 font-bold"
+  app\morador-v2\[unidadeId]\page.tsx:2109:                    }
+  app\morador-v2\[unidadeId]\page.tsx:2110:                  >
+  app\morador-v2\[unidadeId]\page.tsx:2111:                    {visitanteVisualizou
+  app\morador-v2\[unidadeId]\page.tsx:2112:                      ? "✅ Visitante visualizou"
+  app\morador-v2\[unidadeId]\page.tsx:2113:                      : "⏳ Aguardando visitante visualizar"}
+  app\morador-v2\[unidadeId]\page.tsx:2114:                  </p>
+  app\morador-v2\[unidadeId]\page.tsx:2115:                </div>
+  app\morador-v2\[unidadeId]\page.tsx:2116:              )}
+  app\morador-v2\[unidadeId]\page.tsx:2117:            </div>
+  app\morador-v2\[unidadeId]\page.tsx:2118:          ) : (
+  app\morador-v2\[unidadeId]\page.tsx:2119:            <div className="mt-4 bg-slate-900 border border-yellow-500/40 rounded-2xl p-4">
+  app\morador-v2\[unidadeId]\page.tsx:2120:              <p className="text-yellow-300 text-sm font-bold">
+> app\morador-v2\[unidadeId]\page.tsx:2121:                Respostas rápidas ficam liberadas depois de atender.
+  app\morador-v2\[unidadeId]\page.tsx:2122:              </p>
+  app\morador-v2\[unidadeId]\page.tsx:2123:            </div>
+  app\morador-v2\[unidadeId]\page.tsx:2124:          )}
+  app\morador-v2\[unidadeId]\page.tsx:2125:
+  app\morador-v2\[unidadeId]\page.tsx:2126:          {mensagensConversa.length > 0 && (
+  app\morador-v2\[unidadeId]\page.tsx:2127:            <div className="mt-4 bg-slate-900 border border-blue-500/40 rounded-2xl p-4">
+  app\morador-v2\[unidadeId]\page.tsx:2128:              <h3 className="font-bold text-blue-300 mb-3">
+  app\morador-v2\[unidadeId]\page.tsx:2129:                💬 Conversa do atendimento
+  app\morador-v2\[unidadeId]\page.tsx:2130:              </h3>
+  app\morador-v2\[unidadeId]\page.tsx:2131:
+  app\morador-v2\[unidadeId]\page.tsx:2132:              <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
+  app\morador-v2\[unidadeId]\page.tsx:2133:                {mensagensConversa.map((item) => (
+  app\morador-v2\[unidadeId]\page.tsx:2134:                  <div
+  app\morador-v2\[unidadeId]\page.tsx:2135:                    key={item.id}
+  app\morador-v2\[unidadeId]\page.tsx:2136:                    className={
+  app\morador-v2\[unidadeId]\page.tsx:2137:                      item.autor === "morador"
+  app\morador-v2\[unidadeId]\page.tsx:2138:                        ? "bg-green-600/30 border border-green-500 rounded-2xl p-3"
+  app\morador-v2\[unidadeId]\page.tsx:2139:                        : "bg-blue-600/30 border border-blue-500 rounded-2xl p-3"
+  app\morador-v2\[unidadeId]\page.tsx:2140:                    }
+  app\morador-v2\[unidadeId]\page.tsx:2141:                  >
+  app\morador-v2\[unidadeId]\page.tsx:2142:                    <p className="text-xs font-black mb-2">
+  app\morador-v2\[unidadeId]\page.tsx:2143:                      {item.autor === "morador" ? "Você" : "Visitante"}
+  app\morador-v2\[unidadeId]\page.tsx:2144:                    </p>
+  app\morador-v2\[unidadeId]\page.tsx:2145:
+  app\morador-v2\[unidadeId]\page.tsx:2146:                    {item.tipo === "texto" && (
+  app\morador-v2\[unidadeId]\page.tsx:2147:                      <p className="text-white font-bold">{item.texto}</p>
+  app\morador-v2\[unidadeId]\page.tsx:2148:                    )}
+  app\morador-v2\[unidadeId]\page.tsx:2149:
+  app\morador-v2\[unidadeId]\page.tsx:2150:                    {item.tipo === "audio" && item.audioBase64 && (
+  app\morador-v2\[unidadeId]\page.tsx:2151:                      <button
+  app\morador-v2\[unidadeId]\page.tsx:2152:                        onClick={() => {
+  app\morador-v2\[unidadeId]\page.tsx:2153:                          if (item.autor === "visitante") {
+  app\morador-v2\[unidadeId]\page.tsx:2154:                            silenciarToqueAoOuvirAudio();
+  app\morador-v2\[unidadeId]\page.tsx:2155:                          }
+  app\morador-v2\[unidadeId]\page.tsx:2156:
+  app\morador-v2\[unidadeId]\page.tsx:2176:          {atendimentoEmAndamento ? (
+  app\morador-v2\[unidadeId]\page.tsx:2177:            <div className="mt-4 bg-slate-900 border border-cyan-500/40 rounded-2xl p-4 space-y-3">
+  app\morador-v2\[unidadeId]\page.tsx:2178:              <button
+  app\morador-v2\[unidadeId]\page.tsx:2179:                onClick={
+  app\morador-v2\[unidadeId]\page.tsx:2180:                  gravandoAudioMorador
+  app\morador-v2\[unidadeId]\page.tsx:2181:                    ? pararGravacaoMorador
+  app\morador-v2\[unidadeId]\page.tsx:2182:                    : iniciarGravacaoMorador
+  app\morador-v2\[unidadeId]\page.tsx:2183:                }
+  app\morador-v2\[unidadeId]\page.tsx:2184:                disabled={enviandoAudioMorador}
+  app\morador-v2\[unidadeId]\page.tsx:2185:                className={
+  app\morador-v2\[unidadeId]\page.tsx:2186:                  gravandoAudioMorador
+  app\morador-v2\[unidadeId]\page.tsx:2187:                    ? "w-full bg-red-600 py-3 rounded-xl font-black animate-pulse"
+  app\morador-v2\[unidadeId]\page.tsx:2188:                    : "w-full bg-cyan-600 hover:bg-cyan-500 disabled:bg-slate-700 py-3 rounded-xl 
+font-black"
+  app\morador-v2\[unidadeId]\page.tsx:2189:                }
+  app\morador-v2\[unidadeId]\page.tsx:2190:              >
+> app\morador-v2\[unidadeId]\page.tsx:2191:                {gravandoAudioMorador ? "⏹️ PARAR GRAVAÇÃO" : "🎙️ GRAVAR ÁUDIO"}
+  app\morador-v2\[unidadeId]\page.tsx:2192:              </button>
+  app\morador-v2\[unidadeId]\page.tsx:2193:
+  app\morador-v2\[unidadeId]\page.tsx:2194:              {audioRespostaBlob && (
+  app\morador-v2\[unidadeId]\page.tsx:2195:                <div className="space-y-3">
+  app\morador-v2\[unidadeId]\page.tsx:2196:                  <audio
+  app\morador-v2\[unidadeId]\page.tsx:2197:                    controls
+  app\morador-v2\[unidadeId]\page.tsx:2198:                    className="w-full"
+  app\morador-v2\[unidadeId]\page.tsx:2199:                    src={URL.createObjectURL(audioRespostaBlob)}
+  app\morador-v2\[unidadeId]\page.tsx:2200:                  />
+  app\morador-v2\[unidadeId]\page.tsx:2201:
+  app\morador-v2\[unidadeId]\page.tsx:2202:                  <button
+  app\morador-v2\[unidadeId]\page.tsx:2203:                    onClick={enviarAudioMorador}
+  app\morador-v2\[unidadeId]\page.tsx:2204:                    disabled={enviandoAudioMorador}
+  app\morador-v2\[unidadeId]\page.tsx:2205:                    className="w-full bg-blue-600 hover:bg-blue-500 disabled:bg-slate-700 py-3 rounded-xl 
+font-black"
+  app\morador-v2\[unidadeId]\page.tsx:2206:                  >
+  app\morador-v2\[unidadeId]\page.tsx:2207:                    {enviandoAudioMorador
+  app\morador-v2\[unidadeId]\page.tsx:2208:                      ? "Enviando..."
+> app\morador-v2\[unidadeId]\page.tsx:2209:                      : "📤 ENVIAR ÁUDIO AO VISITANTE"}
+  app\morador-v2\[unidadeId]\page.tsx:2210:                  </button>
+  app\morador-v2\[unidadeId]\page.tsx:2211:                </div>
+  app\morador-v2\[unidadeId]\page.tsx:2212:              )}
+  app\morador-v2\[unidadeId]\page.tsx:2213:            </div>
+  app\morador-v2\[unidadeId]\page.tsx:2214:          ) : (
+  app\morador-v2\[unidadeId]\page.tsx:2215:            <div className="mt-4 bg-slate-900 border border-cyan-500/20 rounded-2xl p-4">
+  app\morador-v2\[unidadeId]\page.tsx:2216:              <p className="text-slate-400 text-sm">
+> app\morador-v2\[unidadeId]\page.tsx:2217:                🎙️ Gravação de resposta liberada depois de atender.
+  app\morador-v2\[unidadeId]\page.tsx:2218:              </p>
+  app\morador-v2\[unidadeId]\page.tsx:2219:            </div>
+  app\morador-v2\[unidadeId]\page.tsx:2220:          )}
+  app\morador-v2\[unidadeId]\page.tsx:2221:
+  app\morador-v2\[unidadeId]\page.tsx:2222:          {!gravandoAudioMorador &&
+  app\morador-v2\[unidadeId]\page.tsx:2223:            !audioRespostaBlob &&
+  app\morador-v2\[unidadeId]\page.tsx:2224:            !enviandoAudioMorador && (
+  app\morador-v2\[unidadeId]\page.tsx:2225:              <button
+> app\morador-v2\[unidadeId]\page.tsx:2226:                onClick={finalizarSolicitacao}
+  app\morador-v2\[unidadeId]\page.tsx:2227:                className="w-full mt-6 bg-red-600 hover:bg-red-500 text-white font-bold py-3 rounded-2xl"
+  app\morador-v2\[unidadeId]\page.tsx:2228:              >
+> app\morador-v2\[unidadeId]\page.tsx:2229:                ❌ FINALIZAR ATENDIMENTO
+  app\morador-v2\[unidadeId]\page.tsx:2230:              </button>
+  app\morador-v2\[unidadeId]\page.tsx:2231:            )}
+  app\morador-v2\[unidadeId]\page.tsx:2232:        </div>
+  app\morador-v2\[unidadeId]\page.tsx:2233:
+  app\morador-v2\[unidadeId]\page.tsx:2234:      </div>
+  app\morador-v2\[unidadeId]\page.tsx:2235:    </main>
+  app\morador-v2\[unidadeId]\page.tsx:2236:  );
+  app\morador-v2\[unidadeId]\page.tsx:2237:}
+
+

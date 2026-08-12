@@ -1,0 +1,530 @@
+﻿    setTimeout(() => {
+      void remove(ref(db, caminhoFirebase)).catch((erro) => {
+        console.error("Erro ao limpar chamada encerrada:", erro);
+      });
+    }, 2000);
+  }
+
+  function limparFinalizacaoAutomatica() {
+    if (finalizacaoAutoRef.current) {
+      clearTimeout(finalizacaoAutoRef.current);
+      finalizacaoAutoRef.current = null;
+    }
+  }
+
+  async function atenderSolicitacao() {
+  if (status === "Sem chamado ativo") {
+    alert("NÃ£o existe chamada ativa para atender.");
+    return;
+  }
+
+  if (status === "Em atendimento") {
+    alert("Esta chamada jÃ¡ estÃ¡ em atendimento.");
+    return;
+  }
+
+  setPopupAtendimentoAberto(false);
+  pararToqueContinuo();
+
+  try {
+    const chamadaSnapshot =
+      await get(
+        ref(
+          db,
+          caminhoFirebase
+        )
+      );
+
+    const chamadaAtual =
+      chamadaSnapshot.val() || {};
+
+    const responsavelAtualId =
+      String(
+        chamadaAtual.responsavelAtualId ||
+        ""
+      );
+
+    /*
+     * Enquanto ainda nÃ£o houver responsÃ¡vel individual
+     * definido na chamada, preserva o funcionamento atual.
+     */
+    if (!responsavelAtualId) {
+      await update(
+        ref(
+          db,
+          caminhoFirebase
+        ),
+        {
+          status:
+            "Em atendimento",
+
+          notificar:
+            false,
+
+          atendidoEm:
+            new Date().toISOString(),
+
+          ultimaAtividade:
+            Date.now(),
+        }
+      );
+    } else {
+      const responsaveis =
+        await listarResponsaveisDaUnidade(
+          slug
+        );
+
+      const responsavelAtual =
+        responsaveis.find(
+          (
+            responsavel
+          ) =>
+            responsavel.id ===
+            responsavelAtualId
+        );
+
+      if (!responsavelAtual) {
+        throw new Error(
+          "O responsÃ¡vel atual da chamada nÃ£o foi encontrado."
+        );
+      }
+
+      await registrarAtendimentoDoResponsavel(
+        caminhoFirebase,
+        responsavelAtual
+      );
+    }
+
+    setStatus(
+      "Em atendimento"
+    );
+
+    void Promise.allSettled([
+      registrarAnalytics(
+        "atendida"
+      ),
+
+      registrarLog(
+        "chamada_atendida",
+        responsavelAtualId
+          ? `Chamada atendida pelo responsÃ¡vel ${responsavelAtualId}`
+          : "Chamada atendida pelo painel"
+      ),
+    ]);
+  } catch (erro) {
+    console.error(
+      "Erro ao atender chamada:",
+      erro
+    );
+
+    alert(
+      erro instanceof Error
+        ? erro.message
+        : "NÃ£o foi possÃ­vel confirmar o atendimento."
+    );
+  }
+}
+async function naoPossoAtender() {
+  if (
+    status ===
+    "Sem chamado ativo"
+  ) {
+    alert(
+      "NÃ£o existe chamada ativa."
+    );
+
+    return;
+  }
+
+  pararToqueContinuo();
+  setPopupAtendimentoAberto(
+    false
+  );
+
+  try {
+    const chamadaSnapshot =
+      await get(
+        ref(
+          db,
+          caminhoFirebase
+        )
+      );
+
+    const chamadaAtual =
+      chamadaSnapshot.val() || {};
+
+    const responsavelAtualId =
+      String(
+        chamadaAtual.responsavelAtualId ||
+        ""
+      );
+
+    if (!responsavelAtualId) {
+      alert(
+        "A chamada ainda nÃ£o possui um responsÃ¡vel individual definido."
+      );
+
+      setPopupAtendimentoAberto(
+        true
+      );
+
+      return;
+    }
+
+    const resultado =
+      await recusarEEncaminhar(
+        slug,
+        caminhoFirebase,
+        responsavelAtualId
+      );
+
+    await registrarLog(
+      "chamada_recusada",
+      `ResponsÃ¡vel ${responsavelAtualId} informou que nÃ£o pode atender.`
+    );
+
+    if (
+      resultado.sucesso &&
+      resultado.responsavel
+    ) {
+      alert(
+        `Chamada encaminhada para ${resultado.responsavel.nome}.`
+      );
+
+      return;
+    }
+
+    alert(
+      resultado.motivo ||
+      "NÃ£o existe outro responsÃ¡vel disponÃ­vel no momento."
+    );
+  } catch (erro) {
+    console.error(
+      "Erro ao encaminhar chamada:",
+      erro
+    );
+
+    setPopupAtendimentoAberto(
+      true
+    );
+
+    alert(
+      erro instanceof Error
+        ? erro.message
+        : "NÃ£o foi possÃ­vel encaminhar a chamada."
+    );
+  }
+}
+  async function enviarMensagemRapida(mensagem: string) {
+    if (status === "Sem chamado ativo") {
+      alert("NÃ£o existe chamada ativa para responder.");
+      return;
+    }
+
+    if (status !== "Em atendimento") {
+      alert("Atenda a chamada antes de responder.");
+      return;
+    }
+
+    await registrarLog("mensagem_rapida", "Mensagem enviada: " + mensagem);
+
+    await update(ref(db, caminhoFirebase), {
+      status: "Em atendimento",
+      mensagemResponsavel: mensagem,
+      notificar: false,
+      visitanteVisualizou: false,
+      mensagemVisualizada: false,
+      visualizadoPeloVisitante: false,
+      enviadoEm: Date.now(),
+      ultimaAtividade: Date.now(),
+      atendidoEm: new Date().toISOString(),
+    });
+
+    await registrarMensagemConversa({
+      autor: "morador",
+      tipo: "texto",
+      texto: mensagem,
+    });
+
+    setMensagemResponsavel(mensagem);
+    setVisitanteVisualizou(false);
+    pararToqueContinuo();
+  }
+
+  async function registrarMensagemConversa(
+    dados: Omit<MensagemConversa, "criadoEm">
+  ) {
+    if (status === "Sem chamado ativo") return;
+
+    const idMensagem = String(Date.now());
+
+    await set(ref(db, `${caminhoFirebase}/mensagens/${idMensagem}`), {
+      ...dados,
+      criadoEm: Date.now(),
+    });
+
+    await update(ref(db, caminhoFirebase), {
+      ultimaAtividade: Date.now(),
+      enviadoEm: Date.now(),
+    });
+  }
+
+  async function iniciarGravacaoMorador() {
+    if (status === "Sem chamado ativo") {
+      alert("NÃ£o existe chamada ativa para responder.");
+      return;
+    }
+
+    if (status !== "Em atendimento") {
+      alert("Atenda a chamada antes de gravar resposta.");
+      return;
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+
+      audioChunksMoradorRef.current = [];
+
+      recorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksMoradorRef.current.push(event.data);
+        }
+      };
+
+      recorder.onstop = () => {
+        /*
+         * Usa o formato real produzido pelo navegador.
+         * Firefox normalmente pode gravar em audio/ogg,
+         * enquanto Chrome costuma usar audio/webm.
+         * ForÃ§ar audio/webm em todos os navegadores pode
+         * fazer o Ã¡udio chegar sem som no aparelho visitante.
+         */
+        const tipoAudio =
+          recorder.mimeType ||
+          audioChunksMoradorRef.current[0]?.type ||
+          "audio/webm";
+
+        const blob = new Blob(
+          audioChunksMoradorRef.current,
+          {
+            type: tipoAudio,
+          }
+        );
+
+        setAudioRespostaBlob(blob);
+        setGravandoAudioMorador(false);
+        stream
+          .getTracks()
+          .forEach((track) =>
+            track.stop()
+          );
+      };
+
+      mediaRecorderMoradorRef.current = recorder;
+      recorder.start();
+      setAudioRespostaBlob(null);
+      setGravandoAudioMorador(true);
+
+      setTimeout(() => {
+        if (recorder.state === "recording") {
+          pararGravacaoMorador();
+        }
+      }, 15000);
+    } catch (erro) {
+      console.error(erro);
+      alert("NÃ£o foi possÃ­vel acessar o microfone.");
+      setGravandoAudioMorador(false);
+    }
+  }
+
+  function pararGravacaoMorador() {
+    if (
+      mediaRecorderMoradorRef.current &&
+      mediaRecorderMoradorRef.current.state === "recording"
+    ) {
+      mediaRecorderMoradorRef.current.stop();
+    } else {
+      setGravandoAudioMorador(false);
+    }
+  }
+
+  async function enviarAudioMorador() {
+    if (status === "Sem chamado ativo") {
+      alert("NÃ£o existe chamada ativa para responder.");
+      return;
+    }
+
+    if (status !== "Em atendimento") {
+      alert("Atenda a chamada antes de enviar Ã¡udio.");
+      return;
+    }
+
+    if (!audioRespostaBlob) {
+      alert("Grave um Ã¡udio antes de enviar.");
+      return;
+    }
+
+    try {
+      setEnviandoAudioMorador(true);
+
+      const audioBase64 = await blobParaBase64(audioRespostaBlob);
+
+      await update(ref(db, caminhoFirebase), {
+        status: "Em atendimento",
+        notificar: false,
+        mensagemResponsavel: "",
+        visualizadoPeloVisitante: false,
+        visitanteVisualizou: false,
+        mensagemVisualizada: false,
+        enviadoEm: Date.now(),
+        ultimaAtividade: Date.now(),
+        atendidoEm: new Date().toISOString(),
+      });
+
+      await registrarMensagemConversa({
+        autor: "morador",
+        tipo: "audio",
+        audioBase64,
+      });
+
+      await registrarLog("audio_morador", "Morador enviou Ã¡udio ao visitante");
+
+      setAudioRespostaBlob(null);
+      pararToqueContinuo();
+    } catch (erro) {
+      console.error(erro);
+      alert("Erro ao enviar Ã¡udio.");
+    } finally {
+      setEnviandoAudioMorador(false);
+    }
+  }
+
+  async function limparHistorico() {
+    const confirmar = window.confirm(
+      "Tem certeza que deseja limpar todo o histÃ³rico?"
+    );
+
+    if (!confirmar) return;
+
+    await remove(ref(db, caminhoHistorico));
+    setHistoricoLista([]);
+    alert("HistÃ³rico limpo com sucesso.");
+  }
+
+  async function finalizarSolicitacao() {
+    if (status === "Sem chamado ativo") {
+      alert("NÃ£o existe chamada ativa para finalizar.");
+      return;
+    }
+
+    limparFinalizacaoAutomatica();
+    pararToqueContinuo();
+
+    ultimaChamadaAtivaRef.current = false;
+    setPopupAtendimentoAberto(false);
+    setStatus("Encerrado");
+    setAvisoAuto("Atendimento encerrado. Limpando em instantes.");
+
+    try {
+      await update(ref(db, caminhoFirebase), {
+        status: "Encerrado",
+        mensagemResponsavel: "ATENDIMENTO_ENCERRADO",
+        notificar: false,
+        encerradoEm: new Date().toISOString(),
+      });
+    } catch (erro) {
+      console.error("Erro ao finalizar chamada:", erro);
+      alert("NÃ£o foi possÃ­vel finalizar o atendimento.");
+      return;
+    }
+
+    ultimaChamadaDadosRef.current = null;
+
+    void Promise.allSettled([
+      registrarAnalytics("finalizada"),
+      registrarLog(
+        "chamada_finalizada",
+        "Chamada finalizada manualmente"
+      ),
+      salvarHistorico("Manual"),
+    ]);
+
+    setTimeout(() => {
+      void remove(ref(db, caminhoFirebase)).catch((erro) => {
+        console.error("Erro ao limpar chamada encerrada:", erro);
+      });
+    }, 2000);
+  }
+
+  function tocarBip() {
+    try {
+      const AudioContextClass =
+        window.AudioContext || (window as any).webkitAudioContext;
+
+      if (!audioContextRef.current) {
+        audioContextRef.current = new AudioContextClass();
+      }
+
+      const audioContext = audioContextRef.current;
+
+      if (audioContext.state === "suspended") {
+        audioContext.resume();
+      }
+
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+
+      oscillator.frequency.value = 880;
+      oscillator.type = "sine";
+
+      gainNode.gain.setValueAtTime(0.35, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(
+        0.01,
+        audioContext.currentTime + 0.45
+      );
+
+      oscillator.start();
+      oscillator.stop(audioContext.currentTime + 0.45);
+    } catch (erro) {
+      console.error("Erro ao tocar bip:", erro);
+    }
+  }
+
+  function iniciarToqueContinuo() {
+    if (intervaloSomRef.current) return;
+
+    tocarBip();
+
+    intervaloSomRef.current = setInterval(() => {
+      tocarBip();
+    }, 900);
+  }
+
+  function pararToqueContinuo() {
+    if (intervaloSomRef.current) {
+      clearInterval(intervaloSomRef.current);
+      intervaloSomRef.current = null;
+    }
+  }
+
+  async function alterarStatusOnline() {
+    const novoStatus = !online;
+
+    setOnline(novoStatus);
+
+    await set(ref(db, caminhoStatus), {
+      online: novoStatus,
+      atualizadoEm: new Date().toISOString(),
+    });
+  }
+
+  async function acionarPortao() {
+    if (abrindoPortao) return;
+
+    try {
+      setAbrindoPortao(true);
+      setStatusPortao("â³ Abrindo portÃ£o...");

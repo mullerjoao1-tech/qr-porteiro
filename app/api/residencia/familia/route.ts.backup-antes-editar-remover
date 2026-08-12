@@ -1,0 +1,728 @@
+import "server-only";
+
+import { randomBytes } from "node:crypto";
+
+import {
+  NextRequest,
+  NextResponse,
+} from "next/server";
+
+import {
+  obterFirebaseAdmin,
+} from "@/app/services/server/firebaseAdmin";
+
+import {
+  buscarOuCriarPessoaUniversal,
+} from "@/app/services/usuarios/CadastroPessoaUniversal";
+
+type CorpoAdicionarPessoa = {
+  localId?: string;
+  nome?: string;
+  email?: string;
+  telefone?: string;
+  cpf?: string;
+
+  permissoes?: {
+    receberChamadas?: boolean;
+    abrirPortao?: boolean;
+    visualizarCameras?: boolean;
+    controlarAlarme?: boolean;
+  };
+};
+
+type VinculoBanco = {
+  localId?: string;
+  localNome?: string;
+  localSlug?: string;
+  tipoLocal?: string;
+
+  perfilPrincipal?: string;
+
+  perfis?: Record<
+    string,
+    boolean
+  >;
+
+  unidades?: Record<
+    string,
+    boolean
+  >;
+
+  permissoes?: Record<
+    string,
+    boolean
+  >;
+
+  ativo?: boolean;
+
+  criadoEm?: number;
+};
+
+type UsuarioBanco = {
+  uid?: string;
+  nome?: string;
+  email?: string;
+  telefone?: string;
+  cpf?: string;
+  status?: string;
+
+  locais?: Record<
+    string,
+    VinculoBanco
+  >;
+};
+
+function texto(
+  valor: unknown
+): string {
+  return typeof valor === "string"
+    ? valor.trim()
+    : "";
+}
+
+function obterTokenBearer(
+  request: NextRequest
+): string {
+  const authorization =
+    request.headers.get(
+      "authorization"
+    ) || "";
+
+  if (
+    !authorization.startsWith(
+      "Bearer "
+    )
+  ) {
+    throw new Error(
+      "Autentica??o n?o informada."
+    );
+  }
+
+  const token =
+    authorization
+      .slice(7)
+      .trim();
+
+  if (!token) {
+    throw new Error(
+      "Token de autentica??o inv?lido."
+    );
+  }
+
+  return token;
+}
+
+async function validarGestorResidencia(
+  request: NextRequest,
+  localId: string
+) {
+  const {
+    auth,
+    database,
+  } =
+    obterFirebaseAdmin();
+
+  const token =
+    obterTokenBearer(
+      request
+    );
+
+  const decodificado =
+    await auth.verifyIdToken(
+      token
+    );
+
+  const snapshot =
+    await database
+      .ref(
+        `usuarios-v2/${decodificado.uid}`
+      )
+      .get();
+
+  if (!snapshot.exists()) {
+    throw new Error(
+      "Usu?rio autenticado n?o encontrado."
+    );
+  }
+
+  const usuario =
+    snapshot.val() as
+      UsuarioBanco;
+
+  if (
+    usuario.status &&
+    usuario.status !== "ativo"
+  ) {
+    throw new Error(
+      "Usu?rio autenticado n?o est? ativo."
+    );
+  }
+
+  const vinculo =
+    usuario.locais?.[
+      localId
+    ];
+
+  if (
+    !vinculo ||
+    vinculo.ativo === false
+  ) {
+    throw new Error(
+      "Voc? n?o possui v?nculo ativo com esta resid?ncia."
+    );
+  }
+
+  const perfilPrincipal = (
+    vinculo.perfilPrincipal ||
+    ""
+  )
+    .trim()
+    .toLowerCase()
+    .replaceAll("-", "_");
+
+  const autorizado =
+    perfilPrincipal ===
+      "administrador_master" ||
+    perfilPrincipal ===
+      "proprietario" ||
+    perfilPrincipal ===
+      "responsavel" ||
+    perfilPrincipal ===
+      "gestor_local" ||
+    vinculo.perfis?.[
+      "administrador_master"
+    ] === true ||
+    vinculo.perfis?.[
+      "proprietario"
+    ] === true ||
+    vinculo.perfis?.[
+      "responsavel"
+    ] === true ||
+    vinculo.permissoes?.[
+      "gerenciarMoradores"
+    ] === true;
+
+  if (!autorizado) {
+    throw new Error(
+      "Voc? n?o possui permiss?o para gerenciar a fam?lia desta resid?ncia."
+    );
+  }
+
+  return {
+    uid:
+      decodificado.uid,
+
+    usuario,
+
+    vinculo,
+  };
+}
+
+function criarSenhaProvisoria() {
+  return (
+    randomBytes(18)
+      .toString("base64url")
+      .slice(0, 18) +
+    "Aa1!"
+  );
+}
+
+function normalizarPermissoes(
+  permissoes:
+    CorpoAdicionarPessoa[
+      "permissoes"
+    ]
+) {
+  return {
+    acessarDashboard:
+      true,
+
+    visualizarLocal:
+      true,
+
+    receberChamadas:
+      permissoes
+        ?.receberChamadas ===
+      true,
+
+    atenderChamadas:
+      permissoes
+        ?.receberChamadas ===
+      true,
+
+    abrirPortao:
+      permissoes
+        ?.abrirPortao ===
+      true,
+
+    visualizarCameras:
+      permissoes
+        ?.visualizarCameras ===
+      true,
+
+    controlarAlarme:
+      permissoes
+        ?.controlarAlarme ===
+      true,
+
+    gerenciarMoradores:
+      false,
+
+    gerenciarConfiguracoes:
+      false,
+  };
+}
+
+export async function GET(
+  request: NextRequest
+) {
+  try {
+    const localId =
+      texto(
+        request.nextUrl.searchParams.get(
+          "localId"
+        )
+      );
+
+    if (!localId) {
+      return NextResponse.json(
+        {
+          sucesso: false,
+          mensagem:
+            "Local n?o informado.",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
+    await validarGestorResidencia(
+      request,
+      localId
+    );
+
+    const {
+      database,
+    } =
+      obterFirebaseAdmin();
+
+    const snapshot =
+      await database
+        .ref(
+          "usuarios-v2"
+        )
+        .get();
+
+    if (!snapshot.exists()) {
+      return NextResponse.json({
+        sucesso: true,
+        pessoas: [],
+      });
+    }
+
+    const usuarios =
+      snapshot.val() as
+        Record<
+          string,
+          UsuarioBanco
+        >;
+
+    const pessoas =
+      Object.entries(
+        usuarios
+      )
+        .filter(
+          ([
+            ,
+            usuario,
+          ]) => {
+            const vinculo =
+              usuario.locais?.[
+                localId
+              ];
+
+            return (
+              vinculo &&
+              vinculo.ativo !==
+                false
+            );
+          }
+        )
+        .map(
+          ([
+            uid,
+            usuario,
+          ]) => {
+            const vinculo =
+              usuario.locais?.[
+                localId
+              ];
+
+            return {
+              uid,
+
+              nome:
+                usuario.nome ||
+                "Pessoa",
+
+              email:
+                usuario.email ||
+                "",
+
+              telefone:
+                usuario.telefone ||
+                "",
+
+              cpf:
+                usuario.cpf ||
+                "",
+
+              perfilPrincipal:
+                vinculo
+                  ?.perfilPrincipal ||
+                "",
+
+              permissoes:
+                vinculo
+                  ?.permissoes ||
+                {},
+
+              ativo:
+                vinculo
+                  ?.ativo !==
+                false,
+            };
+          }
+        )
+        .sort(
+          (
+            a,
+            b
+          ) =>
+            a.nome.localeCompare(
+              b.nome,
+              "pt-BR"
+            )
+        );
+
+    return NextResponse.json({
+      sucesso: true,
+      pessoas,
+    });
+  } catch (erro) {
+    console.error(
+      "Erro ao listar fam?lia:",
+      erro
+    );
+
+    return NextResponse.json(
+      {
+        sucesso: false,
+
+        mensagem:
+          erro instanceof Error
+            ? erro.message
+            : "N?o foi poss?vel carregar a fam?lia.",
+      },
+      {
+        status: 400,
+      }
+    );
+  }
+}
+
+export async function POST(
+  request: NextRequest
+) {
+  try {
+    const corpo =
+      (await request.json()) as
+        CorpoAdicionarPessoa;
+
+    const localId =
+      texto(
+        corpo.localId
+      );
+
+    const nome =
+      texto(
+        corpo.nome
+      );
+
+    const email =
+      texto(
+        corpo.email
+      ).toLowerCase();
+
+    const telefone =
+      texto(
+        corpo.telefone
+      );
+
+    const cpf =
+      texto(
+        corpo.cpf
+      );
+
+    if (!localId) {
+      throw new Error(
+        "Local n?o informado."
+      );
+    }
+
+    if (!nome) {
+      throw new Error(
+        "Informe o nome da pessoa."
+      );
+    }
+
+    if (!email) {
+      throw new Error(
+        "Informe o e-mail da pessoa."
+      );
+    }
+
+    if (!cpf) {
+      throw new Error(
+        "Informe o CPF da pessoa."
+      );
+    }
+
+    const gestor =
+      await validarGestorResidencia(
+        request,
+        localId
+      );
+
+    const {
+      auth,
+      database,
+    } =
+      obterFirebaseAdmin();
+
+    const resultadoPessoa =
+      await buscarOuCriarPessoaUniversal({
+        auth,
+        database,
+
+        nome,
+        email,
+        telefone,
+        cpf,
+
+        senhaProvisoria:
+          criarSenhaProvisoria(),
+
+        origem:
+          "residencia-familia",
+      });
+
+    const agora =
+      Date.now();
+
+    const uid =
+      resultadoPessoa.uid;
+
+    const snapshotLocal =
+      await database
+        .ref(
+          `locais-v2/${localId}`
+        )
+        .get();
+
+    const dadosLocal =
+      snapshotLocal.exists()
+        ? snapshotLocal.val() as {
+            nome?: string;
+            slug?: string;
+            tipo?: string;
+            tipoLocal?: string;
+          }
+        : {};
+
+    const snapshotVinculo =
+      await database
+        .ref(
+          `usuarios-v2/${uid}/locais/${localId}`
+        )
+        .get();
+
+    const vinculoAnterior =
+      snapshotVinculo.exists()
+        ? snapshotVinculo.val() as
+            VinculoBanco
+        : null;
+
+    const unidadesGestor =
+      gestor.vinculo
+        .unidades ||
+      {};
+
+    const permissoes =
+      normalizarPermissoes(
+        corpo.permissoes
+      );
+
+    const vinculoFinal = {
+      ...(vinculoAnterior ||
+        {}),
+
+      localId,
+
+      localNome:
+        dadosLocal.nome ||
+        gestor.vinculo
+          .localNome ||
+        localId,
+
+      localSlug:
+        dadosLocal.slug ||
+        gestor.vinculo
+          .localSlug ||
+        undefined,
+
+      tipoLocal:
+        dadosLocal.tipoLocal ||
+        dadosLocal.tipo ||
+        "residencia",
+
+      /*
+       * "morador" permanece apenas como perfil
+       * t?cnico de compatibilidade do Core.
+       * A experi?ncia da resid?ncia ser?
+       * controlada pelas permiss?es abaixo.
+       */
+      perfilPrincipal:
+        "morador",
+
+      perfis: {
+        ...(vinculoAnterior
+          ?.perfis ||
+          {}),
+
+        morador:
+          true,
+      },
+
+      unidades: {
+        ...(vinculoAnterior
+          ?.unidades ||
+          {}),
+
+        ...unidadesGestor,
+      },
+
+      permissoes: {
+        ...(vinculoAnterior
+          ?.permissoes ||
+          {}),
+
+        ...permissoes,
+      },
+
+      ativo:
+        true,
+
+      criadoEm:
+        vinculoAnterior
+          ?.criadoEm ||
+        agora,
+
+      atualizadoEm:
+        agora,
+    };
+
+    const statusConvite =
+      resultadoPessoa
+        .criadoNoAuthentication
+        ? "pendente"
+        : "vinculado";
+
+    await database
+      .ref()
+      .update({
+        [`usuarios-v2/${uid}/locais/${localId}`]:
+          vinculoFinal,
+
+        [`usuarios-v2/${uid}/atualizadoEm`]:
+          agora,
+
+        [`convites-v2/${uid}/${localId}`]:
+          {
+            localId,
+
+            localNome:
+              vinculoFinal
+                .localNome,
+
+            email,
+
+            status:
+              statusConvite,
+
+            criadoPor:
+              gestor.uid,
+
+            criadoEm:
+              agora,
+
+            atualizadoEm:
+              agora,
+
+            emailEnviado:
+              false,
+
+            dispositivoCadastrado:
+              false,
+
+            pushAtivo:
+              false,
+          },
+      });
+
+    return NextResponse.json({
+      sucesso:
+        true,
+
+      uid,
+
+      reutilizado:
+        resultadoPessoa
+          .reutilizado,
+
+      encontradoPor:
+        resultadoPessoa
+          .encontradoPor,
+
+      statusConvite,
+
+      mensagem:
+        resultadoPessoa
+          .criadoNoAuthentication
+          ? "Pessoa cadastrada e convite preparado."
+          : "Pessoa existente reutilizada e vinculada ? resid?ncia.",
+    });
+  } catch (erro) {
+    console.error(
+      "Erro ao adicionar familiar:",
+      erro
+    );
+
+    return NextResponse.json(
+      {
+        sucesso:
+          false,
+
+        mensagem:
+          erro instanceof Error
+            ? erro.message
+            : "N?o foi poss?vel adicionar a pessoa.",
+      },
+      {
+        status:
+          400,
+      }
+    );
+  }
+}

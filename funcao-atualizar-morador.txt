@@ -1,0 +1,100 @@
+﻿
+      alert(
+        "Erro ao cadastrar morador."
+      );
+    } finally {
+      setSalvandoMorador(
+        false
+      );
+    }
+  }
+
+async function atualizarMoradorCadastrado(
+  moradorId: string,
+  dados: {
+    nome: string;
+    telefone: string;
+    email?: string;
+    prioridade: number;
+    recebeChamadas: boolean;
+    podeAbrirPortao: boolean;
+    status: string;
+  }
+) {
+  if (!moradorId) {
+    throw new Error(
+      "Morador nao informado."
+    );
+  }
+
+  const nome =
+    dados.nome.trim();
+
+  const telefone =
+    dados.telefone.trim();
+
+  if (!nome) {
+    throw new Error(
+      "Informe o nome do morador."
+    );
+  }
+
+  if (!telefone) {
+    throw new Error(
+      "Informe o telefone do morador."
+    );
+  }
+
+  await update(
+    ref(
+      db,
+      `qrCentral/moradores/${moradorId}`
+    ),
+    {
+      nome:
+        formatarNome(nome),
+
+      telefone,
+
+      email:
+        dados.email?.trim() || "",
+
+      prioridade:
+        Number(dados.prioridade),
+
+      ordemAtendimento:
+        Number(dados.prioridade),
+
+      recebeChamadas:
+        dados.recebeChamadas,
+
+      podeAbrirPortao:
+        dados.podeAbrirPortao,
+
+      status:
+        dados.status,
+
+      atualizadoEm:
+        new Date().toISOString(),
+
+      ultimoStatusEm:
+        Date.now(),
+    }
+  );
+}
+
+  const atualizacoesDoLocal =
+    useMemo(
+      () =>
+        atualizacoesCadastrais
+          .filter((item) => {
+            const candidatos = [
+              item.condominioId,
+              item.condominioSlug,
+            ]
+              .filter(Boolean)
+              .map((valor) =>
+                String(valor)
+                  .trim()
+                  .toLowerCase()
+              );

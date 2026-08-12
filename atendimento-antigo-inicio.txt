@@ -1,0 +1,730 @@
+﻿"use client";
+
+import { useEffect, useRef, useState } from "react";
+import { useParams, useSearchParams } from "next/navigation";
+import { getToken } from "firebase/messaging";
+import { ref, onValue, update, remove, push, set, get } from "firebase/database";
+import { db, messagingPromise } from "../../services/firebase";
+import { useLocalAtual } from "@/app/hooks/useLocalAtual";
+import {
+  listarResponsaveisDaUnidade,
+  recusarEEncaminhar,
+  registrarAtendimentoDoResponsavel,
+} from "@/app/services/chamadas/MotorEscalonamento";
+type MensagemConversa = {
+  id?: string;
+  autor: "visitante" | "morador";
+  tipo: "texto" | "audio";
+  texto?: string;
+  audioBase64?: string;
+  criadoEm: number;
+};
+
+type ComunicadoMorador = {
+  id: string;
+  condominioId: string;
+  condominioNome: string;
+  tipo: "comunicado" | "assembleia" | "manutencao" | "emergencia";
+  destinatario?:
+    | "unidade"
+    | "bloco"
+    | "moradores"
+    | "proprietarios"
+    | "inquilinos"
+    | "conselho"
+    | "administradora"
+    | "zeladoria"
+    | "portaria";
+  unidadeId?: string;
+  blocoSelecionado?: string;
+  unidadesDestinatarias?: string[];
+  titulo: string;
+  mensagem: string;
+  detalhesModelo?: {
+    dataEvento?: string;
+    horarioEvento?: string;
+    localEvento?: string;
+    pauta?: string;
+    empresaResponsavel?: string;
+    impactoPrevisto?: string;
+    tipoEmergencia?: string;
+    orientacaoImediata?: string;
+  };
+  exigeCiencia?: boolean;
+  exigirCiencia?: boolean;
+  status: "enviado" | "agendado";
+  criadoEm: number;
+  criadoEmFormatado: string;
+  visualizacoes?: Record<
+    string,
+    {
+      unidadeId: string;
+      visualizadoEm?: number;
+      ciente?: boolean;
+      cienteEm?: number;
+    }
+  >;
+};
+
+function blobParaBase64(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
+
+function ordenarMensagens(mensagens?: Record<string, MensagemConversa>) {
+  if (!mensagens) return [];
+
+  return Object.entries(mensagens)
+    .map(([id, mensagem]) => ({ id, ...mensagem }))
+    .sort((a, b) => (a.criadoEm || 0) - (b.criadoEm || 0));
+}
+
+function formatarDataComunicado(data?: string) {
+  if (!data) return "";
+
+  const [ano, mes, dia] = data.split("-");
+  if (!ano || !mes || !dia) return data;
+
+  return `${dia}/${mes}/${ano}`;
+}
+
+function iconeTipoComunicado(tipo: ComunicadoMorador["tipo"]) {
+  if (tipo === "assembleia") return "ðŸ‘¥";
+  if (tipo === "manutencao") return "ðŸ› ï¸";
+  if (tipo === "emergencia") return "ðŸš¨";
+  return "ðŸ“¢";
+}
+
+function textoTipoComunicado(tipo: ComunicadoMorador["tipo"]) {
+  if (tipo === "assembleia") return "ASSEMBLEIA";
+  if (tipo === "manutencao") return "MANUTENÃ‡ÃƒO";
+  if (tipo === "emergencia") return "EMERGÃŠNCIA";
+  return "COMUNICADO";
+}
+
+export default function MoradorV2() {
+  const params = useParams();
+  const searchParams = useSearchParams();
+  const comunicadoIdPeloLink = searchParams.get("comunicado") || "";
+
+  const slug = String(
+    params?.unidadeId ||
+      params?.slug ||
+      params?.id ||
+      params?.unidade ||
+      "qr1"
+  );
+
+  const [nome, setNome] = useState("Nenhuma solicitaÃ§Ã£o");
+  const [motivo, setMotivo] = useState("Aguardando visitante");
+  const [status, setStatus] = useState("Sem chamado ativo");
+  const [horaChamada, setHoraChamada] = useState("");
+  const [modo, setModo] = useState("");
+  const [mensagemResponsavel, setMensagemResponsavel] = useState("");
+  const [historicoLista, setHistoricoLista] = useState<any[]>([]);
+  const [avisoAuto, setAvisoAuto] = useState("");
+  const [online, setOnline] = useState(true);
+  const [fotoCameraAtual, setFotoCameraAtual] = useState("");
+  const [fotoCameraAtualizadaEm, setFotoCameraAtualizadaEm] = useState(Date.now());
+  const [capturandoCamera, setCapturandoCamera] = useState(false);
+  const [abrindoPortao, setAbrindoPortao] = useState(false);
+  const [statusPortao, setStatusPortao] = useState("");
+  const [visitanteVisualizou, setVisitanteVisualizou] = useState(false);
+  const [audioVisitante, setAudioVisitante] = useState("");
+  const [mensagensConversa, setMensagensConversa] = useState<MensagemConversa[]>([]);
+  const [gravandoAudioMorador, setGravandoAudioMorador] = useState(false);
+  const [audioRespostaBlob, setAudioRespostaBlob] = useState<Blob | null>(null);
+  const [enviandoAudioMorador, setEnviandoAudioMorador] = useState(false);
+  const [popupAtendimentoAberto, setPopupAtendimentoAberto] = useState(false);
+  const [mostrarHistorico, setMostrarHistorico] = useState(false);
+  const [mostrarCameraGrande, setMostrarCameraGrande] = useState(false);
+  const [audioPopup, setAudioPopup] = useState<{ titulo: string; audio: string } | null>(null);
+  const [installPrompt, setInstallPrompt] = useState<any>(null);
+  const [appInstalavel, setAppInstalavel] = useState(false);
+  const [comunicados, setComunicados] = useState<ComunicadoMorador[]>([]);
+  const [comunicadoAberto, setComunicadoAberto] =
+    useState<ComunicadoMorador | null>(null);
+  const [salvandoCiencia, setSalvandoCiencia] = useState(false);
+
+  const intervaloSomRef = useRef<NodeJS.Timeout | null>(null);
+  const finalizacaoAutoRef = useRef<NodeJS.Timeout | null>(null);
+  const ultimaCapturaCameraRef = useRef("");
+  const ultimoAudioPopupRef = useRef("");
+  const toqueSilenciadoPorAudioRef = useRef(false);
+  const idChamadaAtualRef = useRef("");
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const ultimaChamadaAtivaRef = useRef(false);
+  const ultimaChamadaDadosRef = useRef<any>(null);
+  const mediaRecorderMoradorRef = useRef<MediaRecorder | null>(null);
+  const audioChunksMoradorRef = useRef<Blob[]>([]);
+
+  function identificarCondominioPeloSlug(unidadeSlug: string) {
+    const valor = unidadeSlug.toLowerCase();
+
+    if (valor.includes("residencial-costa")) {
+      return "residencial-costa";
+    }
+
+    if (valor.includes("tulipas")) return "cnd-tulipas";
+    if (valor.includes("flores")) return "cnd-flores";
+    if (valor.includes("alfa")) return "cnd-alfa";
+
+    return "cnd-tulipas";
+  }
+
+  const {
+  localId,
+  localNome,
+  ehResidencia,
+} = useLocalAtual(slug);
+
+const condominioId =
+  localId || identificarCondominioPeloSlug(slug);
+
+const nomeLocal =
+  localNome || "Morador V2";
+
+  const caminhoComunicados = `comunicados-v2/${condominioId}`;
+  const caminhoFirebase = `unidades-v2/${slug}/chamada`;
+  const caminhoHistorico = `historico-v2/${slug}`;
+  const caminhoStatus = `status-v2/${slug}`;
+  const caminhoLogs = `logs-v2/${slug}`;
+  const caminhoAnalytics = `analytics-v2/${slug}`;
+
+  const TEMPO_AGUARDANDO = 2 * 60 * 1000;
+  const TEMPO_EM_ATENDIMENTO = 1 * 60 * 1000;
+
+  const chamadaAtiva =
+    nome !== "Nenhuma solicitaÃ§Ã£o" &&
+    status !== "Sem chamado ativo" &&
+    status !== "Encerrado";
+
+  const aguardandoAtendimento = status === "Aguardando atendimento";
+  const atendimentoEmAndamento = status === "Em atendimento";
+  const mostrarPopupChamada = chamadaAtiva && popupAtendimentoAberto && aguardandoAtendimento;
+
+  async function registrarLog(tipo: string, detalhes: string) {
+    try {
+      const novoLog = push(ref(db, caminhoLogs));
+
+      await set(novoLog, {
+        tipo,
+        detalhes,
+        unidade: slug,
+        timestamp: new Date().toISOString(),
+        nomeAtual: nome,
+        statusAtual: status,
+        navegador:
+          typeof navigator !== "undefined" ? navigator.userAgent : "indisponivel",
+      });
+    } catch (erro) {
+      console.error("Erro ao salvar log:", erro);
+    }
+  }
+
+  async function registrarAnalytics(evento: string) {
+    try {
+      const referencia = ref(db, caminhoAnalytics);
+      const snapshot = await get(referencia);
+
+      const dados = snapshot.val() || {
+        recebidas: 0,
+        atendidas: 0,
+        finalizadas: 0,
+        timeouts: 0,
+        falhas: 0,
+      };
+
+      if (evento === "recebida") dados.recebidas++;
+      if (evento === "atendida") dados.atendidas++;
+      if (evento === "finalizada") dados.finalizadas++;
+      if (evento === "timeout") dados.timeouts++;
+      if (evento === "falha") dados.falhas++;
+
+      await update(referencia, dados);
+    } catch (erro) {
+      console.error("Erro analytics:", erro);
+    }
+  }
+
+  useEffect(() => {
+    const referenciaComunicados = ref(db, caminhoComunicados);
+
+    const pararDeOuvirComunicados = onValue(
+      referenciaComunicados,
+      (snapshot) => {
+        const dados = snapshot.val();
+
+        if (!dados) {
+          setComunicados([]);
+          return;
+        }
+
+        const agora = Date.now();
+
+        const lista = Object.entries(dados)
+          .map(([id, valor]) => ({
+            id,
+            ...(valor as Omit<ComunicadoMorador, "id">),
+          }))
+          .filter((comunicado) => {
+            const estaDisponivel =
+              comunicado.status === "enviado" ||
+              (comunicado.status === "agendado" &&
+                comunicado.criadoEm <= agora);
+
+            if (!estaDisponivel) return false;
+
+            // Compatibilidade com comunicados antigos, criados antes da
+            // separaÃ§Ã£o por pÃºblico: continuam aparecendo para os moradores.
+            if (!comunicado.destinatario) return true;
+
+            if (comunicado.destinatario === "moradores") return true;
+
+            if (comunicado.destinatario === "unidade") {
+              return (
+                comunicado.unidadeId === slug ||
+                comunicado.unidadesDestinatarias?.includes(slug) === true
+              );
+            }
+
+            if (comunicado.destinatario === "bloco") {
+              return comunicado.unidadesDestinatarias?.includes(slug) === true;
+            }
+
+            // PÃºblicos prÃ³prios nÃ£o devem aparecer no painel comum do morador.
+            return false;
+          })
+          .sort((a, b) => (b.criadoEm || 0) - (a.criadoEm || 0));
+
+        setComunicados(lista);
+      }
+    );
+
+    return () => pararDeOuvirComunicados();
+  }, [caminhoComunicados]);
+
+  useEffect(() => {
+    if (!comunicadoIdPeloLink || comunicados.length === 0) return;
+
+    const comunicadoDoLink = comunicados.find(
+      (item) => item.id === comunicadoIdPeloLink
+    );
+
+    if (!comunicadoDoLink) return;
+
+    abrirComunicado(comunicadoDoLink);
+  }, [comunicadoIdPeloLink, comunicados]);
+
+  async function abrirComunicado(comunicado: ComunicadoMorador) {
+    setComunicadoAberto(comunicado);
+
+    const visualizacaoAtual =
+      comunicado.visualizacoes?.[slug]?.visualizadoEm;
+
+    if (visualizacaoAtual) return;
+
+    try {
+      await update(
+        ref(
+          db,
+          `${caminhoComunicados}/${comunicado.id}/visualizacoes/${slug}`
+        ),
+        {
+          unidadeId: slug,
+          visualizadoEm: Date.now(),
+          ciente: comunicado.visualizacoes?.[slug]?.ciente === true,
+        }
+      );
+    } catch (erro) {
+      console.error("Erro ao registrar visualizaÃ§Ã£o:", erro);
+    }
+  }
+
+  async function confirmarCiencia() {
+    if (!comunicadoAberto || salvandoCiencia) return;
+
+    try {
+      setSalvandoCiencia(true);
+
+      await update(
+        ref(
+          db,
+          `${caminhoComunicados}/${comunicadoAberto.id}/visualizacoes/${slug}`
+        ),
+        {
+          unidadeId: slug,
+          visualizadoEm:
+            comunicadoAberto.visualizacoes?.[slug]?.visualizadoEm ||
+            Date.now(),
+          ciente: true,
+          cienteEm: Date.now(),
+        }
+      );
+
+      setComunicadoAberto(null);
+      alert("Sua ciÃªncia foi registrada com sucesso.");
+    } catch (erro) {
+      console.error("Erro ao registrar ciÃªncia:", erro);
+      alert("NÃ£o foi possÃ­vel registrar sua ciÃªncia.");
+    } finally {
+      setSalvandoCiencia(false);
+    }
+  }
+
+  useEffect(() => {
+    const referenciaStatus = ref(db, caminhoStatus);
+
+    const pararDeOuvirStatus = onValue(referenciaStatus, (snapshot) => {
+      const dados = snapshot.val();
+      if (dados && typeof dados.online === "boolean") {
+        setOnline(dados.online);
+      }
+    });
+
+    return () => pararDeOuvirStatus();
+  }, [caminhoStatus]);
+
+  useEffect(() => {
+    const referenciaHistorico = ref(db, caminhoHistorico);
+
+    const pararDeOuvirHistorico = onValue(referenciaHistorico, (snapshot) => {
+      const dados = snapshot.val();
+
+      if (!dados) {
+        setHistoricoLista([]);
+        return;
+      }
+
+      const lista = Object.values(dados) as any[];
+
+      const listaOrdenada = lista
+        .sort((a, b) => {
+          const dataA = new Date(a.finalizadoEm || 0).getTime();
+          const dataB = new Date(b.finalizadoEm || 0).getTime();
+          return dataB - dataA;
+        })
+        .slice(0, 10);
+
+      setHistoricoLista(listaOrdenada);
+    });
+
+    return () => pararDeOuvirHistorico();
+  }, [caminhoHistorico]);
+
+  useEffect(() => {
+    const referencia = ref(db, caminhoFirebase);
+
+    const pararDeOuvir = onValue(referencia, async (snapshot) => {
+      const dados = snapshot.val();
+
+      limparFinalizacaoAutomatica();
+
+      if (!dados) {
+        if (ultimaChamadaAtivaRef.current && ultimaChamadaDadosRef.current) {
+          await registrarAnalytics("falha");
+          await registrarLog(
+            "chamada_cancelada_visitante",
+            "Visitante cancelou antes do atendimento"
+          );
+          await salvarHistoricoComDados(
+            "Cancelada pelo visitante",
+            ultimaChamadaDadosRef.current
+          );
+        }
+
+        ultimaChamadaAtivaRef.current = false;
+        ultimaChamadaDadosRef.current = null;
+
+        setNome("Nenhuma solicitaÃ§Ã£o");
+        setMotivo("Aguardando visitante");
+        setStatus("Sem chamado ativo");
+        setHoraChamada("");
+        setModo("");
+        setMensagemResponsavel("");
+        setVisitanteVisualizou(false);
+        setAudioVisitante("");
+        ultimoAudioPopupRef.current = "";
+        setAudioPopup(null);
+        setMensagensConversa([]);
+        setAudioRespostaBlob(null);
+        setAvisoAuto("");
+        setPopupAtendimentoAberto(false);
+        toqueSilenciadoPorAudioRef.current = false;
+        idChamadaAtualRef.current = "";
+        pararToqueContinuo();
+        return;
+      }
+
+      ultimaChamadaAtivaRef.current = true;
+      ultimaChamadaDadosRef.current = dados;
+
+      setNome(dados.nome || "Nenhuma solicitaÃ§Ã£o");
+      setMotivo(dados.motivo || "Aguardando visitante");
+      setStatus(dados.status || "Sem chamado ativo");
+      setHoraChamada(
+        dados.criadoEm ? new Date(dados.criadoEm).toLocaleString("pt-BR") : ""
+      );
+      setModo(dados.modo || "");
+      setMensagemResponsavel(dados.mensagemResponsavel || "");
+
+      const idChamadaAtual =
+        String(dados.criadoEm || "") ||
+        `${dados.nome || ""}-${dados.motivo || ""}`;
+
+      if (
+        idChamadaAtual &&
+        idChamadaAtualRef.current !== idChamadaAtual
+      ) {
+        idChamadaAtualRef.current = idChamadaAtual;
+        toqueSilenciadoPorAudioRef.current = false;
+      }
+      setVisitanteVisualizou(
+        dados.visitanteVisualizou === true ||
+          dados.mensagemVisualizada === true ||
+          dados.visualizadoPeloVisitante === true
+      );
+
+      const mensagensOrdenadas = ordenarMensagens(dados.mensagens);
+      setMensagensConversa(mensagensOrdenadas);
+
+      const ultimoAudioVisitante = [...mensagensOrdenadas]
+        .reverse()
+        .find(
+          (item) =>
+            item.autor === "visitante" &&
+            item.tipo === "audio" &&
+            Boolean(item.audioBase64)
+        );
+
+      const audioVisitanteAtual = ultimoAudioVisitante?.audioBase64 || dados.audioBase64 || "";
+      setAudioVisitante(audioVisitanteAtual);
+
+      if (audioVisitanteAtual && ultimoAudioPopupRef.current !== audioVisitanteAtual) {
+        ultimoAudioPopupRef.current = audioVisitanteAtual;
+
+        setAudioPopup({
+          titulo: "ðŸŽ™ï¸ Novo Ã¡udio do visitante",
+          audio: audioVisitanteAtual,
+        });
+      }
+
+      if (dados.status === "Encerrado") {
+        ultimaChamadaAtivaRef.current = false;
+        ultimaChamadaDadosRef.current = null;
+
+        pararToqueContinuo();
+        setPopupAtendimentoAberto(false);
+        setAvisoAuto("Atendimento encerrado. Limpando em instantes.");
+        return;
+      }
+
+      const deveTocar =
+        dados.notificar === true &&
+        dados.status === "Aguardando atendimento" &&
+        !toqueSilenciadoPorAudioRef.current;
+
+      if (deveTocar) {
+        iniciarToqueContinuo();
+        setPopupAtendimentoAberto(true);
+
+        const idChamada = dados.criadoEm || dados.nome || "";
+
+        if (idChamada && ultimaCapturaCameraRef.current !== idChamada) {
+          ultimaCapturaCameraRef.current = idChamada;
+
+          registrarAnalytics("recebida");
+          registrarLog("chamada_recebida", "Nova chamada recebida no painel");
+
+          capturarFotoCamera();
+        }
+      } else {
+        pararToqueContinuo();
+      }
+
+      programarFinalizacaoAutomatica(dados);
+    });
+
+    return () => {
+      limparFinalizacaoAutomatica();
+      pararToqueContinuo();
+      pararDeOuvir();
+    };
+  }, [caminhoFirebase]);
+
+  async function capturarFotoCamera() {
+    setCapturandoCamera(true);
+
+    try {
+      await registrarLog("camera_tentativa", "Tentando capturar foto da cÃ¢mera");
+
+      const resposta = await fetch(`/api/capturar-camera?cache=${Date.now()}`);
+      const dados = await resposta.json();
+
+      if (dados.sucesso && dados.imagem) {
+        setFotoCameraAtual(dados.imagem);
+        setFotoCameraAtualizadaEm(Date.now());
+
+        await registrarLog(
+          "camera_sucesso",
+          "Foto da cÃ¢mera capturada com sucesso"
+        );
+      } else {
+        await registrarLog("erro_camera", "A cÃ¢mera nÃ£o retornou imagem vÃ¡lida");
+        console.log("A cÃ¢mera nÃ£o retornou imagem.");
+      }
+    } catch (erro) {
+      console.error("Erro ao capturar foto da cÃ¢mera:", erro);
+
+      await registrarLog(
+        "erro_camera",
+        "Erro ao atualizar foto da cÃ¢mera: " + String(erro)
+      );
+
+      alert("Erro ao atualizar foto da cÃ¢mera.");
+    }
+
+    setCapturandoCamera(false);
+  }
+
+  async function salvarHistoricoComDados(tipoFinalizacao: string, dados: any) {
+    if (!dados || !dados.nome) return;
+
+    const agora = new Date();
+
+    const novoRegistro = {
+      nome: dados.nome || "Visitante",
+      motivo: dados.motivo || "NÃ£o informado",
+      modo: dados.modo || "",
+      statusFinal: dados.status || "Sem status",
+      tipoFinalizacao,
+      chamadoEm: dados.criadoEm
+        ? new Date(dados.criadoEm).toLocaleString("pt-BR")
+        : "",
+      finalizadoEm: agora.toISOString(),
+      finalizadoEmFormatado: agora.toLocaleString("pt-BR"),
+      fotoCamera: fotoCameraAtual || "",
+    };
+
+    const novoItem = push(ref(db, caminhoHistorico));
+    await set(novoItem, novoRegistro);
+  }
+
+  async function salvarHistorico(tipoFinalizacao: string) {
+    if (nome === "Nenhuma solicitaÃ§Ã£o") return;
+
+    const agora = new Date();
+
+    const novoRegistro = {
+      nome,
+      motivo,
+      modo,
+      statusFinal: status,
+      tipoFinalizacao,
+      chamadoEm: horaChamada,
+      finalizadoEm: agora.toISOString(),
+      finalizadoEmFormatado: agora.toLocaleString("pt-BR"),
+      fotoCamera: fotoCameraAtual || "",
+    };
+
+    const novoItem = push(ref(db, caminhoHistorico));
+    await set(novoItem, novoRegistro);
+  }
+
+  function programarFinalizacaoAutomatica(dados: any) {
+    if (dados.status === "Encerrado") return;
+
+    const agora = Date.now();
+
+    let tempoLimite = TEMPO_AGUARDANDO;
+    let dataBase = dados.criadoEm;
+
+    if (dados.status === "Em atendimento") {
+      tempoLimite = TEMPO_EM_ATENDIMENTO;
+      dataBase =
+        dados.ultimaAtividade ||
+        dados.atendidoEm ||
+        dados.criadoEm;
+    }
+
+    if (!dataBase) return;
+
+    const inicio = new Date(dataBase).getTime();
+    const tempoPassado = agora - inicio;
+    const tempoRestante = tempoLimite - tempoPassado;
+
+    if (tempoRestante <= 0) {
+      finalizarAutomaticamente();
+      return;
+    }
+
+    const minutos = Math.ceil(tempoRestante / 60000);
+    setAvisoAuto(`FinalizaÃ§Ã£o automÃ¡tica em atÃ© ${minutos} min.`);
+
+    finalizacaoAutoRef.current = setTimeout(() => {
+      finalizarAutomaticamente();
+    }, tempoRestante);
+  }
+
+  async function finalizarAutomaticamente() {
+    pararToqueContinuo();
+    limparFinalizacaoAutomatica();
+
+    const timeoutAguardando = status === "Aguardando atendimento";
+
+    ultimaChamadaAtivaRef.current = false;
+    setPopupAtendimentoAberto(false);
+    setStatus("Encerrado");
+    setAvisoAuto("Atendimento encerrado. Limpando em instantes.");
+
+    try {
+      await update(ref(db, caminhoFirebase), {
+        status: "Encerrado",
+        mensagemResponsavel: timeoutAguardando
+          ? "Tempo de espera esgotado."
+          : "ATENDIMENTO_ENCERRADO",
+        notificar: false,
+        encerradoEm: new Date().toISOString(),
+      });
+    } catch (erro) {
+      console.error("Erro ao encerrar chamada automaticamente:", erro);
+    }
+
+    ultimaChamadaDadosRef.current = null;
+    setAudioVisitante("");
+    setMensagensConversa([]);
+    setAudioRespostaBlob(null);
+
+    void Promise.allSettled([
+      registrarAnalytics("timeout"),
+      registrarLog(
+        "timeout_atendimento",
+        "Chamada finalizada automaticamente"
+      ),
+      salvarHistorico(timeoutAguardando ? "NÃ£o atendida" : "AutomÃ¡tica"),
+    ]);
+
+    setTimeout(() => {
+      void remove(ref(db, caminhoFirebase)).catch((erro) => {
+        console.error("Erro ao limpar chamada encerrada:", erro);
+      });
+    }, 2000);
+  }
+
+  function limparFinalizacaoAutomatica() {
+    if (finalizacaoAutoRef.current) {
+      clearTimeout(finalizacaoAutoRef.current);
+      finalizacaoAutoRef.current = null;
+    }
+  }
+
+  async function atenderSolicitacao() {
+  if (status === "Sem chamado ativo") {
+    alert("NÃ£o existe chamada ativa para atender.");
+    return;
+  }
+

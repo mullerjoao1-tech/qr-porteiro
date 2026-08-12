@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 
 import {
   type FormEvent,
-  useMemo,
+  useEffect,
+useMemo,
   useState,
 } from "react";
 
@@ -818,7 +819,139 @@ function PaginaStudio() {
     vinculoSelecionadoId ===
     null;
 
-  const locaisOrdenados =
+  const possuiPerfilSindico = useMemo(
+    () =>
+      vinculosAtivos.some(([, vinculo]) => {
+        const perfilPrincipal = (
+          vinculo.perfilPrincipal || ""
+        )
+          .trim()
+          .toLowerCase()
+          .replaceAll("-", "_");
+
+        if (perfilPrincipal === "sindico") {
+          return true;
+        }
+
+        return Object.entries(
+          vinculo.perfis ?? {}
+        ).some(
+          ([perfil, ativo]) =>
+            ativo === true &&
+            perfil
+              .trim()
+              .toLowerCase()
+              .replaceAll("-", "_") === "sindico"
+        );
+      }),
+    [vinculosAtivos]
+  );
+
+  useEffect(() => {
+    if (
+      !usuario ||
+      !isCarteiraGeral ||
+      !possuiPerfilSindico
+    ) {
+      return;
+    }
+
+    selecionarCarteiraGeral();
+    router.replace("/dashboard/condominio");
+  }, [
+    usuario,
+    isCarteiraGeral,
+    possuiPerfilSindico,
+    selecionarCarteiraGeral,
+    router,
+  ]);
+
+  useEffect(() => {
+  if (
+    !usuario ||
+    !isCarteiraGeral ||
+    possuiPerfilSindico ||
+    vinculosAtivos.length !== 1
+  ) {
+    return;
+  }
+
+  const [vinculoId, vinculo] =
+    vinculosAtivos[0];
+
+  const perfilPrincipal = (
+    vinculo.perfilPrincipal || ""
+  )
+    .trim()
+    .toLowerCase()
+    .replaceAll("-", "_");
+
+  const perfisAtivos = Object.entries(
+vinculo.perfis ?? {}
+)
+.filter(([, ativo]) => ativo === true)
+.map(([perfil]) =>
+perfil
+.trim()
+.toLowerCase()
+.replaceAll("-", "_")
+);
+
+const possuiPerfilEntrada =
+perfilPrincipal === "morador" ||
+perfilPrincipal === "proprietario" ||
+perfilPrincipal === "responsavel" ||
+perfisAtivos.includes("morador") ||
+perfisAtivos.includes("proprietario") ||
+perfisAtivos.includes("responsavel");
+
+if (!possuiPerfilEntrada) {
+return;
+}
+
+selecionarVinculo(
+vinculoId
+);
+
+const tipoLocal = (
+vinculo.tipoLocal || ""
+)
+.trim()
+.toLowerCase()
+.replaceAll("-", "_");
+
+if (tipoLocal === "residencia") {
+router.replace("/dashboard/morador");
+return;
+}
+
+const modulosPermitidos =
+obterModulosDashboard(
+usuario,
+vinculoId
+);
+
+const rotaInicial =
+resolverPainelInicial({
+usuario,
+vinculoId,
+vinculo,
+modulosPermitidos,
+});
+
+router.replace(
+rotaInicial
+);
+}, [
+  usuario,
+  isCarteiraGeral,
+  possuiPerfilSindico,
+  vinculosAtivos,
+  selecionarVinculo,
+  router,
+]);
+
+const locaisOrdenados =
     useMemo(
       () =>
         [

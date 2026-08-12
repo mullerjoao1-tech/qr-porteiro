@@ -1,0 +1,442 @@
+﻿import {
+  NextRequest,
+  NextResponse,
+} from "next/server";
+
+import {
+  obterFirebaseAdmin,
+} from "@/app/services/server/firebaseAdmin";
+
+type VinculoBanco = {
+  ativo?: boolean;
+
+  perfilPrincipal?: string;
+
+  perfis?: Record<
+    string,
+    boolean
+  >;
+
+  unidades?: Record<
+    string,
+    boolean
+  >;
+
+  permissoes?: Record<
+    string,
+    boolean
+  >;
+
+  [chave: string]: unknown;
+};
+
+type UsuarioBanco = {
+  uid?: string;
+  nome?: string;
+  email?: string;
+  status?: string;
+
+  locais?: Record<
+    string,
+    VinculoBanco
+  >;
+};
+
+function texto(
+  valor: unknown
+): string {
+  return typeof valor === "string"
+    ? valor.trim()
+    : "";
+}
+
+function normalizarPerfil(
+  valor: unknown
+): string {
+  return texto(valor)
+    .toLowerCase()
+    .replaceAll("-", "_");
+}
+
+function possuiPerfil(
+  vinculo: VinculoBanco,
+  perfil: string
+): boolean {
+  const perfilNormalizado =
+    normalizarPerfil(perfil);
+
+  if (
+    normalizarPerfil(
+      vinculo.perfilPrincipal
+    ) === perfilNormalizado
+  ) {
+    return true;
+  }
+
+  return Object.entries(
+    vinculo.perfis || {}
+  ).some(
+    ([chave, ativo]) =>
+      ativo === true &&
+      normalizarPerfil(chave) ===
+        perfilNormalizado
+  );
+}
+
+async function validarGestorLocal(
+  request: NextRequest,
+  localId: string
+) {
+  const {
+    auth,
+    database,
+  } =
+    obterFirebaseAdmin();
+
+  const authorization =
+    request.headers.get(
+      "authorization"
+    ) || "";
+
+  if (
+    !authorization.startsWith(
+      "Bearer "
+    )
+  ) {
+    throw new Error(
+      "Sessão não encontrada."
+    );
+  }
+
+  const token =
+    authorization.slice(
+      "Bearer ".length
+    );
+
+  const decodificado =
+    await auth.verifyIdToken(
+      token
+    );
+
+  const snapshotUsuario =
+    await database
+      .ref(
+        `usuarios-v2/${decodificado.uid}`
+      )
+      .get();
+
+  if (
+    !snapshotUsuario.exists()
+  ) {
+    throw new Error(
+      "Usuário autenticado não encontrado no QR Core."
+    );
+  }
+
+  const usuario =
+    snapshotUsuario.val() as
+      UsuarioBanco;
+
+  const vinculo =
+    usuario.locais?.[
+      localId
+    ];
+
+  if (
+    !vinculo ||
+    vinculo.ativo === false
+  ) {
+    throw new Error(
+      "Você não possui vínculo ativo com este local."
+    );
+  }
+
+  const autorizado =
+    possuiPerfil(
+      vinculo,
+      "administrador_master"
+    ) ||
+    possuiPerfil(
+      vinculo,
+      "sindico"
+    ) ||
+    possuiPerfil(
+      vinculo,
+      "gestor_local"
+    );
+
+  if (!autorizado) {
+    throw new Error(
+      "Você não possui permissão para gerenciar moradores deste local."
+    );
+  }
+
+  return {
+    uid:
+      decodificado.uid,
+
+    database,
+  };
+}
+
+async function localizarUsuarioUniversal(
+  database: ReturnType<
+    typeof obterFirebaseAdmin
+  >["database"],
+  emailInformado: string
+) {
+  const email =
+    emailInformado
+      .trim()
+      .toLowerCase();
+
+  if (!email) {
+    throw new Error(
+      "O morador precisa possuir e-mail para localizar sua identidade universal."
+    );
+  }
+
+  const snapshot =
+    await database
+      .ref(
+        "usuarios-v2"
+      )
+      .get();
+
+  if (
+    !snapshot.exists()
+  ) {
+    throw new Error(
+      "Nenhum usuário universal encontrado."
+    );
+  }
+
+  const usuarios =
+    snapshot.val() as Record<
+      string,
+      UsuarioBanco
+    >;
+
+  const encontrado =
+    Object.entries(
+      usuarios
+    ).find(
+      ([, usuario]) =>
+        texto(
+          usuario.email
+        )
+          .toLowerCase() ===
+        email
+    );
+
+  if (!encontrado) {
+    throw new Error(
+      "Não foi possível localizar este morador no Cadastro Universal pelo e-mail."
+    );
+  }
+
+  return {
+    uid:
+      encontrado[0],
+
+    usuario:
+      encontrado[1],
+  };
+}
+
+export async function PATCH(
+  request: NextRequest
+) {
+  try {
+    const corpo =
+      (await request.json()) as {
+        localId?: string;
+
+        moradorId?: string;
+
+        email?: string;
+
+        permissoes?: {
+          receberChamadas?: boolean;
+          abrirPortao?: boolean;
+          visualizarCameras?: boolean;
+          controlarAlarme?: boolean;
+        };
+      };
+
+    const localId =
+      texto(
+        corpo.localId
+      );
+
+    const moradorId =
+      texto(
+        corpo.moradorId
+      );
+
+    const email =
+      texto(
+        corpo.email
+      );
+
+    if (!localId) {
+      throw new Error(
+        "Local não informado."
+      );
+    }
+
+    if (!moradorId) {
+      throw new Error(
+        "Morador não informado."
+      );
+    }
+
+    const gestor =
+      await validarGestorLocal(
+        request,
+        localId
+      );
+
+    const encontrado =
+      await localizarUsuarioUniversal(
+        gestor.database,
+        email
+      );
+
+    const uid =
+      encontrado.uid;
+
+    const snapshotVinculo =
+      await gestor.database
+        .ref(
+          `usuarios-v2/${uid}/locais/${localId}`
+        )
+        .get();
+
+    if (
+      !snapshotVinculo.exists()
+    ) {
+      throw new Error(
+        "O usuário existe no Cadastro Universal, mas não possui vínculo com este local."
+      );
+    }
+
+    const vinculo =
+      snapshotVinculo.val() as
+        VinculoBanco;
+
+    const permissoesAtuais =
+      vinculo.permissoes ||
+      {};
+
+    const novasPermissoes = {
+      ...permissoesAtuais,
+
+      receberChamadas:
+        corpo.permissoes
+          ?.receberChamadas ===
+        true,
+
+      abrirPortao:
+        corpo.permissoes
+          ?.abrirPortao ===
+        true,
+
+      visualizarCameras:
+        corpo.permissoes
+          ?.visualizarCameras ===
+        true,
+
+      controlarAlarme:
+        corpo.permissoes
+          ?.controlarAlarme ===
+        true,
+    };
+
+    const agora =
+      Date.now();
+
+    const atualizacoes:
+      Record<string, unknown> =
+      {
+        [`usuarios-v2/${uid}/locais/${localId}/permissoes`]:
+          novasPermissoes,
+
+        [`usuarios-v2/${uid}/locais/${localId}/atualizadoEm`]:
+          agora,
+
+        [`usuarios-v2/${uid}/atualizadoEm`]:
+          agora,
+
+        [`qrCentral/moradores/${moradorId}/usuarioUid`]:
+          uid,
+
+        [`qrCentral/moradores/${moradorId}/atualizadoEmUniversal`]:
+          agora,
+      };
+
+    /*
+     * Compatibilidade temporária:
+     * se existir o espelho antigo
+     * condominios/{localId},
+     * mantém permissões sincronizadas.
+     */
+    const snapshotCondominio =
+      await gestor.database
+        .ref(
+          `usuarios-v2/${uid}/condominios/${localId}`
+        )
+        .get();
+
+    if (
+      snapshotCondominio.exists()
+    ) {
+      atualizacoes[
+        `usuarios-v2/${uid}/condominios/${localId}/permissoes`
+      ] =
+        novasPermissoes;
+
+      atualizacoes[
+        `usuarios-v2/${uid}/condominios/${localId}/atualizadoEm`
+      ] =
+        agora;
+    }
+
+    await gestor.database
+      .ref()
+      .update(
+        atualizacoes
+      );
+
+    return NextResponse.json({
+      sucesso: true,
+
+      uid,
+
+      permissoes:
+        novasPermissoes,
+
+      mensagem:
+        "Permissões atualizadas com sucesso.",
+    });
+  } catch (erro) {
+    console.error(
+      "Erro ao atualizar permissões universais:",
+      erro
+    );
+
+    return NextResponse.json(
+      {
+        sucesso: false,
+
+        mensagem:
+          erro instanceof Error
+            ? erro.message
+            : "Não foi possível atualizar as permissões.",
+      },
+      {
+        status: 400,
+      }
+    );
+  }
+}

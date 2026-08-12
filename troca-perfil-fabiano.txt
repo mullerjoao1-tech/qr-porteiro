@@ -1,0 +1,1725 @@
+﻿
+  app\acesso-v2\[condominioId]\page.tsx:6:import { db } from "../../services/firebase";
+  app\acesso-v2\[condominioId]\page.tsx:7:
+  app\acesso-v2\[condominioId]\page.tsx:8:type MensagemConversa = {
+> app\acesso-v2\[condominioId]\page.tsx:9:  autor: "visitante" | "morador";
+  app\acesso-v2\[condominioId]\page.tsx:10:  tipo: "texto" | "audio";
+  app\acesso-v2\[condominioId]\page.tsx:11:  texto?: string;
+  app\acesso-v2\[condominioId]\page.tsx:12:  audioBase64?: string;
+  app\acesso-v2\[condominioId]\page.tsx:13:  criadoEm: number;
+  app\acesso-v2\[condominioId]\page.tsx:14:};
+  app\acesso-v2\[condominioId]\page.tsx:15:
+  app\acesso-v2\[condominioId]\page.tsx:16:type MensagemConversaComId = MensagemConversa & {
+  app\acesso-v2\[condominioId]\page.tsx:17:  id: string;
+  app\acesso-v2\[condominioId]\page.tsx:37:    mensagemRapida?: string;
+  app\acesso-v2\[condominioId]\page.tsx:38:    respostaRapida?: string;
+  app\acesso-v2\[condominioId]\page.tsx:39:    resposta?: string;
+> app\acesso-v2\[condominioId]\page.tsx:40:    mensagemMorador?: string;
+  app\acesso-v2\[condominioId]\page.tsx:41:    mensagemResponsavel?: string;
+  app\acesso-v2\[condominioId]\page.tsx:42:    enviadoEm?: number;
+  app\acesso-v2\[condominioId]\page.tsx:43:    ultimaAtividade?: number;
+  app\acesso-v2\[condominioId]\page.tsx:44:    audioBase64?: string;
+  app\acesso-v2\[condominioId]\page.tsx:45:    mensagens?: Record<string, MensagemConversa>;
+  app\acesso-v2\[condominioId]\page.tsx:46:  };
+  app\acesso-v2\[condominioId]\page.tsx:47:};
+  app\acesso-v2\[condominioId]\page.tsx:48:
+  app\acesso-v2\[condominioId]\page.tsx:301:
+  app\acesso-v2\[condominioId]\page.tsx:302:      setMensagensConversa(todasAsMensagens);
+  app\acesso-v2\[condominioId]\page.tsx:303:
+> app\acesso-v2\[condominioId]\page.tsx:304:      const mensagensMorador = todasAsMensagens.filter(
+> app\acesso-v2\[condominioId]\page.tsx:305:        (item) => item.autor === "morador"
+  app\acesso-v2\[condominioId]\page.tsx:306:      );
+  app\acesso-v2\[condominioId]\page.tsx:307:
+> app\acesso-v2\[condominioId]\page.tsx:308:      const ultimaMensagemMorador =
+> app\acesso-v2\[condominioId]\page.tsx:309:        mensagensMorador.length > 0
+> app\acesso-v2\[condominioId]\page.tsx:310:          ? mensagensMorador[mensagensMorador.length - 1]
+  app\acesso-v2\[condominioId]\page.tsx:311:          : null;
+  app\acesso-v2\[condominioId]\page.tsx:312:
+> app\acesso-v2\[condominioId]\page.tsx:313:      if (ultimaMensagemMorador) {
+> app\acesso-v2\[condominioId]\page.tsx:314:        const item = ultimaMensagemMorador;
+  app\acesso-v2\[condominioId]\page.tsx:315:        const idMensagem = `${item.id}-${item.criadoEm || ""}`;
+  app\acesso-v2\[condominioId]\page.tsx:316:
+  app\acesso-v2\[condominioId]\page.tsx:317:        if (idMensagem !== ultimoPopupRef.current) {
+  app\acesso-v2\[condominioId]\page.tsx:318:          ultimoPopupRef.current = idMensagem;
+  app\acesso-v2\[condominioId]\page.tsx:319:
+  app\acesso-v2\[condominioId]\page.tsx:320:          if (item.tipo === "audio" && item.audioBase64) {
+  app\acesso-v2\[condominioId]\page.tsx:321:            setPopupTipo("audio");
+> app\acesso-v2\[condominioId]\page.tsx:322:            setPopupTexto("Você recebeu um áudio do morador.");
+  app\acesso-v2\[condominioId]\page.tsx:323:            setPopupAudioBase64(item.audioBase64);
+  app\acesso-v2\[condominioId]\page.tsx:324:            setPopupAudioFoiOuvido(false);
+  app\acesso-v2\[condominioId]\page.tsx:325:            return;
+  app\acesso-v2\[condominioId]\page.tsx:326:          }
+  app\acesso-v2\[condominioId]\page.tsx:327:
+  app\acesso-v2\[condominioId]\page.tsx:328:          if (item.tipo === "texto" && item.texto) {
+  app\acesso-v2\[condominioId]\page.tsx:329:            setPopupTipo("mensagem");
+  app\acesso-v2\[condominioId]\page.tsx:330:            setPopupAudioBase64("");
+  app\acesso-v2\[condominioId]\page.tsx:340:        chamada.respostaRapida ||
+  app\acesso-v2\[condominioId]\page.tsx:341:        chamada.mensagemResponsavel ||
+  app\acesso-v2\[condominioId]\page.tsx:342:        chamada.resposta ||
+> app\acesso-v2\[condominioId]\page.tsx:343:        chamada.mensagemMorador ||
+  app\acesso-v2\[condominioId]\page.tsx:344:        "";
+  app\acesso-v2\[condominioId]\page.tsx:345:
+  app\acesso-v2\[condominioId]\page.tsx:346:      const idMensagemAntiga = `${textoResposta}-${chamada.enviadoEm || ""}`;
+  app\acesso-v2\[condominioId]\page.tsx:347:
+  app\acesso-v2\[condominioId]\page.tsx:348:      if (
+  app\acesso-v2\[condominioId]\page.tsx:349:        textoResposta &&
+  app\acesso-v2\[condominioId]\page.tsx:350:        idMensagemAntiga !== ultimoPopupRef.current &&
+  app\acesso-v2\[condominioId]\page.tsx:351:        textoResposta !== "ATENDIMENTO_ENCERRADO"
+  app\acesso-v2\[condominioId]\page.tsx:454:          respostaRapida: null,
+  app\acesso-v2\[condominioId]\page.tsx:455:          mensagemResponsavel: null,
+  app\acesso-v2\[condominioId]\page.tsx:456:          resposta: null,
+> app\acesso-v2\[condominioId]\page.tsx:457:          mensagemMorador: null,
+  app\acesso-v2\[condominioId]\page.tsx:458:          enviadoEm: null,
+  app\acesso-v2\[condominioId]\page.tsx:459:        }
+  app\acesso-v2\[condominioId]\page.tsx:460:      );
+  app\acesso-v2\[condominioId]\page.tsx:461:
+  app\acesso-v2\[condominioId]\page.tsx:462:      setEnviando(false);
+  app\acesso-v2\[condominioId]\page.tsx:463:      setDiagnostico("✅ Chamada enviada.");
+  app\acesso-v2\[condominioId]\page.tsx:464:      setMensagem(
+  app\acesso-v2\[condominioId]\page.tsx:465:        `✅ Chamada enviada para ${unidadeNomeAtual}. Aguarde o atendimento.`
+  app\acesso-v2\[condominioId]\page.tsx:643:          respostaRapida: null,
+  app\acesso-v2\[condominioId]\page.tsx:644:          mensagemResponsavel: null,
+  app\acesso-v2\[condominioId]\page.tsx:645:          resposta: null,
+> app\acesso-v2\[condominioId]\page.tsx:646:          mensagemMorador: null,
+  app\acesso-v2\[condominioId]\page.tsx:647:          visualizadoPeloVisitante: false,
+  app\acesso-v2\[condominioId]\page.tsx:648:        });
+  app\acesso-v2\[condominioId]\page.tsx:649:      }
+  app\acesso-v2\[condominioId]\page.tsx:650:
+  app\acesso-v2\[condominioId]\page.tsx:651:      await set(
+  app\acesso-v2\[condominioId]\page.tsx:652:        ref(
+  app\acesso-v2\[condominioId]\page.tsx:653:          db,
+  app\acesso-v2\[condominioId]\page.tsx:654:          `unidades-v2/${unidadeSelecionada.id}/chamada/mensagens/${idMensagem}`
+  app\acesso-v2\[condominioId]\page.tsx:1142:
+  app\acesso-v2\[condominioId]\page.tsx:1143:                <div className="space-y-3">
+  app\acesso-v2\[condominioId]\page.tsx:1144:                  {mensagensConversa.map((item) => {
+> app\acesso-v2\[condominioId]\page.tsx:1145:                    const mensagemMorador = item.autor === "morador";
+  app\acesso-v2\[condominioId]\page.tsx:1146:
+  app\acesso-v2\[condominioId]\page.tsx:1147:                    return (
+  app\acesso-v2\[condominioId]\page.tsx:1148:                      <div
+  app\acesso-v2\[condominioId]\page.tsx:1149:                        key={item.id}
+  app\acesso-v2\[condominioId]\page.tsx:1150:                        className={
+> app\acesso-v2\[condominioId]\page.tsx:1151:                          mensagemMorador
+  app\acesso-v2\[condominioId]\page.tsx:1152:                            ? "flex justify-start"
+  app\acesso-v2\[condominioId]\page.tsx:1153:                            : "flex justify-end"
+  app\acesso-v2\[condominioId]\page.tsx:1154:                        }
+  app\acesso-v2\[condominioId]\page.tsx:1155:                      >
+  app\acesso-v2\[condominioId]\page.tsx:1156:                        <div
+  app\acesso-v2\[condominioId]\page.tsx:1157:                          className={
+> app\acesso-v2\[condominioId]\page.tsx:1158:                            mensagemMorador
+  app\acesso-v2\[condominioId]\page.tsx:1159:                              ? "max-w-[88%] bg-blue-600 rounded-2xl rounded-bl-md p-3"
+  app\acesso-v2\[condominioId]\page.tsx:1160:                              : "max-w-[88%] bg-green-600 text-black rounded-2xl rounded-br-md p-3"
+  app\acesso-v2\[condominioId]\page.tsx:1161:                          }
+  app\acesso-v2\[condominioId]\page.tsx:1162:                        >
+  app\acesso-v2\[condominioId]\page.tsx:1163:                          <p className="text-xs font-black mb-2 opacity-80">
+> app\acesso-v2\[condominioId]\page.tsx:1164:                            {mensagemMorador ? "Morador" : "Você"}
+  app\acesso-v2\[condominioId]\page.tsx:1165:                          </p>
+  app\acesso-v2\[condominioId]\page.tsx:1166:
+  app\acesso-v2\[condominioId]\page.tsx:1167:                          {item.tipo === "texto" && item.texto && (
+  app\acesso-v2\[condominioId]\page.tsx:1168:                            <p className="font-bold break-words">{item.texto}</p>
+  app\acesso-v2\[condominioId]\page.tsx:1169:                          )}
+  app\acesso-v2\[condominioId]\page.tsx:1170:
+  app\acesso-v2\[condominioId]\page.tsx:1171:                          {item.tipo === "audio" && item.audioBase64 && (
+  app\acesso-v2\[condominioId]\page.tsx:1172:                            <audio
+  app\acesso-v2\[condominioId]\page.tsx:1174:                              className="w-full min-w-[220px]"
+  app\acesso-v2\[condominioId]\page.tsx:1175:                              src={item.audioBase64}
+  app\acesso-v2\[condominioId]\page.tsx:1176:                              onPlay={async () => {
+> app\acesso-v2\[condominioId]\page.tsx:1177:                                if (!unidadeSelecionada || !mensagemMorador) {
+  app\acesso-v2\[condominioId]\page.tsx:1178:                                  return;
+  app\acesso-v2\[condominioId]\page.tsx:1179:                                }
+  app\acesso-v2\[condominioId]\page.tsx:1180:
+  app\acesso-v2\[condominioId]\page.tsx:1181:                                await update(
+  app\acesso-v2\[condominioId]\page.tsx:1182:                                  ref(
+  app\acesso-v2\[condominioId]\page.tsx:1183:                                    db,
+  app\acesso-v2\[condominioId]\page.tsx:1184:                                    `unidades-v2/${unidadeSelecionada.id}/chamada`
+  app\acesso-v2\[condominioId]\page.tsx:1185:                                  ),
+  app\api\enviar-comunicado\route.ts:15:export const runtime = "nodejs";
+  app\api\enviar-comunicado\route.ts:16:export const dynamic = "force-dynamic";
+  app\api\enviar-comunicado\route.ts:17:
+> app\api\enviar-comunicado\route.ts:18:type RegistroTokenMorador =
+  app\api\enviar-comunicado\route.ts:19:  | string
+  app\api\enviar-comunicado\route.ts:20:  | {
+  app\api\enviar-comunicado\route.ts:21:      token?: string;
+  app\api\enviar-comunicado\route.ts:22:      unidadeId?: string;
+  app\api\enviar-comunicado\route.ts:23:      condominioId?: string;
+  app\api\enviar-comunicado\route.ts:24:      atualizadoEm?: number;
+  app\api\enviar-comunicado\route.ts:25:    };
+  app\api\enviar-comunicado\route.ts:26:
+  app\api\enviar-comunicado\route.ts:129:
+  app\api\enviar-comunicado\route.ts:130:function normalizarRegistroToken(
+  app\api\enviar-comunicado\route.ts:131:  unidadeIdChave: string,
+> app\api\enviar-comunicado\route.ts:132:  valor: RegistroTokenMorador
+  app\api\enviar-comunicado\route.ts:133:): DestinatarioPush {
+  app\api\enviar-comunicado\route.ts:134:  if (typeof valor === "string") {
+  app\api\enviar-comunicado\route.ts:135:    return {
+  app\api\enviar-comunicado\route.ts:136:      unidadeId: unidadeIdChave,
+  app\api\enviar-comunicado\route.ts:137:      condominioId: "",
+  app\api\enviar-comunicado\route.ts:138:      token: valor.trim(),
+  app\api\enviar-comunicado\route.ts:139:    };
+  app\api\enviar-comunicado\route.ts:140:  }
+  app\api\enviar-comunicado\route.ts:254:    const urlBase = obterUrlBase(request);
+  app\api\enviar-comunicado\route.ts:255:
+  app\api\enviar-comunicado\route.ts:256:    const tokensSnapshot = await db
+> app\api\enviar-comunicado\route.ts:257:      .ref("configuracoes-v2/tokensMorador")
+  app\api\enviar-comunicado\route.ts:258:      .get();
+  app\api\enviar-comunicado\route.ts:259:
+  app\api\enviar-comunicado\route.ts:260:    const tokensCadastrados =
+> app\api\enviar-comunicado\route.ts:261:      (tokensSnapshot.val() as Record<string, RegistroTokenMorador> | null) ||
+  app\api\enviar-comunicado\route.ts:262:      {};
+  app\api\enviar-comunicado\route.ts:263:
+  app\api\enviar-comunicado\route.ts:264:    let destinatarios = Object.entries(tokensCadastrados)
+  app\api\enviar-comunicado\route.ts:265:      .map(([unidadeIdChave, valor]) =>
+  app\api\enviar-comunicado\route.ts:266:        normalizarRegistroToken(unidadeIdChave, valor)
+  app\api\enviar-comunicado\route.ts:267:      )
+  app\api\enviar-comunicado\route.ts:268:      .filter((registro) => Boolean(registro.token));
+  app\api\enviar-comunicado\route.ts:269:
+  app\api\enviar-comunicado\route.ts:308:      const { unidadeId: unidadeDestino, token } = destinatario;
+  app\api\enviar-comunicado\route.ts:309:
+  app\api\enviar-comunicado\route.ts:310:      const link =
+> app\api\enviar-comunicado\route.ts:311:        `${urlBase}/morador-v2/${encodeURIComponent(unidadeDestino)}` +
+  app\api\enviar-comunicado\route.ts:312:        (comunicadoId
+  app\api\enviar-comunicado\route.ts:313:          ? `?comunicado=${encodeURIComponent(comunicadoId)}`
+  app\api\enviar-comunicado\route.ts:314:          : "");
+  app\api\enviar-comunicado\route.ts:315:
+  app\api\enviar-comunicado\route.ts:316:      try {
+  app\api\enviar-comunicado\route.ts:317:        const resposta = await messaging.send({
+  app\api\enviar-comunicado\route.ts:318:          token,
+  app\api\enviar-comunicado\route.ts:319:          data: {
+  app\api\enviar-notificacao-v2\route.ts:33:
+  app\api\enviar-notificacao-v2\route.ts:34:type CorpoRequisicao = CorpoChamada | CorpoComunicado | CorpoTeste;
+  app\api\enviar-notificacao-v2\route.ts:35:
+> app\api\enviar-notificacao-v2\route.ts:36:type RegistroTokenMorador =
+  app\api\enviar-notificacao-v2\route.ts:37:  | string
+  app\api\enviar-notificacao-v2\route.ts:38:  | {
+  app\api\enviar-notificacao-v2\route.ts:39:      token?: string;
+  app\api\enviar-notificacao-v2\route.ts:40:      unidadeId?: string;
+  app\api\enviar-notificacao-v2\route.ts:41:      condominioId?: string;
+  app\api\enviar-notificacao-v2\route.ts:42:      atualizadoEm?: number;
+  app\api\enviar-notificacao-v2\route.ts:43:    };
+  app\api\enviar-notificacao-v2\route.ts:44:
+  app\api\enviar-notificacao-v2\route.ts:141:
+  app\api\enviar-notificacao-v2\route.ts:142:function normalizarRegistroToken(
+  app\api\enviar-notificacao-v2\route.ts:143:  unidadeIdChave: string,
+> app\api\enviar-notificacao-v2\route.ts:144:  valor: RegistroTokenMorador
+  app\api\enviar-notificacao-v2\route.ts:145:) {
+  app\api\enviar-notificacao-v2\route.ts:146:  if (typeof valor === "string") {
+  app\api\enviar-notificacao-v2\route.ts:147:    return {
+  app\api\enviar-notificacao-v2\route.ts:148:      unidadeId: unidadeIdChave,
+  app\api\enviar-notificacao-v2\route.ts:149:      condominioId: "",
+  app\api\enviar-notificacao-v2\route.ts:150:      token: valor.trim(),
+  app\api\enviar-notificacao-v2\route.ts:151:      formatoAntigo: true,
+  app\api\enviar-notificacao-v2\route.ts:152:    };
+  app\api\enviar-notificacao-v2\route.ts:213:    const urlBase = obterUrlBase(request);
+  app\api\enviar-notificacao-v2\route.ts:214:
+  app\api\enviar-notificacao-v2\route.ts:215:    // ======================================================
+> app\api\enviar-notificacao-v2\route.ts:216:    // TESTE DIRETO DE UM ÚNICO MORADOR
+  app\api\enviar-notificacao-v2\route.ts:217:    // ======================================================
+  app\api\enviar-notificacao-v2\route.ts:218:
+  app\api\enviar-notificacao-v2\route.ts:219:    if (corpo.tipo === "teste-push-v2") {
+  app\api\enviar-notificacao-v2\route.ts:220:      const unidadeId = corpo.unidadeId?.trim();
+  app\api\enviar-notificacao-v2\route.ts:221:
+  app\api\enviar-notificacao-v2\route.ts:222:      if (!unidadeId) {
+  app\api\enviar-notificacao-v2\route.ts:223:        return NextResponse.json(
+  app\api\enviar-notificacao-v2\route.ts:224:          { ok: false, erro: "unidadeId não informado" },
+  app\api\enviar-notificacao-v2\route.ts:227:      }
+  app\api\enviar-notificacao-v2\route.ts:228:
+  app\api\enviar-notificacao-v2\route.ts:229:      const tokenSnapshot = await db
+> app\api\enviar-notificacao-v2\route.ts:230:        .ref(`configuracoes-v2/tokensMorador/${unidadeId}`)
+  app\api\enviar-notificacao-v2\route.ts:231:        .get();
+  app\api\enviar-notificacao-v2\route.ts:232:
+> app\api\enviar-notificacao-v2\route.ts:233:      const registroToken = tokenSnapshot.val() as RegistroTokenMorador | null;
+  app\api\enviar-notificacao-v2\route.ts:234:      const tokenNormalizado = registroToken
+  app\api\enviar-notificacao-v2\route.ts:235:        ? normalizarRegistroToken(unidadeId, registroToken)
+  app\api\enviar-notificacao-v2\route.ts:236:        : null;
+  app\api\enviar-notificacao-v2\route.ts:237:      const token = tokenNormalizado?.token || "";
+  app\api\enviar-notificacao-v2\route.ts:238:
+  app\api\enviar-notificacao-v2\route.ts:239:      if (!token) {
+  app\api\enviar-notificacao-v2\route.ts:240:        return NextResponse.json(
+  app\api\enviar-notificacao-v2\route.ts:241:          {
+  app\api\enviar-notificacao-v2\route.ts:253:  tipo: "teste-push-v2",
+  app\api\enviar-notificacao-v2\route.ts:254:  unidadeId: String(unidadeId),
+  app\api\enviar-notificacao-v2\route.ts:255:  titulo: "🔔 Teste QR Acesso",
+> app\api\enviar-notificacao-v2\route.ts:256:  mensagem: "O push do painel do morador está funcionando.",
+> app\api\enviar-notificacao-v2\route.ts:257:  url: `${urlBase}/morador-v2/${encodeURIComponent(unidadeId)}`,
+  app\api\enviar-notificacao-v2\route.ts:258:},
+  app\api\enviar-notificacao-v2\route.ts:259:        webpush: {
+  app\api\enviar-notificacao-v2\route.ts:260:          headers: {
+  app\api\enviar-notificacao-v2\route.ts:261:            Urgency: "high",
+  app\api\enviar-notificacao-v2\route.ts:262:            TTL: "86400",
+  app\api\enviar-notificacao-v2\route.ts:263:          },
+  app\api\enviar-notificacao-v2\route.ts:264:          fcmOptions: {
+> app\api\enviar-notificacao-v2\route.ts:265:            link: `${urlBase}/morador-v2/${encodeURIComponent(unidadeId)}`,
+  app\api\enviar-notificacao-v2\route.ts:266:          },
+  app\api\enviar-notificacao-v2\route.ts:267:        },
+  app\api\enviar-notificacao-v2\route.ts:268:      });
+  app\api\enviar-notificacao-v2\route.ts:269:
+  app\api\enviar-notificacao-v2\route.ts:270:      return NextResponse.json({
+  app\api\enviar-notificacao-v2\route.ts:271:        ok: true,
+  app\api\enviar-notificacao-v2\route.ts:272:        mensagem: "Push de teste enviado",
+  app\api\enviar-notificacao-v2\route.ts:273:        unidadeId,
+  app\api\enviar-notificacao-v2\route.ts:276:    }
+  app\api\enviar-notificacao-v2\route.ts:277:
+  app\api\enviar-notificacao-v2\route.ts:278:    // ======================================================
+> app\api\enviar-notificacao-v2\route.ts:279:    // COMUNICADO PARA MORADORES DO CONDOMÍNIO
+  app\api\enviar-notificacao-v2\route.ts:280:    // ======================================================
+  app\api\enviar-notificacao-v2\route.ts:281:
+  app\api\enviar-notificacao-v2\route.ts:282:    if (corpo.tipo === "comunicado-v2") {
+  app\api\enviar-notificacao-v2\route.ts:283:      const {
+  app\api\enviar-notificacao-v2\route.ts:284:        condominioId,
+  app\api\enviar-notificacao-v2\route.ts:285:        comunicadoId,
+  app\api\enviar-notificacao-v2\route.ts:286:        titulo,
+  app\api\enviar-notificacao-v2\route.ts:287:        mensagem,
+  app\api\enviar-notificacao-v2\route.ts:300:      }
+  app\api\enviar-notificacao-v2\route.ts:301:
+  app\api\enviar-notificacao-v2\route.ts:302:      const tokensSnapshot = await db
+> app\api\enviar-notificacao-v2\route.ts:303:        .ref("configuracoes-v2/tokensMorador")
+  app\api\enviar-notificacao-v2\route.ts:304:        .get();
+  app\api\enviar-notificacao-v2\route.ts:305:
+  app\api\enviar-notificacao-v2\route.ts:306:      const tokensCadastrados =
+> app\api\enviar-notificacao-v2\route.ts:307:        (tokensSnapshot.val() as Record<string, RegistroTokenMorador> | null) ||
+  app\api\enviar-notificacao-v2\route.ts:308:        {};
+  app\api\enviar-notificacao-v2\route.ts:309:
+  app\api\enviar-notificacao-v2\route.ts:310:      const filtroCondominio = textoFiltroCondominio(condominioId);
+  app\api\enviar-notificacao-v2\route.ts:311:
+  app\api\enviar-notificacao-v2\route.ts:312:      const unidadesPermitidas = Array.isArray(unidadesDestinatarias)
+  app\api\enviar-notificacao-v2\route.ts:313:        ? new Set(
+  app\api\enviar-notificacao-v2\route.ts:314:            unidadesDestinatarias
+  app\api\enviar-notificacao-v2\route.ts:315:              .map((unidadeId) => String(unidadeId || "").trim())
+  app\api\enviar-notificacao-v2\route.ts:343:        return NextResponse.json(
+  app\api\enviar-notificacao-v2\route.ts:344:          {
+  app\api\enviar-notificacao-v2\route.ts:345:            ok: false,
+> app\api\enviar-notificacao-v2\route.ts:346:            erro: "Nenhum token de morador encontrado para este condomínio",
+  app\api\enviar-notificacao-v2\route.ts:347:            condominioId,
+  app\api\enviar-notificacao-v2\route.ts:348:            filtroUtilizado: filtroCondominio,
+  app\api\enviar-notificacao-v2\route.ts:349:            chavesEncontradas: Object.keys(tokensCadastrados),
+  app\api\enviar-notificacao-v2\route.ts:350:          },
+  app\api\enviar-notificacao-v2\route.ts:351:          { status: 400 }
+  app\api\enviar-notificacao-v2\route.ts:352:        );
+  app\api\enviar-notificacao-v2\route.ts:353:      }
+  app\api\enviar-notificacao-v2\route.ts:354:
+  app\api\enviar-notificacao-v2\route.ts:371:      ? `${mensagem.slice(0, 117)}...`
+  app\api\enviar-notificacao-v2\route.ts:372:      : mensagem,
+  app\api\enviar-notificacao-v2\route.ts:373:  url:
+> app\api\enviar-notificacao-v2\route.ts:374:    `${urlBase}/morador-v2/${encodeURIComponent(unidadeId)}` +
+  app\api\enviar-notificacao-v2\route.ts:375:    `?comunicado=${encodeURIComponent(comunicadoId)}`,
+  app\api\enviar-notificacao-v2\route.ts:376:},
+  app\api\enviar-notificacao-v2\route.ts:377:            webpush: {
+  app\api\enviar-notificacao-v2\route.ts:378:          headers: {
+  app\api\enviar-notificacao-v2\route.ts:379:            Urgency: "high",
+  app\api\enviar-notificacao-v2\route.ts:380:            TTL: "86400",
+  app\api\enviar-notificacao-v2\route.ts:381:          },
+  app\api\enviar-notificacao-v2\route.ts:382:          fcmOptions: {
+  app\api\enviar-notificacao-v2\route.ts:383:                link:
+> app\api\enviar-notificacao-v2\route.ts:384:                  `${urlBase}/morador-v2/${encodeURIComponent(unidadeId)}` +
+  app\api\enviar-notificacao-v2\route.ts:385:                  `?comunicado=${encodeURIComponent(comunicadoId)}`,
+  app\api\enviar-notificacao-v2\route.ts:386:              },
+  app\api\enviar-notificacao-v2\route.ts:387:            },
+  app\api\enviar-notificacao-v2\route.ts:388:          });
+  app\api\enviar-notificacao-v2\route.ts:389:
+  app\api\enviar-notificacao-v2\route.ts:390:          await db
+  app\api\enviar-notificacao-v2\route.ts:391:            .ref(
+  app\api\enviar-notificacao-v2\route.ts:392:              `comunicados-v2/${condominioId}/${comunicadoId}/enviosPush/${unidadeId}`
+  app\api\enviar-notificacao-v2\route.ts:464:    }
+  app\api\enviar-notificacao-v2\route.ts:465:
+  app\api\enviar-notificacao-v2\route.ts:466:    const tokenSnapshot = await db
+> app\api\enviar-notificacao-v2\route.ts:467:      .ref(`configuracoes-v2/tokensMorador/${unidadeId}`)
+  app\api\enviar-notificacao-v2\route.ts:468:      .get();
+  app\api\enviar-notificacao-v2\route.ts:469:
+> app\api\enviar-notificacao-v2\route.ts:470:    const registroToken = tokenSnapshot.val() as RegistroTokenMorador | null;
+  app\api\enviar-notificacao-v2\route.ts:471:    const tokenNormalizado = registroToken
+  app\api\enviar-notificacao-v2\route.ts:472:      ? normalizarRegistroToken(unidadeId, registroToken)
+  app\api\enviar-notificacao-v2\route.ts:473:      : null;
+  app\api\enviar-notificacao-v2\route.ts:474:    const token = tokenNormalizado?.token || "";
+  app\api\enviar-notificacao-v2\route.ts:475:
+  app\api\enviar-notificacao-v2\route.ts:476:    if (!token) {
+  app\api\enviar-notificacao-v2\route.ts:477:      return NextResponse.json(
+> app\api\enviar-notificacao-v2\route.ts:478:        { ok: false, erro: "Token do morador V2 não encontrado" },
+  app\api\enviar-notificacao-v2\route.ts:479:        { status: 400 }
+  app\api\enviar-notificacao-v2\route.ts:480:      );
+  app\api\enviar-notificacao-v2\route.ts:481:    }
+  app\api\enviar-notificacao-v2\route.ts:482:
+  app\api\enviar-notificacao-v2\route.ts:483:    const chamadaSnapshot = await db
+  app\api\enviar-notificacao-v2\route.ts:484:      .ref(`unidades-v2/${unidadeId}/chamada`)
+  app\api\enviar-notificacao-v2\route.ts:485:      .get();
+  app\api\enviar-notificacao-v2\route.ts:486:
+  app\api\enviar-notificacao-v2\route.ts:498:  tipo: "chamada-v2",
+  app\api\enviar-notificacao-v2\route.ts:499:  titulo: `🔔 ${nome} está chamando`,
+  app\api\enviar-notificacao-v2\route.ts:500:  mensagem: `Motivo: ${motivo}`,
+> app\api\enviar-notificacao-v2\route.ts:501:  url: `${urlBase}/morador-v2/${encodeURIComponent(unidadeId)}`,
+  app\api\enviar-notificacao-v2\route.ts:502:},
+  app\api\enviar-notificacao-v2\route.ts:503:      webpush: {
+  app\api\enviar-notificacao-v2\route.ts:504:          headers: {
+  app\api\enviar-notificacao-v2\route.ts:505:            Urgency: "high",
+  app\api\enviar-notificacao-v2\route.ts:506:            TTL: "86400",
+  app\api\enviar-notificacao-v2\route.ts:507:          },
+  app\api\enviar-notificacao-v2\route.ts:508:          fcmOptions: {
+> app\api\enviar-notificacao-v2\route.ts:509:          link: `${urlBase}/morador-v2/${encodeURIComponent(unidadeId)}`,
+  app\api\enviar-notificacao-v2\route.ts:510:        },
+  app\api\enviar-notificacao-v2\route.ts:511:      },
+  app\api\enviar-notificacao-v2\route.ts:512:    });
+  app\api\enviar-notificacao-v2\route.ts:513:
+  app\api\enviar-notificacao-v2\route.ts:514:    return NextResponse.json({
+  app\api\enviar-notificacao-v2\route.ts:515:      ok: true,
+  app\api\enviar-notificacao-v2\route.ts:516:      mensagem: "Notificação V2 enviada",
+  app\api\enviar-notificacao-v2\route.ts:517:      resposta,
+  app\api\enviar-push\route.ts:31:    const corpo = await request.json().catch(() => ({}));
+  app\api\enviar-push\route.ts:32:const canal = corpo.canal || "qr1";
+  app\api\enviar-push\route.ts:33:const numero = canal.replace("qr", "");
+> app\api\enviar-push\route.ts:34:const tokenNome = `tokenMorador${numero}`;
+  app\api\enviar-push\route.ts:35:const painel = `painel${numero}`;
+  app\api\enviar-push\route.ts:36:const snapshot = await db.ref(`configuracoes/${tokenNome}`).get();    
+  app\api\enviar-push\route.ts:37:const token = snapshot.val();
+  app\api\enviar-push\route.ts:38:
+  app\api\enviar-push\route.ts:39:    if (!token) {
+  app\api\enviar-push\route.ts:40:      return NextResponse.json(
+> app\api\enviar-push\route.ts:41:        { ok: false, erro: "Token do morador não encontrado" },
+  app\api\enviar-push\route.ts:42:        { status: 400 }
+  app\api\enviar-push\route.ts:43:      );
+  app\api\enviar-push\route.ts:44:    }
+  app\api\enviar-push\route.ts:45:const solicitacao = await db.ref(canal).get()
+  app\api\enviar-push\route.ts:46:const dados = solicitacao.val();
+  app\api\enviar-push\route.ts:47:const nome = dados?.nome || "Visitante";
+  app\api\enviar-push\route.ts:48:const motivo = dados?.motivo || "Não informado";
+  app\api\enviar-push\route.ts:49:  const resposta = await getMessaging().send({
+  app\api\implantacao\criar-responsavel\route.ts:105:    enviarComunicados:
+  app\api\implantacao\criar-responsavel\route.ts:106:      true,
+  app\api\implantacao\criar-responsavel\route.ts:107:
+> app\api\implantacao\criar-responsavel\route.ts:108:    gerenciarMoradores:
+  app\api\implantacao\criar-responsavel\route.ts:109:      true,
+  app\api\implantacao\criar-responsavel\route.ts:110:
+  app\api\implantacao\criar-responsavel\route.ts:111:    gerenciarUnidades:
+  app\api\implantacao\criar-responsavel\route.ts:112:      true,
+  app\api\implantacao\criar-responsavel\route.ts:113:
+  app\api\implantacao\criar-responsavel\route.ts:114:    gerenciarUsuarios:
+  app\api\implantacao\criar-responsavel\route.ts:115:      true,
+  app\api\implantacao\criar-responsavel\route.ts:116:
+  app\api\implantacao\criar-responsavel\route.ts:144:    gerenciarConfiguracoes:
+  app\api\implantacao\criar-responsavel\route.ts:145:      true,
+  app\api\implantacao\criar-responsavel\route.ts:146:
+> app\api\implantacao\criar-responsavel\route.ts:147:    moradores:
+  app\api\implantacao\criar-responsavel\route.ts:148:      true,
+  app\api\implantacao\criar-responsavel\route.ts:149:
+  app\api\implantacao\criar-responsavel\route.ts:150:    unidades:
+  app\api\implantacao\criar-responsavel\route.ts:151:      true,
+  app\api\implantacao\criar-responsavel\route.ts:152:
+  app\api\implantacao\criar-responsavel\route.ts:153:    comunicados:
+  app\api\implantacao\criar-responsavel\route.ts:154:      true,
+  app\api\implantacao\criar-responsavel\route.ts:155:
+  app\api\implantacao\criar-responsavel\route.ts:820:    totalUnidades:
+  app\api\implantacao\criar-responsavel\route.ts:821:      0,
+  app\api\implantacao\criar-responsavel\route.ts:822:
+> app\api\implantacao\criar-responsavel\route.ts:823:    totalMoradores:
+  app\api\implantacao\criar-responsavel\route.ts:824:      0,
+  app\api\implantacao\criar-responsavel\route.ts:825:
+  app\api\implantacao\criar-responsavel\route.ts:826:    totalFuncionarios:
+  app\api\implantacao\criar-responsavel\route.ts:827:      0,
+  app\api\implantacao\criar-responsavel\route.ts:828:
+  app\api\implantacao\criar-responsavel\route.ts:829:    totalPrestadores:
+  app\api\implantacao\criar-responsavel\route.ts:830:      0,
+  app\api\implantacao\criar-responsavel\route.ts:831:
+  app\api\init-admin\route.ts:112:            studio: true,
+  app\api\init-admin\route.ts:113:            usuarios: true,
+  app\api\init-admin\route.ts:114:            configuracoes: true,
+> app\api\init-admin\route.ts:115:            moradores: true,
+  app\api\init-admin\route.ts:116:            unidades: true,
+  app\api\init-admin\route.ts:117:            comunicados: true,
+  app\api\init-admin\route.ts:118:            prestadores: true,
+  app\api\init-admin\route.ts:119:            relatorios: true,
+  app\api\init-admin\route.ts:120:          },
+  app\api\init-admin\route.ts:121:        },
+  app\api\init-admin\route.ts:122:      },
+  app\api\init-admin\route.ts:123:    };
+  app\api\migracao\residencial-costa\route.ts:113:          acesso:
+  app\api\migracao\residencial-costa\route.ts:114:            true,
+  app\api\migracao\residencial-costa\route.ts:115:
+> app\api\migracao\residencial-costa\route.ts:116:          morador:
+  app\api\migracao\residencial-costa\route.ts:117:            true,
+  app\api\migracao\residencial-costa\route.ts:118:
+  app\api\migracao\residencial-costa\route.ts:119:          chamadas:
+  app\api\migracao\residencial-costa\route.ts:120:            true,
+  app\api\migracao\residencial-costa\route.ts:121:
+  app\api\migracao\residencial-costa\route.ts:122:          mensagens:
+  app\api\migracao\residencial-costa\route.ts:123:            true,
+  app\api\migracao\residencial-costa\route.ts:124:
+  app\api\migracao\residencial-costa\route.ts:166:          acesso:
+  app\api\migracao\residencial-costa\route.ts:167:            `/acesso-v2/${LOCAL_ID}`,
+  app\api\migracao\residencial-costa\route.ts:168:
+> app\api\migracao\residencial-costa\route.ts:169:          morador:
+> app\api\migracao\residencial-costa\route.ts:170:            `/morador-v2/${UNIDADE_ID}`,
+  app\api\migracao\residencial-costa\route.ts:171:
+  app\api\migracao\residencial-costa\route.ts:172:          qrPrincipal:
+  app\api\migracao\residencial-costa\route.ts:173:            `/api/qrcode/${LOCAL_ID}`,
+  app\api\migracao\residencial-costa\route.ts:174:
+  app\api\migracao\residencial-costa\route.ts:175:          materialA4:
+  app\api\migracao\residencial-costa\route.ts:176:            `/api/materiais/qrcode/${LOCAL_ID}`,
+  app\api\migracao\residencial-costa\route.ts:177:        },
+  app\api\migracao\residencial-costa\route.ts:178:
+  app\api\migracao\residencial-costa\route.ts:180:          totalUnidades:
+  app\api\migracao\residencial-costa\route.ts:181:            1,
+  app\api\migracao\residencial-costa\route.ts:182:
+> app\api\migracao\residencial-costa\route.ts:183:          totalMoradores:
+  app\api\migracao\residencial-costa\route.ts:184:            0,
+  app\api\migracao\residencial-costa\route.ts:185:
+  app\api\migracao\residencial-costa\route.ts:186:          totalResponsaveis:
+  app\api\migracao\residencial-costa\route.ts:187:            0,
+  app\api\migracao\residencial-costa\route.ts:188:        },
+  app\api\migracao\residencial-costa\route.ts:189:      },
+  app\api\migracao\residencial-costa\route.ts:190:
+  app\api\migracao\residencial-costa\route.ts:191:      [`unidades-v2/${UNIDADE_ID}`]: {
+  app\api\migracao\residencial-costa\route.ts:273:          acesso:
+  app\api\migracao\residencial-costa\route.ts:274:            `/acesso-v2/${LOCAL_ID}`,
+  app\api\migracao\residencial-costa\route.ts:275:
+> app\api\migracao\residencial-costa\route.ts:276:          morador:
+> app\api\migracao\residencial-costa\route.ts:277:            `/morador-v2/${UNIDADE_ID}`,
+  app\api\migracao\residencial-costa\route.ts:278:
+  app\api\migracao\residencial-costa\route.ts:279:          qr:
+  app\api\migracao\residencial-costa\route.ts:280:            `/api/qrcode/${LOCAL_ID}`,
+  app\api\migracao\residencial-costa\route.ts:281:
+  app\api\migracao\residencial-costa\route.ts:282:          placa:
+  app\api\migracao\residencial-costa\route.ts:283:            `/api/materiais/qrcode/${LOCAL_ID}`,
+  app\api\migracao\residencial-costa\route.ts:284:        },
+  app\api\migracao\residencial-costa\route.ts:285:      },
+  app\api\residencia\acessos-temporarios\route.backup-historico-api-20260811-092802.ts:140:      "proprietario"
+  app\api\residencia\acessos-temporarios\route.backup-historico-api-20260811-092802.ts:141:    ] === true ||
+  app\api\residencia\acessos-temporarios\route.backup-historico-api-20260811-092802.ts:142:    vinculo.permissoes?.[
+> app\api\residencia\acessos-temporarios\route.backup-historico-api-20260811-092802.ts:143:      "gerenciarMoradores"
+  app\api\residencia\acessos-temporarios\route.backup-historico-api-20260811-092802.ts:144:    ] === true;
+  app\api\residencia\acessos-temporarios\route.backup-historico-api-20260811-092802.ts:145:
+  app\api\residencia\acessos-temporarios\route.backup-historico-api-20260811-092802.ts:146:  if (!autorizado) {
+  app\api\residencia\acessos-temporarios\route.backup-historico-api-20260811-092802.ts:147:    throw new Error(
+  app\api\residencia\acessos-temporarios\route.backup-historico-api-20260811-092802.ts:148:      "Voc? n?o possui permiss?o para gerenciar acessos 
+tempor?rios."
+  app\api\residencia\acessos-temporarios\route.backup-historico-api-20260811-092802.ts:149:    );
+  app\api\residencia\acessos-temporarios\route.backup-historico-api-20260811-092802.ts:150:  }
+  app\api\residencia\acessos-temporarios\route.backup-historico-api-20260811-092802.ts:151:
+  app\api\residencia\acessos-temporarios\route.backup-historico-universal-2-20260811-092628.ts:140:      "proprietario"
+  app\api\residencia\acessos-temporarios\route.backup-historico-universal-2-20260811-092628.ts:141:    ] === true ||
+  app\api\residencia\acessos-temporarios\route.backup-historico-universal-2-20260811-092628.ts:142:    vinculo.permissoes?.[
+> app\api\residencia\acessos-temporarios\route.backup-historico-universal-2-20260811-092628.ts:143:      "gerenciarMoradores"
+  app\api\residencia\acessos-temporarios\route.backup-historico-universal-2-20260811-092628.ts:144:    ] === true;
+  app\api\residencia\acessos-temporarios\route.backup-historico-universal-2-20260811-092628.ts:145:
+  app\api\residencia\acessos-temporarios\route.backup-historico-universal-2-20260811-092628.ts:146:  if (!autorizado) {
+  app\api\residencia\acessos-temporarios\route.backup-historico-universal-2-20260811-092628.ts:147:    throw new Error(
+  app\api\residencia\acessos-temporarios\route.backup-historico-universal-2-20260811-092628.ts:148:      "Voc? n?o possui permiss?o para gerenciar 
+acessos tempor?rios."
+  app\api\residencia\acessos-temporarios\route.backup-historico-universal-2-20260811-092628.ts:149:    );
+  app\api\residencia\acessos-temporarios\route.backup-historico-universal-2-20260811-092628.ts:150:  }
+  app\api\residencia\acessos-temporarios\route.backup-historico-universal-2-20260811-092628.ts:151:
+  app\api\residencia\acessos-temporarios\route.backup-historico-universal-20260811-092426.ts:140:      "proprietario"
+  app\api\residencia\acessos-temporarios\route.backup-historico-universal-20260811-092426.ts:141:    ] === true ||
+  app\api\residencia\acessos-temporarios\route.backup-historico-universal-20260811-092426.ts:142:    vinculo.permissoes?.[
+> app\api\residencia\acessos-temporarios\route.backup-historico-universal-20260811-092426.ts:143:      "gerenciarMoradores"
+  app\api\residencia\acessos-temporarios\route.backup-historico-universal-20260811-092426.ts:144:    ] === true;
+  app\api\residencia\acessos-temporarios\route.backup-historico-universal-20260811-092426.ts:145:
+  app\api\residencia\acessos-temporarios\route.backup-historico-universal-20260811-092426.ts:146:  if (!autorizado) {
+  app\api\residencia\acessos-temporarios\route.backup-historico-universal-20260811-092426.ts:147:    throw new Error(
+  app\api\residencia\acessos-temporarios\route.backup-historico-universal-20260811-092426.ts:148:      "Voc? n?o possui permiss?o para gerenciar 
+acessos tempor?rios."
+  app\api\residencia\acessos-temporarios\route.backup-historico-universal-20260811-092426.ts:149:    );
+  app\api\residencia\acessos-temporarios\route.backup-historico-universal-20260811-092426.ts:150:  }
+  app\api\residencia\acessos-temporarios\route.backup-historico-universal-20260811-092426.ts:151:
+  app\api\residencia\acessos-temporarios\route.backup-status-arquivado-20260811-093557.ts:144:      "proprietario"
+  app\api\residencia\acessos-temporarios\route.backup-status-arquivado-20260811-093557.ts:145:    ] === true ||
+  app\api\residencia\acessos-temporarios\route.backup-status-arquivado-20260811-093557.ts:146:    vinculo.permissoes?.[
+> app\api\residencia\acessos-temporarios\route.backup-status-arquivado-20260811-093557.ts:147:      "gerenciarMoradores"
+  app\api\residencia\acessos-temporarios\route.backup-status-arquivado-20260811-093557.ts:148:    ] === true;
+  app\api\residencia\acessos-temporarios\route.backup-status-arquivado-20260811-093557.ts:149:
+  app\api\residencia\acessos-temporarios\route.backup-status-arquivado-20260811-093557.ts:150:  if (!autorizado) {
+  app\api\residencia\acessos-temporarios\route.backup-status-arquivado-20260811-093557.ts:151:    throw new Error(
+  app\api\residencia\acessos-temporarios\route.backup-status-arquivado-20260811-093557.ts:152:      "Voc? n?o possui permiss?o para gerenciar acessos 
+tempor?rios."
+  app\api\residencia\acessos-temporarios\route.backup-status-arquivado-20260811-093557.ts:153:    );
+  app\api\residencia\acessos-temporarios\route.backup-status-arquivado-20260811-093557.ts:154:  }
+  app\api\residencia\acessos-temporarios\route.backup-status-arquivado-20260811-093557.ts:155:
+  app\api\residencia\acessos-temporarios\route.ts:144:      "proprietario"
+  app\api\residencia\acessos-temporarios\route.ts:145:    ] === true ||
+  app\api\residencia\acessos-temporarios\route.ts:146:    vinculo.permissoes?.[
+> app\api\residencia\acessos-temporarios\route.ts:147:      "gerenciarMoradores"
+  app\api\residencia\acessos-temporarios\route.ts:148:    ] === true;
+  app\api\residencia\acessos-temporarios\route.ts:149:
+  app\api\residencia\acessos-temporarios\route.ts:150:  if (!autorizado) {
+  app\api\residencia\acessos-temporarios\route.ts:151:    throw new Error(
+  app\api\residencia\acessos-temporarios\route.ts:152:      "Voc? n?o possui permiss?o para gerenciar acessos tempor?rios."
+  app\api\residencia\acessos-temporarios\route.ts:153:    );
+  app\api\residencia\acessos-temporarios\route.ts:154:  }
+  app\api\residencia\acessos-temporarios\route.ts:155:
+  app\api\residencia\familia\route.ts:199:      "responsavel"
+  app\api\residencia\familia\route.ts:200:    ] === true ||
+  app\api\residencia\familia\route.ts:201:    vinculo.permissoes?.[
+> app\api\residencia\familia\route.ts:202:      "gerenciarMoradores"
+  app\api\residencia\familia\route.ts:203:    ] === true;
+  app\api\residencia\familia\route.ts:204:
+  app\api\residencia\familia\route.ts:205:  if (!autorizado) {
+  app\api\residencia\familia\route.ts:206:    throw new Error(
+  app\api\residencia\familia\route.ts:207:      "Voc? n?o possui permiss?o para gerenciar a fam?lia desta resid?ncia."
+  app\api\residencia\familia\route.ts:208:    );
+  app\api\residencia\familia\route.ts:209:  }
+  app\api\residencia\familia\route.ts:210:
+  app\api\residencia\familia\route.ts:265:        ?.controlarAlarme ===
+  app\api\residencia\familia\route.ts:266:      true,
+  app\api\residencia\familia\route.ts:267:
+> app\api\residencia\familia\route.ts:268:    gerenciarMoradores:
+  app\api\residencia\familia\route.ts:269:      false,
+  app\api\residencia\familia\route.ts:270:
+  app\api\residencia\familia\route.ts:271:    gerenciarConfiguracoes:
+  app\api\residencia\familia\route.ts:272:      false,
+  app\api\residencia\familia\route.ts:273:  };
+  app\api\residencia\familia\route.ts:274:}
+  app\api\residencia\familia\route.ts:275:
+  app\api\residencia\familia\route.ts:276:export async function GET(
+  app\api\residencia\familia\route.ts:588:        "residencia",
+  app\api\residencia\familia\route.ts:589:
+  app\api\residencia\familia\route.ts:590:      /*
+> app\api\residencia\familia\route.ts:591:       * "morador" permanece apenas como perfil
+  app\api\residencia\familia\route.ts:592:       * t?cnico de compatibilidade do Core.
+  app\api\residencia\familia\route.ts:593:       * A experi?ncia da resid?ncia ser?
+  app\api\residencia\familia\route.ts:594:       * controlada pelas permiss?es abaixo.
+  app\api\residencia\familia\route.ts:595:       */
+  app\api\residencia\familia\route.ts:596:      perfilPrincipal:
+> app\api\residencia\familia\route.ts:597:        "morador",
+  app\api\residencia\familia\route.ts:598:
+  app\api\residencia\familia\route.ts:599:      perfis: {
+  app\api\residencia\familia\route.ts:600:        ...(vinculoAnterior
+  app\api\residencia\familia\route.ts:601:          ?.perfis ||
+  app\api\residencia\familia\route.ts:602:          {}),
+  app\api\residencia\familia\route.ts:603:
+> app\api\residencia\familia\route.ts:604:        morador:
+  app\api\residencia\familia\route.ts:605:          true,
+  app\api\residencia\familia\route.ts:606:      },
+  app\api\residencia\familia\route.ts:607:
+  app\api\residencia\familia\route.ts:608:      unidades: {
+  app\api\residencia\familia\route.ts:609:        ...(vinculoAnterior
+  app\api\residencia\familia\route.ts:610:          ?.unidades ||
+  app\api\residencia\familia\route.ts:611:          {}),
+  app\api\residencia\familia\route.ts:612:
+  app\atualizacao\[condominio]\page.tsx:104:    proprietario: "Proprietário",
+  app\atualizacao\[condominio]\page.tsx:105:    inquilino: "Inquilino",
+  app\atualizacao\[condominio]\page.tsx:106:    familiar: "Familiar",
+> app\atualizacao\[condominio]\page.tsx:107:    morador: "Morador",
+  app\atualizacao\[condominio]\page.tsx:108:    outro: "Outro",
+  app\atualizacao\[condominio]\page.tsx:109:  };
+  app\atualizacao\[condominio]\page.tsx:110:
+  app\atualizacao\[condominio]\page.tsx:111:  return perfis[perfil] || perfil;
+  app\atualizacao\[condominio]\page.tsx:112:}
+  app\atualizacao\[condominio]\page.tsx:113:
+  app\atualizacao\[condominio]\page.tsx:114:export default function AtualizacaoCadastralPage() {
+  app\atualizacao\[condominio]\page.tsx:115:  const params = useParams<{ condominio: string }>();
+  app\atualizacao\[condominio]\page.tsx:131:  const [unidadeSelecionadaId, setUnidadeSelecionadaId] =
+  app\atualizacao\[condominio]\page.tsx:132:    useState("");
+  app\atualizacao\[condominio]\page.tsx:133:
+> app\atualizacao\[condominio]\page.tsx:134:  const [nomeMorador, setNomeMorador] = useState("");
+> app\atualizacao\[condominio]\page.tsx:135:  const [telefoneMorador, setTelefoneMorador] = useState("");
+> app\atualizacao\[condominio]\page.tsx:136:  const [emailMorador, setEmailMorador] = useState("");
+> app\atualizacao\[condominio]\page.tsx:137:  const [perfilMorador, setPerfilMorador] =
+  app\atualizacao\[condominio]\page.tsx:138:    useState("proprietario");
+  app\atualizacao\[condominio]\page.tsx:139:
+  app\atualizacao\[condominio]\page.tsx:140:  const [recebeChamadas, setRecebeChamadas] = useState(true);
+  app\atualizacao\[condominio]\page.tsx:141:  const [salvando, setSalvando] = useState(false);
+  app\atualizacao\[condominio]\page.tsx:142:  const [codigoSolicitacao, setCodigoSolicitacao] = useState("");
+  app\atualizacao\[condominio]\page.tsx:143:
+  app\atualizacao\[condominio]\page.tsx:144:  useEffect(() => {
+  app\atualizacao\[condominio]\page.tsx:145:    setCarregando(true);
+  app\atualizacao\[condominio]\page.tsx:366:  }
+  app\atualizacao\[condominio]\page.tsx:367:
+  app\atualizacao\[condominio]\page.tsx:368:  function continuarComDados() {
+> app\atualizacao\[condominio]\page.tsx:369:    if (!nomeMorador.trim()) {
+  app\atualizacao\[condominio]\page.tsx:370:      alert("Digite seu nome completo.");
+  app\atualizacao\[condominio]\page.tsx:371:      return;
+  app\atualizacao\[condominio]\page.tsx:372:    }
+  app\atualizacao\[condominio]\page.tsx:373:
+> app\atualizacao\[condominio]\page.tsx:374:    const telefoneNumeros = telefoneMorador.replace(/\D/g, "");
+  app\atualizacao\[condominio]\page.tsx:375:
+  app\atualizacao\[condominio]\page.tsx:376:    if (telefoneNumeros.length < 10) {
+  app\atualizacao\[condominio]\page.tsx:377:      alert("Digite um telefone ou WhatsApp válido.");
+  app\atualizacao\[condominio]\page.tsx:378:      return;
+  app\atualizacao\[condominio]\page.tsx:379:    }
+  app\atualizacao\[condominio]\page.tsx:380:
+  app\atualizacao\[condominio]\page.tsx:381:    if (
+> app\atualizacao\[condominio]\page.tsx:382:      emailMorador.trim() &&
+> app\atualizacao\[condominio]\page.tsx:383:      !emailMorador.includes("@")
+  app\atualizacao\[condominio]\page.tsx:384:    ) {
+  app\atualizacao\[condominio]\page.tsx:385:      alert("Digite um e-mail válido ou deixe o campo vazio.");
+  app\atualizacao\[condominio]\page.tsx:386:      return;
+  app\atualizacao\[condominio]\page.tsx:387:    }
+  app\atualizacao\[condominio]\page.tsx:388:
+  app\atualizacao\[condominio]\page.tsx:389:    setEtapa("revisao");
+  app\atualizacao\[condominio]\page.tsx:390:  }
+  app\atualizacao\[condominio]\page.tsx:391:
+  app\atualizacao\[condominio]\page.tsx:426:        unidadeNome: textoUnidadeSelecionada(),
+  app\atualizacao\[condominio]\page.tsx:427:        bloco: unidadeSelecionada.bloco || "",
+  app\atualizacao\[condominio]\page.tsx:428:        nomeUnidade: unidadeSelecionada.nome,
+> app\atualizacao\[condominio]\page.tsx:429:        nome: nomeMorador.trim(),
+> app\atualizacao\[condominio]\page.tsx:430:        telefone: telefoneMorador.trim(),
+> app\atualizacao\[condominio]\page.tsx:431:        email: emailMorador.trim(),
+> app\atualizacao\[condominio]\page.tsx:432:        perfil: perfilMorador,
+  app\atualizacao\[condominio]\page.tsx:433:        recebeChamadas,
+  app\atualizacao\[condominio]\page.tsx:434:        status: "pendente",
+  app\atualizacao\[condominio]\page.tsx:435:        origem: "link-publico",
+  app\atualizacao\[condominio]\page.tsx:436:        criadoEm: agora.toISOString(),
+  app\atualizacao\[condominio]\page.tsx:437:        atualizadoEm: agora.toISOString(),
+  app\atualizacao\[condominio]\page.tsx:438:      });
+  app\atualizacao\[condominio]\page.tsx:439:
+  app\atualizacao\[condominio]\page.tsx:440:      const statusAtual =
+  app\atualizacao\[condominio]\page.tsx:501:
+  app\atualizacao\[condominio]\page.tsx:502:              <p className="text-slate-300 mt-3 leading-relaxed">
+  app\atualizacao\[condominio]\page.tsx:503:                O condomínio está atualizando os dados dos
+> app\atualizacao\[condominio]\page.tsx:504:                moradores para melhorar a comunicação e
+  app\atualizacao\[condominio]\page.tsx:505:                preparar a utilização dos recursos do QR
+  app\atualizacao\[condominio]\page.tsx:506:                Acesso.
+  app\atualizacao\[condominio]\page.tsx:507:              </p>
+  app\atualizacao\[condominio]\page.tsx:508:
+  app\atualizacao\[condominio]\page.tsx:509:              <p className="text-slate-400 mt-3 leading-relaxed">
+  app\atualizacao\[condominio]\page.tsx:510:                O preenchimento será feito pelo celular e
+  app\atualizacao\[condominio]\page.tsx:511:                levará apenas alguns minutos.
+  app\atualizacao\[condominio]\page.tsx:512:              </p>
+  app\atualizacao\[condominio]\page.tsx:629:
+  app\atualizacao\[condominio]\page.tsx:630:                  <p className="text-sm text-yellow-100 mt-2">
+  app\atualizacao\[condominio]\page.tsx:631:                    Cadastre as unidades deste condomínio no
+> app\atualizacao\[condominio]\page.tsx:632:                    painel antes de enviar o link aos moradores.
+  app\atualizacao\[condominio]\page.tsx:633:                  </p>
+  app\atualizacao\[condominio]\page.tsx:634:                </div>
+  app\atualizacao\[condominio]\page.tsx:635:              )}
+  app\atualizacao\[condominio]\page.tsx:636:
+  app\atualizacao\[condominio]\page.tsx:637:            {!carregando &&
+  app\atualizacao\[condominio]\page.tsx:638:              !erroCarregamento &&
+  app\atualizacao\[condominio]\page.tsx:639:              localSelecionado &&
+  app\atualizacao\[condominio]\page.tsx:640:              unidadesDoCondominio.length > 0 && (
+  app\atualizacao\[condominio]\page.tsx:787:
+  app\atualizacao\[condominio]\page.tsx:788:                <input
+  app\atualizacao\[condominio]\page.tsx:789:                  type="text"
+> app\atualizacao\[condominio]\page.tsx:790:                  value={nomeMorador}
+  app\atualizacao\[condominio]\page.tsx:791:                  onChange={(e) =>
+> app\atualizacao\[condominio]\page.tsx:792:                    setNomeMorador(e.target.value)
+  app\atualizacao\[condominio]\page.tsx:793:                  }
+  app\atualizacao\[condominio]\page.tsx:794:                  placeholder="Digite seu nome completo"
+  app\atualizacao\[condominio]\page.tsx:795:                  autoComplete="name"
+  app\atualizacao\[condominio]\page.tsx:796:                  className="w-full bg-slate-800 border border-slate-700 rounded-xl p-4 text-white"
+  app\atualizacao\[condominio]\page.tsx:797:                />
+  app\atualizacao\[condominio]\page.tsx:798:              </div>
+  app\atualizacao\[condominio]\page.tsx:799:
+  app\atualizacao\[condominio]\page.tsx:800:              <div>
+  app\atualizacao\[condominio]\page.tsx:804:
+  app\atualizacao\[condominio]\page.tsx:805:                <input
+  app\atualizacao\[condominio]\page.tsx:806:                  type="tel"
+> app\atualizacao\[condominio]\page.tsx:807:                  value={telefoneMorador}
+  app\atualizacao\[condominio]\page.tsx:808:                  onChange={(e) =>
+> app\atualizacao\[condominio]\page.tsx:809:                    setTelefoneMorador(
+  app\atualizacao\[condominio]\page.tsx:810:                      formatarTelefone(e.target.value)
+  app\atualizacao\[condominio]\page.tsx:811:                    )
+  app\atualizacao\[condominio]\page.tsx:812:                  }
+  app\atualizacao\[condominio]\page.tsx:813:                  placeholder="(41) 99999-9999"
+  app\atualizacao\[condominio]\page.tsx:814:                  autoComplete="tel"
+  app\atualizacao\[condominio]\page.tsx:815:                  inputMode="tel"
+  app\atualizacao\[condominio]\page.tsx:816:                  className="w-full bg-slate-800 border border-slate-700 rounded-xl p-4 text-white"
+  app\atualizacao\[condominio]\page.tsx:817:                />
+  app\atualizacao\[condominio]\page.tsx:828:
+  app\atualizacao\[condominio]\page.tsx:829:                <input
+  app\atualizacao\[condominio]\page.tsx:830:                  type="email"
+> app\atualizacao\[condominio]\page.tsx:831:                  value={emailMorador}
+  app\atualizacao\[condominio]\page.tsx:832:                  onChange={(e) =>
+> app\atualizacao\[condominio]\page.tsx:833:                    setEmailMorador(e.target.value)
+  app\atualizacao\[condominio]\page.tsx:834:                  }
+  app\atualizacao\[condominio]\page.tsx:835:                  placeholder="seunome@email.com"
+  app\atualizacao\[condominio]\page.tsx:836:                  autoComplete="email"
+  app\atualizacao\[condominio]\page.tsx:837:                  className="w-full bg-slate-800 border border-slate-700 rounded-xl p-4 text-white"
+  app\atualizacao\[condominio]\page.tsx:838:                />
+  app\atualizacao\[condominio]\page.tsx:839:              </div>
+  app\atualizacao\[condominio]\page.tsx:840:
+  app\atualizacao\[condominio]\page.tsx:841:              <div>
+  app\atualizacao\[condominio]\page.tsx:844:                </label>
+  app\atualizacao\[condominio]\page.tsx:845:
+  app\atualizacao\[condominio]\page.tsx:846:                <select
+> app\atualizacao\[condominio]\page.tsx:847:                  value={perfilMorador}
+  app\atualizacao\[condominio]\page.tsx:848:                  onChange={(e) =>
+> app\atualizacao\[condominio]\page.tsx:849:                    setPerfilMorador(e.target.value)
+  app\atualizacao\[condominio]\page.tsx:850:                  }
+  app\atualizacao\[condominio]\page.tsx:851:                  className="w-full bg-slate-800 border border-slate-700 rounded-xl p-4 text-white"
+  app\atualizacao\[condominio]\page.tsx:852:                >
+  app\atualizacao\[condominio]\page.tsx:853:                  <option value="proprietario">
+  app\atualizacao\[condominio]\page.tsx:854:                    Proprietário
+  app\atualizacao\[condominio]\page.tsx:855:                  </option>
+  app\atualizacao\[condominio]\page.tsx:856:
+  app\atualizacao\[condominio]\page.tsx:857:                  <option value="inquilino">
+  app\atualizacao\[condominio]\page.tsx:862:                    Familiar
+  app\atualizacao\[condominio]\page.tsx:863:                  </option>
+  app\atualizacao\[condominio]\page.tsx:864:
+> app\atualizacao\[condominio]\page.tsx:865:                  <option value="morador">
+> app\atualizacao\[condominio]\page.tsx:866:                    Morador
+  app\atualizacao\[condominio]\page.tsx:867:                  </option>
+  app\atualizacao\[condominio]\page.tsx:868:
+  app\atualizacao\[condominio]\page.tsx:869:                  <option value="outro">
+  app\atualizacao\[condominio]\page.tsx:870:                    Outro
+  app\atualizacao\[condominio]\page.tsx:871:                  </option>
+  app\atualizacao\[condominio]\page.tsx:872:                </select>
+  app\atualizacao\[condominio]\page.tsx:873:              </div>
+  app\atualizacao\[condominio]\page.tsx:874:
+  app\atualizacao\[condominio]\page.tsx:973:                setEtapa("inicio");
+  app\atualizacao\[condominio]\page.tsx:974:                setBlocoSelecionado("");
+  app\atualizacao\[condominio]\page.tsx:975:                setUnidadeSelecionadaId("");
+> app\atualizacao\[condominio]\page.tsx:976:                setNomeMorador("");
+> app\atualizacao\[condominio]\page.tsx:977:                setTelefoneMorador("");
+> app\atualizacao\[condominio]\page.tsx:978:                setEmailMorador("");
+> app\atualizacao\[condominio]\page.tsx:979:                setPerfilMorador("proprietario");
+  app\atualizacao\[condominio]\page.tsx:980:                setRecebeChamadas(true);
+  app\atualizacao\[condominio]\page.tsx:981:                setCodigoSolicitacao("");
+  app\atualizacao\[condominio]\page.tsx:982:              }}
+  app\atualizacao\[condominio]\page.tsx:983:              className="w-full mt-6 bg-blue-600 hover:bg-blue-500 text-white font-black py-4 rounded-xl"
+  app\atualizacao\[condominio]\page.tsx:984:            >
+  app\atualizacao\[condominio]\page.tsx:985:              Finalizar
+  app\atualizacao\[condominio]\page.tsx:986:            </button>
+  app\atualizacao\[condominio]\page.tsx:987:          </div>
+  app\atualizacao\[condominio]\page.tsx:1038:                NOME
+  app\atualizacao\[condominio]\page.tsx:1039:              </p>
+  app\atualizacao\[condominio]\page.tsx:1040:              <p className="text-lg font-black mt-1">
+> app\atualizacao\[condominio]\page.tsx:1041:                👤 {nomeMorador.trim()}
+  app\atualizacao\[condominio]\page.tsx:1042:              </p>
+  app\atualizacao\[condominio]\page.tsx:1043:            </div>
+  app\atualizacao\[condominio]\page.tsx:1044:
+  app\atualizacao\[condominio]\page.tsx:1045:            <div className="bg-slate-800 border border-slate-700 rounded-2xl p-4">
+  app\atualizacao\[condominio]\page.tsx:1046:              <p className="text-xs font-black text-slate-400">
+  app\atualizacao\[condominio]\page.tsx:1047:                TELEFONE / WHATSAPP
+  app\atualizacao\[condominio]\page.tsx:1048:              </p>
+  app\atualizacao\[condominio]\page.tsx:1049:              <p className="text-lg font-black mt-1">
+> app\atualizacao\[condominio]\page.tsx:1050:                📱 {telefoneMorador}
+  app\atualizacao\[condominio]\page.tsx:1051:              </p>
+  app\atualizacao\[condominio]\page.tsx:1052:            </div>
+  app\atualizacao\[condominio]\page.tsx:1053:
+  app\atualizacao\[condominio]\page.tsx:1054:            <div className="bg-slate-800 border border-slate-700 rounded-2xl p-4">
+  app\atualizacao\[condominio]\page.tsx:1055:              <p className="text-xs font-black text-slate-400">
+  app\atualizacao\[condominio]\page.tsx:1056:                E-MAIL
+  app\atualizacao\[condominio]\page.tsx:1057:              </p>
+  app\atualizacao\[condominio]\page.tsx:1058:              <p className="text-lg font-black mt-1 break-all">
+> app\atualizacao\[condominio]\page.tsx:1059:                ✉️ {emailMorador.trim() || "Não informado"}
+  app\atualizacao\[condominio]\page.tsx:1060:              </p>
+  app\atualizacao\[condominio]\page.tsx:1061:            </div>
+  app\atualizacao\[condominio]\page.tsx:1062:
+  app\atualizacao\[condominio]\page.tsx:1063:            <div className="bg-slate-800 border border-slate-700 rounded-2xl p-4">
+  app\atualizacao\[condominio]\page.tsx:1064:              <p className="text-xs font-black text-slate-400">
+  app\atualizacao\[condominio]\page.tsx:1065:                RELAÇÃO COM A UNIDADE
+  app\atualizacao\[condominio]\page.tsx:1066:              </p>
+  app\atualizacao\[condominio]\page.tsx:1067:              <p className="text-lg font-black mt-1">
+> app\atualizacao\[condominio]\page.tsx:1068:                🏠 {textoPerfil(perfilMorador)}
+  app\atualizacao\[condominio]\page.tsx:1069:              </p>
+  app\atualizacao\[condominio]\page.tsx:1070:            </div>
+  app\atualizacao\[condominio]\page.tsx:1071:
+  app\atualizacao\[condominio]\page.tsx:1072:            <div className="bg-slate-800 border border-slate-700 rounded-2xl p-4">
+  app\atualizacao\[condominio]\page.tsx:1073:              <p className="text-xs font-black text-slate-400">
+  app\atualizacao\[condominio]\page.tsx:1074:                CHAMADAS DE VISITANTES
+  app\atualizacao\[condominio]\page.tsx:1075:              </p>
+  app\atualizacao\[condominio]\page.tsx:1076:              <p className="text-lg font-black mt-1">
+  app\components\core\dashboard\BotaoMeusAcessos.backup-regra-master-proprietario-20260811-082529.tsx:2:
+  app\components\core\dashboard\BotaoMeusAcessos.backup-regra-master-proprietario-20260811-082529.tsx:3:import { useEffect, useRef, useState } from 
+"react";
+  app\components\core\dashboard\BotaoMeusAcessos.backup-regra-master-proprietario-20260811-082529.tsx:4:
+> app\components\core\dashboard\BotaoMeusAcessos.backup-regra-master-proprietario-20260811-082529.tsx:5:import { usePerfilAtivo } from 
+"@/app/context/PerfilAtivoContext";
+  app\components\core\dashboard\BotaoMeusAcessos.backup-regra-master-proprietario-20260811-082529.tsx:6:import { useAuth } from 
+"@/app/context/AuthContext";
+  app\components\core\dashboard\BotaoMeusAcessos.backup-regra-master-proprietario-20260811-082529.tsx:7:import { useRouter } from "next/navigation";
+  app\components\core\dashboard\BotaoMeusAcessos.backup-regra-master-proprietario-20260811-082529.tsx:8:
+  app\components\core\dashboard\BotaoMeusAcessos.backup-regra-master-proprietario-20260811-082529.tsx:9:type BotaoMeusAcessosProps = {
+  app\components\core\dashboard\BotaoMeusAcessos.backup-regra-master-proprietario-20260811-082529.tsx:10:  className?: string;
+  app\components\core\dashboard\BotaoMeusAcessos.backup-regra-master-proprietario-20260811-082529.tsx:11:};
+  app\components\core\dashboard\BotaoMeusAcessos.backup-regra-master-proprietario-20260811-082529.tsx:12:
+  app\components\core\dashboard\BotaoMeusAcessos.backup-regra-master-proprietario-20260811-082529.tsx:13:function normalizarPerfil(perfil?: string | 
+null) {
+  app\components\core\dashboard\BotaoMeusAcessos.backup-regra-master-proprietario-20260811-082529.tsx:26:    case "administrador_master":
+  app\components\core\dashboard\BotaoMeusAcessos.backup-regra-master-proprietario-20260811-082529.tsx:27:      return "Administrador master";
+  app\components\core\dashboard\BotaoMeusAcessos.backup-regra-master-proprietario-20260811-082529.tsx:28:
+> app\components\core\dashboard\BotaoMeusAcessos.backup-regra-master-proprietario-20260811-082529.tsx:29:    case "morador":
+> app\components\core\dashboard\BotaoMeusAcessos.backup-regra-master-proprietario-20260811-082529.tsx:30:      return "Morador";
+  app\components\core\dashboard\BotaoMeusAcessos.backup-regra-master-proprietario-20260811-082529.tsx:31:
+  app\components\core\dashboard\BotaoMeusAcessos.backup-regra-master-proprietario-20260811-082529.tsx:32:    case "inquilino":
+  app\components\core\dashboard\BotaoMeusAcessos.backup-regra-master-proprietario-20260811-082529.tsx:33:      return "Inquilino";
+  app\components\core\dashboard\BotaoMeusAcessos.backup-regra-master-proprietario-20260811-082529.tsx:34:
+  app\components\core\dashboard\BotaoMeusAcessos.backup-regra-master-proprietario-20260811-082529.tsx:35:    case "proprietario":
+  app\components\core\dashboard\BotaoMeusAcessos.backup-regra-master-proprietario-20260811-082529.tsx:36:      return "Proprietário";
+  app\components\core\dashboard\BotaoMeusAcessos.backup-regra-master-proprietario-20260811-082529.tsx:37:
+  app\components\core\dashboard\BotaoMeusAcessos.backup-regra-master-proprietario-20260811-082529.tsx:38:    case "sindico":
+  app\components\core\dashboard\BotaoMeusAcessos.backup-regra-master-proprietario-20260811-082529.tsx:73:    useRef<HTMLDivElement | null>(null);
+  app\components\core\dashboard\BotaoMeusAcessos.backup-regra-master-proprietario-20260811-082529.tsx:74:
+  app\components\core\dashboard\BotaoMeusAcessos.backup-regra-master-proprietario-20260811-082529.tsx:75:  const {
+> app\components\core\dashboard\BotaoMeusAcessos.backup-regra-master-proprietario-20260811-082529.tsx:76:    perfilAtivo,
+  app\components\core\dashboard\BotaoMeusAcessos.backup-regra-master-proprietario-20260811-082529.tsx:77:    perfisDisponiveis,
+  app\components\core\dashboard\BotaoMeusAcessos.backup-regra-master-proprietario-20260811-082529.tsx:78:    selecionarPerfil,
+> app\components\core\dashboard\BotaoMeusAcessos.backup-regra-master-proprietario-20260811-082529.tsx:79:  } = usePerfilAtivo();
+  app\components\core\dashboard\BotaoMeusAcessos.backup-regra-master-proprietario-20260811-082529.tsx:80:
+  app\components\core\dashboard\BotaoMeusAcessos.backup-regra-master-proprietario-20260811-082529.tsx:81:  const {
+  app\components\core\dashboard\BotaoMeusAcessos.backup-regra-master-proprietario-20260811-082529.tsx:82:    vinculoSelecionado,
+  app\components\core\dashboard\BotaoMeusAcessos.backup-regra-master-proprietario-20260811-082529.tsx:83:  } = useAuth();
+  app\components\core\dashboard\BotaoMeusAcessos.backup-regra-master-proprietario-20260811-082529.tsx:84:
+  app\components\core\dashboard\BotaoMeusAcessos.backup-regra-master-proprietario-20260811-082529.tsx:85:  useEffect(() => {
+  app\components\core\dashboard\BotaoMeusAcessos.backup-regra-master-proprietario-20260811-082529.tsx:86:    function fecharAoClicarFora(
+  app\components\core\dashboard\BotaoMeusAcessos.backup-regra-master-proprietario-20260811-082529.tsx:87:      evento: MouseEvent
+  app\components\core\dashboard\BotaoMeusAcessos.backup-regra-master-proprietario-20260811-082529.tsx:135:    return null;
+  app\components\core\dashboard\BotaoMeusAcessos.backup-regra-master-proprietario-20260811-082529.tsx:136:  }
+  app\components\core\dashboard\BotaoMeusAcessos.backup-regra-master-proprietario-20260811-082529.tsx:137:
+> app\components\core\dashboard\BotaoMeusAcessos.backup-regra-master-proprietario-20260811-082529.tsx:138:  function trocarPerfil(
+  app\components\core\dashboard\BotaoMeusAcessos.backup-regra-master-proprietario-20260811-082529.tsx:139:    perfil: string
+  app\components\core\dashboard\BotaoMeusAcessos.backup-regra-master-proprietario-20260811-082529.tsx:140:  ) {
+  app\components\core\dashboard\BotaoMeusAcessos.backup-regra-master-proprietario-20260811-082529.tsx:141:    const normalizado =
+  app\components\core\dashboard\BotaoMeusAcessos.backup-regra-master-proprietario-20260811-082529.tsx:142:      normalizarPerfil(
+  app\components\core\dashboard\BotaoMeusAcessos.backup-regra-master-proprietario-20260811-082529.tsx:143:        perfil
+  app\components\core\dashboard\BotaoMeusAcessos.backup-regra-master-proprietario-20260811-082529.tsx:144:      );
+  app\components\core\dashboard\BotaoMeusAcessos.backup-regra-master-proprietario-20260811-082529.tsx:145:
+  app\components\core\dashboard\BotaoMeusAcessos.backup-regra-master-proprietario-20260811-082529.tsx:146:    selecionarPerfil(
+  app\components\core\dashboard\BotaoMeusAcessos.backup-regra-master-proprietario-20260811-082529.tsx:158:        );
+  app\components\core\dashboard\BotaoMeusAcessos.backup-regra-master-proprietario-20260811-082529.tsx:159:        return;
+  app\components\core\dashboard\BotaoMeusAcessos.backup-regra-master-proprietario-20260811-082529.tsx:160:
+> app\components\core\dashboard\BotaoMeusAcessos.backup-regra-master-proprietario-20260811-082529.tsx:161:      case "morador":
+  app\components\core\dashboard\BotaoMeusAcessos.backup-regra-master-proprietario-20260811-082529.tsx:162:      case "inquilino":
+  app\components\core\dashboard\BotaoMeusAcessos.backup-regra-master-proprietario-20260811-082529.tsx:163:        router.push(
+> app\components\core\dashboard\BotaoMeusAcessos.backup-regra-master-proprietario-20260811-082529.tsx:164:          "/dashboard/morador"
+  app\components\core\dashboard\BotaoMeusAcessos.backup-regra-master-proprietario-20260811-082529.tsx:165:        );
+  app\components\core\dashboard\BotaoMeusAcessos.backup-regra-master-proprietario-20260811-082529.tsx:166:        return;
+  app\components\core\dashboard\BotaoMeusAcessos.backup-regra-master-proprietario-20260811-082529.tsx:167:
+  app\components\core\dashboard\BotaoMeusAcessos.backup-regra-master-proprietario-20260811-082529.tsx:168:      case "sindico":
+  app\components\core\dashboard\BotaoMeusAcessos.backup-regra-master-proprietario-20260811-082529.tsx:169:        router.push(
+  app\components\core\dashboard\BotaoMeusAcessos.backup-regra-master-proprietario-20260811-082529.tsx:170:          "/dashboard/sindico"
+  app\components\core\dashboard\BotaoMeusAcessos.backup-regra-master-proprietario-20260811-082529.tsx:171:        );
+  app\components\core\dashboard\BotaoMeusAcessos.backup-regra-master-proprietario-20260811-082529.tsx:172:        return;
+  app\components\core\dashboard\BotaoMeusAcessos.backup-regra-master-proprietario-20260811-082529.tsx:247:
+  app\components\core\dashboard\BotaoMeusAcessos.backup-regra-master-proprietario-20260811-082529.tsx:248:          <p className="mt-1 truncate 
+text-base font-black text-white">
+  app\components\core\dashboard\BotaoMeusAcessos.backup-regra-master-proprietario-20260811-082529.tsx:249:            {nomePerfil(
+> app\components\core\dashboard\BotaoMeusAcessos.backup-regra-master-proprietario-20260811-082529.tsx:250:              perfilAtivo
+  app\components\core\dashboard\BotaoMeusAcessos.backup-regra-master-proprietario-20260811-082529.tsx:251:            )}
+  app\components\core\dashboard\BotaoMeusAcessos.backup-regra-master-proprietario-20260811-082529.tsx:252:          </p>
+  app\components\core\dashboard\BotaoMeusAcessos.backup-regra-master-proprietario-20260811-082529.tsx:253:
+  app\components\core\dashboard\BotaoMeusAcessos.backup-regra-master-proprietario-20260811-082529.tsx:254:          <p className="mt-1 text-[10px] 
+font-bold text-blue-100">
+  app\components\core\dashboard\BotaoMeusAcessos.backup-regra-master-proprietario-20260811-082529.tsx:255:            {perfisDisponiveis.length} 
+acessos disponíveis
+  app\components\core\dashboard\BotaoMeusAcessos.backup-regra-master-proprietario-20260811-082529.tsx:256:          </p>
+  app\components\core\dashboard\BotaoMeusAcessos.backup-regra-master-proprietario-20260811-082529.tsx:257:        </div>
+  app\components\core\dashboard\BotaoMeusAcessos.backup-regra-master-proprietario-20260811-082529.tsx:258:
+  app\components\core\dashboard\BotaoMeusAcessos.backup-regra-master-proprietario-20260811-082529.tsx:277:                  perfil
+  app\components\core\dashboard\BotaoMeusAcessos.backup-regra-master-proprietario-20260811-082529.tsx:278:                ) ===
+  app\components\core\dashboard\BotaoMeusAcessos.backup-regra-master-proprietario-20260811-082529.tsx:279:                normalizarPerfil(
+> app\components\core\dashboard\BotaoMeusAcessos.backup-regra-master-proprietario-20260811-082529.tsx:280:                  perfilAtivo
+  app\components\core\dashboard\BotaoMeusAcessos.backup-regra-master-proprietario-20260811-082529.tsx:281:                );
+  app\components\core\dashboard\BotaoMeusAcessos.backup-regra-master-proprietario-20260811-082529.tsx:282:
+  app\components\core\dashboard\BotaoMeusAcessos.backup-regra-master-proprietario-20260811-082529.tsx:283:              return (
+  app\components\core\dashboard\BotaoMeusAcessos.backup-regra-master-proprietario-20260811-082529.tsx:284:                <button
+  app\components\core\dashboard\BotaoMeusAcessos.backup-regra-master-proprietario-20260811-082529.tsx:285:                  key={perfil}
+  app\components\core\dashboard\BotaoMeusAcessos.backup-regra-master-proprietario-20260811-082529.tsx:286:                  type="button"
+  app\components\core\dashboard\BotaoMeusAcessos.backup-regra-master-proprietario-20260811-082529.tsx:287:                  onClick={() =>
+> app\components\core\dashboard\BotaoMeusAcessos.backup-regra-master-proprietario-20260811-082529.tsx:288:                    trocarPerfil(
+  app\components\core\dashboard\BotaoMeusAcessos.backup-regra-master-proprietario-20260811-082529.tsx:289:                      perfil
+  app\components\core\dashboard\BotaoMeusAcessos.backup-regra-master-proprietario-20260811-082529.tsx:290:                    )
+  app\components\core\dashboard\BotaoMeusAcessos.backup-regra-master-proprietario-20260811-082529.tsx:291:                  }
+  app\components\core\dashboard\BotaoMeusAcessos.backup-regra-master-proprietario-20260811-082529.tsx:292:                  className={[
+  app\components\core\dashboard\BotaoMeusAcessos.backup-regra-master-proprietario-20260811-082529.tsx:293:                    "flex w-full 
+items-center justify-between rounded-xl px-4 py-3 text-left text-sm font-black transition",
+  app\components\core\dashboard\BotaoMeusAcessos.backup-regra-master-proprietario-20260811-082529.tsx:294:                    ativo
+  app\components\core\dashboard\BotaoMeusAcessos.backup-regra-master-proprietario-20260811-082529.tsx:295:                      ? "bg-violet-500 
+text-white"
+  app\components\core\dashboard\BotaoMeusAcessos.backup-regra-master-proprietario-20260811-082529.tsx:296:                      : "text-slate-200 
+hover:bg-slate-800",
+  app\components\core\dashboard\BotaoMeusAcessos.tsx:2:
+  app\components\core\dashboard\BotaoMeusAcessos.tsx:3:import { useEffect, useRef, useState } from "react";
+  app\components\core\dashboard\BotaoMeusAcessos.tsx:4:
+> app\components\core\dashboard\BotaoMeusAcessos.tsx:5:import { usePerfilAtivo } from "@/app/context/PerfilAtivoContext";
+  app\components\core\dashboard\BotaoMeusAcessos.tsx:6:import { useAuth } from "@/app/context/AuthContext";
+  app\components\core\dashboard\BotaoMeusAcessos.tsx:7:import { useRouter } from "next/navigation";
+  app\components\core\dashboard\BotaoMeusAcessos.tsx:8:
+  app\components\core\dashboard\BotaoMeusAcessos.tsx:9:type BotaoMeusAcessosProps = {
+  app\components\core\dashboard\BotaoMeusAcessos.tsx:10:  className?: string;
+  app\components\core\dashboard\BotaoMeusAcessos.tsx:11:};
+  app\components\core\dashboard\BotaoMeusAcessos.tsx:12:
+  app\components\core\dashboard\BotaoMeusAcessos.tsx:13:function normalizarPerfil(perfil?: string | null) {
+  app\components\core\dashboard\BotaoMeusAcessos.tsx:26:    case "administrador_master":
+  app\components\core\dashboard\BotaoMeusAcessos.tsx:27:      return "Administrador master";
+  app\components\core\dashboard\BotaoMeusAcessos.tsx:28:
+> app\components\core\dashboard\BotaoMeusAcessos.tsx:29:    case "morador":
+> app\components\core\dashboard\BotaoMeusAcessos.tsx:30:      return "Morador";
+  app\components\core\dashboard\BotaoMeusAcessos.tsx:31:
+  app\components\core\dashboard\BotaoMeusAcessos.tsx:32:    case "inquilino":
+  app\components\core\dashboard\BotaoMeusAcessos.tsx:33:      return "Inquilino";
+  app\components\core\dashboard\BotaoMeusAcessos.tsx:34:
+  app\components\core\dashboard\BotaoMeusAcessos.tsx:35:    case "proprietario":
+  app\components\core\dashboard\BotaoMeusAcessos.tsx:36:      return "Proprietário";
+  app\components\core\dashboard\BotaoMeusAcessos.tsx:37:
+  app\components\core\dashboard\BotaoMeusAcessos.tsx:38:    case "sindico":
+  app\components\core\dashboard\BotaoMeusAcessos.tsx:73:    useRef<HTMLDivElement | null>(null);
+  app\components\core\dashboard\BotaoMeusAcessos.tsx:74:
+  app\components\core\dashboard\BotaoMeusAcessos.tsx:75:  const {
+> app\components\core\dashboard\BotaoMeusAcessos.tsx:76:    perfilAtivo,
+  app\components\core\dashboard\BotaoMeusAcessos.tsx:77:    perfisDisponiveis,
+  app\components\core\dashboard\BotaoMeusAcessos.tsx:78:    selecionarPerfil,
+> app\components\core\dashboard\BotaoMeusAcessos.tsx:79:  } = usePerfilAtivo();
+  app\components\core\dashboard\BotaoMeusAcessos.tsx:80:
+  app\components\core\dashboard\BotaoMeusAcessos.tsx:81:  const {
+  app\components\core\dashboard\BotaoMeusAcessos.tsx:82:    vinculoSelecionado,
+  app\components\core\dashboard\BotaoMeusAcessos.tsx:83:  } = useAuth();
+  app\components\core\dashboard\BotaoMeusAcessos.tsx:84:
+  app\components\core\dashboard\BotaoMeusAcessos.tsx:85:  useEffect(() => {
+  app\components\core\dashboard\BotaoMeusAcessos.tsx:86:    function fecharAoClicarFora(
+  app\components\core\dashboard\BotaoMeusAcessos.tsx:87:      evento: MouseEvent
+  app\components\core\dashboard\BotaoMeusAcessos.tsx:135:    return null;
+  app\components\core\dashboard\BotaoMeusAcessos.tsx:136:  }
+  app\components\core\dashboard\BotaoMeusAcessos.tsx:137:
+> app\components\core\dashboard\BotaoMeusAcessos.tsx:138:  function trocarPerfil(
+  app\components\core\dashboard\BotaoMeusAcessos.tsx:139:    perfil: string
+  app\components\core\dashboard\BotaoMeusAcessos.tsx:140:  ) {
+  app\components\core\dashboard\BotaoMeusAcessos.tsx:141:    const normalizado =
+  app\components\core\dashboard\BotaoMeusAcessos.tsx:142:      normalizarPerfil(
+  app\components\core\dashboard\BotaoMeusAcessos.tsx:143:        perfil
+  app\components\core\dashboard\BotaoMeusAcessos.tsx:144:      );
+  app\components\core\dashboard\BotaoMeusAcessos.tsx:145:
+  app\components\core\dashboard\BotaoMeusAcessos.tsx:146:    selecionarPerfil(
+  app\components\core\dashboard\BotaoMeusAcessos.tsx:158:        );
+  app\components\core\dashboard\BotaoMeusAcessos.tsx:159:        return;
+  app\components\core\dashboard\BotaoMeusAcessos.tsx:160:
+> app\components\core\dashboard\BotaoMeusAcessos.tsx:161:      case "morador":
+  app\components\core\dashboard\BotaoMeusAcessos.tsx:162:      case "inquilino":
+  app\components\core\dashboard\BotaoMeusAcessos.tsx:163:        router.push(
+> app\components\core\dashboard\BotaoMeusAcessos.tsx:164:          "/dashboard/morador"
+  app\components\core\dashboard\BotaoMeusAcessos.tsx:165:        );
+  app\components\core\dashboard\BotaoMeusAcessos.tsx:166:        return;
+  app\components\core\dashboard\BotaoMeusAcessos.tsx:167:
+  app\components\core\dashboard\BotaoMeusAcessos.tsx:168:      case "sindico":
+  app\components\core\dashboard\BotaoMeusAcessos.tsx:169:        router.push(
+  app\components\core\dashboard\BotaoMeusAcessos.tsx:170:          "/dashboard/sindico"
+  app\components\core\dashboard\BotaoMeusAcessos.tsx:171:        );
+  app\components\core\dashboard\BotaoMeusAcessos.tsx:172:        return;
+  app\components\core\dashboard\BotaoMeusAcessos.tsx:247:
+  app\components\core\dashboard\BotaoMeusAcessos.tsx:248:          <p className="mt-1 truncate text-base font-black text-white">
+  app\components\core\dashboard\BotaoMeusAcessos.tsx:249:            {nomePerfil(
+> app\components\core\dashboard\BotaoMeusAcessos.tsx:250:              perfilAtivo
+  app\components\core\dashboard\BotaoMeusAcessos.tsx:251:            )}
+  app\components\core\dashboard\BotaoMeusAcessos.tsx:252:          </p>
+  app\components\core\dashboard\BotaoMeusAcessos.tsx:253:
+  app\components\core\dashboard\BotaoMeusAcessos.tsx:254:          <p className="mt-1 text-[10px] font-bold text-blue-100">
+  app\components\core\dashboard\BotaoMeusAcessos.tsx:255:            {perfisDisponiveis.length} acessos disponíveis
+  app\components\core\dashboard\BotaoMeusAcessos.tsx:256:          </p>
+  app\components\core\dashboard\BotaoMeusAcessos.tsx:257:        </div>
+  app\components\core\dashboard\BotaoMeusAcessos.tsx:258:
+  app\components\core\dashboard\BotaoMeusAcessos.tsx:277:                  perfil
+  app\components\core\dashboard\BotaoMeusAcessos.tsx:278:                ) ===
+  app\components\core\dashboard\BotaoMeusAcessos.tsx:279:                normalizarPerfil(
+> app\components\core\dashboard\BotaoMeusAcessos.tsx:280:                  perfilAtivo
+  app\components\core\dashboard\BotaoMeusAcessos.tsx:281:                );
+  app\components\core\dashboard\BotaoMeusAcessos.tsx:282:
+  app\components\core\dashboard\BotaoMeusAcessos.tsx:283:              return (
+  app\components\core\dashboard\BotaoMeusAcessos.tsx:284:                <button
+  app\components\core\dashboard\BotaoMeusAcessos.tsx:285:                  key={perfil}
+  app\components\core\dashboard\BotaoMeusAcessos.tsx:286:                  type="button"
+  app\components\core\dashboard\BotaoMeusAcessos.tsx:287:                  onClick={() =>
+> app\components\core\dashboard\BotaoMeusAcessos.tsx:288:                    trocarPerfil(
+  app\components\core\dashboard\BotaoMeusAcessos.tsx:289:                      perfil
+  app\components\core\dashboard\BotaoMeusAcessos.tsx:290:                    )
+  app\components\core\dashboard\BotaoMeusAcessos.tsx:291:                  }
+  app\components\core\dashboard\BotaoMeusAcessos.tsx:292:                  className={[
+  app\components\core\dashboard\BotaoMeusAcessos.tsx:293:                    "flex w-full items-center justify-between rounded-xl px-4 py-3 text-left 
+text-sm font-black transition",
+  app\components\core\dashboard\BotaoMeusAcessos.tsx:294:                    ativo
+  app\components\core\dashboard\BotaoMeusAcessos.tsx:295:                      ? "bg-violet-500 text-white"
+  app\components\core\dashboard\BotaoMeusAcessos.tsx:296:                      : "text-slate-200 hover:bg-slate-800",
+  app\components\core\dashboard\MateriaisDoLocal.tsx:5:type Props = {
+  app\components\core\dashboard\MateriaisDoLocal.tsx:6:  localId: string;
+  app\components\core\dashboard\MateriaisDoLocal.tsx:7:  visitante?: string;
+> app\components\core\dashboard\MateriaisDoLocal.tsx:8:  morador?: string;
+  app\components\core\dashboard\MateriaisDoLocal.tsx:9:  painel?: string;
+  app\components\core\dashboard\MateriaisDoLocal.tsx:10:  titulo?: string;
+  app\components\core\dashboard\MateriaisDoLocal.tsx:11:};
+  app\components\core\dashboard\MateriaisDoLocal.tsx:12:
+  app\components\core\dashboard\MateriaisDoLocal.tsx:13:function montarUrlCompleta(caminho?: string) {
+  app\components\core\dashboard\MateriaisDoLocal.tsx:14:  if (!caminho) return "";
+  app\components\core\dashboard\MateriaisDoLocal.tsx:15:
+  app\components\core\dashboard\MateriaisDoLocal.tsx:16:  if (
+  app\components\core\dashboard\MateriaisDoLocal.tsx:46:export default function MateriaisDoLocal({
+  app\components\core\dashboard\MateriaisDoLocal.tsx:47:  localId,
+  app\components\core\dashboard\MateriaisDoLocal.tsx:48:  visitante,
+> app\components\core\dashboard\MateriaisDoLocal.tsx:49:  morador,
+  app\components\core\dashboard\MateriaisDoLocal.tsx:50:  painel,
+  app\components\core\dashboard\MateriaisDoLocal.tsx:51:  titulo = "QR e materiais",
+  app\components\core\dashboard\MateriaisDoLocal.tsx:52:}: Props) {
+  app\components\core\dashboard\MateriaisDoLocal.tsx:53:  const [copiado, setCopiado] =
+  app\components\core\dashboard\MateriaisDoLocal.tsx:54:    useState<string | null>(null);
+  app\components\core\dashboard\MateriaisDoLocal.tsx:55:
+  app\components\core\dashboard\MateriaisDoLocal.tsx:56:  async function copiarTexto(
+  app\components\core\dashboard\MateriaisDoLocal.tsx:57:    identificador: string,
+  app\components\core\dashboard\MateriaisDoLocal.tsx:81:      );
+  app\components\core\dashboard\MateriaisDoLocal.tsx:82:    }
+  app\components\core\dashboard\MateriaisDoLocal.tsx:83:
+> app\components\core\dashboard\MateriaisDoLocal.tsx:84:    if (morador) {
+  app\components\core\dashboard\MateriaisDoLocal.tsx:85:      linhas.push(
+> app\components\core\dashboard\MateriaisDoLocal.tsx:86:        `Morador: ${montarUrlCompleta(morador)}`
+  app\components\core\dashboard\MateriaisDoLocal.tsx:87:      );
+  app\components\core\dashboard\MateriaisDoLocal.tsx:88:    }
+  app\components\core\dashboard\MateriaisDoLocal.tsx:89:
+  app\components\core\dashboard\MateriaisDoLocal.tsx:90:    if (painel) {
+  app\components\core\dashboard\MateriaisDoLocal.tsx:91:      linhas.push(
+  app\components\core\dashboard\MateriaisDoLocal.tsx:92:        `Painel: ${montarUrlCompleta(painel)}`
+  app\components\core\dashboard\MateriaisDoLocal.tsx:93:      );
+  app\components\core\dashboard\MateriaisDoLocal.tsx:94:    }
+  app\components\core\dashboard\MateriaisDoLocal.tsx:192:            </button>
+  app\components\core\dashboard\MateriaisDoLocal.tsx:193:          )}
+  app\components\core\dashboard\MateriaisDoLocal.tsx:194:
+> app\components\core\dashboard\MateriaisDoLocal.tsx:195:          {morador && (
+  app\components\core\dashboard\MateriaisDoLocal.tsx:196:            <button
+  app\components\core\dashboard\MateriaisDoLocal.tsx:197:              type="button"
+  app\components\core\dashboard\MateriaisDoLocal.tsx:198:              onClick={() =>
+  app\components\core\dashboard\MateriaisDoLocal.tsx:199:                copiarTexto(
+> app\components\core\dashboard\MateriaisDoLocal.tsx:200:                  "morador",
+> app\components\core\dashboard\MateriaisDoLocal.tsx:201:                  montarUrlCompleta(morador)
+  app\components\core\dashboard\MateriaisDoLocal.tsx:202:                )
+  app\components\core\dashboard\MateriaisDoLocal.tsx:203:              }
+  app\components\core\dashboard\MateriaisDoLocal.tsx:204:              className="rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-left 
+text-sm font-bold text-slate-300 transition hover:bg-slate-800"
+  app\components\core\dashboard\MateriaisDoLocal.tsx:205:            >
+> app\components\core\dashboard\MateriaisDoLocal.tsx:206:              {copiado === "morador"
+> app\components\core\dashboard\MateriaisDoLocal.tsx:207:                ? "Link do morador copiado"
+> app\components\core\dashboard\MateriaisDoLocal.tsx:208:                : "Copiar link do morador"}
+  app\components\core\dashboard\MateriaisDoLocal.tsx:209:            </button>
+  app\components\core\dashboard\MateriaisDoLocal.tsx:210:          )}
+  app\components\core\dashboard\MateriaisDoLocal.tsx:211:
+  app\components\core\dashboard\MateriaisDoLocal.tsx:212:          <button
+  app\components\core\dashboard\MateriaisDoLocal.tsx:213:            type="button"
+  app\components\core\dashboard\MateriaisDoLocal.tsx:214:            onClick={() =>
+  app\components\core\dashboard\MateriaisDoLocal.tsx:215:              copiarTexto(
+  app\components\core\dashboard\MateriaisDoLocal.tsx:216:                "qr",
+  app\components\core\dashboard\ModalTrocarContexto.tsx:85:      string,
+  app\components\core\dashboard\ModalTrocarContexto.tsx:86:      string
+  app\components\core\dashboard\ModalTrocarContexto.tsx:87:    > = {
+> app\components\core\dashboard\ModalTrocarContexto.tsx:88:      morador:
+> app\components\core\dashboard\ModalTrocarContexto.tsx:89:        "Morador",
+  app\components\core\dashboard\ModalTrocarContexto.tsx:90:
+  app\components\core\dashboard\ModalTrocarContexto.tsx:91:      sindico:
+  app\components\core\dashboard\ModalTrocarContexto.tsx:92:        "Síndico",
+  app\components\core\dashboard\ModalTrocarContexto.tsx:93:
+  app\components\core\dashboard\ModalTrocarContexto.tsx:94:      administradora:
+  app\components\core\dashboard\ModalTrocarContexto.tsx:95:        "Administradora",
+  app\components\core\dashboard\ModalTrocarContexto.tsx:96:
+  app\components\core\dashboard\ModalTrocarContexto.tsx:97:      gestor_local:
+  app\components\core\firebase\FirebaseCore.ts:50:/**
+  app\components\core\firebase\FirebaseCore.ts:51: * Firebase Authentication
+  app\components\core\firebase\FirebaseCore.ts:52: *
+> app\components\core\firebase\FirebaseCore.ts:53: * Será usado pelo login de moradores, síndicos
+  app\components\core\firebase\FirebaseCore.ts:54: * e futuros usuários da plataforma.
+  app\components\core\firebase\FirebaseCore.ts:55: */
+  app\components\core\firebase\FirebaseCore.ts:56:export const auth = getAuth(app);
+  app\components\core\firebase\FirebaseCore.ts:57:
+  app\components\core\firebase\FirebaseCore.ts:58:/**
+  app\components\core\firebase\FirebaseCore.ts:59: * Firebase Cloud Messaging
+  app\components\core\firebase\FirebaseCore.ts:60: *
+  app\components\core\firebase\FirebaseCore.ts:61: * Mantido exatamente no mesmo formato para não
+  app\components\core\push\PushButton.tsx:26:
+  app\components\core\push\PushButton.tsx:27:export default function PushButton({
+  app\components\core\push\PushButton.tsx:28:  caminhoFirebase = "configuracoes",
+> app\components\core\push\PushButton.tsx:29:  campoToken = "tokenMorador",
+  app\components\core\push\PushButton.tsx:30:  rotulo = "🔔 Ativar notificações",
+  app\components\core\push\PushButton.tsx:31:  mensagemSucesso = "Notificações ativadas com sucesso!",
+  app\components\core\push\PushButton.tsx:32:  aoGerarToken,
+  app\components\core\push\PushButton.tsx:33:}: PushButtonProps) {
+  app\components\core\push\PushButton.tsx:34:  const [status, setStatus] =
+  app\components\core\push\PushButton.tsx:35:    useState<StatusPush>("verificando");
+  app\components\core\push\PushButton.tsx:36:
+  app\components\core\push\PushButton.tsx:37:  useEffect(() => {
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:54:};
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:55:
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:56:const PERFIS = [
+> app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:57:  "morador",
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:58:  "sindico",
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:59:  "administradora",
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:60:  "gestor_local",
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:61:  "porteiro",
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:62:  "central",
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:63:  "funcionario",
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:64:  "financeiro",
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:65:  "prestador",
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:79:    string,
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:80:    string
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:81:  > = {
+> app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:82:    morador: "Morador",
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:83:    sindico: "Síndico",
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:84:    administradora: "Administradora",
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:85:    gestor_local: "Gestor local",
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:86:    porteiro: "Porteiro",
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:87:    central: "Central",
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:88:    funcionario: "Funcionário",
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:89:    financeiro: "Financeiro",
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:90:    prestador: "Prestador",
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:159:
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:160:  const [
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:161:    perfilPadrao,
+> app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:162:    setPerfilPadrao,
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:163:  ] = useState("");
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:164:
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:165:  const [
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:166:    unidadesSelecionadas,
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:167:    setUnidadesSelecionadas,
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:168:  ] = useState<string[]>([]);
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:169:
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:170:  const [
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:412:    setPessoaId("");
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:413:    setLocalId("");
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:414:    setPerfis([]);
+> app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:415:    setPerfilPadrao("");
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:416:    setUnidadesSelecionadas([]);
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:417:    setAtivo(true);
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:418:  }
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:419:
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:420:  function fechar() {
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:421:    if (salvando) {
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:422:      return;
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:423:    }
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:444:            perfilPadrao ===
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:445:            perfil
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:446:          ) {
+> app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:447:            setPerfilPadrao(
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:448:              novos[0] || ""
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:449:            );
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:450:          }
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:451:
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:452:          return novos;
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:453:        }
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:454:
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:455:        const novos = [
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:460:        if (
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:461:          !perfilPadrao
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:462:        ) {
+> app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:463:          setPerfilPadrao(
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:464:            perfil
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:465:          );
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:466:        }
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:467:
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:468:        return novos;
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:469:      }
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:470:    );
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:471:  }
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:813:                        perfil
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:814:                      }
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:815:                      onChange={() =>
+> app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:816:                        setPerfilPadrao(
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:817:                          perfil
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:818:                        )
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:819:                      }
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:820:                      className="h-5 w-5"
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:821:                    />
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:822:
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:823:                    <span className="font-bold">
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:824:                      {nomePerfil(
+  app\components\dashboard\cadastro-universal\PainelPessoas.tsx:231:      string,
+  app\components\dashboard\cadastro-universal\PainelPessoas.tsx:232:      string
+  app\components\dashboard\cadastro-universal\PainelPessoas.tsx:233:    > = {
+> app\components\dashboard\cadastro-universal\PainelPessoas.tsx:234:      morador:
+> app\components\dashboard\cadastro-universal\PainelPessoas.tsx:235:        "Morador",
+  app\components\dashboard\cadastro-universal\PainelPessoas.tsx:236:
+  app\components\dashboard\cadastro-universal\PainelPessoas.tsx:237:      sindico:
+  app\components\dashboard\cadastro-universal\PainelPessoas.tsx:238:        "Síndico",
+  app\components\dashboard\cadastro-universal\PainelPessoas.tsx:239:
+  app\components\dashboard\cadastro-universal\PainelPessoas.tsx:240:      administradora:
+  app\components\dashboard\cadastro-universal\PainelPessoas.tsx:241:        "Administradora",
+  app\components\dashboard\cadastro-universal\PainelPessoas.tsx:242:
+  app\components\dashboard\cadastro-universal\PainelPessoas.tsx:243:      gestor_local:
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:99:};
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:100:
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:101:const PERFIS = [
+> app\components\dashboard\cadastro-universal\PainelVinculos.tsx:102:  "morador",
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:103:  "sindico",
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:104:  "administradora",
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:105:  "gestor_local",
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:106:  "porteiro",
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:107:  "central",
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:108:  "funcionario",
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:109:  "financeiro",
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:110:  "prestador",
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:124:    string,
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:125:    string
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:126:  > = {
+> app\components\dashboard\cadastro-universal\PainelVinculos.tsx:127:    morador: "Morador",
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:128:    sindico: "Síndico",
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:129:    administradora: "Administradora",
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:130:    gestor_local: "Gestor local",
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:131:    porteiro: "Porteiro",
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:132:    central: "Central",
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:133:    funcionario: "Funcionário",
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:134:    financeiro: "Financeiro",
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:135:    prestador: "Prestador",
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:299:
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:300:  const [
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:301:    perfilPrincipalEditando,
+> app\components\dashboard\cadastro-universal\PainelVinculos.tsx:302:    setPerfilPrincipalEditando,
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:303:  ] =
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:304:    useState("");
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:305:
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:306:  const [
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:307:    ativoEditando,
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:308:    setAtivoEditando,
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:309:  ] =
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:310:    useState(true);
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:779:      perfis
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:780:    );
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:781:
+> app\components\dashboard\cadastro-universal\PainelVinculos.tsx:782:    setPerfilPrincipalEditando(
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:783:      vinculo.perfilPrincipal ||
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:784:      perfis[0] ||
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:785:      "outro"
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:786:    );
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:787:
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:788:    setAtivoEditando(
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:789:      vinculo.ativo
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:790:    );
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:831:            perfil ===
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:832:            perfilPrincipalEditando
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:833:          ) {
+> app\components\dashboard\cadastro-universal\PainelVinculos.tsx:834:            setPerfilPrincipalEditando(
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:835:              novos[0]
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:836:            );
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:837:          }
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:838:
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:839:          return novos;
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:840:        }
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:841:
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:842:        return [
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1582:                          perfil
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1583:                        }
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1584:                        onChange={() =>
+> app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1585:                          setPerfilPrincipalEditando(
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1586:                            perfil
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1587:                          )
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1588:                        }
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1589:                        className="h-5 w-5"
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1590:                      />
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1591:
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1592:                      <span className="font-bold">
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1593:                        {nomePerfil(
+  app\components\dashboard\CardModulo.tsx:31:  condominio: {
+  app\components\dashboard\CardModulo.tsx:32:    status: "Gestão ativa",
+  app\components\dashboard\CardModulo.tsx:33:    destaque: "32 unidades",
+> app\components\dashboard\CardModulo.tsx:34:    detalhe: "94 moradores cadastrados",
+  app\components\dashboard\CardModulo.tsx:35:  },
+  app\components\dashboard\CardModulo.tsx:36:
+  app\components\dashboard\CardModulo.tsx:37:  financeiro: {
+  app\components\dashboard\CardModulo.tsx:38:    status: "Acompanhamento",
+  app\components\dashboard\CardModulo.tsx:39:    destaque: "4 vencimentos",
+  app\components\dashboard\CardModulo.tsx:40:    detalhe: "Contas próximas do prazo",
+  app\components\dashboard\CardModulo.tsx:41:    alerta: true,
+  app\components\dashboard\CardModulo.tsx:42:  },
+  app\components\dashboard\ModalSelecionarUnidade.tsx:40:        <header className="flex items-start justify-between gap-4 border-b border-slate-800 
+p-6">
+  app\components\dashboard\ModalSelecionarUnidade.tsx:41:          <div>
+  app\components\dashboard\ModalSelecionarUnidade.tsx:42:            <p className="text-xs font-black uppercase tracking-[0.16em] text-violet-400">
+> app\components\dashboard\ModalSelecionarUnidade.tsx:43:              👤 Perfil Morador
+  app\components\dashboard\ModalSelecionarUnidade.tsx:44:            </p>
+  app\components\dashboard\ModalSelecionarUnidade.tsx:45:
+  app\components\dashboard\ModalSelecionarUnidade.tsx:46:            <h2 className="mt-1 text-2xl font-black text-white">
+  app\components\dashboard\ModalSelecionarUnidade.tsx:47:              Escolha a unidade
+  app\components\dashboard\ModalSelecionarUnidade.tsx:48:            </h2>
+  app\components\dashboard\ModalSelecionarUnidade.tsx:49:
+  app\components\dashboard\ModalSelecionarUnidade.tsx:50:            <p className="mt-2 text-sm text-slate-400">
+  app\components\dashboard\ModalSelecionarUnidade.tsx:51:              Você possui acesso a mais de uma unidade neste local.
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:11:  modoChamado?: string;
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:12:};
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:13:
+> app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:14:type Morador = {
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:15:  id: string;
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:16:  codigo: string;
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:17:  nome: string;
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:18:  telefone: string;
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:19:email?: string;
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:20:  unidadeId: string;
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:21:  unidadeNome: string;
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:22:  prioridade: number;
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:25:  status: string;
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:26:};
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:27:
+> app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:28:type AbaMorador =
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:29:  | "geral"
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:30:  | "acessos"
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:31:  | "historico"
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:32:  | "documentos"
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:33:  | "dependentes"
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:34:  | "veiculos"
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:35:  | "pets";
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:36:
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:42:  | "solicitacoes"
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:43:  | "comunicados";
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:44:
+> app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:45:type EventoMorador = {
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:46:  id: string;
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:47:  tipo: Exclude<FiltroHistorico, "todos">;
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:48:  grupo: "hoje" | "ontem" | "semana";
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:49:  icone: string;
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:50:  titulo: string;
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:51:  descricao: string;
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:52:  data: string;
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:53:  horario: string;
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:59:
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:60:type Props = {
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:61:  unidades: Unidade[];
+> app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:62:  moradores: Morador[];
+> app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:63:  unidadeMoradorId: string;
+> app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:64:  setUnidadeMoradorId: (valor: string) => void;
+> app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:65:  nomeMorador: string;
+> app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:66:  setNomeMorador: (valor: string) => void;
+> app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:67:  telefoneMorador: string;
+> app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:68:  setTelefoneMorador: (valor: string) => void;
+> app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:69:  prioridadeMorador: string;
+> app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:70:  setPrioridadeMorador: (valor: string) => void;
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:71:  podeAbrirPortao: boolean;
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:72:  setPodeAbrirPortao: (valor: boolean) => void;
+> app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:73:  cadastrarMorador: () => void;
+> app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:74:atualizarMorador: (
+> app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:75:  moradorId: string,
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:76:  dados: {
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:77:    nome: string;
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:78:    telefone: string;
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:79:    email?: string;
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:80:    prioridade: number;
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:81:    recebeChamadas: boolean;
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:82:    podeAbrirPortao: boolean;
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:83:    status: string;
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:84:  }
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:85:) => Promise<void>;
+> app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:86:  salvandoMorador: boolean;
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:87:};
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:88:
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:89:
+> app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:90:const eventosDemonstracao: EventoMorador[] = [
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:91:  {
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:92:    id: "evt-001",
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:93:    tipo: "entregas",
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:94:    grupo: "hoje",
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:95:    icone: "📦",
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:96:    titulo: "Entrega recebida",
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:97:    descricao: "Mercado Livre • pacote médio",
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:98:    data: "Hoje",
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:102:    protocolo: "EVT-20260716-001",
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:103:    detalhes: [
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:104:      "Recebida pela portaria.",
+> app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:105:      "Morador notificado automaticamente.",
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:106:      "Foto da entrega disponível quando houver 
+integração.",
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:107:    ],
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:108:  },
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:109:  {
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:110:    id: "evt-002",
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:111:    tipo: "visitantes",
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:112:    grupo: "ontem",
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:113:    icone: "🚶",
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:119:    destaque: "verde",
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:120:    protocolo: "EVT-20260715-014",
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:121:    detalhes: [
+> app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:122:      "Entrada autorizada pelo morador.",
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:123:      "Entrada registrada às 19:18.",
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:124:      "Saída registrada às 20:07.",
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:125:    ],
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:126:  },
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:127:  {
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:128:    id: "evt-003",
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:129:    tipo: "acessos",
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:130:    grupo: "ontem",
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:155:    destaque: "vermelho",
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:156:    protocolo: "SOL-20260714-008",
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:157:    detalhes: [
+> app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:158:      "Solicitação registrada pelo morador.",
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:159:      "Encaminhada para a zeladoria.",
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:160:      "Prazo de atendimento acompanhado pelo motor de 
+SLA.",
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:161:    ],
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:162:  },
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:163:  {
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:164:    id: "evt-005",
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:165:    tipo: "comunicados",
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:166:    grupo: "semana",
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:173:    destaque: "violeta",
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:174:    protocolo: "COM-20260713-003",
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:175:    detalhes: [
+> app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:176:      "Comunicado enviado para todos os moradores.",
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:177:      "Visualização confirmada pelo dispositivo 
+cadastrado.",
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:178:    ],
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:179:  },
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:180:];
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:181:
+> app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:182:export default function Moradores({
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:183:  unidades,
+> app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:184:  moradores,
+> app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:185:  unidadeMoradorId,
+> app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:186:  setUnidadeMoradorId,
+> app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:187:  nomeMorador,
+> app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:188:  setNomeMorador,
+> app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:189:  telefoneMorador,
+> app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:190:  setTelefoneMorador,
+> app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:191:  prioridadeMorador,
+> app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:192:  setPrioridadeMorador,
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:193:  podeAbrirPortao,
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:194:  setPodeAbrirPortao,
+> app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:195:  cadastrarMorador,
+> app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:196:  atualizarMorador,
+> app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:197:  salvandoMorador,
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:198:}: Props) {
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:199:  const [busca, setBusca] = useState("");
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:200:  const [localFiltro, setLocalFiltro] = useState("todos");
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:201:  const [statusFiltro, setStatusFiltro] = 
+useState("todos");
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:202:  const [modalCadastroAberto, setModalCadastroAberto] = 
+useState(false);
+> app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:203:  const [moradorSelecionado, setMoradorSelecionado] =
+> app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:204:    useState<Morador | null>(null);
+> app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:205:  const [abaAtiva, setAbaAtiva] = 
+useState<AbaMorador>("geral");
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:206:  const [filtroHistorico, setFiltroHistorico] =
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:207:    useState<FiltroHistorico>("todos");
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:208:  const [eventoSelecionado, setEventoSelecionado] =
+> app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:209:    useState<EventoMorador | null>(null);
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:210:
+> app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:211:  const [editandoMorador, setEditandoMorador] = 
+useState(false);
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:212:  const [salvandoEdicao, setSalvandoEdicao] = 
+useState(false);
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:213:
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:214:  const [nomeEdicao, setNomeEdicao] = useState("");
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:215:  const [telefoneEdicao, setTelefoneEdicao] = useState("");
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:216:  const [emailEdicao, setEmailEdicao] = useState("");
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:217:  const [prioridadeEdicao, setPrioridadeEdicao] = 
+useState("1");
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:218:  const [recebeChamadasEdicao, setRecebeChamadasEdicao] = 
+useState(true);
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:219:  const [podeAbrirPortaoEdicao, setPodeAbrirPortaoEdicao] 
+= useState(false);
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:231:    [unidades]
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:232:  );
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:233:
+> app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:234:  const moradoresFiltrados = useMemo(() => {
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:235:    const termo = busca.trim().toLowerCase();
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:236:
+> app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:237:    return moradores
+> app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:238:      .filter((morador) => {
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:239:        const unidade = unidades.find(
+> app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:240:          (item) => item.id === morador.unidadeId
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:241:        );
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:242:
+> app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:243:        const localDoMorador =
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:244:          unidade?.localNome ||
+> app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:245:          morador.unidadeNome.split("•")[0]?.trim() ||
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:246:          "";
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:247:
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:248:        const passaLocal =
+> app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:249:          localFiltro === "todos" || localDoMorador === 
+localFiltro;
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:250:
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:251:        const passaStatus =
+> app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:252:          statusFiltro === "todos" || morador.status === 
+statusFiltro;
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:253:
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:254:        const textoPesquisa = [
+> app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:255:          morador.nome,
+> app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:256:          morador.codigo,
+> app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:257:          morador.telefone,
+> app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:258:          morador.unidadeNome,
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:259:          unidade?.codigo,
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:260:          unidade?.bloco,
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:261:          unidade?.nome,
+> app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:262:          localDoMorador,
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:263:        ]
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:264:          .filter(Boolean)
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:265:          .join(" ")
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:266:          .toLowerCase();
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:267:
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:268:        const passaBusca = !termo || 
+textoPesquisa.includes(termo);
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:269:
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:270:        return passaLocal && passaStatus && passaBusca;
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:271:      })
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:272:      .sort((a, b) => a.nome.localeCompare(b.nome, 
+"pt-BR"));
+> app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:273:  }, [busca, localFiltro, moradores, statusFiltro, 
+unidades]);
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:274:
+> app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:275:  const totalAtivos = moradores.filter(
+> app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:276:    (morador) => morador.status === "ativo"
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:277:  ).length;
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:278:
+> app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:279:  const totalComPortao = moradores.filter(
+> app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:280:    (morador) => morador.podeAbrirPortao
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:281:  ).length;
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:282:
+> app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:283:  const totalSemPermissao = moradores.length - 
+totalComPortao;
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:284:
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:285:  function nomeUnidade(unidade: Unidade) {
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:286:    return unidade.bloco
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:287:      ? `${unidade.localNome} • 
+${unidade.bloco}/${unidade.nome}`
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:288:      : `${unidade.localNome} • ${unidade.nome}`;
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:289:  }
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:290:
+> app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:291:  function obterUnidade(morador: Morador) {
+> app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:292:    return unidades.find((unidade) => unidade.id === 
+morador.unidadeId);
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:293:  }
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:294:
+> app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:295:  function obterLocalMorador(morador: Morador) {
+> app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:296:    const unidade = obterUnidade(morador);
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:297:
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:298:    return (
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:299:      unidade?.localNome ||
+> app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:300:      morador.unidadeNome.split("•")[0]?.trim() ||
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:301:      "Local não informado"
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:302:    );
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:303:  }
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:304:
+> app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:305:  function obterBlocoUnidade(morador: Morador) {
+> app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:306:    const unidade = obterUnidade(morador);
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:307:
+> app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:308:    if (!unidade) return morador.unidadeNome;
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:309:
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:310:    return unidade.bloco
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:311:      ? `${unidade.bloco} / ${unidade.nome}`
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:312:      : unidade.nome;
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:313:  }
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:314:
+> app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:315:  function abrirMorador(morador: Morador) {
+> app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:316:    setMoradorSelecionado(morador);
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:317:    setAbaAtiva("geral");
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:318:  }
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:319:
+> app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:320:  function fecharMorador() {
+> app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:321:    setMoradorSelecionado(null);
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:322:    setAbaAtiva("geral");
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:323:    setFiltroHistorico("todos");
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:324:    setEventoSelecionado(null);
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:325:  }
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:326:
+> app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:327:  function iniciarEdicaoMorador() {
+> app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:328:    if (!moradorSelecionado) return;
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:329:
+> app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:330:    setNomeEdicao(moradorSelecionado.nome || "");
+> app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:331:    setTelefoneEdicao(moradorSelecionado.telefone || "");
+> app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:332:    setEmailEdicao(moradorSelecionado.email || "");
+> app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:333:    
+setPrioridadeEdicao(String(moradorSelecionado.prioridade || 1));
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:334:    setRecebeChamadasEdicao(
+> app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:335:      moradorSelecionado.recebeChamadas !== false
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:336:    );
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:337:    setPodeAbrirPortaoEdicao(
+> app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:338:      moradorSelecionado.podeAbrirPortao === true
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:339:    );
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:340:    setStatusEdicao(
+> app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:341:      moradorSelecionado.status || "ativo"
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:342:    );
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:343:
+> app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:344:    setEditandoMorador(true);
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:345:  }
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:346:
+> app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:347:  async function salvarEdicaoMorador() {
+> app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:348:    if (!moradorSelecionado || salvandoEdicao) return;
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:349:
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:350:    if (!nomeEdicao.trim()) {
+> app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:351:      alert("Informe o nome do morador.");
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:352:      return;
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:353:    }
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:354:
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:355:    if (!telefoneEdicao.trim()) {
+> app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:356:      alert("Informe o telefone do morador.");
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:357:      return;
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:358:    }
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:359:
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:360:    setSalvandoEdicao(true);
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:361:
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:362:    try {
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:363:      const dadosAtualizados = {
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:364:        nome: nomeEdicao.trim(),
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:370:        status: statusEdicao,
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:371:      };
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:372:
+> app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:373:      await atualizarMorador(
+> app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:374:        moradorSelecionado.id,
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:375:        dadosAtualizados
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:376:      );
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:377:
+> app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:378:      setMoradorSelecionado({
+> app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:379:        ...moradorSelecionado,
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:380:        ...dadosAtualizados,
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:381:      });
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:382:
+> app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:383:      setEditandoMorador(false);
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:384:
+> app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:385:      alert("Morador atualizado com sucesso.");
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:386:    } catch (erro) {
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:387:      console.error(
+> app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:388:        "Erro ao atualizar morador:",
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:389:        erro
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:390:      );
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:391:
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:392:      alert(
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:393:        erro instanceof Error
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:394:          ? erro.message
+> app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:395:          : "Nao foi possivel atualizar o morador."
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:396:      );
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:397:    } finally {
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:398:      setSalvandoEdicao(false);
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:399:    }
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:400:  }
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:401:
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:402:  function fecharCadastro() {
+> app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:403:    if (salvandoMorador) return;
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:404:    setModalCadastroAberto(false);
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:405:  }
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:406:
+> app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:407:  async function salvarNovoMorador() {
+> app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:408:    await Promise.resolve(cadastrarMorador());
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:409:  }
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:410:
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:411:  const historicoFiltrado =
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:412:    filtroHistorico === "todos"
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:413:      ? eventosDemonstracao
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:414:      : eventosDemonstracao.filter(
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:415:          (evento) => evento.tipo === filtroHistorico
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:416:        );
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:439:    },
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:440:  ].filter((grupo) => grupo.eventos.length > 0);
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:441:
+> app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:442:  function classesEvento(destaque: 
+EventoMorador["destaque"]) {
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:443:    if (destaque === "verde") {
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:444:      return "border-green-800 bg-green-950/20";
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:445:    }
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:446:
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:447:    if (destaque === "laranja") {
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:448:      return "border-orange-800 bg-orange-950/20";
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:449:    }
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:450:
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:460:  }
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:461:
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:462:  const abas: Array<{
+> app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:463:    id: AbaMorador;
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:464:    nome: string;
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:465:    icone: string;
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:466:  }> = [
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:467:    { id: "geral", nome: "Geral", icone: "👤" },
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:468:    { id: "acessos", nome: "Acessos", icone: "🚪" },
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:469:    { id: "historico", nome: "Histórico", icone: "🕘" },
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:470:    { id: "documentos", nome: "Documentos", icone: "📄" },
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:471:    { id: "dependentes", nome: "Dependentes", icone: 
+"👨‍👩‍👧" },
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:481:        <div className="flex flex-col gap-5 md:flex-row 
+md:items-center md:justify-between">
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:482:          <div>
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:483:            <p className="text-sm font-bold text-blue-100">
+> app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:484:              👥 MÓDULO DE MORADORES
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:485:            </p>
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:486:
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:487:            <h2 className="mt-1 text-3xl font-black 
+md:text-4xl">
+> app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:488:              Moradores
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:489:            </h2>
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:490:
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:491:            <p className="mt-2 text-sm text-blue-100 
+md:text-base">
+> app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:492:              Pesquise, consulte e acompanhe tudo 
+relacionado a cada morador.
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:493:            </p>
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:494:          </div>
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:495:
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:496:          <button
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:497:            type="button"
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:498:            onClick={() => setModalCadastroAberto(true)}
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:499:            className="rounded-2xl bg-white px-5 py-3 
+font-black text-blue-700 shadow-lg transition-all hover:bg-blue-50 active:scale-95"
+  app\components\dashboard\Moradores.backup-corrigir-textos-edicao-20260811-180336.tsx:500:          >
+
+

@@ -69,6 +69,10 @@ export default function Unidades({
   const [filtroLocal, setFiltroLocal] = useState("todos");
   const [filtroTipo, setFiltroTipo] = useState("todos");
   const [modalCadastroAberto, setModalCadastroAberto] = useState(false);
+
+const contextoLocalTravado =
+  modoCondominio &&
+  Boolean(localSelecionadoId);
   const [unidadeSelecionada, setUnidadeSelecionada] =
     useState<UnidadeCadastrada | null>(null);
   const [abaAtiva, setAbaAtiva] = useState<AbaUnidade>("geral");
@@ -436,7 +440,7 @@ export default function Unidades({
                 </h3>
 
                 <p className="mt-2 text-sm text-slate-400">
-                  Vincule a unidade ao local e defina seu modo de chamada.
+                  Cadastre a unidade deste condomínio e defina seu modo de chamada.
                 </p>
               </div>
 
@@ -451,6 +455,7 @@ export default function Unidades({
             </div>
 
             <div className="mt-5 space-y-4">
+              {!contextoLocalTravado && (
               <select
                 value={localSelecionadoId}
                 onChange={(event) =>
@@ -466,6 +471,7 @@ export default function Unidades({
                   </option>
                 ))}
               </select>
+              )}
 
               {modoCondominio && (
                 <input
@@ -491,6 +497,7 @@ export default function Unidades({
                 className="w-full rounded-xl border border-slate-700 bg-slate-800 p-3 text-white outline-none placeholder:text-slate-500 focus:border-blue-500"
               />
 
+              {!contextoLocalTravado && (
               <select
                 value={tipoUnidade}
                 onChange={(event) =>
@@ -513,6 +520,7 @@ export default function Unidades({
                   </>
                 )}
               </select>
+              )}
 
               <select
                 value={modoChamadoUnidade}

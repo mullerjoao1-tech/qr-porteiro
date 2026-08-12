@@ -1,0 +1,427 @@
+﻿
+  app\api\implantacao\criar-responsavel\route.ts:889:          string,
+  app\api\implantacao\criar-responsavel\route.ts:890:          {
+  app\api\implantacao\criar-responsavel\route.ts:891:            ativo?:
+  app\api\implantacao\criar-responsavel\route.ts:892:              boolean;
+  app\api\implantacao\criar-responsavel\route.ts:893:
+> app\api\implantacao\criar-responsavel\route.ts:894:            perfilPrincipal?:
+  app\api\implantacao\criar-responsavel\route.ts:895:              string;
+  app\api\implantacao\criar-responsavel\route.ts:896:
+  app\api\implantacao\criar-responsavel\route.ts:897:            perfis?:
+  app\api\implantacao\criar-responsavel\route.ts:898:              Record<
+  app\api\implantacao\criar-responsavel\route.ts:899:                string,
+  app\api\implantacao\criar-responsavel\route.ts:900:                boolean
+  app\api\implantacao\criar-responsavel\route.ts:901:              >;
+  app\api\implantacao\criar-responsavel\route.ts:902:          }
+  app\api\implantacao\criar-responsavel\route.ts:903:        >;
+  app\api\implantacao\criar-responsavel\route.ts:904:    };
+  app\api\implantacao\criar-responsavel\route.ts:905:
+  app\api\implantacao\criar-responsavel\route.ts:906:  if (
+  app\api\implantacao\criar-responsavel\route.ts:930:        ) {
+  app\api\implantacao\criar-responsavel\route.ts:931:          return false;
+  app\api\implantacao\criar-responsavel\route.ts:932:        }
+  app\api\implantacao\criar-responsavel\route.ts:933:
+  app\api\implantacao\criar-responsavel\route.ts:934:        return (
+> app\api\implantacao\criar-responsavel\route.ts:935:          vinculo.perfilPrincipal ===
+  app\api\implantacao\criar-responsavel\route.ts:936:            "administrador_master" ||
+> app\api\implantacao\criar-responsavel\route.ts:937:          vinculo.perfilPrincipal ===
+  app\api\implantacao\criar-responsavel\route.ts:938:            "administrador-master" ||
+  app\api\implantacao\criar-responsavel\route.ts:939:          vinculo.perfis?.[
+  app\api\implantacao\criar-responsavel\route.ts:940:            "administrador_master"
+  app\api\implantacao\criar-responsavel\route.ts:941:          ] === true ||
+  app\api\implantacao\criar-responsavel\route.ts:942:          vinculo.perfis?.[
+  app\api\implantacao\criar-responsavel\route.ts:943:            "administrador-master"
+  app\api\implantacao\criar-responsavel\route.ts:944:          ] === true
+  app\api\implantacao\criar-responsavel\route.ts:945:        );
+  app\api\implantacao\criar-responsavel\route.ts:946:      }
+  app\api\implantacao\criar-responsavel\route.ts:947:    );
+  app\api\implantacao\criar-responsavel\route.ts:948:
+  app\api\implantacao\criar-responsavel\route.ts:949:  if (
+  app\api\implantacao\criar-responsavel\route.ts:1354:        localNome,
+  app\api\implantacao\criar-responsavel\route.ts:1355:
+  app\api\implantacao\criar-responsavel\route.ts:1356:      condominioSlug:
+  app\api\implantacao\criar-responsavel\route.ts:1357:        localSlug,
+  app\api\implantacao\criar-responsavel\route.ts:1358:
+> app\api\implantacao\criar-responsavel\route.ts:1359:      perfilPrincipal:
+  app\api\implantacao\criar-responsavel\route.ts:1360:        perfil,
+  app\api\implantacao\criar-responsavel\route.ts:1361:
+  app\api\implantacao\criar-responsavel\route.ts:1362:      perfis: {
+  app\api\implantacao\criar-responsavel\route.ts:1363:        [perfil]:
+  app\api\implantacao\criar-responsavel\route.ts:1364:          true,
+  app\api\implantacao\criar-responsavel\route.ts:1365:      },
+  app\api\implantacao\criar-responsavel\route.ts:1366:
+  app\api\implantacao\criar-responsavel\route.ts:1367:      unidades:
+  app\api\implantacao\criar-responsavel\route.ts:1368:        {},
+  app\api\implantacao\criar-responsavel\route.ts:1369:
+  app\api\implantacao\criar-responsavel\route.ts:1370:      permissoes: {
+  app\api\implantacao\criar-responsavel\route.ts:1371:        ...PERMISSOES_SINDICO,
+  app\api\implantacao\criar-responsavel\route.ts:1420:
+  app\api\implantacao\criar-responsavel\route.ts:1421:      cpf:
+  app\api\implantacao\criar-responsavel\route.ts:1422:        cpf ||
+  app\api\implantacao\criar-responsavel\route.ts:1423:        null,
+  app\api\implantacao\criar-responsavel\route.ts:1424:
+> app\api\implantacao\criar-responsavel\route.ts:1425:      perfilPrincipal:
+  app\api\implantacao\criar-responsavel\route.ts:1426:        perfil,
+  app\api\implantacao\criar-responsavel\route.ts:1427:
+  app\api\implantacao\criar-responsavel\route.ts:1428:      perfis: {
+  app\api\implantacao\criar-responsavel\route.ts:1429:        [perfil]:
+  app\api\implantacao\criar-responsavel\route.ts:1430:          true,
+  app\api\implantacao\criar-responsavel\route.ts:1431:      },
+  app\api\implantacao\criar-responsavel\route.ts:1432:
+  app\api\implantacao\criar-responsavel\route.ts:1433:      ativo:
+  app\api\implantacao\criar-responsavel\route.ts:1434:        true,
+  app\api\implantacao\criar-responsavel\route.ts:1435:
+  app\api\implantacao\criar-responsavel\route.ts:1436:      criadoEm:
+  app\api\implantacao\criar-responsavel\route.ts:1437:        agora,
+  app\api\implantacao\criar-responsavel\route.ts:1859:        if (
+  app\api\implantacao\criar-responsavel\route.ts:1860:          vinculosUsuarioGravados
+  app\api\implantacao\criar-responsavel\route.ts:1861:        ) {
+  app\api\implantacao\criar-responsavel\route.ts:1862:          await database
+  app\api\implantacao\criar-responsavel\route.ts:1863:            .ref(
+> app\api\implantacao\criar-responsavel\route.ts:1864:              `usuarios-v2/${uidResponsavel}/locais/${localIdProcessado}`
+  app\api\implantacao\criar-responsavel\route.ts:1865:            )
+  app\api\implantacao\criar-responsavel\route.ts:1866:            .remove();
+  app\api\implantacao\criar-responsavel\route.ts:1867:
+  app\api\implantacao\criar-responsavel\route.ts:1868:          await database
+  app\api\implantacao\criar-responsavel\route.ts:1869:            .ref(
+  app\api\implantacao\criar-responsavel\route.ts:1870:              `usuarios-v2/${uidResponsavel}/condominios/${localIdProcessado}`
+  app\api\implantacao\criar-responsavel\route.ts:1871:            )
+  app\api\implantacao\criar-responsavel\route.ts:1872:            .remove();
+  app\api\implantacao\criar-responsavel\route.ts:1873:        }
+  app\api\implantacao\criar-responsavel\route.ts:1874:
+  app\api\implantacao\criar-responsavel\route.ts:1875:        await database
+  app\api\implantacao\criar-responsavel\route.ts:1876:          .ref(
+  app\api\init-admin\route.ts:88:      condominios: {
+  app\api\init-admin\route.ts:89:        studio: {
+  app\api\init-admin\route.ts:90:          condominioId: "studio",
+  app\api\init-admin\route.ts:91:          condominioNome: "QR Acesso Studio",
+  app\api\init-admin\route.ts:92:          ativo: true,
+> app\api\init-admin\route.ts:93:          perfilPrincipal:
+  app\api\init-admin\route.ts:94:            "administrador-master",
+  app\api\init-admin\route.ts:95:
+  app\api\init-admin\route.ts:96:          perfis: {
+  app\api\init-admin\route.ts:97:            "administrador-master": true,
+  app\api\init-admin\route.ts:98:          },
+  app\api\init-admin\route.ts:99:
+  app\api\init-admin\route.ts:100:          unidades: {},
+  app\api\init-admin\route.ts:101:
+  app\api\init-admin\route.ts:102:          permissoes: {
+  app\api\init-admin\route.ts:103:            dashboard: true,
+  app\api\init-admin\route.ts:104:            "central-inteligente": true,
+  app\api\init-admin\route.ts:105:            administradora: true,
+  app\api\residencia\acessos-temporarios\route.ts:18:registrarHistoricoLocal,
+  app\api\residencia\acessos-temporarios\route.ts:19:} from "@/app/services/server/historicoLocal";
+  app\api\residencia\acessos-temporarios\route.ts:20:
+  app\api\residencia\acessos-temporarios\route.ts:21:type VinculoBanco = {
+  app\api\residencia\acessos-temporarios\route.ts:22:  ativo?: boolean;
+> app\api\residencia\acessos-temporarios\route.ts:23:  perfilPrincipal?: string;
+> app\api\residencia\acessos-temporarios\route.ts:24:  perfis?: Record<string, boolean>;
+  app\api\residencia\acessos-temporarios\route.ts:25:  permissoes?: Record<string, boolean>;
+  app\api\residencia\acessos-temporarios\route.ts:26:};
+  app\api\residencia\acessos-temporarios\route.ts:27:
+  app\api\residencia\acessos-temporarios\route.ts:28:type UsuarioBanco = {
+  app\api\residencia\acessos-temporarios\route.ts:29:  status?: string;
+  app\api\residencia\acessos-temporarios\route.ts:30:  locais?: Record<string, VinculoBanco>;
+  app\api\residencia\acessos-temporarios\route.ts:31:};
+  app\api\residencia\acessos-temporarios\route.ts:32:
+  app\api\residencia\acessos-temporarios\route.ts:33:function texto(
+  app\api\residencia\acessos-temporarios\route.ts:34:  valor: unknown
+  app\api\residencia\acessos-temporarios\route.ts:35:): string {
+  app\api\residencia\acessos-temporarios\route.ts:36:  return typeof valor === "string"
+  app\api\residencia\acessos-temporarios\route.ts:118:    throw new Error(
+  app\api\residencia\acessos-temporarios\route.ts:119:      "Voc? n?o possui v?nculo ativo com esta resid?ncia."
+  app\api\residencia\acessos-temporarios\route.ts:120:    );
+  app\api\residencia\acessos-temporarios\route.ts:121:  }
+  app\api\residencia\acessos-temporarios\route.ts:122:
+> app\api\residencia\acessos-temporarios\route.ts:123:  const perfilPrincipal = (
+> app\api\residencia\acessos-temporarios\route.ts:124:    vinculo.perfilPrincipal ||
+  app\api\residencia\acessos-temporarios\route.ts:125:    ""
+  app\api\residencia\acessos-temporarios\route.ts:126:  )
+  app\api\residencia\acessos-temporarios\route.ts:127:    .trim()
+  app\api\residencia\acessos-temporarios\route.ts:128:    .toLowerCase()
+  app\api\residencia\acessos-temporarios\route.ts:129:    .replaceAll("-", "_");
+  app\api\residencia\acessos-temporarios\route.ts:130:
+  app\api\residencia\acessos-temporarios\route.ts:131:  const autorizado =
+> app\api\residencia\acessos-temporarios\route.ts:132:    perfilPrincipal ===
+  app\api\residencia\acessos-temporarios\route.ts:133:      "administrador_master" ||
+> app\api\residencia\acessos-temporarios\route.ts:134:    perfilPrincipal ===
+  app\api\residencia\acessos-temporarios\route.ts:135:      "proprietario" ||
+> app\api\residencia\acessos-temporarios\route.ts:136:    perfilPrincipal ===
+  app\api\residencia\acessos-temporarios\route.ts:137:      "responsavel" ||
+> app\api\residencia\acessos-temporarios\route.ts:138:    perfilPrincipal ===
+  app\api\residencia\acessos-temporarios\route.ts:139:      "gestor_local" ||
+  app\api\residencia\acessos-temporarios\route.ts:140:    vinculo.perfis?.[
+  app\api\residencia\acessos-temporarios\route.ts:141:      "administrador_master"
+  app\api\residencia\acessos-temporarios\route.ts:142:    ] === true ||
+  app\api\residencia\acessos-temporarios\route.ts:143:    vinculo.perfis?.[
+  app\api\residencia\acessos-temporarios\route.ts:144:      "proprietario"
+  app\api\residencia\acessos-temporarios\route.ts:145:    ] === true ||
+  app\api\residencia\acessos-temporarios\route.ts:146:    vinculo.permissoes?.[
+  app\api\residencia\acessos-temporarios\route.ts:147:      "gerenciarMoradores"
+  app\api\residencia\acessos-temporarios\route.ts:148:    ] === true;
+  app\api\residencia\acessos-temporarios\route.ts:149:
+  app\api\residencia\acessos-temporarios\route.ts:150:  if (!autorizado) {
+  app\api\residencia\familia\route.ts:34:  localId?: string;
+  app\api\residencia\familia\route.ts:35:  localNome?: string;
+  app\api\residencia\familia\route.ts:36:  localSlug?: string;
+  app\api\residencia\familia\route.ts:37:  tipoLocal?: string;
+  app\api\residencia\familia\route.ts:38:
+> app\api\residencia\familia\route.ts:39:  perfilPrincipal?: string;
+  app\api\residencia\familia\route.ts:40:
+> app\api\residencia\familia\route.ts:41:  perfis?: Record<
+  app\api\residencia\familia\route.ts:42:    string,
+  app\api\residencia\familia\route.ts:43:    boolean
+  app\api\residencia\familia\route.ts:44:  >;
+  app\api\residencia\familia\route.ts:45:
+  app\api\residencia\familia\route.ts:46:  unidades?: Record<
+  app\api\residencia\familia\route.ts:47:    string,
+  app\api\residencia\familia\route.ts:48:    boolean
+  app\api\residencia\familia\route.ts:49:  >;
+  app\api\residencia\familia\route.ts:50:
+  app\api\residencia\familia\route.ts:51:  permissoes?: Record<
+  app\api\residencia\familia\route.ts:52:    string,
+  app\api\residencia\familia\route.ts:53:    boolean
+  app\api\residencia\familia\route.ts:170:    throw new Error(
+  app\api\residencia\familia\route.ts:171:      "Voc? n?o possui v?nculo ativo com esta resid?ncia."
+  app\api\residencia\familia\route.ts:172:    );
+  app\api\residencia\familia\route.ts:173:  }
+  app\api\residencia\familia\route.ts:174:
+> app\api\residencia\familia\route.ts:175:  const perfilPrincipal = (
+> app\api\residencia\familia\route.ts:176:    vinculo.perfilPrincipal ||
+  app\api\residencia\familia\route.ts:177:    ""
+  app\api\residencia\familia\route.ts:178:  )
+  app\api\residencia\familia\route.ts:179:    .trim()
+  app\api\residencia\familia\route.ts:180:    .toLowerCase()
+  app\api\residencia\familia\route.ts:181:    .replaceAll("-", "_");
+  app\api\residencia\familia\route.ts:182:
+  app\api\residencia\familia\route.ts:183:  const autorizado =
+> app\api\residencia\familia\route.ts:184:    perfilPrincipal ===
+  app\api\residencia\familia\route.ts:185:      "administrador_master" ||
+> app\api\residencia\familia\route.ts:186:    perfilPrincipal ===
+  app\api\residencia\familia\route.ts:187:      "proprietario" ||
+> app\api\residencia\familia\route.ts:188:    perfilPrincipal ===
+  app\api\residencia\familia\route.ts:189:      "responsavel" ||
+> app\api\residencia\familia\route.ts:190:    perfilPrincipal ===
+  app\api\residencia\familia\route.ts:191:      "gestor_local" ||
+  app\api\residencia\familia\route.ts:192:    vinculo.perfis?.[
+  app\api\residencia\familia\route.ts:193:      "administrador_master"
+  app\api\residencia\familia\route.ts:194:    ] === true ||
+  app\api\residencia\familia\route.ts:195:    vinculo.perfis?.[
+  app\api\residencia\familia\route.ts:196:      "proprietario"
+  app\api\residencia\familia\route.ts:197:    ] === true ||
+  app\api\residencia\familia\route.ts:198:    vinculo.perfis?.[
+  app\api\residencia\familia\route.ts:199:      "responsavel"
+  app\api\residencia\familia\route.ts:200:    ] === true ||
+  app\api\residencia\familia\route.ts:201:    vinculo.permissoes?.[
+  app\api\residencia\familia\route.ts:202:      "gerenciarMoradores"
+  app\api\residencia\familia\route.ts:376:
+  app\api\residencia\familia\route.ts:377:              cpf:
+  app\api\residencia\familia\route.ts:378:                usuario.cpf ||
+  app\api\residencia\familia\route.ts:379:                "",
+  app\api\residencia\familia\route.ts:380:
+> app\api\residencia\familia\route.ts:381:              perfilPrincipal:
+  app\api\residencia\familia\route.ts:382:                vinculo
+> app\api\residencia\familia\route.ts:383:                  ?.perfilPrincipal ||
+  app\api\residencia\familia\route.ts:384:                "",
+  app\api\residencia\familia\route.ts:385:
+  app\api\residencia\familia\route.ts:386:              permissoes:
+  app\api\residencia\familia\route.ts:387:                vinculo
+  app\api\residencia\familia\route.ts:388:                  ?.permissoes ||
+  app\api\residencia\familia\route.ts:389:                {},
+  app\api\residencia\familia\route.ts:390:
+  app\api\residencia\familia\route.ts:391:              ativo:
+  app\api\residencia\familia\route.ts:392:                vinculo
+  app\api\residencia\familia\route.ts:393:                  ?.ativo !==
+  app\api\residencia\familia\route.ts:394:                false,
+  app\api\residencia\familia\route.ts:395:            };
+  app\api\residencia\familia\route.ts:542:        : {};
+  app\api\residencia\familia\route.ts:543:
+  app\api\residencia\familia\route.ts:544:    const snapshotVinculo =
+  app\api\residencia\familia\route.ts:545:      await database
+  app\api\residencia\familia\route.ts:546:        .ref(
+> app\api\residencia\familia\route.ts:547:          `usuarios-v2/${uid}/locais/${localId}`
+  app\api\residencia\familia\route.ts:548:        )
+  app\api\residencia\familia\route.ts:549:        .get();
+  app\api\residencia\familia\route.ts:550:
+  app\api\residencia\familia\route.ts:551:    const vinculoAnterior =
+  app\api\residencia\familia\route.ts:552:      snapshotVinculo.exists()
+  app\api\residencia\familia\route.ts:553:        ? snapshotVinculo.val() as
+  app\api\residencia\familia\route.ts:554:            VinculoBanco
+  app\api\residencia\familia\route.ts:555:        : null;
+  app\api\residencia\familia\route.ts:556:
+  app\api\residencia\familia\route.ts:557:    const unidadesGestor =
+  app\api\residencia\familia\route.ts:558:      gestor.vinculo
+  app\api\residencia\familia\route.ts:559:        .unidades ||
+  app\api\residencia\familia\route.ts:591:       * "morador" permanece apenas como perfil
+  app\api\residencia\familia\route.ts:592:       * t?cnico de compatibilidade do Core.
+  app\api\residencia\familia\route.ts:593:       * A experi?ncia da resid?ncia ser?
+  app\api\residencia\familia\route.ts:594:       * controlada pelas permiss?es abaixo.
+  app\api\residencia\familia\route.ts:595:       */
+> app\api\residencia\familia\route.ts:596:      perfilPrincipal:
+  app\api\residencia\familia\route.ts:597:        "morador",
+  app\api\residencia\familia\route.ts:598:
+  app\api\residencia\familia\route.ts:599:      perfis: {
+  app\api\residencia\familia\route.ts:600:        ...(vinculoAnterior
+  app\api\residencia\familia\route.ts:601:          ?.perfis ||
+  app\api\residencia\familia\route.ts:602:          {}),
+  app\api\residencia\familia\route.ts:603:
+  app\api\residencia\familia\route.ts:604:        morador:
+  app\api\residencia\familia\route.ts:605:          true,
+  app\api\residencia\familia\route.ts:606:      },
+  app\api\residencia\familia\route.ts:607:
+  app\api\residencia\familia\route.ts:608:      unidades: {
+  app\api\residencia\familia\route.ts:640:        : "vinculado";
+  app\api\residencia\familia\route.ts:641:
+  app\api\residencia\familia\route.ts:642:    await database
+  app\api\residencia\familia\route.ts:643:      .ref()
+  app\api\residencia\familia\route.ts:644:      .update({
+> app\api\residencia\familia\route.ts:645:        [`usuarios-v2/${uid}/locais/${localId}`]:
+  app\api\residencia\familia\route.ts:646:          vinculoFinal,
+  app\api\residencia\familia\route.ts:647:
+  app\api\residencia\familia\route.ts:648:        [`usuarios-v2/${uid}/atualizadoEm`]:
+  app\api\residencia\familia\route.ts:649:          agora,
+  app\api\residencia\familia\route.ts:650:
+  app\api\residencia\familia\route.ts:651:        [`convites-v2/${uid}/${localId}`]:
+  app\api\residencia\familia\route.ts:652:          {
+  app\api\residencia\familia\route.ts:653:            localId,
+  app\api\residencia\familia\route.ts:654:
+  app\api\residencia\familia\route.ts:655:            localNome:
+  app\api\residencia\familia\route.ts:656:              vinculoFinal
+  app\api\residencia\familia\route.ts:657:                .localNome,
+  app\api\residencia\familia\route.ts:777:      obterFirebaseAdmin();
+  app\api\residencia\familia\route.ts:778:
+  app\api\residencia\familia\route.ts:779:    const snapshot =
+  app\api\residencia\familia\route.ts:780:      await database
+  app\api\residencia\familia\route.ts:781:        .ref(
+> app\api\residencia\familia\route.ts:782:          `usuarios-v2/${uid}/locais/${localId}`
+  app\api\residencia\familia\route.ts:783:        )
+  app\api\residencia\familia\route.ts:784:        .get();
+  app\api\residencia\familia\route.ts:785:
+  app\api\residencia\familia\route.ts:786:    if (!snapshot.exists()) {
+  app\api\residencia\familia\route.ts:787:      throw new Error(
+  app\api\residencia\familia\route.ts:788:        "V?nculo da pessoa com esta resid?ncia n?o encontrado."
+  app\api\residencia\familia\route.ts:789:      );
+  app\api\residencia\familia\route.ts:790:    }
+  app\api\residencia\familia\route.ts:791:
+  app\api\residencia\familia\route.ts:792:    const agora =
+  app\api\residencia\familia\route.ts:793:      Date.now();
+  app\api\residencia\familia\route.ts:794:
+  app\api\residencia\familia\route.ts:798:      );
+  app\api\residencia\familia\route.ts:799:
+  app\api\residencia\familia\route.ts:800:    await database
+  app\api\residencia\familia\route.ts:801:      .ref()
+  app\api\residencia\familia\route.ts:802:      .update({
+> app\api\residencia\familia\route.ts:803:        [`usuarios-v2/${uid}/locais/${localId}/permissoes`]:
+  app\api\residencia\familia\route.ts:804:          permissoes,
+  app\api\residencia\familia\route.ts:805:
+> app\api\residencia\familia\route.ts:806:        [`usuarios-v2/${uid}/locais/${localId}/atualizadoEm`]:
+  app\api\residencia\familia\route.ts:807:          agora,
+  app\api\residencia\familia\route.ts:808:
+  app\api\residencia\familia\route.ts:809:        [`usuarios-v2/${uid}/atualizadoEm`]:
+  app\api\residencia\familia\route.ts:810:          agora,
+  app\api\residencia\familia\route.ts:811:      });
+  app\api\residencia\familia\route.ts:812:
+  app\api\residencia\familia\route.ts:813:    return NextResponse.json({
+  app\api\residencia\familia\route.ts:814:      sucesso: true,
+  app\api\residencia\familia\route.ts:815:      mensagem:
+  app\api\residencia\familia\route.ts:816:        "Permiss?es atualizadas com sucesso.",
+  app\api\residencia\familia\route.ts:817:    });
+  app\api\residencia\familia\route.ts:818:  } catch (erro) {
+  app\api\residencia\familia\route.ts:889:      Date.now();
+  app\api\residencia\familia\route.ts:890:
+  app\api\residencia\familia\route.ts:891:    await database
+  app\api\residencia\familia\route.ts:892:      .ref()
+  app\api\residencia\familia\route.ts:893:      .update({
+> app\api\residencia\familia\route.ts:894:        [`usuarios-v2/${uid}/locais/${localId}`]:
+  app\api\residencia\familia\route.ts:895:          null,
+  app\api\residencia\familia\route.ts:896:
+  app\api\residencia\familia\route.ts:897:        [`convites-v2/${uid}/${localId}`]:
+  app\api\residencia\familia\route.ts:898:          null,
+  app\api\residencia\familia\route.ts:899:
+  app\api\residencia\familia\route.ts:900:        [`usuarios-v2/${uid}/atualizadoEm`]:
+  app\api\residencia\familia\route.ts:901:          agora,
+  app\api\residencia\familia\route.ts:902:      });
+  app\api\residencia\familia\route.ts:903:
+  app\api\residencia\familia\route.ts:904:    return NextResponse.json({
+  app\api\residencia\familia\route.ts:905:      sucesso: true,
+  app\api\residencia\familia\route.ts:906:      mensagem:
+  app\api\usuarios\regularizar-acesso\route.ts:13:  email?: string;
+  app\api\usuarios\regularizar-acesso\route.ts:14:  telefone?: string;
+  app\api\usuarios\regularizar-acesso\route.ts:15:  cpf?: string;
+  app\api\usuarios\regularizar-acesso\route.ts:16:  status?: string;
+  app\api\usuarios\regularizar-acesso\route.ts:17:
+> app\api\usuarios\regularizar-acesso\route.ts:18:  perfilPrincipal?: string;
+  app\api\usuarios\regularizar-acesso\route.ts:19:
+> app\api\usuarios\regularizar-acesso\route.ts:20:  perfis?: Record<
+  app\api\usuarios\regularizar-acesso\route.ts:21:    string,
+  app\api\usuarios\regularizar-acesso\route.ts:22:    boolean
+  app\api\usuarios\regularizar-acesso\route.ts:23:  >;
+  app\api\usuarios\regularizar-acesso\route.ts:24:
+  app\api\usuarios\regularizar-acesso\route.ts:25:  condominios?: Record<
+  app\api\usuarios\regularizar-acesso\route.ts:26:    string,
+  app\api\usuarios\regularizar-acesso\route.ts:27:    {
+  app\api\usuarios\regularizar-acesso\route.ts:28:      ativo?: boolean;
+> app\api\usuarios\regularizar-acesso\route.ts:29:      perfilPrincipal?: string;
+> app\api\usuarios\regularizar-acesso\route.ts:30:      perfis?: Record<
+  app\api\usuarios\regularizar-acesso\route.ts:31:        string,
+  app\api\usuarios\regularizar-acesso\route.ts:32:        boolean
+  app\api\usuarios\regularizar-acesso\route.ts:33:      >;
+  app\api\usuarios\regularizar-acesso\route.ts:34:    }
+  app\api\usuarios\regularizar-acesso\route.ts:35:  >;
+  app\api\usuarios\regularizar-acesso\route.ts:36:
+  app\api\usuarios\regularizar-acesso\route.ts:37:  locais?: Record<
+  app\api\usuarios\regularizar-acesso\route.ts:38:    string,
+  app\api\usuarios\regularizar-acesso\route.ts:39:    {
+  app\api\usuarios\regularizar-acesso\route.ts:40:      ativo?: boolean;
+> app\api\usuarios\regularizar-acesso\route.ts:41:      perfilPrincipal?: string;
+> app\api\usuarios\regularizar-acesso\route.ts:42:      perfis?: Record<
+  app\api\usuarios\regularizar-acesso\route.ts:43:        string,
+  app\api\usuarios\regularizar-acesso\route.ts:44:        boolean
+  app\api\usuarios\regularizar-acesso\route.ts:45:      >;
+  app\api\usuarios\regularizar-acesso\route.ts:46:    }
+  app\api\usuarios\regularizar-acesso\route.ts:47:  >;
+  app\api\usuarios\regularizar-acesso\route.ts:48:};
+  app\api\usuarios\regularizar-acesso\route.ts:49:
+  app\api\usuarios\regularizar-acesso\route.ts:50:function texto(
+  app\api\usuarios\regularizar-acesso\route.ts:51:  valor: unknown
+  app\api\usuarios\regularizar-acesso\route.ts:52:): string {
+  app\api\usuarios\regularizar-acesso\route.ts:53:  return typeof valor === "string"
+  app\api\usuarios\regularizar-acesso\route.ts:54:    ? valor.trim()
+  app\api\usuarios\regularizar-acesso\route.ts:92:
+  app\api\usuarios\regularizar-acesso\route.ts:93:function possuiPerfilAdministradorMaster(
+  app\api\usuarios\regularizar-acesso\route.ts:94:  usuario: UsuarioBanco
+  app\api\usuarios\regularizar-acesso\route.ts:95:): boolean {
+  app\api\usuarios\regularizar-acesso\route.ts:96:  if (
+> app\api\usuarios\regularizar-acesso\route.ts:97:    usuario.perfilPrincipal ===
+  app\api\usuarios\regularizar-acesso\route.ts:98:      "administrador_master" ||
+  app\api\usuarios\regularizar-acesso\route.ts:99:    usuario.perfis
+  app\api\usuarios\regularizar-acesso\route.ts:100:      ?.administrador_master ===
+  app\api\usuarios\regularizar-acesso\route.ts:101:      true
+  app\api\usuarios\regularizar-acesso\route.ts:102:  ) {
+  app\api\usuarios\regularizar-acesso\route.ts:103:    return true;
+  app\api\usuarios\regularizar-acesso\route.ts:104:  }
+  app\api\usuarios\regularizar-acesso\route.ts:105:
+  app\api\usuarios\regularizar-acesso\route.ts:106:  const vinculos = [
+  app\api\usuarios\regularizar-acesso\route.ts:107:    ...Object.values(
+  app\api\usuarios\regularizar-acesso\route.ts:108:      usuario.condominios ?? {}
+  app\api\usuarios\regularizar-acesso\route.ts:109:    ),
+  app\api\usuarios\regularizar-acesso\route.ts:119:      ) {
+  app\api\usuarios\regularizar-acesso\route.ts:120:        return false;
+  app\api\usuarios\regularizar-acesso\route.ts:121:      }
+  app\api\usuarios\regularizar-acesso\route.ts:122:
+  app\api\usuarios\regularizar-acesso\route.ts:123:      return (
+> app\api\usuarios\regularizar-acesso\route.ts:124:        vinculo.perfilPrincipal ===
+  app\api\usuarios\regularizar-acesso\route.ts:125:          "administrador_master" ||
+  app\api\usuarios\regularizar-acesso\route.ts:126:        vinculo.perfis
+  app\api\usuarios\regularizar-acesso\route.ts:127:          ?.administrador_master ===
+  app\api\usuarios\regularizar-acesso\route.ts:128:          true
+  app\api\usuarios\regularizar-acesso\route.ts:129:      );
+  app\api\usuarios\regularizar-acesso\route.ts:130:    }
+  app\api\usuarios\regularizar-acesso\route.ts:131:  );
+  app\api\usuarios\regularizar-acesso\route.ts:132:}
+  app\api\usuarios\regularizar-acesso\route.ts:133:
+  app\api\usuarios\regularizar-acesso\route.ts:134:async function validarAdministradorMaster(
+  app\api\usuarios\regularizar-acesso\route.ts:135:  request: NextRequest
+  app\api\usuarios\regularizar-acesso\route.ts:136:) {
+
+

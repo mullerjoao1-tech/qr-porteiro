@@ -1,0 +1,140 @@
+"use client";
+
+import {
+  useEffect,
+} from "react";
+
+import {
+  useRouter,
+} from "next/navigation";
+
+import CentralResidencia from "@/app/dashboard/condominio/CentralResidencia";
+import CentralSindico from "@/app/dashboard/sindico/CentralSindico";
+import { useAuth } from "@/app/context/AuthContext";
+
+function normalizar(
+  valor?: string
+) {
+  return (valor || "")
+    .trim()
+    .toLowerCase()
+    .replaceAll("-", "_");
+}
+
+export default function PaginaCondominio() {
+  const router =
+    useRouter();
+
+  const {
+    usuario,
+    carregando,
+    vinculoSelecionado,
+  } = useAuth();
+
+  const tipoLocal =
+    normalizar(
+      vinculoSelecionado
+        ?.tipoLocal
+    );
+
+  const perfilPrincipal =
+    normalizar(
+      vinculoSelecionado
+        ?.perfilPrincipal
+    );
+
+  const perfis =
+    vinculoSelecionado
+      ?.perfis ??
+    {};
+
+  const possuiPerfil = (
+    perfil: string
+  ) => {
+    if (
+      perfilPrincipal ===
+      normalizar(perfil)
+    ) {
+      return true;
+    }
+
+    return Object.entries(
+      perfis
+    ).some(
+      ([nome, ativo]) =>
+        ativo === true &&
+        normalizar(nome) ===
+          normalizar(perfil)
+    );
+  };
+
+  const modoResidencia =
+    tipoLocal ===
+    "residencia";
+
+  const podeGerenciarResidencia =
+    possuiPerfil(
+      "administrador_master"
+    ) ||
+    possuiPerfil(
+      "proprietario"
+    ) ||
+    possuiPerfil(
+      "responsavel"
+    ) ||
+    possuiPerfil(
+      "gestor_local"
+    );
+
+  useEffect(() => {
+    if (
+      carregando ||
+      !usuario ||
+      !vinculoSelecionado
+    ) {
+      return;
+    }
+
+    if (
+      modoResidencia &&
+      !podeGerenciarResidencia
+    ) {
+      router.replace(
+        "/dashboard/morador"
+      );
+    }
+  }, [
+    carregando,
+    usuario,
+    vinculoSelecionado,
+    modoResidencia,
+    podeGerenciarResidencia,
+    router,
+  ]);
+
+  if (
+  carregando ||
+  !usuario
+) {
+  return null;
+}
+
+  if (
+    modoResidencia &&
+    !podeGerenciarResidencia
+  ) {
+    return null;
+  }
+
+  return (
+    <main className="min-h-screen bg-slate-950 text-white">
+      <div className="mx-auto w-full max-w-[1600px] p-3 md:p-6">
+        {modoResidencia ? (
+          <CentralResidencia />
+        ) : (
+          <CentralSindico />
+        )}
+      </div>
+    </main>
+  );
+}

@@ -1,0 +1,223 @@
+﻿===== TRECHO DO ERRO =====
+            const inicio =
+              Number(
+                acesso.inicio ||
+                0
+              );
+
+            const fim =
+              Number(
+                acesso.fim ||
+                0
+              );
+
+            let status =
+              "ativo";
+
+            if (
+              inicio &&
+              agora < inicio
+            ) {
+              status =
+                "agendado";
+            }
+
+            if (
+              fim &&
+              agora > fim
+            ) {
+              status =
+                "expirado";
+            }
+
+            if (
+              acesso.ativo ===
+              false
+            ) {
+              status =
+                "revogado";
+            }
+
+            return {
+              id,
+              ...acesso,
+              status,
+            };
+          }
+        )
+        .sort(
+          (
+            a,
+            b
+          ) =>
+            Number(
+              b.criadoEm ||
+              0
+            ) -
+            Number(
+              a.criadoEm ||
+              0
+            )
+        );
+
+    return NextResponse.json({
+      sucesso: true,
+      acessos,
+    });
+  } catch (erro) {
+    return NextResponse.json(
+      {
+        sucesso: false,
+        mensagem:
+          erro instanceof Error
+            ? erro.message
+            : "N?o foi poss?vel carregar os acessos tempor?rios.",
+      },
+      {
+        status: 400,
+      }
+    );
+  }
+}
+
+export async function POST(
+  request: NextRequest
+) {
+  try {
+    const corpo =
+      await request.json();
+
+    const localId =
+      texto(
+
+===== TIPOS DO INICIO DO ARQUIVO =====
+import "server-only";
+
+import {
+  randomInt,
+  randomUUID,
+} from "node:crypto";
+
+import {
+  NextRequest,
+  NextResponse,
+} from "next/server";
+
+import {
+  obterFirebaseAdmin,
+} from "@/app/services/server/firebaseAdmin";
+
+import {
+registrarHistoricoLocal,
+} from "@/app/services/server/historicoLocal";
+
+type VinculoBanco = {
+  ativo?: boolean;
+  perfilPrincipal?: string;
+  perfis?: Record<string, boolean>;
+  permissoes?: Record<string, boolean>;
+};
+
+type UsuarioBanco = {
+  status?: string;
+  locais?: Record<string, VinculoBanco>;
+};
+
+function texto(
+  valor: unknown
+): string {
+  return typeof valor === "string"
+    ? valor.trim()
+    : "";
+}
+
+function obterTokenBearer(
+  request: NextRequest
+): string {
+  const authorization =
+    request.headers.get(
+      "authorization"
+    ) || "";
+
+  if (
+    !authorization.startsWith(
+      "Bearer "
+    )
+  ) {
+    throw new Error(
+      "Autentica??o n?o informada."
+    );
+  }
+
+  const token =
+    authorization
+      .slice(7)
+      .trim();
+
+  if (!token) {
+    throw new Error(
+      "Token de autentica??o inv?lido."
+    );
+  }
+
+  return token;
+}
+
+async function validarGestor(
+  request: NextRequest,
+  localId: string
+) {
+  const {
+    auth,
+    database,
+  } =
+    obterFirebaseAdmin();
+
+  const token =
+    obterTokenBearer(
+      request
+    );
+
+  const decodificado =
+    await auth.verifyIdToken(
+      token
+    );
+
+  const snapshot =
+    await database
+      .ref(
+        `usuarios-v2/${decodificado.uid}`
+      )
+      .get();
+
+  if (!snapshot.exists()) {
+    throw new Error(
+      "Usu?rio n?o encontrado."
+    );
+  }
+
+  const usuario =
+    snapshot.val() as UsuarioBanco;
+
+  const vinculo =
+    usuario.locais?.[
+      localId
+    ];
+
+  if (
+    !vinculo ||
+    vinculo.ativo === false
+  ) {
+    throw new Error(
+      "Voc? n?o possui v?nculo ativo com esta resid?ncia."
+    );
+  }
+
+  const perfilPrincipal = (
+    vinculo.perfilPrincipal ||
+    ""
+  )
+    .trim()
+    .toLowerCase()
+    .replaceAll("-", "_");
+

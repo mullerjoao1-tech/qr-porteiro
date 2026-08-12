@@ -1,4 +1,4 @@
-import "server-only";
+﻿import "server-only";
 
 import {
   cert,
@@ -39,7 +39,8 @@ let servicosCache:
 
 function obterChaveServico() {
   const chaveTexto =
-    process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
+    process.env.FIREBASE_SERVICE_ACCOUNT_KEY
+      ?.trim();
 
   if (!chaveTexto) {
     throw new Error(
@@ -47,15 +48,107 @@ function obterChaveServico() {
     );
   }
 
+  let textoChave =
+    chaveTexto;
+
+  /*
+   * No .env.local atual do Studio a credencial
+   * pode vir envolvida por aspas simples.
+   */
+  if (
+    textoChave.startsWith("'") &&
+    textoChave.endsWith("'")
+  ) {
+    textoChave =
+      textoChave.slice(
+        1,
+        -1
+      );
+  }
+
+  let conteudoChave:
+    unknown;
+
   try {
-    return JSON.parse(
-      chaveTexto
-    );
+    conteudoChave =
+      JSON.parse(
+        textoChave
+      );
+
+    /*
+     * Compatibilidade já usada anteriormente
+     * no QR: JSON serializado como string.
+     */
+    if (
+      typeof conteudoChave ===
+      "string"
+    ) {
+      conteudoChave =
+        JSON.parse(
+          conteudoChave
+        );
+    }
   } catch {
     throw new Error(
       "A variável FIREBASE_SERVICE_ACCOUNT_KEY possui um JSON inválido."
     );
   }
+
+  if (
+    !conteudoChave ||
+    typeof conteudoChave !==
+      "object" ||
+    Array.isArray(
+      conteudoChave
+    )
+  ) {
+    throw new Error(
+      "A variável FIREBASE_SERVICE_ACCOUNT_KEY não possui o formato esperado."
+    );
+  }
+
+  const dados =
+    conteudoChave as {
+      project_id?: string;
+      client_email?: string;
+      private_key?: string;
+      projectId?: string;
+      clientEmail?: string;
+      privateKey?: string;
+    };
+
+  const projectId =
+    dados.project_id ||
+    dados.projectId;
+
+  const clientEmail =
+    dados.client_email ||
+    dados.clientEmail;
+
+  const privateKey =
+    dados.private_key ||
+    dados.privateKey;
+
+  if (
+    !projectId ||
+    !clientEmail ||
+    !privateKey
+  ) {
+    throw new Error(
+      "A conta de serviço não possui project_id, client_email ou private_key."
+    );
+  }
+
+  return {
+    projectId,
+    clientEmail,
+
+    privateKey:
+      privateKey.replace(
+        /\\n/g,
+        "\n"
+      ),
+  };
 }
 
 function obterStorageBucket(): string {
@@ -65,7 +158,7 @@ function obterStorageBucket(): string {
 
   if (!bucket.trim()) {
     throw new Error(
-      "O bucket do Firebase Storage não foi informado."
+      "O bucket do Firebase Storage nÃ£o foi informado."
     );
   }
 
@@ -108,3 +201,4 @@ export function obterFirebaseAdmin():
 
   return servicosCache;
 }
+

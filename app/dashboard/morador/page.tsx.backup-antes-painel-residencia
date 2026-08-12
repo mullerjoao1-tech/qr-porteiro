@@ -1,0 +1,239 @@
+"use client";
+
+import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+
+import DashboardBase from "@/app/components/core/dashboard/DashboardBase";
+import SeletorPerfilAtivo from "@/app/components/dashboard/SeletorPerfilAtivo";
+import { useAuth } from "@/app/context/AuthContext";
+
+function normalizarTexto(valor?: string | null) {
+  return (valor || "")
+    .trim()
+    .replaceAll("_", " ")
+    .replaceAll("-", " ");
+}
+
+export default function PaginaMorador() {
+  const router = useRouter();
+
+  const {
+    usuario,
+    carregando,
+    vinculoSelecionadoId,
+    vinculoSelecionado,
+    logout,
+  } = useAuth();
+
+  const [saindo, setSaindo] = useState(false);
+
+  const nomeLocal = useMemo(() => {
+    if (!vinculoSelecionado) {
+      return "Local n?o selecionado";
+    }
+
+    return (
+      vinculoSelecionado.localNome ||
+      vinculoSelecionado.condominioNome ||
+      vinculoSelecionado.localSlug ||
+      vinculoSelecionado.condominioSlug ||
+      vinculoSelecionado.localId ||
+      vinculoSelecionado.condominioId ||
+      vinculoSelecionadoId ||
+      "Local"
+    );
+  }, [
+    vinculoSelecionado,
+    vinculoSelecionadoId,
+  ]);
+
+  const unidadeId = useMemo(() => {
+    if (!vinculoSelecionado) {
+      return null;
+    }
+
+    return (
+      Object.entries(
+        vinculoSelecionado.unidades ?? {}
+      ).find(([, ativo]) => ativo === true)?.[0] ??
+      null
+    );
+  }, [vinculoSelecionado]);
+
+  const tipoLocal = normalizarTexto(
+    vinculoSelecionado?.tipoLocal
+  );
+
+  async function sair() {
+    try {
+      setSaindo(true);
+      await logout();
+      window.location.href = "/";
+    } finally {
+      setSaindo(false);
+    }
+  }
+
+  function abrirAtendimentoVisitantes() {
+    if (!unidadeId) {
+      alert(
+        "Nenhuma unidade est? vinculada a este perfil."
+      );
+      return;
+    }
+
+    router.push(
+      `/morador-v2/${encodeURIComponent(
+        unidadeId
+      )}`
+    );
+  }
+
+  if (carregando && !usuario) {
+    return (
+      <main className="min-h-screen bg-slate-950 text-white">
+        <div className="mx-auto max-w-7xl p-6">
+          <p className="font-bold text-slate-300">
+            Carregando painel do morador...
+          </p>
+        </div>
+      </main>
+    );
+  }
+
+  if (!usuario) {
+    return (
+      <main className="min-h-screen bg-slate-950 text-white">
+        <div className="mx-auto max-w-xl p-6">
+          <section className="rounded-3xl border border-slate-800 bg-slate-900 p-6">
+            <h1 className="text-2xl font-black">
+              Acesso n?o identificado
+            </h1>
+
+            <button
+              type="button"
+              onClick={() => router.push("/")}
+              className="mt-5 w-full rounded-2xl bg-cyan-500 px-4 py-3 font-black text-slate-950"
+            >
+              Voltar ao login
+            </button>
+          </section>
+        </div>
+      </main>
+    );
+  }
+
+  return (
+    <DashboardBase textoRodape="QR Core ? Painel do Morador">
+      <section className="rounded-3xl bg-gradient-to-r from-blue-700 to-cyan-600 p-5 text-white md:p-7">
+        <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
+          <div>
+            <p className="text-sm font-black text-blue-100">
+              QR Core • Morador
+            </p>
+
+            <h1 className="mt-1 text-3xl font-black md:text-4xl">
+              Olá, {usuario.nome?.split(" ")[0] || "Morador"}
+            </h1>
+
+            <p className="mt-2 text-sm text-blue-100 md:text-base">
+              Tudo o que você precisa do seu condomínio e da sua unidade em um só lugar.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={sair}
+            disabled={saindo}
+            className="rounded-2xl border border-white/40 bg-white/15 px-5 py-3 text-sm font-black text-white transition hover:bg-white/25 disabled:opacity-60"
+          >
+            {saindo ? "Saindo..." : "Sair"}
+          </button>
+        </div>
+
+        <div className="mt-5 rounded-2xl border border-white/20 bg-black/10 p-4">
+          <p className="text-xs font-bold uppercase tracking-wider text-blue-100">
+            Contexto atual
+          </p>
+
+          <p className="mt-1 text-lg font-black">
+            {nomeLocal}
+          </p>
+
+          <p className="mt-1 text-sm text-blue-100">
+            {tipoLocal || "condomínio"}
+            {unidadeId
+              ? ` • Unidade ${unidadeId}`
+              : ""}
+          </p>
+        </div>
+      </section>
+
+      <div className="mt-5">
+        <SeletorPerfilAtivo />
+      </div>
+
+      <section className="mt-5 rounded-3xl border border-slate-800 bg-slate-900 p-5 md:p-6">
+        <p className="text-xs font-black uppercase tracking-wider text-cyan-400">
+          Minha unidade
+        </p>
+
+        <h2 className="mt-1 text-2xl font-black text-white">
+          Acesso rápido
+        </h2>
+
+        <p className="mt-2 text-sm text-slate-400">
+          Os recursos disponíveis aqui serão definidos pelo condomínio, plano contratado e permissões do seu perfil.
+        </p>
+
+        <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <button
+            type="button"
+            onClick={abrirAtendimentoVisitantes}
+            className="rounded-2xl border border-slate-700 bg-slate-800 p-5 text-left transition hover:border-cyan-500 hover:bg-slate-700 active:scale-[0.98]"
+          >
+            <div className="text-3xl">
+              🔔
+            </div>
+
+            <div className="mt-3 font-black text-white">
+              Atendimento de visitantes
+            </div>
+
+            <div className="mt-1 text-sm text-slate-400">
+              Abra o painel de chamadas da sua unidade.
+            </div>
+          </button>
+
+          <div className="rounded-2xl border border-slate-800 bg-slate-950/70 p-5">
+            <div className="text-3xl">
+              📦
+            </div>
+
+            <div className="mt-3 font-black text-white">
+              Entregas
+            </div>
+
+            <div className="mt-1 text-sm text-slate-500">
+              Será exibido quando o módulo estiver ativo para este condomínio.
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-slate-800 bg-slate-950/70 p-5">
+            <div className="text-3xl">
+              📢
+            </div>
+
+            <div className="mt-3 font-black text-white">
+              Comunicados
+            </div>
+
+            <div className="mt-1 text-sm text-slate-500">
+              Será exibido conforme as permissões e módulos ativos.
+            </div>
+          </div>
+        </div>
+      </section>
+    </DashboardBase>
+  );
+}

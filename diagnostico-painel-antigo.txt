@@ -1,0 +1,1132 @@
+﻿
+  app\morador-v2\[unidadeId]\page.tsx:11:  recusarEEncaminhar,
+  app\morador-v2\[unidadeId]\page.tsx:12:  registrarAtendimentoDoResponsavel,
+> app\morador-v2\[unidadeId]\page.tsx:13:} from "@/app/services/chamadas/MotorEscalonamento";
+> app\morador-v2\[unidadeId]\page.tsx:14:type MensagemConversa = {
+  app\morador-v2\[unidadeId]\page.tsx:15:  id?: string;
+  app\morador-v2\[unidadeId]\page.tsx:16:  autor: "visitante" | "morador";
+> app\morador-v2\[unidadeId]\page.tsx:17:  tipo: "texto" | "audio";
+  app\morador-v2\[unidadeId]\page.tsx:18:  texto?: string;
+> app\morador-v2\[unidadeId]\page.tsx:19:  audioBase64?: string;
+  app\morador-v2\[unidadeId]\page.tsx:20:  criadoEm: number;
+  app\morador-v2\[unidadeId]\page.tsx:21:};
+  app\morador-v2\[unidadeId]\page.tsx:22:
+  app\morador-v2\[unidadeId]\page.tsx:23:type ComunicadoMorador = {
+  app\morador-v2\[unidadeId]\page.tsx:24:  id: string;
+  app\morador-v2\[unidadeId]\page.tsx:25:  condominioId: string;
+  app\morador-v2\[unidadeId]\page.tsx:26:  condominioNome: string;
+  app\morador-v2\[unidadeId]\page.tsx:27:  tipo: "comunicado" | "assembleia" | "manutencao" | "emergencia";
+  app\morador-v2\[unidadeId]\page.tsx:40:  unidadesDestinatarias?: string[];
+  app\morador-v2\[unidadeId]\page.tsx:41:  titulo: string;
+> app\morador-v2\[unidadeId]\page.tsx:42:  mensagem: string;
+  app\morador-v2\[unidadeId]\page.tsx:43:  detalhesModelo?: {
+  app\morador-v2\[unidadeId]\page.tsx:44:    dataEvento?: string;
+  app\morador-v2\[unidadeId]\page.tsx:45:    horarioEvento?: string;
+  app\morador-v2\[unidadeId]\page.tsx:46:    localEvento?: string;
+  app\morador-v2\[unidadeId]\page.tsx:47:    pauta?: string;
+  app\morador-v2\[unidadeId]\page.tsx:48:    empresaResponsavel?: string;
+  app\morador-v2\[unidadeId]\page.tsx:49:    impactoPrevisto?: string;
+  app\morador-v2\[unidadeId]\page.tsx:50:    tipoEmergencia?: string;
+  app\morador-v2\[unidadeId]\page.tsx:67:};
+  app\morador-v2\[unidadeId]\page.tsx:68:
+> app\morador-v2\[unidadeId]\page.tsx:69:function blobParaBase64(blob: Blob): Promise<string> {
+  app\morador-v2\[unidadeId]\page.tsx:70:  return new Promise((resolve, reject) => {
+  app\morador-v2\[unidadeId]\page.tsx:71:    const reader = new FileReader();
+  app\morador-v2\[unidadeId]\page.tsx:72:    reader.onloadend = () => resolve(reader.result as string);
+  app\morador-v2\[unidadeId]\page.tsx:73:    reader.onerror = reject;
+  app\morador-v2\[unidadeId]\page.tsx:74:    reader.readAsDataURL(blob);
+  app\morador-v2\[unidadeId]\page.tsx:75:  });
+  app\morador-v2\[unidadeId]\page.tsx:76:}
+  app\morador-v2\[unidadeId]\page.tsx:77:
+> app\morador-v2\[unidadeId]\page.tsx:78:function ordenarMensagens(mensagens?: Record<string, MensagemConversa>) {
+  app\morador-v2\[unidadeId]\page.tsx:79:  if (!mensagens) return [];
+  app\morador-v2\[unidadeId]\page.tsx:80:
+  app\morador-v2\[unidadeId]\page.tsx:81:  return Object.entries(mensagens)
+> app\morador-v2\[unidadeId]\page.tsx:82:    .map(([id, mensagem]) => ({ id, ...mensagem }))
+  app\morador-v2\[unidadeId]\page.tsx:83:    .sort((a, b) => (a.criadoEm || 0) - (b.criadoEm || 0));
+  app\morador-v2\[unidadeId]\page.tsx:84:}
+  app\morador-v2\[unidadeId]\page.tsx:85:
+> app\morador-v2\[unidadeId]\page.tsx:86:function formatarDataComunicado(data?: string) {
+  app\morador-v2\[unidadeId]\page.tsx:87:  if (!data) return "";
+  app\morador-v2\[unidadeId]\page.tsx:88:
+  app\morador-v2\[unidadeId]\page.tsx:89:  const [ano, mes, dia] = data.split("-");
+  app\morador-v2\[unidadeId]\page.tsx:90:  if (!ano || !mes || !dia) return data;
+  app\morador-v2\[unidadeId]\page.tsx:91:
+  app\morador-v2\[unidadeId]\page.tsx:92:  return `${dia}/${mes}/${ano}`;
+  app\morador-v2\[unidadeId]\page.tsx:93:}
+  app\morador-v2\[unidadeId]\page.tsx:94:
+> app\morador-v2\[unidadeId]\page.tsx:95:function iconeTipoComunicado(tipo: ComunicadoMorador["tipo"]) {
+  app\morador-v2\[unidadeId]\page.tsx:96:  if (tipo === "assembleia") return "👥";
+  app\morador-v2\[unidadeId]\page.tsx:97:  if (tipo === "manutencao") return "🛠️";
+  app\morador-v2\[unidadeId]\page.tsx:98:  if (tipo === "emergencia") return "🚨";
+  app\morador-v2\[unidadeId]\page.tsx:99:  return "📢";
+  app\morador-v2\[unidadeId]\page.tsx:100:}
+  app\morador-v2\[unidadeId]\page.tsx:101:
+> app\morador-v2\[unidadeId]\page.tsx:102:function textoTipoComunicado(tipo: ComunicadoMorador["tipo"]) {
+  app\morador-v2\[unidadeId]\page.tsx:103:  if (tipo === "assembleia") return "ASSEMBLEIA";
+  app\morador-v2\[unidadeId]\page.tsx:104:  if (tipo === "manutencao") return "MANUTENÇÃO";
+  app\morador-v2\[unidadeId]\page.tsx:105:  if (tipo === "emergencia") return "EMERGÊNCIA";
+  app\morador-v2\[unidadeId]\page.tsx:106:  return "COMUNICADO";
+  app\morador-v2\[unidadeId]\page.tsx:107:}
+  app\morador-v2\[unidadeId]\page.tsx:108:
+> app\morador-v2\[unidadeId]\page.tsx:109:export default function MoradorV2() {
+  app\morador-v2\[unidadeId]\page.tsx:110:  const params = useParams();
+  app\morador-v2\[unidadeId]\page.tsx:111:  const searchParams = useSearchParams();
+  app\morador-v2\[unidadeId]\page.tsx:112:  const comunicadoIdPeloLink = searchParams.get("comunicado") || "";
+  app\morador-v2\[unidadeId]\page.tsx:113:
+  app\morador-v2\[unidadeId]\page.tsx:114:  const slug = String(
+  app\morador-v2\[unidadeId]\page.tsx:115:    params?.unidadeId ||
+  app\morador-v2\[unidadeId]\page.tsx:116:      params?.slug ||
+  app\morador-v2\[unidadeId]\page.tsx:117:      params?.id ||
+  app\morador-v2\[unidadeId]\page.tsx:123:  const [motivo, setMotivo] = useState("Aguardando visitante");
+  app\morador-v2\[unidadeId]\page.tsx:124:  const [status, setStatus] = useState("Sem chamado ativo");
+> app\morador-v2\[unidadeId]\page.tsx:125:  const [horaChamada, setHoraChamada] = useState("");
+  app\morador-v2\[unidadeId]\page.tsx:126:  const [modo, setModo] = useState("");
+> app\morador-v2\[unidadeId]\page.tsx:127:  const [mensagemResponsavel, setMensagemResponsavel] = useState("");
+> app\morador-v2\[unidadeId]\page.tsx:128:  const [historicoLista, setHistoricoLista] = useState<any[]>([]);
+  app\morador-v2\[unidadeId]\page.tsx:129:  const [avisoAuto, setAvisoAuto] = useState("");
+  app\morador-v2\[unidadeId]\page.tsx:130:  const [online, setOnline] = useState(true);
+> app\morador-v2\[unidadeId]\page.tsx:131:  const [fotoCameraAtual, setFotoCameraAtual] = useState("");
+> app\morador-v2\[unidadeId]\page.tsx:132:  const [fotoCameraAtualizadaEm, setFotoCameraAtualizadaEm] = useState(Date.now());
+> app\morador-v2\[unidadeId]\page.tsx:133:  const [capturandoCamera, setCapturandoCamera] = useState(false);
+  app\morador-v2\[unidadeId]\page.tsx:134:  const [abrindoPortao, setAbrindoPortao] = useState(false);
+  app\morador-v2\[unidadeId]\page.tsx:135:  const [statusPortao, setStatusPortao] = useState("");
+  app\morador-v2\[unidadeId]\page.tsx:136:  const [visitanteVisualizou, setVisitanteVisualizou] = useState(false);
+> app\morador-v2\[unidadeId]\page.tsx:137:  const [audioVisitante, setAudioVisitante] = useState("");
+> app\morador-v2\[unidadeId]\page.tsx:138:  const [mensagensConversa, setMensagensConversa] = useState<MensagemConversa[]>([]);
+> app\morador-v2\[unidadeId]\page.tsx:139:  const [gravandoAudioMorador, setGravandoAudioMorador] = useState(false);
+> app\morador-v2\[unidadeId]\page.tsx:140:  const [audioRespostaBlob, setAudioRespostaBlob] = useState<Blob | null>(null);
+> app\morador-v2\[unidadeId]\page.tsx:141:  const [enviandoAudioMorador, setEnviandoAudioMorador] = useState(false);
+  app\morador-v2\[unidadeId]\page.tsx:142:  const [popupAtendimentoAberto, setPopupAtendimentoAberto] = useState(false);
+> app\morador-v2\[unidadeId]\page.tsx:143:  const [mostrarHistorico, setMostrarHistorico] = useState(false);
+> app\morador-v2\[unidadeId]\page.tsx:144:  const [mostrarCameraGrande, setMostrarCameraGrande] = useState(false);
+> app\morador-v2\[unidadeId]\page.tsx:145:  const [audioPopup, setAudioPopup] = useState<{ titulo: string; audio: string } | null>(null);
+  app\morador-v2\[unidadeId]\page.tsx:146:  const [installPrompt, setInstallPrompt] = useState<any>(null);
+  app\morador-v2\[unidadeId]\page.tsx:147:  const [appInstalavel, setAppInstalavel] = useState(false);
+  app\morador-v2\[unidadeId]\page.tsx:148:  const [comunicados, setComunicados] = useState<ComunicadoMorador[]>([]);
+  app\morador-v2\[unidadeId]\page.tsx:149:  const [comunicadoAberto, setComunicadoAberto] =
+  app\morador-v2\[unidadeId]\page.tsx:150:    useState<ComunicadoMorador | null>(null);
+  app\morador-v2\[unidadeId]\page.tsx:151:  const [salvandoCiencia, setSalvandoCiencia] = useState(false);
+  app\morador-v2\[unidadeId]\page.tsx:152:
+  app\morador-v2\[unidadeId]\page.tsx:153:  const intervaloSomRef = useRef<NodeJS.Timeout | null>(null);
+  app\morador-v2\[unidadeId]\page.tsx:154:  const finalizacaoAutoRef = useRef<NodeJS.Timeout | null>(null);
+> app\morador-v2\[unidadeId]\page.tsx:155:  const ultimaCapturaCameraRef = useRef("");
+> app\morador-v2\[unidadeId]\page.tsx:156:  const ultimoAudioPopupRef = useRef("");
+> app\morador-v2\[unidadeId]\page.tsx:157:  const toqueSilenciadoPorAudioRef = useRef(false);
+> app\morador-v2\[unidadeId]\page.tsx:158:  const idChamadaAtualRef = useRef("");
+> app\morador-v2\[unidadeId]\page.tsx:159:  const audioContextRef = useRef<AudioContext | null>(null);
+> app\morador-v2\[unidadeId]\page.tsx:160:  const ultimaChamadaAtivaRef = useRef(false);
+> app\morador-v2\[unidadeId]\page.tsx:161:  const ultimaChamadaDadosRef = useRef<any>(null);
+  app\morador-v2\[unidadeId]\page.tsx:162:  const mediaRecorderMoradorRef = useRef<MediaRecorder | null>(null);
+> app\morador-v2\[unidadeId]\page.tsx:163:  const audioChunksMoradorRef = useRef<Blob[]>([]);
+  app\morador-v2\[unidadeId]\page.tsx:164:
+> app\morador-v2\[unidadeId]\page.tsx:165:  function identificarCondominioPeloSlug(unidadeSlug: string) {
+  app\morador-v2\[unidadeId]\page.tsx:166:    const valor = unidadeSlug.toLowerCase();
+  app\morador-v2\[unidadeId]\page.tsx:167:
+  app\morador-v2\[unidadeId]\page.tsx:168:    if (valor.includes("residencial-costa")) {
+  app\morador-v2\[unidadeId]\page.tsx:169:      return "residencial-costa";
+  app\morador-v2\[unidadeId]\page.tsx:170:    }
+  app\morador-v2\[unidadeId]\page.tsx:171:
+  app\morador-v2\[unidadeId]\page.tsx:172:    if (valor.includes("tulipas")) return "cnd-tulipas";
+  app\morador-v2\[unidadeId]\page.tsx:173:    if (valor.includes("flores")) return "cnd-flores";
+  app\morador-v2\[unidadeId]\page.tsx:190:
+  app\morador-v2\[unidadeId]\page.tsx:191:  const caminhoComunicados = `comunicados-v2/${condominioId}`;
+> app\morador-v2\[unidadeId]\page.tsx:192:  const caminhoFirebase = `unidades-v2/${slug}/chamada`;
+> app\morador-v2\[unidadeId]\page.tsx:193:  const caminhoHistorico = `historico-v2/${slug}`;
+  app\morador-v2\[unidadeId]\page.tsx:194:  const caminhoStatus = `status-v2/${slug}`;
+  app\morador-v2\[unidadeId]\page.tsx:195:  const caminhoLogs = `logs-v2/${slug}`;
+  app\morador-v2\[unidadeId]\page.tsx:196:  const caminhoAnalytics = `analytics-v2/${slug}`;
+  app\morador-v2\[unidadeId]\page.tsx:197:
+  app\morador-v2\[unidadeId]\page.tsx:198:  const TEMPO_AGUARDANDO = 2 * 60 * 1000;
+  app\morador-v2\[unidadeId]\page.tsx:199:  const TEMPO_EM_ATENDIMENTO = 1 * 60 * 1000;
+  app\morador-v2\[unidadeId]\page.tsx:200:
+> app\morador-v2\[unidadeId]\page.tsx:201:  const chamadaAtiva =
+  app\morador-v2\[unidadeId]\page.tsx:202:    nome !== "Nenhuma solicitação" &&
+  app\morador-v2\[unidadeId]\page.tsx:203:    status !== "Sem chamado ativo" &&
+  app\morador-v2\[unidadeId]\page.tsx:204:    status !== "Encerrado";
+  app\morador-v2\[unidadeId]\page.tsx:205:
+  app\morador-v2\[unidadeId]\page.tsx:206:  const aguardandoAtendimento = status === "Aguardando atendimento";
+  app\morador-v2\[unidadeId]\page.tsx:207:  const atendimentoEmAndamento = status === "Em atendimento";
+> app\morador-v2\[unidadeId]\page.tsx:208:  const mostrarPopupChamada = chamadaAtiva && popupAtendimentoAberto && aguardandoAtendimento;
+  app\morador-v2\[unidadeId]\page.tsx:209:
+> app\morador-v2\[unidadeId]\page.tsx:210:  async function registrarLog(tipo: string, detalhes: string) {
+  app\morador-v2\[unidadeId]\page.tsx:211:    try {
+  app\morador-v2\[unidadeId]\page.tsx:212:      const novoLog = push(ref(db, caminhoLogs));
+  app\morador-v2\[unidadeId]\page.tsx:213:
+  app\morador-v2\[unidadeId]\page.tsx:214:      await set(novoLog, {
+  app\morador-v2\[unidadeId]\page.tsx:215:        tipo,
+  app\morador-v2\[unidadeId]\page.tsx:216:        detalhes,
+  app\morador-v2\[unidadeId]\page.tsx:217:        unidade: slug,
+  app\morador-v2\[unidadeId]\page.tsx:218:        timestamp: new Date().toISOString(),
+  app\morador-v2\[unidadeId]\page.tsx:227:  }
+  app\morador-v2\[unidadeId]\page.tsx:228:
+> app\morador-v2\[unidadeId]\page.tsx:229:  async function registrarAnalytics(evento: string) {
+  app\morador-v2\[unidadeId]\page.tsx:230:    try {
+  app\morador-v2\[unidadeId]\page.tsx:231:      const referencia = ref(db, caminhoAnalytics);
+  app\morador-v2\[unidadeId]\page.tsx:232:      const snapshot = await get(referencia);
+  app\morador-v2\[unidadeId]\page.tsx:233:
+  app\morador-v2\[unidadeId]\page.tsx:234:      const dados = snapshot.val() || {
+  app\morador-v2\[unidadeId]\page.tsx:235:        recebidas: 0,
+  app\morador-v2\[unidadeId]\page.tsx:236:        atendidas: 0,
+  app\morador-v2\[unidadeId]\page.tsx:237:        finalizadas: 0,
+  app\morador-v2\[unidadeId]\page.tsx:321:  }, [comunicadoIdPeloLink, comunicados]);
+  app\morador-v2\[unidadeId]\page.tsx:322:
+> app\morador-v2\[unidadeId]\page.tsx:323:  async function abrirComunicado(comunicado: ComunicadoMorador) {
+  app\morador-v2\[unidadeId]\page.tsx:324:    setComunicadoAberto(comunicado);
+  app\morador-v2\[unidadeId]\page.tsx:325:
+  app\morador-v2\[unidadeId]\page.tsx:326:    const visualizacaoAtual =
+  app\morador-v2\[unidadeId]\page.tsx:327:      comunicado.visualizacoes?.[slug]?.visualizadoEm;
+  app\morador-v2\[unidadeId]\page.tsx:328:
+  app\morador-v2\[unidadeId]\page.tsx:329:    if (visualizacaoAtual) return;
+  app\morador-v2\[unidadeId]\page.tsx:330:
+  app\morador-v2\[unidadeId]\page.tsx:331:    try {
+  app\morador-v2\[unidadeId]\page.tsx:346:  }
+  app\morador-v2\[unidadeId]\page.tsx:347:
+> app\morador-v2\[unidadeId]\page.tsx:348:  async function confirmarCiencia() {
+  app\morador-v2\[unidadeId]\page.tsx:349:    if (!comunicadoAberto || salvandoCiencia) return;
+  app\morador-v2\[unidadeId]\page.tsx:350:
+  app\morador-v2\[unidadeId]\page.tsx:351:    try {
+  app\morador-v2\[unidadeId]\page.tsx:352:      setSalvandoCiencia(true);
+  app\morador-v2\[unidadeId]\page.tsx:353:
+  app\morador-v2\[unidadeId]\page.tsx:354:      await update(
+  app\morador-v2\[unidadeId]\page.tsx:355:        ref(
+  app\morador-v2\[unidadeId]\page.tsx:356:          db,
+  app\morador-v2\[unidadeId]\page.tsx:391:
+  app\morador-v2\[unidadeId]\page.tsx:392:  useEffect(() => {
+> app\morador-v2\[unidadeId]\page.tsx:393:    const referenciaHistorico = ref(db, caminhoHistorico);
+  app\morador-v2\[unidadeId]\page.tsx:394:
+> app\morador-v2\[unidadeId]\page.tsx:395:    const pararDeOuvirHistorico = onValue(referenciaHistorico, (snapshot) => {
+  app\morador-v2\[unidadeId]\page.tsx:396:      const dados = snapshot.val();
+  app\morador-v2\[unidadeId]\page.tsx:397:
+  app\morador-v2\[unidadeId]\page.tsx:398:      if (!dados) {
+> app\morador-v2\[unidadeId]\page.tsx:399:        setHistoricoLista([]);
+  app\morador-v2\[unidadeId]\page.tsx:400:        return;
+  app\morador-v2\[unidadeId]\page.tsx:401:      }
+  app\morador-v2\[unidadeId]\page.tsx:402:
+  app\morador-v2\[unidadeId]\page.tsx:403:      const lista = Object.values(dados) as any[];
+  app\morador-v2\[unidadeId]\page.tsx:404:
+  app\morador-v2\[unidadeId]\page.tsx:405:      const listaOrdenada = lista
+  app\morador-v2\[unidadeId]\page.tsx:406:        .sort((a, b) => {
+  app\morador-v2\[unidadeId]\page.tsx:407:          const dataA = new Date(a.finalizadoEm || 0).getTime();
+  app\morador-v2\[unidadeId]\page.tsx:411:        .slice(0, 10);
+  app\morador-v2\[unidadeId]\page.tsx:412:
+> app\morador-v2\[unidadeId]\page.tsx:413:      setHistoricoLista(listaOrdenada);
+  app\morador-v2\[unidadeId]\page.tsx:414:    });
+  app\morador-v2\[unidadeId]\page.tsx:415:
+> app\morador-v2\[unidadeId]\page.tsx:416:    return () => pararDeOuvirHistorico();
+> app\morador-v2\[unidadeId]\page.tsx:417:  }, [caminhoHistorico]);
+  app\morador-v2\[unidadeId]\page.tsx:418:
+  app\morador-v2\[unidadeId]\page.tsx:419:  useEffect(() => {
+  app\morador-v2\[unidadeId]\page.tsx:420:    const referencia = ref(db, caminhoFirebase);
+  app\morador-v2\[unidadeId]\page.tsx:421:
+  app\morador-v2\[unidadeId]\page.tsx:422:    const pararDeOuvir = onValue(referencia, async (snapshot) => {
+  app\morador-v2\[unidadeId]\page.tsx:423:      const dados = snapshot.val();
+  app\morador-v2\[unidadeId]\page.tsx:424:
+  app\morador-v2\[unidadeId]\page.tsx:425:      limparFinalizacaoAutomatica();
+  app\morador-v2\[unidadeId]\page.tsx:426:
+  app\morador-v2\[unidadeId]\page.tsx:427:      if (!dados) {
+> app\morador-v2\[unidadeId]\page.tsx:428:        if (ultimaChamadaAtivaRef.current && ultimaChamadaDadosRef.current) {
+  app\morador-v2\[unidadeId]\page.tsx:429:          await registrarAnalytics("falha");
+  app\morador-v2\[unidadeId]\page.tsx:430:          await registrarLog(
+> app\morador-v2\[unidadeId]\page.tsx:431:            "chamada_cancelada_visitante",
+  app\morador-v2\[unidadeId]\page.tsx:432:            "Visitante cancelou antes do atendimento"
+  app\morador-v2\[unidadeId]\page.tsx:433:          );
+> app\morador-v2\[unidadeId]\page.tsx:434:          await salvarHistoricoComDados(
+  app\morador-v2\[unidadeId]\page.tsx:435:            "Cancelada pelo visitante",
+> app\morador-v2\[unidadeId]\page.tsx:436:            ultimaChamadaDadosRef.current
+  app\morador-v2\[unidadeId]\page.tsx:437:          );
+  app\morador-v2\[unidadeId]\page.tsx:438:        }
+  app\morador-v2\[unidadeId]\page.tsx:439:
+> app\morador-v2\[unidadeId]\page.tsx:440:        ultimaChamadaAtivaRef.current = false;
+> app\morador-v2\[unidadeId]\page.tsx:441:        ultimaChamadaDadosRef.current = null;
+  app\morador-v2\[unidadeId]\page.tsx:442:
+  app\morador-v2\[unidadeId]\page.tsx:443:        setNome("Nenhuma solicitação");
+  app\morador-v2\[unidadeId]\page.tsx:444:        setMotivo("Aguardando visitante");
+  app\morador-v2\[unidadeId]\page.tsx:445:        setStatus("Sem chamado ativo");
+> app\morador-v2\[unidadeId]\page.tsx:446:        setHoraChamada("");
+  app\morador-v2\[unidadeId]\page.tsx:447:        setModo("");
+> app\morador-v2\[unidadeId]\page.tsx:448:        setMensagemResponsavel("");
+  app\morador-v2\[unidadeId]\page.tsx:449:        setVisitanteVisualizou(false);
+> app\morador-v2\[unidadeId]\page.tsx:450:        setAudioVisitante("");
+> app\morador-v2\[unidadeId]\page.tsx:451:        ultimoAudioPopupRef.current = "";
+> app\morador-v2\[unidadeId]\page.tsx:452:        setAudioPopup(null);
+  app\morador-v2\[unidadeId]\page.tsx:453:        setMensagensConversa([]);
+> app\morador-v2\[unidadeId]\page.tsx:454:        setAudioRespostaBlob(null);
+  app\morador-v2\[unidadeId]\page.tsx:455:        setAvisoAuto("");
+  app\morador-v2\[unidadeId]\page.tsx:456:        setPopupAtendimentoAberto(false);
+> app\morador-v2\[unidadeId]\page.tsx:457:        toqueSilenciadoPorAudioRef.current = false;
+> app\morador-v2\[unidadeId]\page.tsx:458:        idChamadaAtualRef.current = "";
+  app\morador-v2\[unidadeId]\page.tsx:459:        pararToqueContinuo();
+  app\morador-v2\[unidadeId]\page.tsx:460:        return;
+  app\morador-v2\[unidadeId]\page.tsx:461:      }
+  app\morador-v2\[unidadeId]\page.tsx:462:
+> app\morador-v2\[unidadeId]\page.tsx:463:      ultimaChamadaAtivaRef.current = true;
+> app\morador-v2\[unidadeId]\page.tsx:464:      ultimaChamadaDadosRef.current = dados;
+  app\morador-v2\[unidadeId]\page.tsx:465:
+  app\morador-v2\[unidadeId]\page.tsx:466:      setNome(dados.nome || "Nenhuma solicitação");
+  app\morador-v2\[unidadeId]\page.tsx:467:      setMotivo(dados.motivo || "Aguardando visitante");
+  app\morador-v2\[unidadeId]\page.tsx:468:      setStatus(dados.status || "Sem chamado ativo");
+> app\morador-v2\[unidadeId]\page.tsx:469:      setHoraChamada(
+  app\morador-v2\[unidadeId]\page.tsx:470:        dados.criadoEm ? new Date(dados.criadoEm).toLocaleString("pt-BR") : ""
+  app\morador-v2\[unidadeId]\page.tsx:471:      );
+  app\morador-v2\[unidadeId]\page.tsx:472:      setModo(dados.modo || "");
+> app\morador-v2\[unidadeId]\page.tsx:473:      setMensagemResponsavel(dados.mensagemResponsavel || "");
+  app\morador-v2\[unidadeId]\page.tsx:474:
+> app\morador-v2\[unidadeId]\page.tsx:475:      const idChamadaAtual =
+  app\morador-v2\[unidadeId]\page.tsx:476:        String(dados.criadoEm || "") ||
+  app\morador-v2\[unidadeId]\page.tsx:477:        `${dados.nome || ""}-${dados.motivo || ""}`;
+  app\morador-v2\[unidadeId]\page.tsx:478:
+  app\morador-v2\[unidadeId]\page.tsx:479:      if (
+> app\morador-v2\[unidadeId]\page.tsx:480:        idChamadaAtual &&
+> app\morador-v2\[unidadeId]\page.tsx:481:        idChamadaAtualRef.current !== idChamadaAtual
+  app\morador-v2\[unidadeId]\page.tsx:482:      ) {
+> app\morador-v2\[unidadeId]\page.tsx:483:        idChamadaAtualRef.current = idChamadaAtual;
+> app\morador-v2\[unidadeId]\page.tsx:484:        toqueSilenciadoPorAudioRef.current = false;
+  app\morador-v2\[unidadeId]\page.tsx:485:      }
+  app\morador-v2\[unidadeId]\page.tsx:486:      setVisitanteVisualizou(
+  app\morador-v2\[unidadeId]\page.tsx:487:        dados.visitanteVisualizou === true ||
+> app\morador-v2\[unidadeId]\page.tsx:488:          dados.mensagemVisualizada === true ||
+  app\morador-v2\[unidadeId]\page.tsx:489:          dados.visualizadoPeloVisitante === true
+  app\morador-v2\[unidadeId]\page.tsx:490:      );
+  app\morador-v2\[unidadeId]\page.tsx:491:
+  app\morador-v2\[unidadeId]\page.tsx:492:      const mensagensOrdenadas = ordenarMensagens(dados.mensagens);
+  app\morador-v2\[unidadeId]\page.tsx:493:      setMensagensConversa(mensagensOrdenadas);
+  app\morador-v2\[unidadeId]\page.tsx:494:
+> app\morador-v2\[unidadeId]\page.tsx:495:      const ultimoAudioVisitante = [...mensagensOrdenadas]
+  app\morador-v2\[unidadeId]\page.tsx:496:        .reverse()
+  app\morador-v2\[unidadeId]\page.tsx:497:        .find(
+  app\morador-v2\[unidadeId]\page.tsx:498:          (item) =>
+  app\morador-v2\[unidadeId]\page.tsx:499:            item.autor === "visitante" &&
+> app\morador-v2\[unidadeId]\page.tsx:500:            item.tipo === "audio" &&
+> app\morador-v2\[unidadeId]\page.tsx:501:            Boolean(item.audioBase64)
+  app\morador-v2\[unidadeId]\page.tsx:502:        );
+  app\morador-v2\[unidadeId]\page.tsx:503:
+> app\morador-v2\[unidadeId]\page.tsx:504:      const audioVisitanteAtual = ultimoAudioVisitante?.audioBase64 || dados.audioBase64 || "";
+> app\morador-v2\[unidadeId]\page.tsx:505:      setAudioVisitante(audioVisitanteAtual);
+  app\morador-v2\[unidadeId]\page.tsx:506:
+> app\morador-v2\[unidadeId]\page.tsx:507:      if (audioVisitanteAtual && ultimoAudioPopupRef.current !== audioVisitanteAtual) {
+> app\morador-v2\[unidadeId]\page.tsx:508:        ultimoAudioPopupRef.current = audioVisitanteAtual;
+  app\morador-v2\[unidadeId]\page.tsx:509:
+> app\morador-v2\[unidadeId]\page.tsx:510:        setAudioPopup({
+  app\morador-v2\[unidadeId]\page.tsx:511:          titulo: "🎙️ Novo áudio do visitante",
+> app\morador-v2\[unidadeId]\page.tsx:512:          audio: audioVisitanteAtual,
+  app\morador-v2\[unidadeId]\page.tsx:513:        });
+  app\morador-v2\[unidadeId]\page.tsx:514:      }
+  app\morador-v2\[unidadeId]\page.tsx:515:
+  app\morador-v2\[unidadeId]\page.tsx:516:      if (dados.status === "Encerrado") {
+> app\morador-v2\[unidadeId]\page.tsx:517:        ultimaChamadaAtivaRef.current = false;
+> app\morador-v2\[unidadeId]\page.tsx:518:        ultimaChamadaDadosRef.current = null;
+  app\morador-v2\[unidadeId]\page.tsx:519:
+  app\morador-v2\[unidadeId]\page.tsx:520:        pararToqueContinuo();
+  app\morador-v2\[unidadeId]\page.tsx:521:        setPopupAtendimentoAberto(false);
+  app\morador-v2\[unidadeId]\page.tsx:522:        setAvisoAuto("Atendimento encerrado. Limpando em instantes.");
+  app\morador-v2\[unidadeId]\page.tsx:523:        return;
+  app\morador-v2\[unidadeId]\page.tsx:524:      }
+  app\morador-v2\[unidadeId]\page.tsx:525:
+  app\morador-v2\[unidadeId]\page.tsx:526:      const deveTocar =
+> app\morador-v2\[unidadeId]\page.tsx:527:        dados.notificar === true &&
+  app\morador-v2\[unidadeId]\page.tsx:528:        dados.status === "Aguardando atendimento" &&
+> app\morador-v2\[unidadeId]\page.tsx:529:        !toqueSilenciadoPorAudioRef.current;
+  app\morador-v2\[unidadeId]\page.tsx:530:
+  app\morador-v2\[unidadeId]\page.tsx:531:      if (deveTocar) {
+  app\morador-v2\[unidadeId]\page.tsx:532:        iniciarToqueContinuo();
+  app\morador-v2\[unidadeId]\page.tsx:533:        setPopupAtendimentoAberto(true);
+  app\morador-v2\[unidadeId]\page.tsx:534:
+> app\morador-v2\[unidadeId]\page.tsx:535:        const idChamada = dados.criadoEm || dados.nome || "";
+  app\morador-v2\[unidadeId]\page.tsx:536:
+> app\morador-v2\[unidadeId]\page.tsx:537:        if (idChamada && ultimaCapturaCameraRef.current !== idChamada) {
+> app\morador-v2\[unidadeId]\page.tsx:538:          ultimaCapturaCameraRef.current = idChamada;
+  app\morador-v2\[unidadeId]\page.tsx:539:
+  app\morador-v2\[unidadeId]\page.tsx:540:          registrarAnalytics("recebida");
+> app\morador-v2\[unidadeId]\page.tsx:541:          registrarLog("chamada_recebida", "Nova chamada recebida no painel");
+  app\morador-v2\[unidadeId]\page.tsx:542:
+> app\morador-v2\[unidadeId]\page.tsx:543:          capturarFotoCamera();
+  app\morador-v2\[unidadeId]\page.tsx:544:        }
+  app\morador-v2\[unidadeId]\page.tsx:545:      } else {
+  app\morador-v2\[unidadeId]\page.tsx:546:        pararToqueContinuo();
+  app\morador-v2\[unidadeId]\page.tsx:547:      }
+  app\morador-v2\[unidadeId]\page.tsx:548:
+  app\morador-v2\[unidadeId]\page.tsx:549:      programarFinalizacaoAutomatica(dados);
+  app\morador-v2\[unidadeId]\page.tsx:550:    });
+  app\morador-v2\[unidadeId]\page.tsx:551:
+  app\morador-v2\[unidadeId]\page.tsx:557:  }, [caminhoFirebase]);
+  app\morador-v2\[unidadeId]\page.tsx:558:
+> app\morador-v2\[unidadeId]\page.tsx:559:  async function capturarFotoCamera() {
+> app\morador-v2\[unidadeId]\page.tsx:560:    setCapturandoCamera(true);
+  app\morador-v2\[unidadeId]\page.tsx:561:
+  app\morador-v2\[unidadeId]\page.tsx:562:    try {
+> app\morador-v2\[unidadeId]\page.tsx:563:      await registrarLog("camera_tentativa", "Tentando capturar foto da câmera");
+  app\morador-v2\[unidadeId]\page.tsx:564:
+> app\morador-v2\[unidadeId]\page.tsx:565:      const resposta = await fetch(`/api/capturar-camera?cache=${Date.now()}`);
+  app\morador-v2\[unidadeId]\page.tsx:566:      const dados = await resposta.json();
+  app\morador-v2\[unidadeId]\page.tsx:567:
+  app\morador-v2\[unidadeId]\page.tsx:568:      if (dados.sucesso && dados.imagem) {
+> app\morador-v2\[unidadeId]\page.tsx:569:        setFotoCameraAtual(dados.imagem);
+> app\morador-v2\[unidadeId]\page.tsx:570:        setFotoCameraAtualizadaEm(Date.now());
+  app\morador-v2\[unidadeId]\page.tsx:571:
+  app\morador-v2\[unidadeId]\page.tsx:572:        await registrarLog(
+> app\morador-v2\[unidadeId]\page.tsx:573:          "camera_sucesso",
+  app\morador-v2\[unidadeId]\page.tsx:574:          "Foto da câmera capturada com sucesso"
+  app\morador-v2\[unidadeId]\page.tsx:575:        );
+  app\morador-v2\[unidadeId]\page.tsx:576:      } else {
+> app\morador-v2\[unidadeId]\page.tsx:577:        await registrarLog("erro_camera", "A câmera não retornou imagem válida");
+  app\morador-v2\[unidadeId]\page.tsx:578:        console.log("A câmera não retornou imagem.");
+  app\morador-v2\[unidadeId]\page.tsx:579:      }
+  app\morador-v2\[unidadeId]\page.tsx:580:    } catch (erro) {
+  app\morador-v2\[unidadeId]\page.tsx:581:      console.error("Erro ao capturar foto da câmera:", erro);
+  app\morador-v2\[unidadeId]\page.tsx:582:
+  app\morador-v2\[unidadeId]\page.tsx:583:      await registrarLog(
+> app\morador-v2\[unidadeId]\page.tsx:584:        "erro_camera",
+  app\morador-v2\[unidadeId]\page.tsx:585:        "Erro ao atualizar foto da câmera: " + String(erro)
+  app\morador-v2\[unidadeId]\page.tsx:586:      );
+  app\morador-v2\[unidadeId]\page.tsx:587:
+  app\morador-v2\[unidadeId]\page.tsx:588:      alert("Erro ao atualizar foto da câmera.");
+  app\morador-v2\[unidadeId]\page.tsx:589:    }
+  app\morador-v2\[unidadeId]\page.tsx:590:
+> app\morador-v2\[unidadeId]\page.tsx:591:    setCapturandoCamera(false);
+  app\morador-v2\[unidadeId]\page.tsx:592:  }
+  app\morador-v2\[unidadeId]\page.tsx:593:
+> app\morador-v2\[unidadeId]\page.tsx:594:  async function salvarHistoricoComDados(tipoFinalizacao: string, dados: any) {
+  app\morador-v2\[unidadeId]\page.tsx:595:    if (!dados || !dados.nome) return;
+  app\morador-v2\[unidadeId]\page.tsx:596:
+  app\morador-v2\[unidadeId]\page.tsx:597:    const agora = new Date();
+  app\morador-v2\[unidadeId]\page.tsx:598:
+  app\morador-v2\[unidadeId]\page.tsx:599:    const novoRegistro = {
+  app\morador-v2\[unidadeId]\page.tsx:600:      nome: dados.nome || "Visitante",
+  app\morador-v2\[unidadeId]\page.tsx:601:      motivo: dados.motivo || "Não informado",
+  app\morador-v2\[unidadeId]\page.tsx:602:      modo: dados.modo || "",
+  app\morador-v2\[unidadeId]\page.tsx:608:      finalizadoEm: agora.toISOString(),
+  app\morador-v2\[unidadeId]\page.tsx:609:      finalizadoEmFormatado: agora.toLocaleString("pt-BR"),
+> app\morador-v2\[unidadeId]\page.tsx:610:      fotoCamera: fotoCameraAtual || "",
+  app\morador-v2\[unidadeId]\page.tsx:611:    };
+  app\morador-v2\[unidadeId]\page.tsx:612:
+> app\morador-v2\[unidadeId]\page.tsx:613:    const novoItem = push(ref(db, caminhoHistorico));
+  app\morador-v2\[unidadeId]\page.tsx:614:    await set(novoItem, novoRegistro);
+  app\morador-v2\[unidadeId]\page.tsx:615:  }
+  app\morador-v2\[unidadeId]\page.tsx:616:
+> app\morador-v2\[unidadeId]\page.tsx:617:  async function salvarHistorico(tipoFinalizacao: string) {
+  app\morador-v2\[unidadeId]\page.tsx:618:    if (nome === "Nenhuma solicitação") return;
+  app\morador-v2\[unidadeId]\page.tsx:619:
+  app\morador-v2\[unidadeId]\page.tsx:620:    const agora = new Date();
+  app\morador-v2\[unidadeId]\page.tsx:621:
+  app\morador-v2\[unidadeId]\page.tsx:622:    const novoRegistro = {
+  app\morador-v2\[unidadeId]\page.tsx:623:      nome,
+  app\morador-v2\[unidadeId]\page.tsx:624:      motivo,
+  app\morador-v2\[unidadeId]\page.tsx:625:      modo,
+  app\morador-v2\[unidadeId]\page.tsx:626:      statusFinal: status,
+  app\morador-v2\[unidadeId]\page.tsx:627:      tipoFinalizacao,
+> app\morador-v2\[unidadeId]\page.tsx:628:      chamadoEm: horaChamada,
+  app\morador-v2\[unidadeId]\page.tsx:629:      finalizadoEm: agora.toISOString(),
+  app\morador-v2\[unidadeId]\page.tsx:630:      finalizadoEmFormatado: agora.toLocaleString("pt-BR"),
+> app\morador-v2\[unidadeId]\page.tsx:631:      fotoCamera: fotoCameraAtual || "",
+  app\morador-v2\[unidadeId]\page.tsx:632:    };
+  app\morador-v2\[unidadeId]\page.tsx:633:
+> app\morador-v2\[unidadeId]\page.tsx:634:    const novoItem = push(ref(db, caminhoHistorico));
+  app\morador-v2\[unidadeId]\page.tsx:635:    await set(novoItem, novoRegistro);
+  app\morador-v2\[unidadeId]\page.tsx:636:  }
+  app\morador-v2\[unidadeId]\page.tsx:637:
+> app\morador-v2\[unidadeId]\page.tsx:638:  function programarFinalizacaoAutomatica(dados: any) {
+  app\morador-v2\[unidadeId]\page.tsx:639:    if (dados.status === "Encerrado") return;
+  app\morador-v2\[unidadeId]\page.tsx:640:
+  app\morador-v2\[unidadeId]\page.tsx:641:    const agora = Date.now();
+  app\morador-v2\[unidadeId]\page.tsx:642:
+  app\morador-v2\[unidadeId]\page.tsx:643:    let tempoLimite = TEMPO_AGUARDANDO;
+  app\morador-v2\[unidadeId]\page.tsx:644:    let dataBase = dados.criadoEm;
+  app\morador-v2\[unidadeId]\page.tsx:645:
+  app\morador-v2\[unidadeId]\page.tsx:646:    if (dados.status === "Em atendimento") {
+  app\morador-v2\[unidadeId]\page.tsx:659:
+  app\morador-v2\[unidadeId]\page.tsx:660:    if (tempoRestante <= 0) {
+> app\morador-v2\[unidadeId]\page.tsx:661:      finalizarAutomaticamente();
+  app\morador-v2\[unidadeId]\page.tsx:662:      return;
+  app\morador-v2\[unidadeId]\page.tsx:663:    }
+  app\morador-v2\[unidadeId]\page.tsx:664:
+  app\morador-v2\[unidadeId]\page.tsx:665:    const minutos = Math.ceil(tempoRestante / 60000);
+  app\morador-v2\[unidadeId]\page.tsx:666:    setAvisoAuto(`Finalização automática em até ${minutos} min.`);
+  app\morador-v2\[unidadeId]\page.tsx:667:
+  app\morador-v2\[unidadeId]\page.tsx:668:    finalizacaoAutoRef.current = setTimeout(() => {
+> app\morador-v2\[unidadeId]\page.tsx:669:      finalizarAutomaticamente();
+  app\morador-v2\[unidadeId]\page.tsx:670:    }, tempoRestante);
+  app\morador-v2\[unidadeId]\page.tsx:671:  }
+  app\morador-v2\[unidadeId]\page.tsx:672:
+> app\morador-v2\[unidadeId]\page.tsx:673:  async function finalizarAutomaticamente() {
+  app\morador-v2\[unidadeId]\page.tsx:674:    pararToqueContinuo();
+  app\morador-v2\[unidadeId]\page.tsx:675:    limparFinalizacaoAutomatica();
+  app\morador-v2\[unidadeId]\page.tsx:676:
+  app\morador-v2\[unidadeId]\page.tsx:677:    const timeoutAguardando = status === "Aguardando atendimento";
+  app\morador-v2\[unidadeId]\page.tsx:678:
+> app\morador-v2\[unidadeId]\page.tsx:679:    ultimaChamadaAtivaRef.current = false;
+  app\morador-v2\[unidadeId]\page.tsx:680:    setPopupAtendimentoAberto(false);
+  app\morador-v2\[unidadeId]\page.tsx:681:    setStatus("Encerrado");
+  app\morador-v2\[unidadeId]\page.tsx:682:    setAvisoAuto("Atendimento encerrado. Limpando em instantes.");
+  app\morador-v2\[unidadeId]\page.tsx:683:
+  app\morador-v2\[unidadeId]\page.tsx:684:    try {
+  app\morador-v2\[unidadeId]\page.tsx:685:      await update(ref(db, caminhoFirebase), {
+  app\morador-v2\[unidadeId]\page.tsx:686:        status: "Encerrado",
+> app\morador-v2\[unidadeId]\page.tsx:687:        mensagemResponsavel: timeoutAguardando
+  app\morador-v2\[unidadeId]\page.tsx:688:          ? "Tempo de espera esgotado."
+  app\morador-v2\[unidadeId]\page.tsx:689:          : "ATENDIMENTO_ENCERRADO",
+> app\morador-v2\[unidadeId]\page.tsx:690:        notificar: false,
+  app\morador-v2\[unidadeId]\page.tsx:691:        encerradoEm: new Date().toISOString(),
+  app\morador-v2\[unidadeId]\page.tsx:692:      });
+  app\morador-v2\[unidadeId]\page.tsx:693:    } catch (erro) {
+> app\morador-v2\[unidadeId]\page.tsx:694:      console.error("Erro ao encerrar chamada automaticamente:", erro);
+  app\morador-v2\[unidadeId]\page.tsx:695:    }
+  app\morador-v2\[unidadeId]\page.tsx:696:
+> app\morador-v2\[unidadeId]\page.tsx:697:    ultimaChamadaDadosRef.current = null;
+> app\morador-v2\[unidadeId]\page.tsx:698:    setAudioVisitante("");
+  app\morador-v2\[unidadeId]\page.tsx:699:    setMensagensConversa([]);
+> app\morador-v2\[unidadeId]\page.tsx:700:    setAudioRespostaBlob(null);
+  app\morador-v2\[unidadeId]\page.tsx:701:
+  app\morador-v2\[unidadeId]\page.tsx:702:    void Promise.allSettled([
+  app\morador-v2\[unidadeId]\page.tsx:703:      registrarAnalytics("timeout"),
+  app\morador-v2\[unidadeId]\page.tsx:704:      registrarLog(
+  app\morador-v2\[unidadeId]\page.tsx:705:        "timeout_atendimento",
+> app\morador-v2\[unidadeId]\page.tsx:706:        "Chamada finalizada automaticamente"
+  app\morador-v2\[unidadeId]\page.tsx:707:      ),
+> app\morador-v2\[unidadeId]\page.tsx:708:      salvarHistorico(timeoutAguardando ? "Não atendida" : "Automática"),
+  app\morador-v2\[unidadeId]\page.tsx:709:    ]);
+  app\morador-v2\[unidadeId]\page.tsx:710:
+  app\morador-v2\[unidadeId]\page.tsx:711:    setTimeout(() => {
+  app\morador-v2\[unidadeId]\page.tsx:712:      void remove(ref(db, caminhoFirebase)).catch((erro) => {
+> app\morador-v2\[unidadeId]\page.tsx:713:        console.error("Erro ao limpar chamada encerrada:", erro);
+  app\morador-v2\[unidadeId]\page.tsx:714:      });
+  app\morador-v2\[unidadeId]\page.tsx:715:    }, 2000);
+  app\morador-v2\[unidadeId]\page.tsx:716:  }
+  app\morador-v2\[unidadeId]\page.tsx:717:
+> app\morador-v2\[unidadeId]\page.tsx:718:  function limparFinalizacaoAutomatica() {
+  app\morador-v2\[unidadeId]\page.tsx:719:    if (finalizacaoAutoRef.current) {
+  app\morador-v2\[unidadeId]\page.tsx:720:      clearTimeout(finalizacaoAutoRef.current);
+  app\morador-v2\[unidadeId]\page.tsx:721:      finalizacaoAutoRef.current = null;
+  app\morador-v2\[unidadeId]\page.tsx:722:    }
+  app\morador-v2\[unidadeId]\page.tsx:723:  }
+  app\morador-v2\[unidadeId]\page.tsx:724:
+> app\morador-v2\[unidadeId]\page.tsx:725:  async function atenderSolicitacao() {
+  app\morador-v2\[unidadeId]\page.tsx:726:  if (status === "Sem chamado ativo") {
+> app\morador-v2\[unidadeId]\page.tsx:727:    alert("Não existe chamada ativa para atender.");
+  app\morador-v2\[unidadeId]\page.tsx:728:    return;
+  app\morador-v2\[unidadeId]\page.tsx:729:  }
+  app\morador-v2\[unidadeId]\page.tsx:730:
+  app\morador-v2\[unidadeId]\page.tsx:731:  if (status === "Em atendimento") {
+> app\morador-v2\[unidadeId]\page.tsx:732:    alert("Esta chamada já está em atendimento.");
+  app\morador-v2\[unidadeId]\page.tsx:733:    return;
+  app\morador-v2\[unidadeId]\page.tsx:734:  }
+  app\morador-v2\[unidadeId]\page.tsx:735:
+  app\morador-v2\[unidadeId]\page.tsx:736:  setPopupAtendimentoAberto(false);
+  app\morador-v2\[unidadeId]\page.tsx:737:  pararToqueContinuo();
+  app\morador-v2\[unidadeId]\page.tsx:738:
+  app\morador-v2\[unidadeId]\page.tsx:739:  try {
+> app\morador-v2\[unidadeId]\page.tsx:740:    const chamadaSnapshot =
+  app\morador-v2\[unidadeId]\page.tsx:741:      await get(
+  app\morador-v2\[unidadeId]\page.tsx:742:        ref(
+  app\morador-v2\[unidadeId]\page.tsx:743:          db,
+  app\morador-v2\[unidadeId]\page.tsx:744:          caminhoFirebase
+  app\morador-v2\[unidadeId]\page.tsx:745:        )
+  app\morador-v2\[unidadeId]\page.tsx:746:      );
+  app\morador-v2\[unidadeId]\page.tsx:747:
+> app\morador-v2\[unidadeId]\page.tsx:748:    const chamadaAtual =
+> app\morador-v2\[unidadeId]\page.tsx:749:      chamadaSnapshot.val() || {};
+  app\morador-v2\[unidadeId]\page.tsx:750:
+  app\morador-v2\[unidadeId]\page.tsx:751:    const responsavelAtualId =
+  app\morador-v2\[unidadeId]\page.tsx:752:      String(
+> app\morador-v2\[unidadeId]\page.tsx:753:        chamadaAtual.responsavelAtualId ||
+  app\morador-v2\[unidadeId]\page.tsx:754:        ""
+  app\morador-v2\[unidadeId]\page.tsx:755:      );
+  app\morador-v2\[unidadeId]\page.tsx:756:
+  app\morador-v2\[unidadeId]\page.tsx:757:    /*
+  app\morador-v2\[unidadeId]\page.tsx:758:     * Enquanto ainda não houver responsável individual
+> app\morador-v2\[unidadeId]\page.tsx:759:     * definido na chamada, preserva o funcionamento atual.
+  app\morador-v2\[unidadeId]\page.tsx:760:     */
+  app\morador-v2\[unidadeId]\page.tsx:761:    if (!responsavelAtualId) {
+  app\morador-v2\[unidadeId]\page.tsx:762:      await update(
+  app\morador-v2\[unidadeId]\page.tsx:763:        ref(
+  app\morador-v2\[unidadeId]\page.tsx:764:          db,
+  app\morador-v2\[unidadeId]\page.tsx:765:          caminhoFirebase
+  app\morador-v2\[unidadeId]\page.tsx:766:        ),
+  app\morador-v2\[unidadeId]\page.tsx:767:        {
+  app\morador-v2\[unidadeId]\page.tsx:769:            "Em atendimento",
+  app\morador-v2\[unidadeId]\page.tsx:770:
+> app\morador-v2\[unidadeId]\page.tsx:771:          notificar:
+  app\morador-v2\[unidadeId]\page.tsx:772:            false,
+  app\morador-v2\[unidadeId]\page.tsx:773:
+  app\morador-v2\[unidadeId]\page.tsx:774:          atendidoEm:
+  app\morador-v2\[unidadeId]\page.tsx:775:            new Date().toISOString(),
+  app\morador-v2\[unidadeId]\page.tsx:776:
+  app\morador-v2\[unidadeId]\page.tsx:777:          ultimaAtividade:
+  app\morador-v2\[unidadeId]\page.tsx:778:            Date.now(),
+  app\morador-v2\[unidadeId]\page.tsx:779:        }
+  app\morador-v2\[unidadeId]\page.tsx:796:      if (!responsavelAtual) {
+  app\morador-v2\[unidadeId]\page.tsx:797:        throw new Error(
+> app\morador-v2\[unidadeId]\page.tsx:798:          "O responsável atual da chamada não foi encontrado."
+  app\morador-v2\[unidadeId]\page.tsx:799:        );
+  app\morador-v2\[unidadeId]\page.tsx:800:      }
+  app\morador-v2\[unidadeId]\page.tsx:801:
+  app\morador-v2\[unidadeId]\page.tsx:802:      await registrarAtendimentoDoResponsavel(
+  app\morador-v2\[unidadeId]\page.tsx:803:        caminhoFirebase,
+  app\morador-v2\[unidadeId]\page.tsx:804:        responsavelAtual
+  app\morador-v2\[unidadeId]\page.tsx:805:      );
+  app\morador-v2\[unidadeId]\page.tsx:806:    }
+  app\morador-v2\[unidadeId]\page.tsx:816:
+  app\morador-v2\[unidadeId]\page.tsx:817:      registrarLog(
+> app\morador-v2\[unidadeId]\page.tsx:818:        "chamada_atendida",
+  app\morador-v2\[unidadeId]\page.tsx:819:        responsavelAtualId
+> app\morador-v2\[unidadeId]\page.tsx:820:          ? `Chamada atendida pelo responsável ${responsavelAtualId}`
+> app\morador-v2\[unidadeId]\page.tsx:821:          : "Chamada atendida pelo painel"
+  app\morador-v2\[unidadeId]\page.tsx:822:      ),
+  app\morador-v2\[unidadeId]\page.tsx:823:    ]);
+  app\morador-v2\[unidadeId]\page.tsx:824:  } catch (erro) {
+  app\morador-v2\[unidadeId]\page.tsx:825:    console.error(
+> app\morador-v2\[unidadeId]\page.tsx:826:      "Erro ao atender chamada:",
+  app\morador-v2\[unidadeId]\page.tsx:827:      erro
+  app\morador-v2\[unidadeId]\page.tsx:828:    );
+  app\morador-v2\[unidadeId]\page.tsx:829:
+  app\morador-v2\[unidadeId]\page.tsx:830:    alert(
+  app\morador-v2\[unidadeId]\page.tsx:831:      erro instanceof Error
+  app\morador-v2\[unidadeId]\page.tsx:832:        ? erro.message
+  app\morador-v2\[unidadeId]\page.tsx:833:        : "Não foi possível confirmar o atendimento."
+  app\morador-v2\[unidadeId]\page.tsx:834:    );
+  app\morador-v2\[unidadeId]\page.tsx:835:  }
+  app\morador-v2\[unidadeId]\page.tsx:836:}
+> app\morador-v2\[unidadeId]\page.tsx:837:async function naoPossoAtender() {
+  app\morador-v2\[unidadeId]\page.tsx:838:  if (
+  app\morador-v2\[unidadeId]\page.tsx:839:    status ===
+  app\morador-v2\[unidadeId]\page.tsx:840:    "Sem chamado ativo"
+  app\morador-v2\[unidadeId]\page.tsx:841:  ) {
+  app\morador-v2\[unidadeId]\page.tsx:842:    alert(
+> app\morador-v2\[unidadeId]\page.tsx:843:      "Não existe chamada ativa."
+  app\morador-v2\[unidadeId]\page.tsx:844:    );
+  app\morador-v2\[unidadeId]\page.tsx:845:
+  app\morador-v2\[unidadeId]\page.tsx:846:    return;
+  app\morador-v2\[unidadeId]\page.tsx:847:  }
+  app\morador-v2\[unidadeId]\page.tsx:848:
+  app\morador-v2\[unidadeId]\page.tsx:849:  pararToqueContinuo();
+  app\morador-v2\[unidadeId]\page.tsx:850:  setPopupAtendimentoAberto(
+  app\morador-v2\[unidadeId]\page.tsx:851:    false
+  app\morador-v2\[unidadeId]\page.tsx:853:
+  app\morador-v2\[unidadeId]\page.tsx:854:  try {
+> app\morador-v2\[unidadeId]\page.tsx:855:    const chamadaSnapshot =
+  app\morador-v2\[unidadeId]\page.tsx:856:      await get(
+  app\morador-v2\[unidadeId]\page.tsx:857:        ref(
+  app\morador-v2\[unidadeId]\page.tsx:858:          db,
+  app\morador-v2\[unidadeId]\page.tsx:859:          caminhoFirebase
+  app\morador-v2\[unidadeId]\page.tsx:860:        )
+  app\morador-v2\[unidadeId]\page.tsx:861:      );
+  app\morador-v2\[unidadeId]\page.tsx:862:
+> app\morador-v2\[unidadeId]\page.tsx:863:    const chamadaAtual =
+> app\morador-v2\[unidadeId]\page.tsx:864:      chamadaSnapshot.val() || {};
+  app\morador-v2\[unidadeId]\page.tsx:865:
+  app\morador-v2\[unidadeId]\page.tsx:866:    const responsavelAtualId =
+  app\morador-v2\[unidadeId]\page.tsx:867:      String(
+> app\morador-v2\[unidadeId]\page.tsx:868:        chamadaAtual.responsavelAtualId ||
+  app\morador-v2\[unidadeId]\page.tsx:869:        ""
+  app\morador-v2\[unidadeId]\page.tsx:870:      );
+  app\morador-v2\[unidadeId]\page.tsx:871:
+  app\morador-v2\[unidadeId]\page.tsx:872:    if (!responsavelAtualId) {
+  app\morador-v2\[unidadeId]\page.tsx:873:      alert(
+> app\morador-v2\[unidadeId]\page.tsx:874:        "A chamada ainda não possui um responsável individual definido."
+  app\morador-v2\[unidadeId]\page.tsx:875:      );
+  app\morador-v2\[unidadeId]\page.tsx:876:
+  app\morador-v2\[unidadeId]\page.tsx:877:      setPopupAtendimentoAberto(
+  app\morador-v2\[unidadeId]\page.tsx:878:        true
+  app\morador-v2\[unidadeId]\page.tsx:879:      );
+  app\morador-v2\[unidadeId]\page.tsx:880:
+  app\morador-v2\[unidadeId]\page.tsx:881:      return;
+  app\morador-v2\[unidadeId]\page.tsx:882:    }
+  app\morador-v2\[unidadeId]\page.tsx:890:
+  app\morador-v2\[unidadeId]\page.tsx:891:    await registrarLog(
+> app\morador-v2\[unidadeId]\page.tsx:892:      "chamada_recusada",
+> app\morador-v2\[unidadeId]\page.tsx:893:      `Responsável ${responsavelAtualId} informou que não pode atender.`
+  app\morador-v2\[unidadeId]\page.tsx:894:    );
+  app\morador-v2\[unidadeId]\page.tsx:895:
+  app\morador-v2\[unidadeId]\page.tsx:896:    if (
+  app\morador-v2\[unidadeId]\page.tsx:897:      resultado.sucesso &&
+  app\morador-v2\[unidadeId]\page.tsx:898:      resultado.responsavel
+  app\morador-v2\[unidadeId]\page.tsx:899:    ) {
+  app\morador-v2\[unidadeId]\page.tsx:900:      alert(
+> app\morador-v2\[unidadeId]\page.tsx:901:        `Chamada encaminhada para ${resultado.responsavel.nome}.`
+  app\morador-v2\[unidadeId]\page.tsx:902:      );
+  app\morador-v2\[unidadeId]\page.tsx:903:
+  app\morador-v2\[unidadeId]\page.tsx:904:      return;
+  app\morador-v2\[unidadeId]\page.tsx:905:    }
+  app\morador-v2\[unidadeId]\page.tsx:906:
+  app\morador-v2\[unidadeId]\page.tsx:907:    alert(
+  app\morador-v2\[unidadeId]\page.tsx:908:      resultado.motivo ||
+  app\morador-v2\[unidadeId]\page.tsx:909:      "Não existe outro responsável disponível no momento."
+  app\morador-v2\[unidadeId]\page.tsx:911:  } catch (erro) {
+  app\morador-v2\[unidadeId]\page.tsx:912:    console.error(
+> app\morador-v2\[unidadeId]\page.tsx:913:      "Erro ao encaminhar chamada:",
+  app\morador-v2\[unidadeId]\page.tsx:914:      erro
+  app\morador-v2\[unidadeId]\page.tsx:915:    );
+  app\morador-v2\[unidadeId]\page.tsx:916:
+  app\morador-v2\[unidadeId]\page.tsx:917:    setPopupAtendimentoAberto(
+  app\morador-v2\[unidadeId]\page.tsx:918:      true
+  app\morador-v2\[unidadeId]\page.tsx:919:    );
+  app\morador-v2\[unidadeId]\page.tsx:920:
+  app\morador-v2\[unidadeId]\page.tsx:921:    alert(
+  app\morador-v2\[unidadeId]\page.tsx:922:      erro instanceof Error
+  app\morador-v2\[unidadeId]\page.tsx:923:        ? erro.message
+> app\morador-v2\[unidadeId]\page.tsx:924:        : "Não foi possível encaminhar a chamada."
+  app\morador-v2\[unidadeId]\page.tsx:925:    );
+  app\morador-v2\[unidadeId]\page.tsx:926:  }
+  app\morador-v2\[unidadeId]\page.tsx:927:}
+> app\morador-v2\[unidadeId]\page.tsx:928:  async function enviarMensagemRapida(mensagem: string) {
+  app\morador-v2\[unidadeId]\page.tsx:929:    if (status === "Sem chamado ativo") {
+> app\morador-v2\[unidadeId]\page.tsx:930:      alert("Não existe chamada ativa para responder.");
+  app\morador-v2\[unidadeId]\page.tsx:931:      return;
+  app\morador-v2\[unidadeId]\page.tsx:932:    }
+  app\morador-v2\[unidadeId]\page.tsx:933:
+  app\morador-v2\[unidadeId]\page.tsx:934:    if (status !== "Em atendimento") {
+> app\morador-v2\[unidadeId]\page.tsx:935:      alert("Atenda a chamada antes de responder.");
+  app\morador-v2\[unidadeId]\page.tsx:936:      return;
+  app\morador-v2\[unidadeId]\page.tsx:937:    }
+  app\morador-v2\[unidadeId]\page.tsx:938:
+> app\morador-v2\[unidadeId]\page.tsx:939:    await registrarLog("mensagem_rapida", "Mensagem enviada: " + mensagem);
+  app\morador-v2\[unidadeId]\page.tsx:940:
+  app\morador-v2\[unidadeId]\page.tsx:941:    await update(ref(db, caminhoFirebase), {
+  app\morador-v2\[unidadeId]\page.tsx:942:      status: "Em atendimento",
+> app\morador-v2\[unidadeId]\page.tsx:943:      mensagemResponsavel: mensagem,
+> app\morador-v2\[unidadeId]\page.tsx:944:      notificar: false,
+  app\morador-v2\[unidadeId]\page.tsx:945:      visitanteVisualizou: false,
+> app\morador-v2\[unidadeId]\page.tsx:946:      mensagemVisualizada: false,
+  app\morador-v2\[unidadeId]\page.tsx:947:      visualizadoPeloVisitante: false,
+  app\morador-v2\[unidadeId]\page.tsx:948:      enviadoEm: Date.now(),
+  app\morador-v2\[unidadeId]\page.tsx:949:      ultimaAtividade: Date.now(),
+  app\morador-v2\[unidadeId]\page.tsx:950:      atendidoEm: new Date().toISOString(),
+  app\morador-v2\[unidadeId]\page.tsx:951:    });
+  app\morador-v2\[unidadeId]\page.tsx:952:
+> app\morador-v2\[unidadeId]\page.tsx:953:    await registrarMensagemConversa({
+  app\morador-v2\[unidadeId]\page.tsx:954:      autor: "morador",
+  app\morador-v2\[unidadeId]\page.tsx:955:      tipo: "texto",
+> app\morador-v2\[unidadeId]\page.tsx:956:      texto: mensagem,
+  app\morador-v2\[unidadeId]\page.tsx:957:    });
+  app\morador-v2\[unidadeId]\page.tsx:958:
+> app\morador-v2\[unidadeId]\page.tsx:959:    setMensagemResponsavel(mensagem);
+  app\morador-v2\[unidadeId]\page.tsx:960:    setVisitanteVisualizou(false);
+  app\morador-v2\[unidadeId]\page.tsx:961:    pararToqueContinuo();
+  app\morador-v2\[unidadeId]\page.tsx:962:  }
+  app\morador-v2\[unidadeId]\page.tsx:963:
+> app\morador-v2\[unidadeId]\page.tsx:964:  async function registrarMensagemConversa(
+> app\morador-v2\[unidadeId]\page.tsx:965:    dados: Omit<MensagemConversa, "criadoEm">
+  app\morador-v2\[unidadeId]\page.tsx:966:  ) {
+  app\morador-v2\[unidadeId]\page.tsx:967:    if (status === "Sem chamado ativo") return;
+  app\morador-v2\[unidadeId]\page.tsx:968:
+> app\morador-v2\[unidadeId]\page.tsx:969:    const idMensagem = String(Date.now());
+  app\morador-v2\[unidadeId]\page.tsx:970:
+> app\morador-v2\[unidadeId]\page.tsx:971:    await set(ref(db, `${caminhoFirebase}/mensagens/${idMensagem}`), {
+  app\morador-v2\[unidadeId]\page.tsx:972:      ...dados,
+  app\morador-v2\[unidadeId]\page.tsx:973:      criadoEm: Date.now(),
+  app\morador-v2\[unidadeId]\page.tsx:974:    });
+  app\morador-v2\[unidadeId]\page.tsx:975:
+  app\morador-v2\[unidadeId]\page.tsx:976:    await update(ref(db, caminhoFirebase), {
+  app\morador-v2\[unidadeId]\page.tsx:977:      ultimaAtividade: Date.now(),
+  app\morador-v2\[unidadeId]\page.tsx:978:      enviadoEm: Date.now(),
+  app\morador-v2\[unidadeId]\page.tsx:979:    });
+  app\morador-v2\[unidadeId]\page.tsx:980:  }
+  app\morador-v2\[unidadeId]\page.tsx:981:
+> app\morador-v2\[unidadeId]\page.tsx:982:  async function iniciarGravacaoMorador() {
+  app\morador-v2\[unidadeId]\page.tsx:983:    if (status === "Sem chamado ativo") {
+> app\morador-v2\[unidadeId]\page.tsx:984:      alert("Não existe chamada ativa para responder.");
+  app\morador-v2\[unidadeId]\page.tsx:985:      return;
+  app\morador-v2\[unidadeId]\page.tsx:986:    }
+  app\morador-v2\[unidadeId]\page.tsx:987:
+  app\morador-v2\[unidadeId]\page.tsx:988:    if (status !== "Em atendimento") {
+> app\morador-v2\[unidadeId]\page.tsx:989:      alert("Atenda a chamada antes de gravar resposta.");
+  app\morador-v2\[unidadeId]\page.tsx:990:      return;
+  app\morador-v2\[unidadeId]\page.tsx:991:    }
+  app\morador-v2\[unidadeId]\page.tsx:992:
+  app\morador-v2\[unidadeId]\page.tsx:993:    try {
+> app\morador-v2\[unidadeId]\page.tsx:994:      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  app\morador-v2\[unidadeId]\page.tsx:995:      const recorder = new MediaRecorder(stream);
+  app\morador-v2\[unidadeId]\page.tsx:996:
+> app\morador-v2\[unidadeId]\page.tsx:997:      audioChunksMoradorRef.current = [];
+  app\morador-v2\[unidadeId]\page.tsx:998:
+  app\morador-v2\[unidadeId]\page.tsx:999:      recorder.ondataavailable = (event) => {
+  app\morador-v2\[unidadeId]\page.tsx:1000:        if (event.data.size > 0) {
+> app\morador-v2\[unidadeId]\page.tsx:1001:          audioChunksMoradorRef.current.push(event.data);
+  app\morador-v2\[unidadeId]\page.tsx:1002:        }
+  app\morador-v2\[unidadeId]\page.tsx:1003:      };
+  app\morador-v2\[unidadeId]\page.tsx:1004:
+  app\morador-v2\[unidadeId]\page.tsx:1005:      recorder.onstop = () => {
+  app\morador-v2\[unidadeId]\page.tsx:1006:        /*
+  app\morador-v2\[unidadeId]\page.tsx:1007:         * Usa o formato real produzido pelo navegador.
+> app\morador-v2\[unidadeId]\page.tsx:1008:         * Firefox normalmente pode gravar em audio/ogg,
+> app\morador-v2\[unidadeId]\page.tsx:1009:         * enquanto Chrome costuma usar audio/webm.
+> app\morador-v2\[unidadeId]\page.tsx:1010:         * Forçar audio/webm em todos os navegadores pode
+  app\morador-v2\[unidadeId]\page.tsx:1011:         * fazer o áudio chegar sem som no aparelho visitante.
+  app\morador-v2\[unidadeId]\page.tsx:1012:         */
+> app\morador-v2\[unidadeId]\page.tsx:1013:        const tipoAudio =
+  app\morador-v2\[unidadeId]\page.tsx:1014:          recorder.mimeType ||
+> app\morador-v2\[unidadeId]\page.tsx:1015:          audioChunksMoradorRef.current[0]?.type ||
+> app\morador-v2\[unidadeId]\page.tsx:1016:          "audio/webm";
+  app\morador-v2\[unidadeId]\page.tsx:1017:
+  app\morador-v2\[unidadeId]\page.tsx:1018:        const blob = new Blob(
+> app\morador-v2\[unidadeId]\page.tsx:1019:          audioChunksMoradorRef.current,
+  app\morador-v2\[unidadeId]\page.tsx:1020:          {
+> app\morador-v2\[unidadeId]\page.tsx:1021:            type: tipoAudio,
+  app\morador-v2\[unidadeId]\page.tsx:1022:          }
+  app\morador-v2\[unidadeId]\page.tsx:1023:        );
+  app\morador-v2\[unidadeId]\page.tsx:1024:
+> app\morador-v2\[unidadeId]\page.tsx:1025:        setAudioRespostaBlob(blob);
+> app\morador-v2\[unidadeId]\page.tsx:1026:        setGravandoAudioMorador(false);
+  app\morador-v2\[unidadeId]\page.tsx:1027:        stream
+  app\morador-v2\[unidadeId]\page.tsx:1028:          .getTracks()
+  app\morador-v2\[unidadeId]\page.tsx:1029:          .forEach((track) =>
+  app\morador-v2\[unidadeId]\page.tsx:1030:            track.stop()
+  app\morador-v2\[unidadeId]\page.tsx:1031:          );
+  app\morador-v2\[unidadeId]\page.tsx:1032:      };
+  app\morador-v2\[unidadeId]\page.tsx:1033:
+  app\morador-v2\[unidadeId]\page.tsx:1034:      mediaRecorderMoradorRef.current = recorder;
+  app\morador-v2\[unidadeId]\page.tsx:1035:      recorder.start();
+> app\morador-v2\[unidadeId]\page.tsx:1036:      setAudioRespostaBlob(null);
+> app\morador-v2\[unidadeId]\page.tsx:1037:      setGravandoAudioMorador(true);
+  app\morador-v2\[unidadeId]\page.tsx:1038:
+  app\morador-v2\[unidadeId]\page.tsx:1039:      setTimeout(() => {
+  app\morador-v2\[unidadeId]\page.tsx:1040:        if (recorder.state === "recording") {
+  app\morador-v2\[unidadeId]\page.tsx:1041:          pararGravacaoMorador();
+  app\morador-v2\[unidadeId]\page.tsx:1042:        }
+  app\morador-v2\[unidadeId]\page.tsx:1043:      }, 15000);
+  app\morador-v2\[unidadeId]\page.tsx:1044:    } catch (erro) {
+  app\morador-v2\[unidadeId]\page.tsx:1045:      console.error(erro);
+  app\morador-v2\[unidadeId]\page.tsx:1046:      alert("Não foi possível acessar o microfone.");
+> app\morador-v2\[unidadeId]\page.tsx:1047:      setGravandoAudioMorador(false);
+  app\morador-v2\[unidadeId]\page.tsx:1048:    }
+  app\morador-v2\[unidadeId]\page.tsx:1049:  }
+  app\morador-v2\[unidadeId]\page.tsx:1050:
+> app\morador-v2\[unidadeId]\page.tsx:1051:  function pararGravacaoMorador() {
+  app\morador-v2\[unidadeId]\page.tsx:1052:    if (
+  app\morador-v2\[unidadeId]\page.tsx:1053:      mediaRecorderMoradorRef.current &&
+  app\morador-v2\[unidadeId]\page.tsx:1054:      mediaRecorderMoradorRef.current.state === "recording"
+  app\morador-v2\[unidadeId]\page.tsx:1055:    ) {
+  app\morador-v2\[unidadeId]\page.tsx:1056:      mediaRecorderMoradorRef.current.stop();
+  app\morador-v2\[unidadeId]\page.tsx:1057:    } else {
+> app\morador-v2\[unidadeId]\page.tsx:1058:      setGravandoAudioMorador(false);
+  app\morador-v2\[unidadeId]\page.tsx:1059:    }
+  app\morador-v2\[unidadeId]\page.tsx:1060:  }
+  app\morador-v2\[unidadeId]\page.tsx:1061:
+> app\morador-v2\[unidadeId]\page.tsx:1062:  async function enviarAudioMorador() {
+  app\morador-v2\[unidadeId]\page.tsx:1063:    if (status === "Sem chamado ativo") {
+> app\morador-v2\[unidadeId]\page.tsx:1064:      alert("Não existe chamada ativa para responder.");
+  app\morador-v2\[unidadeId]\page.tsx:1065:      return;
+  app\morador-v2\[unidadeId]\page.tsx:1066:    }
+  app\morador-v2\[unidadeId]\page.tsx:1067:
+  app\morador-v2\[unidadeId]\page.tsx:1068:    if (status !== "Em atendimento") {
+> app\morador-v2\[unidadeId]\page.tsx:1069:      alert("Atenda a chamada antes de enviar áudio.");
+  app\morador-v2\[unidadeId]\page.tsx:1070:      return;
+  app\morador-v2\[unidadeId]\page.tsx:1071:    }
+  app\morador-v2\[unidadeId]\page.tsx:1072:
+> app\morador-v2\[unidadeId]\page.tsx:1073:    if (!audioRespostaBlob) {
+  app\morador-v2\[unidadeId]\page.tsx:1074:      alert("Grave um áudio antes de enviar.");
+  app\morador-v2\[unidadeId]\page.tsx:1075:      return;
+  app\morador-v2\[unidadeId]\page.tsx:1076:    }
+  app\morador-v2\[unidadeId]\page.tsx:1077:
+  app\morador-v2\[unidadeId]\page.tsx:1078:    try {
+> app\morador-v2\[unidadeId]\page.tsx:1079:      setEnviandoAudioMorador(true);
+  app\morador-v2\[unidadeId]\page.tsx:1080:
+> app\morador-v2\[unidadeId]\page.tsx:1081:      const audioBase64 = await blobParaBase64(audioRespostaBlob);
+  app\morador-v2\[unidadeId]\page.tsx:1082:
+  app\morador-v2\[unidadeId]\page.tsx:1083:      await update(ref(db, caminhoFirebase), {
+  app\morador-v2\[unidadeId]\page.tsx:1084:        status: "Em atendimento",
+> app\morador-v2\[unidadeId]\page.tsx:1085:        notificar: false,
+> app\morador-v2\[unidadeId]\page.tsx:1086:        mensagemResponsavel: "",
+  app\morador-v2\[unidadeId]\page.tsx:1087:        visualizadoPeloVisitante: false,
+  app\morador-v2\[unidadeId]\page.tsx:1088:        visitanteVisualizou: false,
+> app\morador-v2\[unidadeId]\page.tsx:1089:        mensagemVisualizada: false,
+  app\morador-v2\[unidadeId]\page.tsx:1090:        enviadoEm: Date.now(),
+  app\morador-v2\[unidadeId]\page.tsx:1091:        ultimaAtividade: Date.now(),
+  app\morador-v2\[unidadeId]\page.tsx:1092:        atendidoEm: new Date().toISOString(),
+  app\morador-v2\[unidadeId]\page.tsx:1093:      });
+  app\morador-v2\[unidadeId]\page.tsx:1094:
+> app\morador-v2\[unidadeId]\page.tsx:1095:      await registrarMensagemConversa({
+  app\morador-v2\[unidadeId]\page.tsx:1096:        autor: "morador",
+> app\morador-v2\[unidadeId]\page.tsx:1097:        tipo: "audio",
+> app\morador-v2\[unidadeId]\page.tsx:1098:        audioBase64,
+  app\morador-v2\[unidadeId]\page.tsx:1099:      });
+  app\morador-v2\[unidadeId]\page.tsx:1100:
+> app\morador-v2\[unidadeId]\page.tsx:1101:      await registrarLog("audio_morador", "Morador enviou áudio ao visitante");
+  app\morador-v2\[unidadeId]\page.tsx:1102:
+> app\morador-v2\[unidadeId]\page.tsx:1103:      setAudioRespostaBlob(null);
+  app\morador-v2\[unidadeId]\page.tsx:1104:      pararToqueContinuo();
+  app\morador-v2\[unidadeId]\page.tsx:1105:    } catch (erro) {
+  app\morador-v2\[unidadeId]\page.tsx:1106:      console.error(erro);
+  app\morador-v2\[unidadeId]\page.tsx:1107:      alert("Erro ao enviar áudio.");
+  app\morador-v2\[unidadeId]\page.tsx:1108:    } finally {
+> app\morador-v2\[unidadeId]\page.tsx:1109:      setEnviandoAudioMorador(false);
+  app\morador-v2\[unidadeId]\page.tsx:1110:    }
+  app\morador-v2\[unidadeId]\page.tsx:1111:  }
+  app\morador-v2\[unidadeId]\page.tsx:1112:
+> app\morador-v2\[unidadeId]\page.tsx:1113:  async function limparHistorico() {
+  app\morador-v2\[unidadeId]\page.tsx:1114:    const confirmar = window.confirm(
+  app\morador-v2\[unidadeId]\page.tsx:1115:      "Tem certeza que deseja limpar todo o histórico?"
+  app\morador-v2\[unidadeId]\page.tsx:1116:    );
+  app\morador-v2\[unidadeId]\page.tsx:1117:
+  app\morador-v2\[unidadeId]\page.tsx:1118:    if (!confirmar) return;
+  app\morador-v2\[unidadeId]\page.tsx:1119:
+> app\morador-v2\[unidadeId]\page.tsx:1120:    await remove(ref(db, caminhoHistorico));
+> app\morador-v2\[unidadeId]\page.tsx:1121:    setHistoricoLista([]);
+  app\morador-v2\[unidadeId]\page.tsx:1122:    alert("Histórico limpo com sucesso.");
+  app\morador-v2\[unidadeId]\page.tsx:1123:  }
+  app\morador-v2\[unidadeId]\page.tsx:1124:
+> app\morador-v2\[unidadeId]\page.tsx:1125:  async function finalizarSolicitacao() {
+  app\morador-v2\[unidadeId]\page.tsx:1126:    if (status === "Sem chamado ativo") {
+> app\morador-v2\[unidadeId]\page.tsx:1127:      alert("Não existe chamada ativa para finalizar.");
+  app\morador-v2\[unidadeId]\page.tsx:1128:      return;
+  app\morador-v2\[unidadeId]\page.tsx:1129:    }
+  app\morador-v2\[unidadeId]\page.tsx:1130:
+  app\morador-v2\[unidadeId]\page.tsx:1131:    limparFinalizacaoAutomatica();
+  app\morador-v2\[unidadeId]\page.tsx:1132:    pararToqueContinuo();
+  app\morador-v2\[unidadeId]\page.tsx:1133:
+> app\morador-v2\[unidadeId]\page.tsx:1134:    ultimaChamadaAtivaRef.current = false;
+  app\morador-v2\[unidadeId]\page.tsx:1135:    setPopupAtendimentoAberto(false);
+  app\morador-v2\[unidadeId]\page.tsx:1136:    setStatus("Encerrado");
+  app\morador-v2\[unidadeId]\page.tsx:1137:    setAvisoAuto("Atendimento encerrado. Limpando em instantes.");
+  app\morador-v2\[unidadeId]\page.tsx:1138:
+  app\morador-v2\[unidadeId]\page.tsx:1139:    try {
+  app\morador-v2\[unidadeId]\page.tsx:1140:      await update(ref(db, caminhoFirebase), {
+  app\morador-v2\[unidadeId]\page.tsx:1141:        status: "Encerrado",
+> app\morador-v2\[unidadeId]\page.tsx:1142:        mensagemResponsavel: "ATENDIMENTO_ENCERRADO",
+> app\morador-v2\[unidadeId]\page.tsx:1143:        notificar: false,
+  app\morador-v2\[unidadeId]\page.tsx:1144:        encerradoEm: new Date().toISOString(),
+  app\morador-v2\[unidadeId]\page.tsx:1145:      });
+  app\morador-v2\[unidadeId]\page.tsx:1146:    } catch (erro) {
+> app\morador-v2\[unidadeId]\page.tsx:1147:      console.error("Erro ao finalizar chamada:", erro);
+> app\morador-v2\[unidadeId]\page.tsx:1148:      alert("Não foi possível finalizar o atendimento.");
+  app\morador-v2\[unidadeId]\page.tsx:1149:      return;
+  app\morador-v2\[unidadeId]\page.tsx:1150:    }
+  app\morador-v2\[unidadeId]\page.tsx:1151:
+> app\morador-v2\[unidadeId]\page.tsx:1152:    ultimaChamadaDadosRef.current = null;
+  app\morador-v2\[unidadeId]\page.tsx:1153:
+  app\morador-v2\[unidadeId]\page.tsx:1154:    void Promise.allSettled([
+  app\morador-v2\[unidadeId]\page.tsx:1155:      registrarAnalytics("finalizada"),
+  app\morador-v2\[unidadeId]\page.tsx:1156:      registrarLog(
+> app\morador-v2\[unidadeId]\page.tsx:1157:        "chamada_finalizada",
+> app\morador-v2\[unidadeId]\page.tsx:1158:        "Chamada finalizada manualmente"
+  app\morador-v2\[unidadeId]\page.tsx:1159:      ),
+> app\morador-v2\[unidadeId]\page.tsx:1160:      salvarHistorico("Manual"),
+  app\morador-v2\[unidadeId]\page.tsx:1161:    ]);
+  app\morador-v2\[unidadeId]\page.tsx:1162:
+  app\morador-v2\[unidadeId]\page.tsx:1163:    setTimeout(() => {
+  app\morador-v2\[unidadeId]\page.tsx:1164:      void remove(ref(db, caminhoFirebase)).catch((erro) => {
+> app\morador-v2\[unidadeId]\page.tsx:1165:        console.error("Erro ao limpar chamada encerrada:", erro);
+  app\morador-v2\[unidadeId]\page.tsx:1166:      });
+  app\morador-v2\[unidadeId]\page.tsx:1167:    }, 2000);
+  app\morador-v2\[unidadeId]\page.tsx:1168:  }
+  app\morador-v2\[unidadeId]\page.tsx:1169:
+> app\morador-v2\[unidadeId]\page.tsx:1170:  function tocarBip() {
+  app\morador-v2\[unidadeId]\page.tsx:1171:    try {
+> app\morador-v2\[unidadeId]\page.tsx:1172:      const AudioContextClass =
+> app\morador-v2\[unidadeId]\page.tsx:1173:        window.AudioContext || (window as any).webkitAudioContext;
+  app\morador-v2\[unidadeId]\page.tsx:1174:
+> app\morador-v2\[unidadeId]\page.tsx:1175:      if (!audioContextRef.current) {
+> app\morador-v2\[unidadeId]\page.tsx:1176:        audioContextRef.current = new AudioContextClass();
+  app\morador-v2\[unidadeId]\page.tsx:1177:      }
+  app\morador-v2\[unidadeId]\page.tsx:1178:
+> app\morador-v2\[unidadeId]\page.tsx:1179:      const audioContext = audioContextRef.current;
+  app\morador-v2\[unidadeId]\page.tsx:1180:
+> app\morador-v2\[unidadeId]\page.tsx:1181:      if (audioContext.state === "suspended") {
+> app\morador-v2\[unidadeId]\page.tsx:1182:        audioContext.resume();
+  app\morador-v2\[unidadeId]\page.tsx:1183:      }
+  app\morador-v2\[unidadeId]\page.tsx:1184:
+> app\morador-v2\[unidadeId]\page.tsx:1185:      const oscillator = audioContext.createOscillator();
+> app\morador-v2\[unidadeId]\page.tsx:1186:      const gainNode = audioContext.createGain();
+  app\morador-v2\[unidadeId]\page.tsx:1187:
+  app\morador-v2\[unidadeId]\page.tsx:1188:      oscillator.connect(gainNode);
+> app\morador-v2\[unidadeId]\page.tsx:1189:      gainNode.connect(audioContext.destination);
+  app\morador-v2\[unidadeId]\page.tsx:1190:
+  app\morador-v2\[unidadeId]\page.tsx:1191:      oscillator.frequency.value = 880;
+  app\morador-v2\[unidadeId]\page.tsx:1192:      oscillator.type = "sine";
+  app\morador-v2\[unidadeId]\page.tsx:1193:
+> app\morador-v2\[unidadeId]\page.tsx:1194:      gainNode.gain.setValueAtTime(0.35, audioContext.currentTime);
+  app\morador-v2\[unidadeId]\page.tsx:1195:      gainNode.gain.exponentialRampToValueAtTime(
+  app\morador-v2\[unidadeId]\page.tsx:1196:        0.01,
+> app\morador-v2\[unidadeId]\page.tsx:1197:        audioContext.currentTime + 0.45
+  app\morador-v2\[unidadeId]\page.tsx:1198:      );
+  app\morador-v2\[unidadeId]\page.tsx:1199:
+  app\morador-v2\[unidadeId]\page.tsx:1200:      oscillator.start();
+> app\morador-v2\[unidadeId]\page.tsx:1201:      oscillator.stop(audioContext.currentTime + 0.45);
+  app\morador-v2\[unidadeId]\page.tsx:1202:    } catch (erro) {
+  app\morador-v2\[unidadeId]\page.tsx:1203:      console.error("Erro ao tocar bip:", erro);
+  app\morador-v2\[unidadeId]\page.tsx:1204:    }
+  app\morador-v2\[unidadeId]\page.tsx:1205:  }
+  app\morador-v2\[unidadeId]\page.tsx:1206:
+> app\morador-v2\[unidadeId]\page.tsx:1207:  function iniciarToqueContinuo() {
+  app\morador-v2\[unidadeId]\page.tsx:1208:    if (intervaloSomRef.current) return;
+  app\morador-v2\[unidadeId]\page.tsx:1209:
+  app\morador-v2\[unidadeId]\page.tsx:1210:    tocarBip();
+  app\morador-v2\[unidadeId]\page.tsx:1211:
+  app\morador-v2\[unidadeId]\page.tsx:1212:    intervaloSomRef.current = setInterval(() => {
+  app\morador-v2\[unidadeId]\page.tsx:1213:      tocarBip();
+  app\morador-v2\[unidadeId]\page.tsx:1214:    }, 900);
+  app\morador-v2\[unidadeId]\page.tsx:1215:  }
+  app\morador-v2\[unidadeId]\page.tsx:1216:
+> app\morador-v2\[unidadeId]\page.tsx:1217:  function pararToqueContinuo() {
+  app\morador-v2\[unidadeId]\page.tsx:1218:    if (intervaloSomRef.current) {
+  app\morador-v2\[unidadeId]\page.tsx:1219:      clearInterval(intervaloSomRef.current);
+  app\morador-v2\[unidadeId]\page.tsx:1220:      intervaloSomRef.current = null;
+  app\morador-v2\[unidadeId]\page.tsx:1221:    }
+  app\morador-v2\[unidadeId]\page.tsx:1222:  }
+  app\morador-v2\[unidadeId]\page.tsx:1223:
+> app\morador-v2\[unidadeId]\page.tsx:1224:  async function alterarStatusOnline() {
+  app\morador-v2\[unidadeId]\page.tsx:1225:    const novoStatus = !online;
+  app\morador-v2\[unidadeId]\page.tsx:1226:
+  app\morador-v2\[unidadeId]\page.tsx:1227:    setOnline(novoStatus);
+  app\morador-v2\[unidadeId]\page.tsx:1228:
+  app\morador-v2\[unidadeId]\page.tsx:1229:    await set(ref(db, caminhoStatus), {
+  app\morador-v2\[unidadeId]\page.tsx:1230:      online: novoStatus,
+  app\morador-v2\[unidadeId]\page.tsx:1231:      atualizadoEm: new Date().toISOString(),
+  app\morador-v2\[unidadeId]\page.tsx:1232:    });
+  app\morador-v2\[unidadeId]\page.tsx:1233:  }
+  app\morador-v2\[unidadeId]\page.tsx:1234:
+> app\morador-v2\[unidadeId]\page.tsx:1235:  async function acionarPortao() {
+  app\morador-v2\[unidadeId]\page.tsx:1236:    if (abrindoPortao) return;
+  app\morador-v2\[unidadeId]\page.tsx:1237:
+  app\morador-v2\[unidadeId]\page.tsx:1238:    try {
+  app\morador-v2\[unidadeId]\page.tsx:1239:      setAbrindoPortao(true);
+  app\morador-v2\[unidadeId]\page.tsx:1240:      setStatusPortao("⏳ Abrindo portão...");
+  app\morador-v2\[unidadeId]\page.tsx:1241:
+  app\morador-v2\[unidadeId]\page.tsx:1242:      await registrarLog("portao_tentativa", "Tentativa de abertura do portão");
+  app\morador-v2\[unidadeId]\page.tsx:1243:
+  app\morador-v2\[unidadeId]\page.tsx:1269:  }
+  app\morador-v2\[unidadeId]\page.tsx:1270:
+> app\morador-v2\[unidadeId]\page.tsx:1271:  async function ativarNotificacoes() {
+  app\morador-v2\[unidadeId]\page.tsx:1272:    try {
+  app\morador-v2\[unidadeId]\page.tsx:1273:      if (typeof window === "undefined") {
+> app\morador-v2\[unidadeId]\page.tsx:1274:        alert("As notificações só podem ser ativadas no navegador.");
+  app\morador-v2\[unidadeId]\page.tsx:1275:        return;
+  app\morador-v2\[unidadeId]\page.tsx:1276:      }
+  app\morador-v2\[unidadeId]\page.tsx:1277:
+> app\morador-v2\[unidadeId]\page.tsx:1278:      if (!("Notification" in window)) {
+  app\morador-v2\[unidadeId]\page.tsx:1279:        await registrarLog(
+  app\morador-v2\[unidadeId]\page.tsx:1280:          "push_nao_suportado",
+> app\morador-v2\[unidadeId]\page.tsx:1281:          "Este navegador não possui suporte à API de notificações"
+  app\morador-v2\[unidadeId]\page.tsx:1282:        );
+  app\morador-v2\[unidadeId]\page.tsx:1283:
+> app\morador-v2\[unidadeId]\page.tsx:1284:        alert("Este navegador não suporta notificações.");
+  app\morador-v2\[unidadeId]\page.tsx:1285:        return;
+  app\morador-v2\[unidadeId]\page.tsx:1286:      }
+  app\morador-v2\[unidadeId]\page.tsx:1287:
+  app\morador-v2\[unidadeId]\page.tsx:1288:      if (!("serviceWorker" in navigator)) {
+  app\morador-v2\[unidadeId]\page.tsx:1289:        await registrarLog(
+  app\morador-v2\[unidadeId]\page.tsx:1290:          "push_sem_service_worker",
+  app\morador-v2\[unidadeId]\page.tsx:1291:          "Este navegador não possui suporte a Service Worker"
+  app\morador-v2\[unidadeId]\page.tsx:1292:        );
+  app\morador-v2\[unidadeId]\page.tsx:1293:
+> app\morador-v2\[unidadeId]\page.tsx:1294:        alert("Este navegador não suporta notificações em segundo plano.");
+  app\morador-v2\[unidadeId]\page.tsx:1295:        return;
+  app\morador-v2\[unidadeId]\page.tsx:1296:      }
+  app\morador-v2\[unidadeId]\page.tsx:1297:
+  app\morador-v2\[unidadeId]\page.tsx:1298:      const messaging = await messagingPromise;
+  app\morador-v2\[unidadeId]\page.tsx:1299:
+  app\morador-v2\[unidadeId]\page.tsx:1300:      if (!messaging) {
+  app\morador-v2\[unidadeId]\page.tsx:1301:        await registrarLog(
+  app\morador-v2\[unidadeId]\page.tsx:1302:          "push_nao_suportado",
+  app\morador-v2\[unidadeId]\page.tsx:1304:        );
+  app\morador-v2\[unidadeId]\page.tsx:1305:
+> app\morador-v2\[unidadeId]\page.tsx:1306:        alert("Não foi possível iniciar as notificações neste navegador.");
+  app\morador-v2\[unidadeId]\page.tsx:1307:        return;
+  app\morador-v2\[unidadeId]\page.tsx:1308:      }
+  app\morador-v2\[unidadeId]\page.tsx:1309:
+> app\morador-v2\[unidadeId]\page.tsx:1310:      const permissao = await Notification.requestPermission();
+  app\morador-v2\[unidadeId]\page.tsx:1311:
+  app\morador-v2\[unidadeId]\page.tsx:1312:      if (permissao !== "granted") {
+  app\morador-v2\[unidadeId]\page.tsx:1313:        await registrarLog(
+  app\morador-v2\[unidadeId]\page.tsx:1314:          "push_permissao_negada",
+> app\morador-v2\[unidadeId]\page.tsx:1315:          "Permissão para notificações negada: " + permissao
+  app\morador-v2\[unidadeId]\page.tsx:1316:        );
+  app\morador-v2\[unidadeId]\page.tsx:1317:
+> app\morador-v2\[unidadeId]\page.tsx:1318:        alert("Permissão para notificações não foi concedida.");
+  app\morador-v2\[unidadeId]\page.tsx:1319:        return;
+  app\morador-v2\[unidadeId]\page.tsx:1320:      }
+  app\morador-v2\[unidadeId]\page.tsx:1321:
+  app\morador-v2\[unidadeId]\page.tsx:1322:      const registroServiceWorker = await navigator.serviceWorker.register(
+  app\morador-v2\[unidadeId]\page.tsx:1323:        "/firebase-messaging-sw.js",
+  app\morador-v2\[unidadeId]\page.tsx:1324:        {
+  app\morador-v2\[unidadeId]\page.tsx:1325:          scope: "/",
+  app\morador-v2\[unidadeId]\page.tsx:1326:        }
+  app\morador-v2\[unidadeId]\page.tsx:1335:      if (!token) {
+  app\morador-v2\[unidadeId]\page.tsx:1336:        throw new Error(
+> app\morador-v2\[unidadeId]\page.tsx:1337:          "O Firebase não retornou um token de notificação."
+  app\morador-v2\[unidadeId]\page.tsx:1338:        );
+  app\morador-v2\[unidadeId]\page.tsx:1339:      }
+  app\morador-v2\[unidadeId]\page.tsx:1340:const condominioId = identificarCondominioPeloSlug(slug);
+  app\morador-v2\[unidadeId]\page.tsx:1341:      await set(ref(db, `configuracoes-v2/tokensMorador/${slug}`), {
+  app\morador-v2\[unidadeId]\page.tsx:1342:        token,
+  app\morador-v2\[unidadeId]\page.tsx:1343:        unidadeId: slug,
+  app\morador-v2\[unidadeId]\page.tsx:1344:        condominioId,
+  app\morador-v2\[unidadeId]\page.tsx:1345:        atualizadoEm: Date.now(),
+  app\morador-v2\[unidadeId]\page.tsx:1348:      await registrarLog(
+  app\morador-v2\[unidadeId]\page.tsx:1349:        "push_token_salvo",
+> app\morador-v2\[unidadeId]\page.tsx:1350:        "Token de notificação salvo com sucesso"
+  app\morador-v2\[unidadeId]\page.tsx:1351:      );
+  app\morador-v2\[unidadeId]\page.tsx:1352:
+> app\morador-v2\[unidadeId]\page.tsx:1353:      alert("Notificações ativadas com sucesso!");
+  app\morador-v2\[unidadeId]\page.tsx:1354:    } catch (erro: any) {
+> app\morador-v2\[unidadeId]\page.tsx:1355:      console.error("Erro completo ao ativar notificações:", erro);
+  app\morador-v2\[unidadeId]\page.tsx:1356:
+  app\morador-v2\[unidadeId]\page.tsx:1357:      const codigo =
+  app\morador-v2\[unidadeId]\page.tsx:1358:        erro?.code ||
+  app\morador-v2\[unidadeId]\page.tsx:1359:        erro?.name ||
+  app\morador-v2\[unidadeId]\page.tsx:1360:        "erro-desconhecido";
+  app\morador-v2\[unidadeId]\page.tsx:1361:
+> app\morador-v2\[unidadeId]\page.tsx:1362:      const mensagemErro =
+  app\morador-v2\[unidadeId]\page.tsx:1363:        erro?.message ||
+  app\morador-v2\[unidadeId]\page.tsx:1364:        String(erro);
+  app\morador-v2\[unidadeId]\page.tsx:1365:
+  app\morador-v2\[unidadeId]\page.tsx:1366:      await registrarLog(
+  app\morador-v2\[unidadeId]\page.tsx:1367:        "push_erro_token",
+> app\morador-v2\[unidadeId]\page.tsx:1368:        `Código: ${codigo} | Mensagem: ${mensagemErro}`
+  app\morador-v2\[unidadeId]\page.tsx:1369:      );
+  app\morador-v2\[unidadeId]\page.tsx:1370:
+  app\morador-v2\[unidadeId]\page.tsx:1371:      alert(
+> app\morador-v2\[unidadeId]\page.tsx:1372:        `Não foi possível ativar as notificações.
+  app\morador-v2\[unidadeId]\page.tsx:1373:
+  app\morador-v2\[unidadeId]\page.tsx:1374:Código: ${codigo}
+> app\morador-v2\[unidadeId]\page.tsx:1375:Mensagem: ${mensagemErro}`
+  app\morador-v2\[unidadeId]\page.tsx:1376:      );
+  app\morador-v2\[unidadeId]\page.tsx:1377:    }
+  app\morador-v2\[unidadeId]\page.tsx:1378:  }
+  app\morador-v2\[unidadeId]\page.tsx:1379:
+  app\morador-v2\[unidadeId]\page.tsx:1380:  useEffect(() => {
+> app\morador-v2\[unidadeId]\page.tsx:1381:    function prepararInstalacao(evento: any) {
+  app\morador-v2\[unidadeId]\page.tsx:1382:      evento.preventDefault();
+  app\morador-v2\[unidadeId]\page.tsx:1383:      setInstallPrompt(evento);
+  app\morador-v2\[unidadeId]\page.tsx:1384:      setAppInstalavel(true);
+  app\morador-v2\[unidadeId]\page.tsx:1385:    }
+  app\morador-v2\[unidadeId]\page.tsx:1386:
+> app\morador-v2\[unidadeId]\page.tsx:1387:    function appInstalado() {
+  app\morador-v2\[unidadeId]\page.tsx:1388:      setInstallPrompt(null);
+  app\morador-v2\[unidadeId]\page.tsx:1389:      setAppInstalavel(false);
+  app\morador-v2\[unidadeId]\page.tsx:1390:    }
+  app\morador-v2\[unidadeId]\page.tsx:1391:
+  app\morador-v2\[unidadeId]\page.tsx:1392:    window.addEventListener("beforeinstallprompt", prepararInstalacao);
+  app\morador-v2\[unidadeId]\page.tsx:1393:    window.addEventListener("appinstalled", appInstalado);
+  app\morador-v2\[unidadeId]\page.tsx:1394:
+  app\morador-v2\[unidadeId]\page.tsx:1395:    return () => {
+  app\morador-v2\[unidadeId]\page.tsx:1399:  }, []);
+  app\morador-v2\[unidadeId]\page.tsx:1400:
+> app\morador-v2\[unidadeId]\page.tsx:1401:  async function instalarApp() {
+  app\morador-v2\[unidadeId]\page.tsx:1402:    if (!installPrompt) {
+  app\morador-v2\[unidadeId]\page.tsx:1403:      alert(
+  app\morador-v2\[unidadeId]\page.tsx:1404:        "Se o botão não abrir a instalação automaticamente, use o menu do navegador e procure por 
+'Instalar app' ou 'Adicionar à tela inicial'."
+  app\morador-v2\[unidadeId]\page.tsx:1405:      );
+  app\morador-v2\[unidadeId]\page.tsx:1406:      return;
+  app\morador-v2\[unidadeId]\page.tsx:1407:    }
+  app\morador-v2\[unidadeId]\page.tsx:1408:
+  app\morador-v2\[unidadeId]\page.tsx:1409:    try {
+  app\morador-v2\[unidadeId]\page.tsx:1418:  }
+  app\morador-v2\[unidadeId]\page.tsx:1419:
+> app\morador-v2\[unidadeId]\page.tsx:1420:  async function abrirCameraGrande() {
+> app\morador-v2\[unidadeId]\page.tsx:1421:    setMostrarCameraGrande(true);
+  app\morador-v2\[unidadeId]\page.tsx:1422:
+> app\morador-v2\[unidadeId]\page.tsx:1423:    if (!fotoCameraAtual) {
+> app\morador-v2\[unidadeId]\page.tsx:1424:      await capturarFotoCamera();
+  app\morador-v2\[unidadeId]\page.tsx:1425:    }
+  app\morador-v2\[unidadeId]\page.tsx:1426:  }
+  app\morador-v2\[unidadeId]\page.tsx:1427:
+> app\morador-v2\[unidadeId]\page.tsx:1428:  function silenciarToqueAoOuvirAudio() {
+> app\morador-v2\[unidadeId]\page.tsx:1429:    toqueSilenciadoPorAudioRef.current = true;
+  app\morador-v2\[unidadeId]\page.tsx:1430:    pararToqueContinuo();
+  app\morador-v2\[unidadeId]\page.tsx:1431:  }
+  app\morador-v2\[unidadeId]\page.tsx:1432:
+> app\morador-v2\[unidadeId]\page.tsx:1433:  function abrirAudioVisitanteGrande() {
+
+

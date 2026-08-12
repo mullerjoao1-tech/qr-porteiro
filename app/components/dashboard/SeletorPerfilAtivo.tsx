@@ -235,32 +235,53 @@ export default function SeletorPerfilAtivo() {
   }
 
   function entrarComoMorador() {
-    if (
-      unidades.length === 0
-    ) {
-      alert(
-        "Este perfil ainda não possui nenhuma unidade vinculada neste local."
-      );
+  const tipoLocal = (
+    vinculoSelecionado?.tipoLocal || ""
+  )
+    .trim()
+    .toLowerCase()
+    .replaceAll("-", "_");
 
-      return;
-    }
-
-    if (
-      unidades.length === 1
-    ) {
-      router.push(
-        `/morador-v2/${unidades[0].slug}`
-      );
-
-      return;
-    }
-
-    setModalUnidadeAberto(
-      true
+  if (tipoLocal === "condominio") {
+    router.push(
+      "/dashboard/morador"
     );
+    return;
   }
 
-  function trocarPerfil(
+  if (tipoLocal === "residencia") {
+    router.push(
+      "/dashboard/condominio"
+    );
+    return;
+  }
+
+  if (
+    unidades.length === 0
+  ) {
+    alert(
+      "Este perfil ainda n?o possui nenhuma unidade vinculada neste local."
+    );
+
+    return;
+  }
+
+  if (
+    unidades.length === 1
+  ) {
+    router.push(
+      `/morador-v2/${unidades[0].slug}`
+    );
+
+    return;
+  }
+
+  setModalUnidadeAberto(
+    true
+  );
+}
+
+function trocarPerfil(
     perfil: string
   ) {
     const normalizado =
@@ -306,18 +327,38 @@ export default function SeletorPerfilAtivo() {
         return;
 
       case "morador":
-      case "inquilino":
-        entrarComoMorador();
-        return;
+  case "inquilino":
+    router.push(
+      "/dashboard/morador"
+    );
+    return;
 
       case "gestor_local":
-      case "proprietario":
-      case "responsavel":
-      case "gerente":
-        router.push(
-          "/dashboard"
-        );
-        return;
+  case "proprietario":
+  case "responsavel":
+  case "gerente": {
+    const tipoLocalAtual = (
+      vinculoSelecionado?.tipoLocal || ""
+    )
+      .trim()
+      .toLowerCase()
+      .replaceAll("-", "_");
+
+    if (
+      tipoLocalAtual === "residencia" ||
+      tipoLocalAtual === "condominio"
+    ) {
+      router.push(
+        "/dashboard/condominio"
+      );
+      return;
+    }
+
+    router.push(
+      "/dashboard"
+    );
+    return;
+  }
 
       default:
         return;

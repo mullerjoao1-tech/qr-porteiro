@@ -2,7 +2,6 @@
 
 import ModalTrocarContexto from "@/app/components/core/dashboard/ModalTrocarContexto";
 
-import SeletorPerfilAtivo from "@/app/components/dashboard/SeletorPerfilAtivo";
 
 
 import { useRouter } from "next/navigation";
@@ -12,6 +11,7 @@ import DashboardAtalhos, {
   type AtalhoDashboard,
 } from "@/app/components/core/dashboard/DashboardAtalhos";
 import DashboardBase from "@/app/components/core/dashboard/DashboardBase";
+import MateriaisDoLocal from "@/app/components/core/dashboard/MateriaisDoLocal";
 import DashboardCarteira from "@/app/components/core/dashboard/DashboardCarteira";
 import DashboardIndicadores from "@/app/components/core/dashboard/DashboardIndicadores";
 import HeaderDashboard from "@/app/components/core/dashboard/HeaderDashboard";
@@ -86,11 +86,31 @@ function obterNomeLocal(
 }
 
 function obterTipoLocal(
-  vinculo: VinculoComPermissoes
+vinculo: VinculoComPermissoes
 ): string {
-  return (vinculo.tipoLocal || "local")
-    .replaceAll("_", " ")
-    .replaceAll("-", " ");
+const identificador = (
+vinculo.localId ||
+vinculo.localSlug ||
+vinculo.condominioId ||
+vinculo.condominioSlug ||
+""
+)
+.trim()
+.toLowerCase();
+
+if (
+identificador === "residencial-costa" ||
+identificador === "muller"
+) {
+return "residencia";
+}
+
+return (
+vinculo.tipoLocal ||
+"local"
+)
+.replaceAll("_", " ")
+.replaceAll("-", " ");
 }
 
 function obterPerfil(
@@ -149,7 +169,13 @@ export default function PaginaSindico() {
       )
     : "Carteira Geral";
 
-  const tipoLocalSelecionado = vinculoSelecionado
+  console.log(
+  "DEBUG VINCULO SELECIONADO:",
+  vinculoSelecionadoId,
+  vinculoSelecionado
+);
+
+const tipoLocalSelecionado = vinculoSelecionado
     ? obterTipoLocal(vinculoSelecionado)
     : undefined;
 
@@ -157,9 +183,50 @@ export default function PaginaSindico() {
     ? obterPerfil(vinculoSelecionado)
     : undefined;
 
+  const localIdMateriais = vinculoSelecionado
+    ? (
+        vinculoSelecionado.localId ||
+        vinculoSelecionado.condominioId ||
+        vinculoSelecionadoId ||
+        ""
+      )
+    : "";
+
+  const slugLocalMateriais = vinculoSelecionado
+    ? (
+        vinculoSelecionado.localSlug ||
+        vinculoSelecionado.condominioSlug ||
+        vinculoSelecionado.localId ||
+        vinculoSelecionado.condominioId ||
+        vinculoSelecionadoId ||
+        ""
+      )
+    : "";
+
+  const unidadeMoradorMateriais = vinculoSelecionado
+    ? (
+        Object.entries(
+          vinculoSelecionado.unidades ?? {}
+        ).find(
+          ([, ativo]) =>
+            ativo === true
+        )?.[0] ||
+        ""
+      )
+    : "";
+
+  const mostrarMateriaisCondominio =
+    Boolean(
+      vinculoSelecionado &&
+      localIdMateriais &&
+      slugLocalMateriais &&
+      tipoLocalSelecionado !== "residencia"
+    );
+
   function trocarLocal(vinculoId: string) {
-    selecionarVinculo(vinculoId);
-  }
+  selecionarVinculo(vinculoId);
+  router.push("/dashboard/condominio");
+}
 
   function voltarInicio() {
     router.push("/");
@@ -217,7 +284,6 @@ export default function PaginaSindico() {
         onTrocarContexto={voltarInicio}
       />
 
-      <SeletorPerfilAtivo />
 
       <DashboardIndicadores
         totalLocais={vinculosAtivos.length}
@@ -245,6 +311,21 @@ export default function PaginaSindico() {
         obterTipoLocal={obterTipoLocal}
         obterPerfil={obterPerfil}
       />
+
+      {mostrarMateriaisCondominio && (
+        <MateriaisDoLocal
+          localId={localIdMateriais}
+          visitante={`/acesso-v2/${slugLocalMateriais}`}
+          morador={
+            unidadeMoradorMateriais
+              ? `/morador-v2/${unidadeMoradorMateriais}`
+              : undefined
+          }
+          painel="/dashboard/sindico"
+          titulo="QR, placa e links do condomínio"
+        />
+      )}
+
       <ModalTrocarContexto
         aberto={
           modalContextoAberto
@@ -259,6 +340,7 @@ export default function PaginaSindico() {
     </DashboardBase>
   );
 }
+
 
 
 
