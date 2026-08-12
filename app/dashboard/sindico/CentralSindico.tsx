@@ -657,8 +657,11 @@ Boolean(
       ...vinculosAtivos.map(([vinculoId, vinculo]) => ({
         id: vinculoId,
         nome:
+          vinculo.localNome ||
           vinculo.condominioNome ||
+          vinculo.localSlug ||
           vinculo.condominioSlug ||
+          vinculo.localId ||
           vinculo.condominioId ||
           vinculoId,
         icone: "🏢",
@@ -677,8 +680,11 @@ Boolean(
         return {
           id: vinculoId,
           nome:
+            vinculo.localNome ||
             vinculo.condominioNome ||
+            vinculo.localSlug ||
             vinculo.condominioSlug ||
+            vinculo.localId ||
             vinculo.condominioId ||
             vinculoId,
           percentual: demonstracao?.percentual ?? 100,
