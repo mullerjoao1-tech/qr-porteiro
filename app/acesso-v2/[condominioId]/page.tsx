@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "next/navigation";
@@ -108,6 +108,7 @@ export default function AcessoV2Condominio() {
   const [popupAudioBase64, setPopupAudioBase64] = useState("");
   const [popupTipo, setPopupTipo] = useState<"mensagem" | "audio" | "encerrado">("mensagem");
   const [popupAudioFoiOuvido, setPopupAudioFoiOuvido] = useState(false);
+  const [popupAudioVisitanteAberto, setPopupAudioVisitanteAberto] = useState(false);
   const [mensagensConversa, setMensagensConversa] = useState<MensagemConversaComId[]>([]);
 
   const chamadaAtivaRef = useRef(false);
@@ -693,6 +694,7 @@ export default function AcessoV2Condominio() {
       }
 
       setAudioBlob(null);
+      setPopupAudioVisitanteAberto(false);
       setMensagem(
         chamadaJaAtiva
           ? "✅ Áudio enviado para o responsável."
@@ -789,7 +791,7 @@ export default function AcessoV2Condominio() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-950 text-white p-4 flex justify-center">
+    <main className="min-h-screen bg-slate-950 text-white p-3 flex justify-center">
       {popupTexto && (
         <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-5">
           <div
@@ -815,7 +817,7 @@ export default function AcessoV2Condominio() {
                 : "NOVA MENSAGEM"}
             </h2>
 
-            <p className="text-3xl font-black leading-relaxed py-6">
+            <p className="text-2xl font-black leading-relaxed py-6">
               {popupTexto}
             </p>
 
@@ -883,18 +885,136 @@ export default function AcessoV2Condominio() {
         </div>
       )}
 
+      {popupAudioVisitanteAberto && (
+        <div className="fixed inset-0 z-[60] bg-black/90 flex items-center justify-center p-4">
+          <div className="relative w-full max-w-md bg-slate-900 border-2 border-blue-500 rounded-3xl p-5 shadow-2xl">
+
+            {!gravandoAudio && !enviandoAudio && (
+              <button
+                type="button"
+                onClick={() => {
+                  setAudioBlob(null);
+                  setPopupAudioVisitanteAberto(false);
+                }}
+                className="absolute top-3 right-4 text-slate-400 hover:text-white text-3xl font-black"
+              >
+                &times;
+              </button>
+            )}
+
+            <div className="text-center mb-5">
+              <div className="text-5xl mb-3">
+                {gravandoAudio ? "REC" : audioBlob ? "AUDIO" : "..."}
+              </div>
+
+              <h2 className="text-2xl font-black">
+                {gravandoAudio
+                  ? "GRAVANDO ÁUDIO"
+                  : audioBlob
+                  ? "ÁUDIO GRAVADO"
+                  : "PREPARANDO MICROFONE"}
+              </h2>
+
+              <p className="text-slate-400 text-sm mt-2">
+                {gravandoAudio
+                  ? "Fale normalmente e toque em parar quando terminar."
+                  : audioBlob
+                  ? "Confira o áudio e depois envie."
+                  : "Aguarde a liberação do microfone."}
+              </p>
+            </div>
+
+            {gravandoAudio && (
+              <div className="space-y-4">
+                <div className="bg-red-500/10 border border-red-500/40 rounded-2xl p-4 text-center">
+                  <p className="text-red-400 font-black animate-pulse">
+                    GRAVAÇÃO EM ANDAMENTO
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={pararGravacao}
+                  className="w-full bg-red-600 hover:bg-red-500 text-white text-xl font-black py-4 rounded-2xl"
+                >
+                  &#9209; PARAR GRAVAÇÃO
+                </button>
+              </div>
+            )}
+
+            {!gravandoAudio && audioBlob && (
+              <div className="space-y-4">
+
+                <div className="bg-slate-800 border border-slate-700 rounded-2xl p-3">
+                  <audio
+                    controls
+                    className="w-full"
+                    src={URL.createObjectURL(audioBlob)}
+                  />
+                </div>
+
+                <button
+                  type="button"
+                  onClick={enviarAudioVisitante}
+                  disabled={enviandoAudio}
+                  className="w-full bg-blue-500 hover:bg-blue-400 disabled:bg-gray-500 text-white text-xl font-black py-4 rounded-2xl"
+                >
+                  {enviandoAudio ? "Enviando..." : "ENVIAR ÁUDIO"}
+                </button>
+
+                {!enviandoAudio && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAudioBlob(null);
+                      iniciarGravacao();
+                    }}
+                    className="w-full bg-slate-800 hover:bg-slate-700 border border-slate-600 text-white font-bold py-3 rounded-2xl"
+                  >
+                    GRAVAR NOVAMENTE
+                  </button>
+                )}
+
+              </div>
+            )}
+
+            {!gravandoAudio && !audioBlob && (
+              <div className="space-y-3">
+
+                <div className="bg-slate-800 border border-slate-700 rounded-2xl p-5 text-center text-slate-300 font-bold">
+                  Preparando microfone...
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPopupAudioVisitanteAberto(false);
+                  }}
+                  className="w-full bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 rounded-2xl"
+                >
+                  FECHAR
+                </button>
+
+              </div>
+            )}
+
+          </div>
+        </div>
+      )}
+
       <div className="w-full max-w-xl">
-        <section className="bg-slate-900 border border-slate-700 rounded-3xl p-6 mb-5 text-center">
-          <p className="text-green-400 font-black text-sm mb-2">
+
+        <section className="bg-slate-900 border border-slate-700 rounded-3xl p-4 mb-3 text-center">
+          <p className="text-green-400 font-black text-xs mb-1">
             QR ACESSO • V2
           </p>
 
-          <h1 className="text-3xl font-black">
+          <h1 className="text-2xl font-black">
             {localEhResidencia ? "🏠" : "🏢"} {" "}
             {localCadastro?.nome || "Chamar Unidade"}
           </h1>
 
-          <p className="text-slate-400 mt-2">
+          <p className="text-slate-400 mt-1 text-sm">
             {localEhResidencia
               ? "Informe o motivo da visita para chamar a residência."
               : "Escolha bloco, unidade e motivo da chamada."}
@@ -936,7 +1056,7 @@ export default function AcessoV2Condominio() {
               {temBlocos && (
                 <button
                   onClick={voltarBloco}
-                  className="mb-4 text-sm text-slate-300 underline"
+                  className="mb-3 text-sm text-slate-300 underline"
                 >
                   ← Trocar bloco
                 </button>
@@ -952,7 +1072,7 @@ export default function AcessoV2Condominio() {
                 value={busca}
                 onChange={(evento) => setBusca(evento.target.value)}
                 placeholder="Ex: 101, casa 5, apto 202"
-                className="w-full mt-2 mb-5 bg-slate-950 border border-slate-600 rounded-2xl px-4 py-4 text-white outline-none focus:border-green-400"
+                className="w-full mt-2 mb-4 bg-slate-950 border border-slate-600 rounded-2xl px-4 py-3 text-white outline-none focus:border-green-400"
               />
 
               {unidadesFiltradas.length > 0 ? (
@@ -1019,17 +1139,17 @@ export default function AcessoV2Condominio() {
           )}
 
         {unidadeSelecionada && (
-          <section className="bg-slate-900 border border-green-500 rounded-3xl p-5">
+          <section className="bg-slate-900 border border-green-500 rounded-3xl p-4">
             <button
               onClick={limparSelecao}
-              className="mb-4 text-sm text-slate-300 underline"
+              className="mb-3 text-sm text-slate-300 underline"
             >
               ← Trocar unidade
             </button>
 
-            <div className="bg-slate-800 rounded-2xl p-4 mb-5">
+            <div className="bg-slate-800 rounded-2xl p-3 mb-4">
               <p className="text-sm text-slate-400">Unidade selecionada</p>
-              <h2 className="text-2xl font-black text-green-400">
+              <h2 className="text-xl font-black text-green-400">
                 🏠 {unidadeSelecionada.nome}
               </h2>
               <p className="text-slate-400">
@@ -1037,11 +1157,11 @@ export default function AcessoV2Condominio() {
               </p>
             </div>
 
-            <p className="text-sm text-slate-300 font-bold mb-3">
+            <p className="text-sm text-slate-300 font-bold mb-2">
               O que você precisa?
             </p>
 
-            <div className="grid grid-cols-1 gap-3 mb-5">
+            <div className="grid grid-cols-2 gap-2 mb-4">
               {["Visitante", "Entrega", "Entrega de comida", "Outros"].map(
                 (item) => (
                   <button
@@ -1052,8 +1172,8 @@ export default function AcessoV2Condominio() {
                     }}
                     className={
                       motivo === item
-                        ? "bg-green-500 text-black font-black py-4 rounded-2xl"
-                        : "bg-slate-800 text-white font-bold py-4 rounded-2xl border border-slate-600"
+                        ? "bg-green-500 text-black font-black px-2 py-3 min-h-[72px] rounded-2xl"
+                        : "bg-slate-800 text-white font-bold px-2 py-3 min-h-[72px] rounded-2xl border border-slate-600"
                     }
                   >
                     {item === "Visitante" && "👤 Visitante"}
@@ -1074,7 +1194,7 @@ export default function AcessoV2Condominio() {
                   value={nome}
                   onChange={(evento) => setNome(evento.target.value)}
                   placeholder="Digite seu nome"
-                  className="w-full mt-2 mb-5 bg-slate-950 border border-slate-600 rounded-2xl px-4 py-4 text-white outline-none focus:border-green-400"
+                  className="w-full mt-2 mb-4 bg-slate-950 border border-slate-600 rounded-2xl px-4 py-3 text-white outline-none focus:border-green-400"
                 />
               </>
             )}
@@ -1088,13 +1208,13 @@ export default function AcessoV2Condominio() {
                   value={outroMotivo}
                   onChange={(evento) => setOutroMotivo(evento.target.value)}
                   placeholder="Ex: reunião, manutenção, serviço..."
-                  className="w-full mt-2 mb-5 bg-slate-950 border border-slate-600 rounded-2xl px-4 py-4 text-white outline-none focus:border-green-400"
+                  className="w-full mt-2 mb-4 bg-slate-950 border border-slate-600 rounded-2xl px-4 py-3 text-white outline-none focus:border-green-400"
                 />
               </>
             )}
 
             {(motivo === "Entrega" || motivo === "Entrega de comida") && (
-              <div className="mb-5 bg-blue-500/10 border border-blue-500/40 rounded-2xl p-4 text-blue-300 text-sm font-bold text-center">
+              <div className="mb-4 bg-blue-500/10 border border-blue-500/40 rounded-2xl p-3 text-blue-300 text-sm font-bold text-center">
                 Para esse tipo de chamada, não precisa informar nome.
               </div>
             )}
@@ -1102,7 +1222,7 @@ export default function AcessoV2Condominio() {
             <button
               onClick={chamarUnidade}
               disabled={enviando || !motivo}
-              className="w-full sticky bottom-4 z-40 bg-green-500 hover:bg-green-400 disabled:bg-gray-500 text-black text-xl font-black py-4 rounded-2xl shadow-2xl"
+              className="w-full sticky bottom-2 z-40 bg-green-500 hover:bg-green-400 disabled:bg-gray-500 text-black text-xl font-black py-3 rounded-2xl shadow-2xl"
             >
               {enviando ? "Enviando..." : "🔔 CHAMAR"}
             </button>
@@ -1200,42 +1320,18 @@ export default function AcessoV2Condominio() {
               </div>
             )}
 
-            <div className="mt-4 space-y-3">
+            <div className="mt-4">
               <button
-                onClick={gravandoAudio ? pararGravacao : iniciarGravacao}
+                type="button"
+                onClick={() => {
+                  setPopupAudioVisitanteAberto(true);
+                  iniciarGravacao();
+                }}
                 disabled={enviandoAudio}
-                className={
-                  gravandoAudio
-                    ? "w-full bg-red-600 text-white text-xl font-black py-4 rounded-2xl animate-pulse"
-                    : "w-full bg-blue-600 hover:bg-blue-500 disabled:bg-gray-500 text-white text-xl font-black py-4 rounded-2xl"
-                }
+                className="w-full bg-blue-600 hover:bg-blue-500 disabled:bg-gray-500 text-white text-lg font-black py-3 rounded-2xl"
               >
-                {gravandoAudio
-                  ? "⏹️ PARAR GRAVAÇÃO"
-                  : "🎙️ GRAVAR ÁUDIO"}
+                &#127908; GRAVAR ÁUDIO
               </button>
-
-              {audioBlob && (
-                <div className="bg-slate-800 border border-blue-500/40 rounded-2xl p-4 space-y-3">
-                  <p className="text-blue-300 text-sm font-bold text-center">
-                    Áudio gravado. Confira e envie.
-                  </p>
-
-                  <audio
-                    controls
-                    className="w-full"
-                    src={URL.createObjectURL(audioBlob)}
-                  />
-
-                  <button
-                    onClick={enviarAudioVisitante}
-                    disabled={enviandoAudio}
-                    className="w-full bg-blue-500 hover:bg-blue-400 disabled:bg-gray-500 text-white text-xl font-black py-4 rounded-2xl"
-                  >
-                    {enviandoAudio ? "Enviando..." : "📤 ENVIAR ÁUDIO"}
-                  </button>
-                </div>
-              )}
             </div>
           </section>
         )}
@@ -1243,3 +1339,5 @@ export default function AcessoV2Condominio() {
     </main>
   );
 }
+
+
