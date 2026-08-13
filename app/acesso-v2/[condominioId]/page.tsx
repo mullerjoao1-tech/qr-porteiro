@@ -112,6 +112,7 @@ export default function AcessoV2Condominio() {
 
   const chamadaAtivaRef = useRef(false);
   const chamadaFoiEnviadaRef = useRef(false);
+  const criandoChamadaRef = useRef(false);
   const ultimoPopupRef = useRef("");
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -260,6 +261,12 @@ export default function AcessoV2Condominio() {
       const chamada = snapshot.val();
 
       if (!chamada) {
+        if (
+          criandoChamadaRef.current
+        ) {
+          return;
+        }
+
         setMensagensConversa([]);
 
         if (chamadaAtivaRef.current && chamadaFoiEnviadaRef.current) {
@@ -436,6 +443,7 @@ export default function AcessoV2Condominio() {
       setMensagensConversa([]);
 
       ultimoPopupRef.current = "";
+      criandoChamadaRef.current = true;
       chamadaFoiEnviadaRef.current = true;
       chamadaAtivaRef.current = true;
       setDiagnostico("Gravando chamada...");
@@ -458,6 +466,8 @@ export default function AcessoV2Condominio() {
           enviadoEm: null,
         }
       );
+
+      criandoChamadaRef.current = false;
 
       setEnviando(false);
       setDiagnostico("✅ Chamada enviada.");
@@ -509,6 +519,7 @@ export default function AcessoV2Condominio() {
 
       setDiagnostico(`❌ ERRO: ${detalhe}`);
       setMensagem("");
+      criandoChamadaRef.current = false;
       chamadaAtivaRef.current = false;
       chamadaFoiEnviadaRef.current = false;
       setEnviando(false);
