@@ -18,6 +18,10 @@ type MensagemConversa = {
   texto?: string;
   audioBase64?: string;
   criadoEm: number;
+  visualizadoPeloMorador?: boolean;
+  visualizadoPeloMoradorEm?: number;
+  audioOuvidoPeloMorador?: boolean;
+  audioOuvidoPeloMoradorEm?: number;
 };
 
 type ComunicadoMorador = {
@@ -149,7 +153,12 @@ export default function MoradorV2() {
   const [popupAtendimentoAberto, setPopupAtendimentoAberto] = useState(false);
   const [mostrarHistorico, setMostrarHistorico] = useState(false);
   const [mostrarCameraGrande, setMostrarCameraGrande] = useState(false);
-  const [audioPopup, setAudioPopup] = useState<{ titulo: string; audio: string } | null>(null);
+  const [audioPopup, setAudioPopup] = useState<{
+    titulo: string;
+    audio: string;
+    mensagemId?: string;
+    autor?: "visitante" | "morador";
+  } | null>(null);
   const [installPrompt, setInstallPrompt] = useState<any>(null);
   const [appInstalavel, setAppInstalavel] = useState(false);
   const [comunicados, setComunicados] = useState<ComunicadoMorador[]>([]);
@@ -518,6 +527,8 @@ const nomeLocal =
         setAudioPopup({
           titulo: "🎙️ Novo áudio do visitante",
           audio: audioVisitanteAtual,
+          mensagemId: ultimoAudioVisitante?.id,
+          autor: "visitante",
         });
       }
 
@@ -936,6 +947,44 @@ async function naoPossoAtender() {
     );
   }
 }
+  useEffect(() => {
+    if (status !== "Em atendimento") return;
+
+    if (
+      typeof document !== "undefined" &&
+      document.visibilityState !== "visible"
+    ) {
+      return;
+    }
+
+    const mensagensPendentes = mensagensConversa.filter(
+      (item) =>
+        item.autor === "visitante" &&
+        item.tipo === "texto" &&
+        Boolean(item.id) &&
+        item.visualizadoPeloMorador !== true
+    );
+
+    if (mensagensPendentes.length === 0) return;
+
+    Promise.all(
+      mensagensPendentes.map((item) =>
+        update(
+          ref(db, `${caminhoFirebase}/mensagens/${item.id}`),
+          {
+            visualizadoPeloMorador: true,
+            visualizadoPeloMoradorEm: Date.now(),
+          }
+        )
+      )
+    ).catch((erro) => {
+      console.error(
+        "Erro ao registrar leitura das mensagens pelo morador:",
+        erro
+      );
+    });
+  }, [mensagensConversa, status, caminhoFirebase]);
+
   async function enviarMensagemRapida(mensagem: string) {
     if (status === "Sem chamado ativo") {
       alert("Não existe chamada ativa para responder.");
@@ -1482,6 +1531,11 @@ Mensagem: ${mensagemErro}`
     },
   ];
 
+  const ultimaMensagemMoradorId =
+    [...mensagensConversa]
+      .reverse()
+      .find((item) => item.autor === "morador")?.id || "";
+
   return (
     <main className="min-h-screen bg-slate-950 text-white p-4 relative">
       {comunicadoAberto && (() => {
@@ -1873,7 +1927,29 @@ Mensagem: ${mensagemErro}`
                 onPointerDown={silenciarToqueAoOuvirAudio}
                 onTouchStart={silenciarToqueAoOuvirAudio}
                 onClick={silenciarToqueAoOuvirAudio}
-                onPlay={silenciarToqueAoOuvirAudio}
+                onPlay={async () => {
+                  silenciarToqueAoOuvirAudio();
+
+                  if (
+                    audioPopup.autor === "visitante" &&
+                    audioPopup.mensagemId
+                  ) {
+                    const agora = Date.now();
+
+                    await update(
+                      ref(
+                        db,
+                        `${caminhoFirebase}/mensagens/${audioPopup.mensagemId}`
+                      ),
+                      {
+                        visualizadoPeloMorador: true,
+                        visualizadoPeloMoradorEm: agora,
+                        audioOuvidoPeloMorador: true,
+                        audioOuvidoPeloMoradorEm: agora,
+                      }
+                    );
+                  }
+                }}
                 onPlaying={silenciarToqueAoOuvirAudio}
               />
             </div>
@@ -2271,9 +2347,26 @@ Mensagem: ${mensagemErro}`
                         {item.tipo === "audio" && item.audioBase64 && (
                           <button
                             type="button"
-                            onClick={() => {
+                            onClick={async () => {
                               if (item.autor === "visitante") {
                                 silenciarToqueAoOuvirAudio();
+
+                                if (item.id) {
+                                  const agora = Date.now();
+
+                                  await update(
+                                    ref(
+                                      db,
+                                      `${caminhoFirebase}/mensagens/${item.id}`
+                                    ),
+                                    {
+                                      visualizadoPeloMorador: true,
+                                      visualizadoPeloMoradorEm: agora,
+                                      audioOuvidoPeloMorador: true,
+                                      audioOuvidoPeloMoradorEm: agora,
+                                    }
+                                  );
+                                }
                               }
 
                               setAudioPopup({
@@ -2289,6 +2382,21 @@ Mensagem: ${mensagemErro}`
                             🎙️ Ouvir áudio
                           </button>
                         )}
+
+                        {item.autor === "morador" &&
+                          item.id === ultimaMensagemMoradorId && (
+                            <p
+                              className={
+                                visitanteVisualizou
+                                  ? "text-xs text-green-400 font-bold mt-2 text-right"
+                                  : "text-xs text-slate-400 font-bold mt-2 text-right"
+                              }
+                            >
+                              {visitanteVisualizou
+                                ? "✓✓ Lido"
+                                : "✓ Enviado"}
+                            </p>
+                          )}
                       </div>
                     ))}
                   </div>
@@ -2328,6 +2436,9 @@ Mensagem: ${mensagemErro}`
     </main>
   );
 }
+
+
+
 
 
 

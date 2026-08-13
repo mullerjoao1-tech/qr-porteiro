@@ -11,6 +11,10 @@ type MensagemConversa = {
   texto?: string;
   audioBase64?: string;
   criadoEm: number;
+  visualizadoPeloMorador?: boolean;
+  visualizadoPeloMoradorEm?: number;
+  audioOuvidoPeloMorador?: boolean;
+  audioOuvidoPeloMoradorEm?: number;
 };
 
 type MensagemConversaComId = MensagemConversa & {
@@ -1329,6 +1333,28 @@ export default function AcessoV2Condominio() {
                               }}
                             />
                           )}
+
+                          {!mensagemMorador && (
+                            <p
+                              className={
+                                item.tipo === "audio"
+                                  ? item.audioOuvidoPeloMorador
+                                    ? "text-xs text-green-400 font-bold mt-2 text-right"
+                                    : "text-xs text-slate-400 font-bold mt-2 text-right"
+                                  : item.visualizadoPeloMorador
+                                  ? "text-xs text-green-400 font-bold mt-2 text-right"
+                                  : "text-xs text-slate-400 font-bold mt-2 text-right"
+                              }
+                            >
+                              {item.tipo === "audio"
+                                ? item.audioOuvidoPeloMorador
+                                  ? "✓✓ Ouvido"
+                                  : "✓ Enviado"
+                                : item.visualizadoPeloMorador
+                                ? "✓✓ Lido"
+                                : "✓ Enviado"}
+                            </p>
+                          )}
                         </div>
                       </div>
                     );
@@ -1356,6 +1382,7 @@ export default function AcessoV2Condominio() {
     </main>
   );
 }
+
 
 
 
