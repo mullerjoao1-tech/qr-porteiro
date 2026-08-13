@@ -646,7 +646,6 @@ const nomeLocal =
     if (dados.status === "Em atendimento") {
       tempoLimite = TEMPO_EM_ATENDIMENTO;
       dataBase =
-        dados.ultimaAtividade ||
         dados.atendidoEm ||
         dados.criadoEm;
     }
@@ -2235,4 +2234,7 @@ Mensagem: ${mensagemErro}`
     </main>
   );
 }
+
+
+
 
