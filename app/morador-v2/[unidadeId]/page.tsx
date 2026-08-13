@@ -128,6 +128,11 @@ export default function MoradorV2() {
   const [historicoLista, setHistoricoLista] = useState<any[]>([]);
   const [avisoAuto, setAvisoAuto] = useState("");
   const [online, setOnline] = useState(true);
+  // Recursos opcionais do local.
+  // TEMPORARIO: depois estas flags virao do pacote contratado.
+  const cameraContratada = false;
+  const portaoContratado = false;
+
   const [fotoCameraAtual, setFotoCameraAtual] = useState("");
   const [fotoCameraAtualizadaEm, setFotoCameraAtualizadaEm] = useState(Date.now());
   const [capturandoCamera, setCapturandoCamera] = useState(false);
@@ -139,6 +144,8 @@ export default function MoradorV2() {
   const [gravandoAudioMorador, setGravandoAudioMorador] = useState(false);
   const [audioRespostaBlob, setAudioRespostaBlob] = useState<Blob | null>(null);
   const [enviandoAudioMorador, setEnviandoAudioMorador] = useState(false);
+  const [popupAudioMoradorAberto, setPopupAudioMoradorAberto] = useState(false);
+  const [respostasRapidasAbertas, setRespostasRapidasAbertas] = useState(true);
   const [popupAtendimentoAberto, setPopupAtendimentoAberto] = useState(false);
   const [mostrarHistorico, setMostrarHistorico] = useState(false);
   const [mostrarCameraGrande, setMostrarCameraGrande] = useState(false);
@@ -454,6 +461,7 @@ const nomeLocal =
         setAudioRespostaBlob(null);
         setAvisoAuto("");
         setPopupAtendimentoAberto(false);
+        setRespostasRapidasAbertas(true);
         toqueSilenciadoPorAudioRef.current = false;
         idChamadaAtualRef.current = "";
         pararToqueContinuo();
@@ -540,7 +548,9 @@ const nomeLocal =
           registrarAnalytics("recebida");
           registrarLog("chamada_recebida", "Nova chamada recebida no painel");
 
-          capturarFotoCamera();
+          if (cameraContratada) {
+            capturarFotoCamera();
+          }
         }
       } else {
         pararToqueContinuo();
@@ -808,6 +818,8 @@ const nomeLocal =
       "Em atendimento"
     );
 
+    setRespostasRapidasAbertas(true);
+
     void Promise.allSettled([
       registrarAnalytics(
         "atendida"
@@ -957,6 +969,7 @@ async function naoPossoAtender() {
 
     setMensagemResponsavel(mensagem);
     setVisitanteVisualizou(false);
+    setRespostasRapidasAbertas(false);
     pararToqueContinuo();
   }
 
@@ -1044,6 +1057,7 @@ async function naoPossoAtender() {
       console.error(erro);
       alert("Não foi possível acessar o microfone.");
       setGravandoAudioMorador(false);
+      setPopupAudioMoradorAberto(false);
     }
   }
 
@@ -1100,6 +1114,7 @@ async function naoPossoAtender() {
       await registrarLog("audio_morador", "Morador enviou áudio ao visitante");
 
       setAudioRespostaBlob(null);
+      setPopupAudioMoradorAberto(false);
       pararToqueContinuo();
     } catch (erro) {
       console.error(erro);
@@ -1738,7 +1753,111 @@ Mensagem: ${mensagemErro}`
         </div>
       )}
 
+      {popupAudioMoradorAberto && (
+        <div className="fixed inset-0 z-[1100] bg-black/90 flex items-center justify-center p-4">
+          <div className="relative w-full max-w-md bg-slate-900 border-2 border-cyan-500 rounded-3xl p-5 shadow-2xl">
+
+            {!gravandoAudioMorador && !enviandoAudioMorador && (
+              <button
+                type="button"
+                onClick={() => {
+                  setAudioRespostaBlob(null);
+                  setPopupAudioMoradorAberto(false);
+                }}
+                className="absolute top-3 right-4 text-slate-400 hover:text-white text-3xl font-black"
+              >
+                ×
+              </button>
+            )}
+
+            <div className="text-center mb-5">
+              <div className="text-5xl mb-3">
+                {gravandoAudioMorador ? "🎙️" : "🎧"}
+              </div>
+
+              <h2 className="text-2xl font-black">
+                {gravandoAudioMorador
+                  ? "GRAVANDO ÁUDIO"
+                  : "ÁUDIO GRAVADO"}
+              </h2>
+
+              <p className="text-slate-400 text-sm mt-2">
+                {gravandoAudioMorador
+                  ? "Fale normalmente e toque em parar quando terminar."
+                  : "Confira o áudio antes de enviar ao visitante."}
+              </p>
+            </div>
+
+            {gravandoAudioMorador && (
+              <div className="space-y-4">
+
+                <div className="bg-red-500/10 border border-red-500/40 rounded-2xl p-4 text-center">
+                  <p className="text-red-400 font-black animate-pulse">
+                    GRAVAÇÃO EM ANDAMENTO
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={pararGravacaoMorador}
+                  className="w-full bg-red-600 hover:bg-red-500 text-white text-xl font-black py-4 rounded-2xl"
+                >
+                  ⏹️ PARAR GRAVAÇÃO
+                </button>
+
+              </div>
+            )}
+
+            {!gravandoAudioMorador && audioRespostaBlob && (
+              <div className="space-y-4">
+
+                <div className="bg-slate-800 border border-slate-700 rounded-2xl p-3">
+                  <audio
+                    controls
+                    className="w-full"
+                    src={URL.createObjectURL(audioRespostaBlob)}
+                  />
+                </div>
+
+                <button
+                  type="button"
+                  onClick={enviarAudioMorador}
+                  disabled={enviandoAudioMorador}
+                  className="w-full bg-blue-600 hover:bg-blue-500 disabled:bg-slate-700 text-white text-xl font-black py-4 rounded-2xl"
+                >
+                  {enviandoAudioMorador
+                    ? "Enviando..."
+                    : "📤 ENVIAR ÁUDIO"}
+                </button>
+
+                {!enviandoAudioMorador && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAudioRespostaBlob(null);
+                      iniciarGravacaoMorador();
+                    }}
+                    className="w-full bg-slate-800 hover:bg-slate-700 border border-slate-600 text-white font-bold py-3 rounded-2xl"
+                  >
+                    🔄 GRAVAR NOVAMENTE
+                  </button>
+                )}
+
+              </div>
+            )}
+
+            {!gravandoAudioMorador && !audioRespostaBlob && (
+              <div className="bg-slate-800 border border-slate-700 rounded-2xl p-5 text-center text-slate-300 font-bold">
+                Preparando microfone...
+              </div>
+            )}
+
+          </div>
+        </div>
+      )}
+
       {audioPopup && (
+
         <div className="fixed inset-0 z-[999] bg-black/95 flex items-center justify-center p-4">
           <div className="w-full max-w-md bg-slate-900 border-4 border-blue-400 rounded-3xl p-5 text-center shadow-2xl">
             <p className="text-6xl mb-3">🎙️</p>
@@ -1883,15 +2002,18 @@ Mensagem: ${mensagemErro}`
             </p>
           </div>
 
-          <div
+          <button
+            type="button"
+            onClick={alterarStatusOnline}
+            title="Alterar disponibilidade para receber chamadas"
             className={
               online
-                ? "bg-green-500/10 border border-green-500/40 text-green-400 text-xs font-bold px-3 py-2 rounded-xl"
-                : "bg-red-500/10 border border-red-500/40 text-red-400 text-xs font-bold px-3 py-2 rounded-xl"
+                ? "bg-green-500/10 hover:bg-green-500/20 border border-green-500/40 text-green-400 text-xs font-bold px-3 py-2 rounded-xl transition"
+                : "bg-red-500/10 hover:bg-red-500/20 border border-red-500/40 text-red-400 text-xs font-bold px-3 py-2 rounded-xl transition"
             }
           >
             {online ? "🟢 Disponível" : "🔴 Ausente"}
-          </div>
+          </button>
         </div>
 
         {comunicados.length > 0 && (
@@ -1985,19 +2107,55 @@ Mensagem: ${mensagemErro}`
 
         <div className="grid grid-cols-2 gap-3 mt-3">
           <button
-            onClick={abrirCameraGrande}
-            disabled={capturandoCamera}
-            className="bg-slate-700 hover:bg-slate-600 disabled:bg-gray-500 text-white text-sm font-bold py-3 rounded-2xl"
+            type="button"
+            onClick={() => {
+              if (!cameraContratada) {
+                alert(
+                  "📷 Recurso opcional\n\nA câmera é um recurso opcional do QR Acesso. Consulte a administração para ativação."
+                );
+                return;
+              }
+
+              abrirCameraGrande();
+            }}
+            disabled={cameraContratada && capturandoCamera}
+            className={
+              cameraContratada
+                ? "bg-slate-700 hover:bg-slate-600 disabled:bg-gray-500 text-white text-sm font-bold py-3 rounded-2xl"
+                : "bg-slate-800 border border-slate-600 text-slate-300 text-sm font-bold py-3 rounded-2xl"
+            }
           >
-            {capturandoCamera ? "📸 Atualizando" : "📷 Câmera"}
+            {cameraContratada
+              ? capturandoCamera
+                ? "📸 Atualizando"
+                : "📷 Câmera"
+              : "🔒 Câmera"}
           </button>
 
           <button
-            onClick={acionarPortao}
-            disabled={abrindoPortao}
-            className="bg-purple-600 hover:bg-purple-500 disabled:bg-gray-500 text-white text-sm font-bold py-3 rounded-2xl"
+            type="button"
+            onClick={() => {
+              if (!portaoContratado) {
+                alert(
+                  "🚪 Recurso opcional\n\nA abertura de portão é um recurso opcional do QR Acesso. Consulte a administração para ativação."
+                );
+                return;
+              }
+
+              acionarPortao();
+            }}
+            disabled={portaoContratado && abrindoPortao}
+            className={
+              portaoContratado
+                ? "bg-purple-600 hover:bg-purple-500 disabled:bg-gray-500 text-white text-sm font-bold py-3 rounded-2xl"
+                : "bg-slate-800 border border-slate-600 text-slate-300 text-sm font-bold py-3 rounded-2xl"
+            }
           >
-            {abrindoPortao ? "⏳ Abrindo" : "🚪 Abrir portão"}
+            {portaoContratado
+              ? abrindoPortao
+                ? "⏳ Abrindo"
+                : "🚪 Abrir portão"
+              : "🔒 Abrir portão"}
           </button>
         </div>
 
@@ -2019,56 +2177,25 @@ Mensagem: ${mensagemErro}`
             📲 Instalar app
           </button>
 
-          <button
-            onClick={() => setMostrarHistorico(true)}
-            className="bg-slate-700 hover:bg-slate-600 text-white text-sm font-bold py-3 rounded-2xl"
-          >
-            📋 Histórico
-          </button>
-        </div>
 
-        <div className="bg-slate-800 rounded-2xl p-4 mt-5 border border-slate-700">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <p
-                className={
-                  online ? "text-green-400 font-bold" : "text-red-400 font-bold"
-                }
-              >
-                {online ? "🟢 Atendimento ativo" : "🔴 Atendimento pausado"}
-              </p>
-              <p className="text-slate-400 text-xs mt-1">
-                Use quando estiver disponível ou ausente.
-              </p>
-            </div>
-
-            <button
-              onClick={alterarStatusOnline}
-              className="bg-slate-600 hover:bg-slate-500 text-white text-xs font-bold px-3 py-2 rounded-xl"
-            >
-              ALTERAR
-            </button>
-          </div>
         </div>
 
         <div className="bg-slate-800 rounded-2xl p-4 mt-4 border border-green-500/20">
           <h2 className="font-black text-green-400 text-xl">🔔 {nome}</h2>
 
-          <p className="text-sm text-slate-300 mt-3">Motivo: {motivo}</p>
-
-          <p className="text-sm text-cyan-400 mt-2">
-            Modo: {modo === "porteiro" ? "Portaria" : "Direto para morador"}
-          </p>
-
-          <p className="text-sm text-yellow-400 mt-2">Status: {status}</p>
-
-          {horaChamada && (
-            <p className="text-sm text-blue-300 mt-2">Horário: {horaChamada}</p>
+          {nome.trim().toLowerCase() !== motivo.trim().toLowerCase() && (
+            <p className="text-sm text-slate-300 mt-3">
+              Motivo: {motivo}
+            </p>
           )}
 
-          {avisoAuto && (
-            <p className="text-sm text-orange-300 mt-2">⏱ {avisoAuto}</p>
-          )}
+
+
+
+
+
+
+
 
           {aguardandoAtendimento && (
             <button
@@ -2080,145 +2207,112 @@ Mensagem: ${mensagemErro}`
           )}
 
           {atendimentoEmAndamento ? (
-            <div className="mt-4 bg-slate-900 border border-slate-700 rounded-2xl p-4">
-              <h3 className="font-bold text-blue-300 mb-3">💬 Respostas rápidas</h3>
+            <>
+              {respostasRapidasAbertas ? (
+                <div className="mt-4 bg-slate-900 border border-slate-700 rounded-2xl p-4">
+                  <div className="flex items-center justify-between gap-3 mb-3">
+                    <h3 className="font-bold text-blue-300">
+                      💬 Respostas rápidas
+                    </h3>
 
-              {respostasRapidas.map((item) => (
-                <button
-                  key={item.texto}
-                  onClick={() => enviarMensagemRapida(item.mensagem)}
-                  className="w-full mb-2 last:mb-0 bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-2xl"
-                >
-                  {item.icone} {item.texto}
-                </button>
-              ))}
-
-              {mensagemResponsavel && (
-                <div className="mt-4 bg-slate-800 rounded-xl p-3 border border-slate-700">
-                  <p className="text-sm text-green-400 font-bold">
-                    Última mensagem enviada:
-                  </p>
-                  <p className="text-sm text-white mt-1">{mensagemResponsavel}</p>
-
-                  <p
-                    className={
-                      visitanteVisualizou
-                        ? "text-xs text-green-400 mt-2 font-bold"
-                        : "text-xs text-yellow-400 mt-2 font-bold"
-                    }
-                  >
-                    {visitanteVisualizou
-                      ? "✅ Visitante visualizou"
-                      : "⏳ Aguardando visitante visualizar"}
-                  </p>
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="mt-4 bg-slate-900 border border-yellow-500/40 rounded-2xl p-4">
-              <p className="text-yellow-300 text-sm font-bold">
-                Respostas rápidas ficam liberadas depois de atender.
-              </p>
-            </div>
-          )}
-
-          {mensagensConversa.length > 0 && (
-            <div className="mt-4 bg-slate-900 border border-blue-500/40 rounded-2xl p-4">
-              <h3 className="font-bold text-blue-300 mb-3">
-                💬 Conversa do atendimento
-              </h3>
-
-              <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
-                {mensagensConversa.map((item) => (
-                  <div
-                    key={item.id}
-                    className={
-                      item.autor === "morador"
-                        ? "bg-green-600/30 border border-green-500 rounded-2xl p-3"
-                        : "bg-blue-600/30 border border-blue-500 rounded-2xl p-3"
-                    }
-                  >
-                    <p className="text-xs font-black mb-2">
-                      {item.autor === "morador" ? "Você" : "Visitante"}
-                    </p>
-
-                    {item.tipo === "texto" && (
-                      <p className="text-white font-bold">{item.texto}</p>
-                    )}
-
-                    {item.tipo === "audio" && item.audioBase64 && (
-                      <button
-                        onClick={() => {
-                          if (item.autor === "visitante") {
-                            silenciarToqueAoOuvirAudio();
-                          }
-
-                          setAudioPopup({
-                            titulo:
-                              item.autor === "morador"
-                                ? "🎙️ Seu áudio enviado"
-                                : "🎙️ Áudio do visitante",
-                            audio: item.audioBase64 || "",
-                          });
-                        }}
-                        className="w-full bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-xl py-3 font-bold text-white"
-                      >
-                        🎙️ Ouvir áudio
-                      </button>
-                    )}
+                    <button
+                      type="button"
+                      onClick={() => setRespostasRapidasAbertas(false)}
+                      className="text-xs font-bold text-slate-400 hover:text-white"
+                    >
+                      RECOLHER
+                    </button>
                   </div>
-                ))}
-              </div>
-            </div>
-          )}
 
-          {atendimentoEmAndamento ? (
-            <div className="mt-4 bg-slate-900 border border-cyan-500/40 rounded-2xl p-4 space-y-3">
-              <button
-                onClick={
-                  gravandoAudioMorador
-                    ? pararGravacaoMorador
-                    : iniciarGravacaoMorador
-                }
-                disabled={enviandoAudioMorador}
-                className={
-                  gravandoAudioMorador
-                    ? "w-full bg-red-600 py-3 rounded-xl font-black animate-pulse"
-                    : "w-full bg-cyan-600 hover:bg-cyan-500 disabled:bg-slate-700 py-3 rounded-xl font-black"
-                }
-              >
-                {gravandoAudioMorador ? "⏹️ PARAR GRAVAÇÃO" : "🎙️ GRAVAR ÁUDIO"}
-              </button>
+                  {respostasRapidas.map((item) => (
+                    <button
+                      key={item.texto}
+                      onClick={() => enviarMensagemRapida(item.mensagem)}
+                      className="w-full mb-2 last:mb-0 bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-2xl"
+                    >
+                      {item.icone} {item.texto}
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setRespostasRapidasAbertas(true)}
+                  className="w-full mt-4 bg-slate-800 hover:bg-slate-700 border border-blue-500/40 text-blue-300 font-black py-3 rounded-2xl"
+                >
+                  💬 RESPOSTAS RÁPIDAS
+                </button>
+              )}
 
-              {audioRespostaBlob && (
-                <div className="space-y-3">
-                  <audio
-                    controls
-                    className="w-full"
-                    src={URL.createObjectURL(audioRespostaBlob)}
-                  />
+              {mensagensConversa.length > 0 && (
+                <div className="mt-4 bg-slate-900 border border-blue-500/40 rounded-2xl p-4">
+                  <h3 className="font-bold text-blue-300 mb-3">
+                    💬 Conversa do atendimento
+                  </h3>
 
-                  <button
-                    onClick={enviarAudioMorador}
-                    disabled={enviandoAudioMorador}
-                    className="w-full bg-blue-600 hover:bg-blue-500 disabled:bg-slate-700 py-3 rounded-xl font-black"
-                  >
-                    {enviandoAudioMorador
-                      ? "Enviando..."
-                      : "📤 ENVIAR ÁUDIO AO VISITANTE"}
-                  </button>
+                  <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
+                    {mensagensConversa.map((item) => (
+                      <div
+                        key={item.id}
+                        className={
+                          item.autor === "morador"
+                            ? "bg-green-600/30 border border-green-500 rounded-2xl p-3"
+                            : "bg-blue-600/30 border border-blue-500 rounded-2xl p-3"
+                        }
+                      >
+                        <p className="text-xs font-black mb-2">
+                          {item.autor === "morador" ? "Você" : "Visitante"}
+                        </p>
+
+                        {item.tipo === "texto" && (
+                          <p className="text-white font-bold">{item.texto}</p>
+                        )}
+
+                        {item.tipo === "audio" && item.audioBase64 && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (item.autor === "visitante") {
+                                silenciarToqueAoOuvirAudio();
+                              }
+
+                              setAudioPopup({
+                                titulo:
+                                  item.autor === "morador"
+                                    ? "🎙️ Seu áudio enviado"
+                                    : "🎙️ Áudio do visitante",
+                                audio: item.audioBase64 || "",
+                              });
+                            }}
+                            className="w-full bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-xl py-3 font-bold text-white"
+                          >
+                            🎙️ Ouvir áudio
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
-            </div>
-          ) : (
-            <div className="mt-4 bg-slate-900 border border-cyan-500/20 rounded-2xl p-4">
-              <p className="text-slate-400 text-sm">
-                🎙️ Gravação de resposta liberada depois de atender.
-              </p>
-            </div>
-          )}
 
-          {!gravandoAudioMorador &&
+              <div className="mt-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPopupAudioMoradorAberto(true);
+                    iniciarGravacaoMorador();
+                  }}
+                  disabled={enviandoAudioMorador}
+                  className="w-full bg-cyan-600 hover:bg-cyan-500 disabled:bg-slate-700 py-3 rounded-xl font-black"
+                >
+                  🎙️ GRAVAR ÁUDIO
+                </button>
+              </div>
+            </>
+          ) : null}
+
+          {chamadaAtiva &&
+            !gravandoAudioMorador &&
             !audioRespostaBlob &&
             !enviandoAudioMorador && (
               <button
@@ -2234,6 +2328,16 @@ Mensagem: ${mensagemErro}`
     </main>
   );
 }
+
+
+
+
+
+
+
+
+
+
 
 
 
