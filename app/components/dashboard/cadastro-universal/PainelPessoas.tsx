@@ -407,7 +407,17 @@ function obterPerfisPessoa(
   );
 }
 
-export default function PainelPessoas() {
+type Props = {
+  filtroLocalId?: string | null;
+
+  onLimparFiltroLocal:
+    () => void;
+};
+
+export default function PainelPessoas({
+  filtroLocalId,
+  onLimparFiltroLocal,
+}: Props) {
   const [
     pessoas,
     setPessoas,
@@ -663,21 +673,74 @@ export default function PainelPessoas() {
               status ===
                 filtroStatus;
 
-            return (
-              passaBusca &&
-              passaStatus
-            );
+        const passaLocal =
+          !filtroLocalId ||
+          vinculos.some(
+            (vinculo) =>
+              vinculo.id === filtroLocalId ||
+              vinculo.dados.localId === filtroLocalId ||
+              vinculo.dados.localSlug === filtroLocalId
+          );
+
+        return (
+          passaBusca &&
+          passaStatus &&
+          passaLocal
+        );
           }
         );
       },
       [
         busca,
         filtroStatus,
-        pessoas,
+        filtroLocalId,
+pessoas,
       ]
     );
 
-  const totalAtivos =
+  const nomeLocalFiltrado =
+  useMemo(
+    () => {
+      if (!filtroLocalId) {
+        return "";
+      }
+
+      for (
+        const pessoa of pessoas
+      ) {
+        const vinculos =
+          obterVinculosOficiais(
+            pessoa
+          );
+
+        const vinculo =
+          vinculos.find(
+            (item) =>
+              item.id ===
+                filtroLocalId ||
+              item.dados.localId ===
+                filtroLocalId ||
+              item.dados.localSlug ===
+                filtroLocalId
+          );
+
+        if (vinculo) {
+          return (
+            vinculo.dados.localNome ||
+            filtroLocalId
+          );
+        }
+      }
+
+      return filtroLocalId;
+    },
+    [
+      filtroLocalId,
+      pessoas,
+    ]
+  );
+
+const totalAtivos =
     pessoas.filter(
       (
         pessoa
@@ -1136,6 +1199,30 @@ A exclusão removerá a pessoa de usuarios-v2.`
 
       <section className="rounded-2xl border border-slate-800 bg-slate-900 p-4 md:p-5">
         <div className="grid gap-3 lg:grid-cols-[1fr_220px]">
+        {filtroLocalId && (
+          <div className="col-span-full flex flex-col gap-3 rounded-xl border border-blue-700 bg-blue-950/30 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-[10px] font-black uppercase text-blue-400">
+                LOCAL SELECIONADO
+              </p>
+
+              <p className="mt-1 font-black text-white">
+                {nomeLocalFiltrado}
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={
+                onLimparFiltroLocal
+              }
+              className="rounded-lg border border-blue-600 bg-blue-600 px-4 py-2 text-sm font-black text-white transition hover:bg-blue-500"
+            >
+              Todos os locais
+            </button>
+          </div>
+        )}
+
           <input
             value={
               busca
@@ -1236,7 +1323,7 @@ A exclusão removerá a pessoa de usuarios-v2.`
             </p>
           </div>
         ) : (
-          <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             {pessoasFiltradas.map(
               (
                 pessoa

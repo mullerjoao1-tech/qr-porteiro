@@ -51,6 +51,18 @@ export default function CadastroUniversal() {
   const [aba, setAba] =
     useState<Aba>("pessoas");
 
+  const [
+    filtroLocalId,
+    setFiltroLocalId,
+  ] = useState<string | null>(null);
+
+  function abrirPessoasDoLocal(
+    localId: string
+  ) {
+    setFiltroLocalId(localId);
+    setAba("pessoas");
+  }
+
   return (
     <div className="space-y-5">
       <section className="rounded-3xl bg-gradient-to-r from-indigo-700 via-blue-700 to-cyan-600 p-5 text-white md:p-7">
@@ -91,11 +103,22 @@ export default function CadastroUniversal() {
       </nav>
 
       {aba === "pessoas" && (
-        <PainelPessoas />
+        <PainelPessoas
+          filtroLocalId={
+            filtroLocalId
+          }
+          onLimparFiltroLocal={() =>
+            setFiltroLocalId(null)
+          }
+        />
       )}
 
       {aba === "locais" && (
-        <PainelLocais />
+        <PainelLocais
+          onVerPessoas={
+            abrirPessoasDoLocal
+          }
+        />
       )}
 
       {aba === "unidades" && (
