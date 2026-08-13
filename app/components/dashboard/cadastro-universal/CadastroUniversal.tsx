@@ -56,10 +56,33 @@ export default function CadastroUniversal() {
     setFiltroLocalId,
   ] = useState<string | null>(null);
 
+  const [
+    filtroUnidadeId,
+    setFiltroUnidadeId,
+  ] = useState<string | null>(null);
+
+  const [
+    filtroUnidadeNome,
+    setFiltroUnidadeNome,
+  ] = useState<string | null>(null);
+
   function abrirPessoasDoLocal(
     localId: string
   ) {
     setFiltroLocalId(localId);
+    setFiltroUnidadeId(null);
+    setFiltroUnidadeNome(null);
+    setAba("pessoas");
+  }
+
+  function abrirPessoasDaUnidade(
+    localId: string,
+    unidadeId: string,
+    unidadeNome: string
+  ) {
+    setFiltroLocalId(localId);
+    setFiltroUnidadeId(unidadeId);
+    setFiltroUnidadeNome(unidadeNome);
     setAba("pessoas");
   }
 
@@ -107,9 +130,17 @@ export default function CadastroUniversal() {
           filtroLocalId={
             filtroLocalId
           }
-          onLimparFiltroLocal={() =>
-            setFiltroLocalId(null)
+          filtroUnidadeId={
+            filtroUnidadeId
           }
+          filtroUnidadeNome={
+            filtroUnidadeNome
+          }
+          onLimparFiltroLocal={() => {
+            setFiltroLocalId(null);
+            setFiltroUnidadeId(null);
+            setFiltroUnidadeNome(null);
+          }}
         />
       )}
 
@@ -122,7 +153,11 @@ export default function CadastroUniversal() {
       )}
 
       {aba === "unidades" && (
-        <PainelUnidades />
+        <PainelUnidades
+          onVerPessoasDaUnidade={
+            abrirPessoasDaUnidade
+          }
+        />
       )}
 
       {aba === "vinculos" && (

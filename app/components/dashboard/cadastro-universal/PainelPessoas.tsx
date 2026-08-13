@@ -409,6 +409,8 @@ function obterPerfisPessoa(
 
 type Props = {
   filtroLocalId?: string | null;
+  filtroUnidadeId?: string | null;
+  filtroUnidadeNome?: string | null;
 
   onLimparFiltroLocal:
     () => void;
@@ -416,6 +418,8 @@ type Props = {
 
 export default function PainelPessoas({
   filtroLocalId,
+  filtroUnidadeId,
+  filtroUnidadeNome,
   onLimparFiltroLocal,
 }: Props) {
   const [
@@ -682,10 +686,20 @@ export default function PainelPessoas({
               vinculo.dados.localSlug === filtroLocalId
           );
 
+        const passaUnidade =
+          !filtroUnidadeId ||
+          vinculos.some(
+            (vinculo) =>
+              vinculo.dados.unidades?.[
+                filtroUnidadeId
+              ] === true
+          );
+
         return (
           passaBusca &&
           passaStatus &&
-          passaLocal
+          passaLocal &&
+          passaUnidade
         );
           }
         );
@@ -694,7 +708,8 @@ export default function PainelPessoas({
         busca,
         filtroStatus,
         filtroLocalId,
-pessoas,
+filtroUnidadeId,
+        pessoas,
       ]
     );
 
@@ -1203,12 +1218,25 @@ A exclusão removerá a pessoa de usuarios-v2.`
           <div className="col-span-full flex flex-col gap-3 rounded-xl border border-blue-700 bg-blue-950/30 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="text-[10px] font-black uppercase text-blue-400">
-                LOCAL SELECIONADO
+                {
+                  filtroUnidadeId
+                    ? "UNIDADE SELECIONADA"
+                    : "LOCAL SELECIONADO"
+                }
               </p>
 
               <p className="mt-1 font-black text-white">
                 {nomeLocalFiltrado}
               </p>
+
+              {filtroUnidadeId && (
+                <p className="mt-1 text-sm font-bold text-cyan-300">
+                  {
+                    filtroUnidadeNome ||
+                    filtroUnidadeId
+                  }
+                </p>
+              )}
             </div>
 
             <button
