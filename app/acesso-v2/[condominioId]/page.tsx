@@ -401,6 +401,9 @@ export default function AcessoV2Condominio() {
   const precisaNome = motivo === "Visitante";
   const precisaDescricao = motivo === "Outros";
 
+  const chamadaVisualAtiva =
+    Boolean(mensagem) || chamadaEmAtendimento;
+
   async function chamarUnidade() {
     if (!unidadeSelecionada) {
       alert("Selecione uma unidade.");
@@ -1009,7 +1012,7 @@ export default function AcessoV2Condominio() {
 
       <div className="w-full max-w-xl">
 
-        <section className="bg-slate-900 border border-slate-700 rounded-3xl p-4 mb-3 text-center">
+        <section className={chamadaVisualAtiva ? "hidden" : "bg-slate-900 border border-slate-700 rounded-3xl p-4 mb-3 text-center"}>
           <p className="text-green-400 font-black text-xs mb-1">
             QR ACESSO • V2
           </p>
@@ -1061,7 +1064,7 @@ export default function AcessoV2Condominio() {
               {temBlocos && (
                 <button
                   onClick={voltarBloco}
-                  className="mb-3 text-sm text-slate-300 underline"
+                  className={chamadaVisualAtiva ? "hidden" : "mb-3 text-sm text-slate-300 underline"}
                 >
                   ← Trocar bloco
                 </button>
@@ -1147,26 +1150,34 @@ export default function AcessoV2Condominio() {
           <section className="bg-slate-900 border border-green-500 rounded-3xl p-4">
             <button
               onClick={limparSelecao}
-              className="mb-3 text-sm text-slate-300 underline"
+              className={chamadaVisualAtiva ? "hidden" : "mb-3 text-sm text-slate-300 underline"}
             >
               ← Trocar unidade
             </button>
 
-            <div className="bg-slate-800 rounded-2xl p-3 mb-4">
-              <p className="text-sm text-slate-400">Unidade selecionada</p>
-              <h2 className="text-xl font-black text-green-400">
-                🏠 {unidadeSelecionada.nome}
-              </h2>
-              <p className="text-slate-400">
-                {unidadeSelecionada.tipo || "Unidade"}
-              </p>
-            </div>
+            {chamadaVisualAtiva ? (
+              <div className="mb-3 text-center">
+                <span className="text-green-400 font-black text-lg">
+                  🏠 {unidadeSelecionada.nome}
+                </span>
+              </div>
+            ) : (
+              <div className="bg-slate-800 rounded-2xl p-3 mb-4">
+                <p className="text-sm text-slate-400">Unidade selecionada</p>
+                <h2 className="text-xl font-black text-green-400">
+                  🏠 {unidadeSelecionada.nome}
+                </h2>
+                <p className="text-slate-400">
+                  {unidadeSelecionada.tipo || "Unidade"}
+                </p>
+              </div>
+            )}
 
-            <p className="text-sm text-slate-300 font-bold mb-2">
+            <p className={chamadaVisualAtiva ? "hidden" : "text-sm text-slate-300 font-bold mb-2"}>
               O que você precisa?
             </p>
 
-            <div className="grid grid-cols-2 gap-2 mb-4">
+            <div className={chamadaVisualAtiva ? "hidden" : "grid grid-cols-2 gap-2 mb-4"}>
               {["Visitante", "Entrega", "Entrega de comida", "Outros"].map(
                 (item) => (
                   <button
@@ -1190,7 +1201,7 @@ export default function AcessoV2Condominio() {
               )}
             </div>
 
-            {motivo === "Visitante" && (
+            {!chamadaVisualAtiva && motivo === "Visitante" && (
               <>
                 <label className="text-sm text-slate-300 font-bold">
                   Seu nome
@@ -1204,7 +1215,7 @@ export default function AcessoV2Condominio() {
               </>
             )}
 
-            {motivo === "Outros" && (
+            {!chamadaVisualAtiva && motivo === "Outros" && (
               <>
                 <label className="text-sm text-slate-300 font-bold">
                   Descreva o motivo
@@ -1222,7 +1233,7 @@ export default function AcessoV2Condominio() {
             <button
               onClick={chamarUnidade}
               disabled={enviando || !motivo}
-              className="w-full sticky bottom-2 z-40 bg-green-500 hover:bg-green-400 disabled:bg-gray-500 text-black text-xl font-black py-3 rounded-2xl shadow-2xl"
+              className={chamadaVisualAtiva ? "hidden" : "w-full sticky bottom-2 z-40 bg-green-500 hover:bg-green-400 disabled:bg-gray-500 text-black text-xl font-black py-3 rounded-2xl shadow-2xl"}
             >
               {enviando ? "Enviando..." : "🔔 CHAMAR"}
             </button>
@@ -1345,6 +1356,8 @@ export default function AcessoV2Condominio() {
     </main>
   );
 }
+
+
 
 
 
