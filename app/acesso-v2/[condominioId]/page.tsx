@@ -100,6 +100,7 @@ export default function AcessoV2Condominio() {
   const [outroMotivo, setOutroMotivo] = useState("");
   const [enviando, setEnviando] = useState(false);
   const [mensagem, setMensagem] = useState("");
+  const [chamadaEmAtendimento, setChamadaEmAtendimento] = useState(false);
   const [diagnostico, setDiagnostico] = useState("");
   const [gravandoAudio, setGravandoAudio] = useState(false);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
@@ -259,6 +260,10 @@ export default function AcessoV2Condominio() {
 
     const pararDeOuvir = onValue(referencia, (snapshot) => {
       const chamada = snapshot.val();
+
+      setChamadaEmAtendimento(
+        chamada?.status === "Em atendimento"
+      );
 
       if (!chamada) {
         setMensagensConversa([]);
@@ -1213,11 +1218,6 @@ export default function AcessoV2Condominio() {
               </>
             )}
 
-            {(motivo === "Entrega" || motivo === "Entrega de comida") && (
-              <div className="mb-4 bg-blue-500/10 border border-blue-500/40 rounded-2xl p-3 text-blue-300 text-sm font-bold text-center">
-                Para esse tipo de chamada, não precisa informar nome.
-              </div>
-            )}
 
             <button
               onClick={chamarUnidade}
@@ -1227,7 +1227,7 @@ export default function AcessoV2Condominio() {
               {enviando ? "Enviando..." : "🔔 CHAMAR"}
             </button>
 
-            {diagnostico && (
+            {diagnostico && diagnostico !== "✅ Chamada enviada." && (
               <div
                 className={
                   diagnostico.startsWith("❌")
@@ -1243,9 +1243,15 @@ export default function AcessoV2Condominio() {
 
             {mensagem && (
               <div className="mt-5 space-y-4">
-                <div className="bg-green-500/15 border border-green-500 rounded-2xl p-4 text-green-300 font-bold text-center">
-                  {mensagem}
-                </div>
+                {chamadaEmAtendimento ? (
+                  <div className="bg-blue-500/15 border border-blue-500 rounded-2xl p-3 text-blue-300 font-black text-center">
+                    🟢 EM ATENDIMENTO
+                  </div>
+                ) : (
+                  <div className="bg-green-500/15 border border-green-500 rounded-2xl p-4 text-green-300 font-bold text-center">
+                    {mensagem}
+                  </div>
+                )}
 
                 <button
                   onClick={cancelarChamada}
@@ -1339,5 +1345,9 @@ export default function AcessoV2Condominio() {
     </main>
   );
 }
+
+
+
+
 
 
