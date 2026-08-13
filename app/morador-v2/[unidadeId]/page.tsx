@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useRef, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
@@ -195,8 +195,8 @@ const nomeLocal =
   const caminhoLogs = `logs-v2/${slug}`;
   const caminhoAnalytics = `analytics-v2/${slug}`;
 
-  const TEMPO_AGUARDANDO = 2 * 60 * 1000;
-  const TEMPO_EM_ATENDIMENTO = 1 * 60 * 1000;
+  const TEMPO_AGUARDANDO = 5 * 60 * 1000;
+  const TEMPO_EM_ATENDIMENTO = 3 * 60 * 1000;
 
   const chamadaAtiva =
     nome !== "Nenhuma solicitação" &&
@@ -2235,3 +2235,4 @@ Mensagem: ${mensagemErro}`
     </main>
   );
 }
+
