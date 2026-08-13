@@ -9,6 +9,7 @@ import {
 import {
   onValue,
   ref,
+  update,
 } from "firebase/database";
 
 import {
@@ -288,6 +289,18 @@ export default function PainelUnidades({
     setFiltroLocal,
   ] = useState("todos");
 
+  const [
+    filtroStatusUnidade,
+    setFiltroStatusUnidade,
+  ] = useState("ativas");
+
+  const [
+    arquivandoUnidadeId,
+    setArquivandoUnidadeId,
+  ] = useState<string | null>(
+    null
+  );
+
   useEffect(() => {
     const parar =
       onValue(
@@ -365,6 +378,172 @@ export default function PainelUnidades({
       parar();
     };
   }, []);
+
+  async function arquivarUnidade(
+    unidade: UnidadeResumo
+  ) {
+    if (
+      arquivandoUnidadeId
+    ) {
+      return;
+    }
+
+    const confirmado =
+      window.confirm(
+        'Arquivar "' +
+          unidade.nome +
+          '" de "' +
+          unidade.localNome +
+          '"?\n\n' +
+          'A unidade saira da lista ativa.\n' +
+          'Pessoas, vinculos e historico serao preservados.'
+      );
+
+    if (
+      !confirmado
+    ) {
+      return;
+    }
+
+    try {
+      setArquivandoUnidadeId(
+        unidade.id
+      );
+
+      const agora =
+        Date.now();
+
+      const atualizacoes: Record<
+        string,
+        unknown
+      > = {};
+
+      const local =
+        locais[
+          unidade.localId
+        ];
+
+      // unidades-v2
+      if (
+        unidadesBanco[
+          unidade.id
+        ]
+      ) {
+        atualizacoes[
+          "unidades-v2/" +
+            unidade.id +
+            "/status"
+        ] = "arquivada";
+
+        atualizacoes[
+          "unidades-v2/" +
+            unidade.id +
+            "/ativo"
+        ] = false;
+
+        atualizacoes[
+          "unidades-v2/" +
+            unidade.id +
+            "/atualizadoEm"
+        ] = agora;
+      }
+
+      // Unidade diretamente dentro de locais-v2
+      if (
+        local?.unidades?.[
+          unidade.id
+        ]
+      ) {
+        atualizacoes[
+          "locais-v2/" +
+            unidade.localId +
+            "/unidades/" +
+            unidade.id +
+            "/status"
+        ] = "arquivada";
+
+        atualizacoes[
+          "locais-v2/" +
+            unidade.localId +
+            "/unidades/" +
+            unidade.id +
+            "/ativo"
+        ] = false;
+
+        atualizacoes[
+          "locais-v2/" +
+            unidade.localId +
+            "/unidades/" +
+            unidade.id +
+            "/atualizadoEm"
+        ] = agora;
+      }
+
+      // Unidade dentro de estruturas/unidades
+      if (
+        local?.estruturas
+          ?.unidades?.[
+            unidade.id
+          ]
+      ) {
+        atualizacoes[
+          "locais-v2/" +
+            unidade.localId +
+            "/estruturas/unidades/" +
+            unidade.id +
+            "/status"
+        ] = "arquivada";
+
+        atualizacoes[
+          "locais-v2/" +
+            unidade.localId +
+            "/estruturas/unidades/" +
+            unidade.id +
+            "/ativo"
+        ] = false;
+
+        atualizacoes[
+          "locais-v2/" +
+            unidade.localId +
+            "/estruturas/unidades/" +
+            unidade.id +
+            "/atualizadoEm"
+        ] = agora;
+      }
+
+      if (
+        Object.keys(
+          atualizacoes
+        ).length === 0
+      ) {
+        throw new Error(
+          "Registro oficial da unidade nao localizado."
+        );
+      }
+
+      await update(
+        ref(
+          db
+        ),
+        atualizacoes
+      );
+    } catch (
+      erro
+    ) {
+      console.error(
+        "Erro ao arquivar unidade:",
+        erro
+      );
+
+      window.alert(
+        "Nao foi possivel arquivar a unidade."
+      );
+    } finally {
+      setArquivandoUnidadeId(
+        null
+      );
+    }
+  }
 
   const unidades =
     useMemo<
@@ -684,6 +863,22 @@ export default function PainelUnidades({
               unidade.localId ===
                 filtroLocal;
 
+            const passaStatusUnidade =
+              filtroStatusUnidade ===
+                "todas" ||
+              (
+                filtroStatusUnidade ===
+                  "ativas" &&
+                unidade.status ===
+                  "ativa"
+              ) ||
+              (
+                filtroStatusUnidade ===
+                  "arquivadas" &&
+                unidade.status !==
+                  "ativa"
+              );
+
             const passaBusca =
               !termo ||
               [
@@ -701,6 +896,7 @@ export default function PainelUnidades({
 
             return (
               passaLocal &&
+              passaStatusUnidade &&
               passaBusca
             );
           }
@@ -709,6 +905,7 @@ export default function PainelUnidades({
       [
         unidades,
         filtroLocal,
+        filtroStatusUnidade,
         pesquisa,
       ]
     );
@@ -778,7 +975,7 @@ export default function PainelUnidades({
       </section>
 
       <section className="rounded-2xl border border-slate-800 bg-slate-900 p-4 md:p-5">
-        <div className="grid gap-3 lg:grid-cols-[1fr_260px]">
+        <div className="grid gap-3 lg:grid-cols-[1fr_240px_200px]">
           <input
             value={
               pesquisa
@@ -827,6 +1024,32 @@ export default function PainelUnidades({
                 </option>
               )
             )}
+          </select>
+
+          <select
+            value={
+              filtroStatusUnidade
+            }
+            onChange={(
+              event
+            ) =>
+              setFiltroStatusUnidade(
+                event.target.value
+              )
+            }
+            className="rounded-xl border border-slate-700 bg-slate-800 p-3 font-bold text-white outline-none focus:border-violet-500"
+          >
+            <option value="ativas">
+              Ativas
+            </option>
+
+            <option value="arquivadas">
+              Arquivadas / inativas
+            </option>
+
+            <option value="todas">
+              Todas
+            </option>
           </select>
         </div>
 
@@ -890,6 +1113,31 @@ export default function PainelUnidades({
                       unidade.status
                     }
                   </span>
+
+                  {unidade.status ===
+                    "ativa" && (
+                    <button
+                      type="button"
+                      title="Arquivar unidade"
+                      onClick={() =>
+                        void arquivarUnidade(
+                          unidade
+                        )
+                      }
+                      disabled={
+                        arquivandoUnidadeId ===
+                        unidade.id
+                      }
+                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-red-900 bg-red-950/30 text-sm text-red-300 transition hover:bg-red-950/60 disabled:opacity-40"
+                    >
+                      {
+                        arquivandoUnidadeId ===
+                        unidade.id
+                          ? "..."
+                          : "🗑"
+                      }
+                    </button>
+                  )}
                 </div>
 
                 <div className="mt-4 rounded-xl border border-slate-700 bg-slate-800 p-3">

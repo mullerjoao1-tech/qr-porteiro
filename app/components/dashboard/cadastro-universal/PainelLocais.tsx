@@ -9,6 +9,7 @@ import {
 import {
   onValue,
   ref,
+  update,
 } from "firebase/database";
 
 import {
@@ -257,6 +258,18 @@ export default function PainelLocais({
     setPesquisa,
   ] = useState("");
 
+  const [
+    filtroStatusLocal,
+    setFiltroStatusLocal,
+  ] = useState("ativos");
+
+  const [
+    arquivandoLocalId,
+    setArquivandoLocalId,
+  ] = useState<string | null>(
+    null
+  );
+
   useEffect(() => {
     const parar =
       onValue(
@@ -424,6 +437,70 @@ export default function PainelLocais({
       ]
     );
 
+  async function arquivarLocal(
+    local: LocalResumo
+  ) {
+    if (
+      arquivandoLocalId
+    ) {
+      return;
+    }
+
+    const confirmado =
+      window.confirm(
+        'Arquivar "' +
+          local.nome +
+          '"?\n\n' +
+          'O local saira da lista ativa.\n' +
+          'Unidades, pessoas, vinculos e historico serao preservados.'
+      );
+
+    if (
+      !confirmado
+    ) {
+      return;
+    }
+
+    try {
+      setArquivandoLocalId(
+        local.id
+      );
+
+      await update(
+        ref(
+          db,
+          "locais-v2/" +
+            local.id
+        ),
+        {
+          status:
+            "arquivado",
+
+          ativo:
+            false,
+
+          atualizadoEm:
+            Date.now(),
+        }
+      );
+    } catch (
+      erro
+    ) {
+      console.error(
+        "Erro ao arquivar local:",
+        erro
+      );
+
+      window.alert(
+        "Nao foi possivel arquivar o local."
+      );
+    } finally {
+      setArquivandoLocalId(
+        null
+      );
+    }
+  }
+
   const locaisFiltrados =
     useMemo(
       () => {
@@ -432,30 +509,53 @@ export default function PainelLocais({
             .trim()
             .toLowerCase();
 
-        if (!termo) {
-          return locaisResumo;
-        }
-
         return locaisResumo.filter(
           (
             local
-          ) =>
-            [
-              local.nome,
-              local.tipo,
-              local.cidade,
-              local.estado,
-              local.id,
-            ]
-              .join(" ")
-              .toLowerCase()
-              .includes(
-                termo
-              )
+          ) => {
+            const ativo =
+              local.status ===
+              "ativo";
+
+            const passaStatus =
+              filtroStatusLocal ===
+                "todos" ||
+              (
+                filtroStatusLocal ===
+                  "ativos" &&
+                ativo
+              ) ||
+              (
+                filtroStatusLocal ===
+                  "arquivados" &&
+                !ativo
+              );
+
+            const passaBusca =
+              !termo ||
+              [
+                local.nome,
+                local.tipo,
+                local.cidade,
+                local.estado,
+                local.id,
+              ]
+                .join(" ")
+                .toLowerCase()
+                .includes(
+                  termo
+                );
+
+            return (
+              passaStatus &&
+              passaBusca
+            );
+          }
         );
       },
       [
         locaisResumo,
+        filtroStatusLocal,
         pesquisa,
       ]
     );
@@ -535,16 +635,44 @@ export default function PainelLocais({
       </section>
 
       <section className="rounded-2xl border border-slate-800 bg-slate-900 p-4">
-        <input
-          value={pesquisa}
-          onChange={(event) =>
-            setPesquisa(
-              event.target.value
-            )
-          }
-          placeholder="Pesquisar local, tipo ou cidade..."
-          className="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-white outline-none placeholder:text-slate-500 focus:border-cyan-500"
-        />
+        <div className="grid gap-3 lg:grid-cols-[1fr_220px]">
+          <input
+            value={pesquisa}
+            onChange={(event) =>
+              setPesquisa(
+                event.target.value
+              )
+            }
+            placeholder="Pesquisar local, tipo ou cidade..."
+            className="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-white outline-none placeholder:text-slate-500 focus:border-cyan-500"
+          />
+
+          <select
+            value={
+              filtroStatusLocal
+            }
+            onChange={(
+              event
+            ) =>
+              setFiltroStatusLocal(
+                event.target.value
+              )
+            }
+            className="rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 font-bold text-white outline-none focus:border-cyan-500"
+          >
+            <option value="ativos">
+              Ativos
+            </option>
+
+            <option value="arquivados">
+              Arquivados / inativos
+            </option>
+
+            <option value="todos">
+              Todos
+            </option>
+          </select>
+        </div>
 
         <p className="mt-3 text-sm text-slate-400">
           {locaisFiltrados.length} local
@@ -571,9 +699,9 @@ export default function PainelLocais({
             ) => (
               <article
                 key={local.id}
-                className="rounded-3xl border border-slate-700 bg-slate-900 p-5"
+                className="relative rounded-3xl border border-slate-700 bg-slate-900 p-5"
               >
-                <div className="flex items-start justify-between gap-4">
+                <div className="pr-32">
                   <div>
                     <p className="text-xs font-black uppercase tracking-wider text-cyan-400">
                       {local.tipo}
@@ -596,6 +724,7 @@ export default function PainelLocais({
                     )}
                   </div>
 
+                  <div className="absolute right-5 top-5 flex items-start gap-2">
                   <span
                     className={`rounded-full px-3 py-1 text-[10px] font-black uppercase ${
                       local.status ===
@@ -606,6 +735,32 @@ export default function PainelLocais({
                   >
                     {local.status}
                   </span>
+
+                  {local.status ===
+                    "ativo" && (
+                    <button
+                      type="button"
+                      title="Arquivar local"
+                      onClick={() =>
+                        void arquivarLocal(
+                          local
+                        )
+                      }
+                      disabled={
+                        arquivandoLocalId ===
+                        local.id
+                      }
+                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-red-900 bg-red-950/30 text-sm text-red-300 transition hover:bg-red-950/60 disabled:opacity-40"
+                    >
+                      {
+                        arquivandoLocalId ===
+                        local.id
+                          ? "..."
+                          : "🗑"
+                      }
+                    </button>
+                  )}
+                  </div>
                 </div>
 
                 <div className="mt-5 grid grid-cols-2 gap-3">
