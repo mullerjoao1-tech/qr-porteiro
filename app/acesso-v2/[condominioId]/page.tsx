@@ -112,7 +112,6 @@ export default function AcessoV2Condominio() {
 
   const chamadaAtivaRef = useRef(false);
   const chamadaFoiEnviadaRef = useRef(false);
-  const criandoChamadaRef = useRef(false);
   const ultimoPopupRef = useRef("");
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -261,12 +260,6 @@ export default function AcessoV2Condominio() {
       const chamada = snapshot.val();
 
       if (!chamada) {
-        if (
-          criandoChamadaRef.current
-        ) {
-          return;
-        }
-
         setMensagensConversa([]);
 
         if (chamadaAtivaRef.current && chamadaFoiEnviadaRef.current) {
@@ -443,7 +436,6 @@ export default function AcessoV2Condominio() {
       setMensagensConversa([]);
 
       ultimoPopupRef.current = "";
-      criandoChamadaRef.current = true;
       chamadaFoiEnviadaRef.current = true;
       chamadaAtivaRef.current = true;
       setDiagnostico("Gravando chamada...");
@@ -466,8 +458,6 @@ export default function AcessoV2Condominio() {
           enviadoEm: null,
         }
       );
-
-      criandoChamadaRef.current = false;
 
       setEnviando(false);
       setDiagnostico("✅ Chamada enviada.");
@@ -519,7 +509,6 @@ export default function AcessoV2Condominio() {
 
       setDiagnostico(`❌ ERRO: ${detalhe}`);
       setMensagem("");
-      criandoChamadaRef.current = false;
       chamadaAtivaRef.current = false;
       chamadaFoiEnviadaRef.current = false;
       setEnviando(false);
@@ -1031,8 +1020,6 @@ export default function AcessoV2Condominio() {
 
         {unidadeSelecionada && (
           <section className="bg-slate-900 border border-green-500 rounded-3xl p-5">
-            {!mensagem && (
-              <>
             <button
               onClick={limparSelecao}
               className="mb-4 text-sm text-slate-300 underline"
@@ -1119,10 +1106,8 @@ export default function AcessoV2Condominio() {
             >
               {enviando ? "Enviando..." : "🔔 CHAMAR"}
             </button>
-              </>
-            )}
 
-            {diagnostico && !mensagem && (
+            {diagnostico && (
               <div
                 className={
                   diagnostico.startsWith("❌")
@@ -1137,34 +1122,16 @@ export default function AcessoV2Condominio() {
             )}
 
             {mensagem && (
-              <div className="space-y-3">
-                <div className="rounded-2xl border border-green-500 bg-green-500/10 p-4">
-                  <div className="flex items-start gap-3">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-green-500 text-xl">
-                      {"\uD83D\uDD14"}
-                    </div>
-
-                    <div className="min-w-0 flex-1">
-                      <p className="text-[11px] font-black uppercase tracking-wider text-green-400">
-                        CHAMADA EM ANDAMENTO
-                      </p>
-
-                      <p className="mt-1 text-lg font-black text-white">
-                        {unidadeSelecionada.nome}
-                      </p>
-
-                      <p className="mt-1 text-sm font-bold text-green-300">
-                        {"Aguarde o atendimento do respons\u00E1vel."}
-                      </p>
-                    </div>
-                  </div>
+              <div className="mt-5 space-y-4">
+                <div className="bg-green-500/15 border border-green-500 rounded-2xl p-4 text-green-300 font-bold text-center">
+                  {mensagem}
                 </div>
 
                 <button
                   onClick={cancelarChamada}
-                  className="w-full rounded-xl border border-red-700 bg-red-950/40 px-4 py-3 text-sm font-black text-red-300 transition hover:bg-red-900/50"
+                  className="w-full bg-red-600 hover:bg-red-500 text-white text-xl font-black py-4 rounded-2xl"
                 >
-                  {"\u274C CANCELAR CHAMADA"}
+                  ❌ CANCELAR CHAMADA
                 </button>
               </div>
             )}
@@ -1233,7 +1200,6 @@ export default function AcessoV2Condominio() {
               </div>
             )}
 
-            {mensagem && (
             <div className="mt-4 space-y-3">
               <button
                 onClick={gravandoAudio ? pararGravacao : iniciarGravacao}
@@ -1271,7 +1237,6 @@ export default function AcessoV2Condominio() {
                 </div>
               )}
             </div>
-            )}
           </section>
         )}
       </div>
