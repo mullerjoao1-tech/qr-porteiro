@@ -1194,9 +1194,13 @@ async function naoPossoAtender() {
         );
       }
 
-      alert(
-        `Chamada encaminhada para ${resultado.responsavel.nome}.`
+      setAvisoAuto(
+        `✓ Chamada encaminhada para ${resultado.responsavel.nome}.`
       );
+
+      setTimeout(() => {
+        setAvisoAuto("");
+      }, 2000);
 
       return;
     }
@@ -2822,6 +2826,7 @@ Mensagem: ${mensagemErro}`
     </main>
   );
 }
+
 
 
 
