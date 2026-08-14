@@ -822,6 +822,31 @@ export default function AcessoV2Condominio() {
     ultimoPopupRef.current = "";
   }
 
+  useEffect(() => {
+    if (
+      popupTipo !== "encerrado" ||
+      !popupTexto
+    ) {
+      return;
+    }
+
+    const temporizador =
+      setTimeout(() => {
+        setPopupTexto("");
+        setPopupAudioBase64("");
+        setPopupAudioFoiOuvido(false);
+      }, 2000);
+
+    return () => {
+      clearTimeout(
+        temporizador
+      );
+    };
+  }, [
+    popupTipo,
+    popupTexto,
+  ]);
+
   return (
     <main className="min-h-screen bg-slate-950 text-white p-3 flex justify-center">
       {popupTexto && (
@@ -1402,6 +1427,7 @@ export default function AcessoV2Condominio() {
     </main>
   );
 }
+
 
 
 
