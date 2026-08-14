@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+﻿import { NextResponse } from "next/server";
 import {
   cert,
   getApp,
@@ -467,58 +467,228 @@ export async function POST(request: Request) {
       );
     }
 
-    const tokenSnapshot = await db
-      .ref(`configuracoes-v2/tokensMorador/${unidadeId}`)
-      .get();
-
-    const registroToken = tokenSnapshot.val() as RegistroTokenMorador | null;
-    const tokenNormalizado = registroToken
-      ? normalizarRegistroToken(unidadeId, registroToken)
-      : null;
-    const token = tokenNormalizado?.token || "";
-
-    if (!token) {
-      return NextResponse.json(
-        { ok: false, erro: "Token do morador V2 não encontrado" },
-        { status: 400 }
-      );
-    }
-
     const chamadaSnapshot = await db
       .ref(`unidades-v2/${unidadeId}/chamada`)
       .get();
 
-    const chamada = chamadaSnapshot.val();
+    const chamada =
+      chamadaSnapshot.val() || {};
 
-    const nome = chamada?.nome || "Visitante";
-    const motivo = chamada?.motivo || "Não informado";
+    const responsavelAtualUid =
+      String(
+        chamada.responsavelAtualUid ||
+        chamada.responsavelAtualId ||
+        ""
+      ).trim();
 
-    const resposta = await messaging.send({
-      token,
-     data: {
-  unidadeId: String(unidadeId),
-  nome: String(nome),
-  motivo: String(motivo),
-  tipo: "chamada-v2",
-  titulo: `🔔 ${nome} está chamando`,
-  mensagem: `Motivo: ${motivo}`,
-  url: `${urlBase}/morador-v2/${encodeURIComponent(unidadeId)}`,
-},
-      webpush: {
-          headers: {
-            Urgency: "high",
-            TTL: "86400",
-          },
-          fcmOptions: {
-          link: `${urlBase}/morador-v2/${encodeURIComponent(unidadeId)}`,
+    const nome =
+      chamada?.nome ||
+      "Visitante";
+
+    const motivo =
+      chamada?.motivo ||
+      "Não informado";
+
+    const tokens =
+      new Set<string>();
+
+    if (responsavelAtualUid) {
+      const dispositivosSnapshot =
+        await db
+          .ref(
+            `configuracoes-v2/tokensUsuarios/${responsavelAtualUid}`
+          )
+          .get();
+
+      const dispositivos =
+        dispositivosSnapshot.val() as
+          Record<
+            string,
+            {
+              token?: string;
+              ativo?: boolean;
+            }
+          > | null;
+
+      if (dispositivos) {
+        for (
+          const dispositivo
+          of Object.values(dispositivos)
+        ) {
+          const token =
+            String(
+              dispositivo?.token ||
+              ""
+            ).trim();
+
+          if (
+            token &&
+            dispositivo?.ativo !== false
+          ) {
+            tokens.add(
+              token
+            );
+          }
+        }
+      }
+    }
+
+    let usouFallbackLegado =
+      false;
+
+    if (tokens.size === 0) {
+      const tokenSnapshot =
+        await db
+          .ref(
+            `configuracoes-v2/tokensMorador/${unidadeId}`
+          )
+          .get();
+
+      const registroToken =
+        tokenSnapshot.val() as
+          RegistroTokenMorador | null;
+
+      const tokenNormalizado =
+        registroToken
+          ? normalizarRegistroToken(
+              unidadeId,
+              registroToken
+            )
+          : null;
+
+      const tokenLegado =
+        tokenNormalizado?.token ||
+        "";
+
+      if (tokenLegado) {
+        tokens.add(
+          tokenLegado
+        );
+
+        usouFallbackLegado =
+          true;
+      }
+    }
+
+    if (tokens.size === 0) {
+      return NextResponse.json(
+        {
+          ok: false,
+          erro:
+            "Nenhum token encontrado para o responsável atual.",
+          unidadeId,
+          responsavelAtualUid:
+            responsavelAtualUid ||
+            null,
         },
-      },
-    });
+        {
+          status: 400,
+        }
+      );
+    }
+
+    const resultados = [];
+
+    for (
+      const token
+      of Array.from(tokens)
+    ) {
+      try {
+        const resposta =
+          await messaging.send({
+            token,
+
+            data: {
+              unidadeId:
+                String(unidadeId),
+
+              responsavelAtualUid:
+                String(
+                  responsavelAtualUid
+                ),
+
+              nome:
+                String(nome),
+
+              motivo:
+                String(motivo),
+
+              tipo:
+                "chamada-v2",
+
+              titulo:
+                `🔔 ${nome} está chamando`,
+
+              mensagem:
+                `Motivo: ${motivo}`,
+
+              url:
+                `${urlBase}/morador-v2/${encodeURIComponent(
+                  unidadeId
+                )}`,
+            },
+
+            webpush: {
+              headers: {
+                Urgency: "high",
+                TTL: "86400",
+              },
+
+              fcmOptions: {
+                link:
+                  `${urlBase}/morador-v2/${encodeURIComponent(
+                    unidadeId
+                  )}`,
+              },
+            },
+          });
+
+        resultados.push({
+          enviado: true,
+          resposta,
+        });
+      } catch (
+        erroEnvio
+      ) {
+        resultados.push({
+          enviado: false,
+          erro:
+            detalharErroPush(
+              erroEnvio
+            ),
+        });
+      }
+    }
+
+    const enviados =
+      resultados.filter(
+        (
+          resultado
+        ) =>
+          resultado.enviado
+      ).length;
 
     return NextResponse.json({
-      ok: true,
-      mensagem: "Notificação V2 enviada",
-      resposta,
+      ok:
+        enviados > 0,
+
+      mensagem:
+        "Notificação V2 processada",
+
+      unidadeId,
+
+      responsavelAtualUid:
+        responsavelAtualUid ||
+        null,
+
+      totalTokens:
+        tokens.size,
+
+      enviados,
+
+      usouFallbackLegado,
+
+      resultados,
     });
   } catch (erro) {
     console.error("ERRO PUSH V2:", erro);

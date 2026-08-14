@@ -1558,13 +1558,85 @@ async function naoPossoAtender() {
           "O Firebase não retornou um token de notificação."
         );
       }
-const condominioId = identificarCondominioPeloSlug(slug);
-      await set(ref(db, `configuracoes-v2/tokensMorador/${slug}`), {
-        token,
-        unidadeId: slug,
-        condominioId,
-        atualizadoEm: Date.now(),
-      });
+      const condominioId =
+        identificarCondominioPeloSlug(
+          slug
+        );
+
+      /*
+       * Compatibilidade com Tulipas e fluxos legados.
+       * Mantemos temporariamente o token antigo por unidade.
+       */
+      await set(
+        ref(
+          db,
+          `configuracoes-v2/tokensMorador/${slug}`
+        ),
+        {
+          token,
+          unidadeId: slug,
+          condominioId,
+          atualizadoEm: Date.now(),
+        }
+      );
+
+      /*
+       * Token individual do QR Core.
+       *
+       * Cada usuario pode possuir varios dispositivos.
+       * O identificador fica salvo neste navegador/PWA
+       * e nao depende da unidade.
+       */
+      if (usuario?.uid) {
+        const chaveDeviceId =
+          "qr-core:device-id";
+
+        let deviceId =
+          window.localStorage.getItem(
+            chaveDeviceId
+          ) || "";
+
+        if (!deviceId) {
+          deviceId =
+            typeof crypto !== "undefined" &&
+            typeof crypto.randomUUID ===
+              "function"
+              ? crypto.randomUUID()
+              : `device-${Date.now()}-${Math.random()
+                  .toString(36)
+                  .slice(2)}`;
+
+          window.localStorage.setItem(
+            chaveDeviceId,
+            deviceId
+          );
+        }
+
+        await set(
+          ref(
+            db,
+            `configuracoes-v2/tokensUsuarios/${usuario.uid}/${deviceId}`
+          ),
+          {
+            token,
+            uid:
+              usuario.uid,
+
+            deviceId,
+
+            unidadeId:
+              slug,
+
+            condominioId,
+
+            ativo:
+              true,
+
+            atualizadoEm:
+              Date.now(),
+          }
+        );
+      }
 
       await registrarLog(
         "push_token_salvo",
@@ -2594,6 +2666,7 @@ Mensagem: ${mensagemErro}`
     </main>
   );
 }
+
 
 
 
