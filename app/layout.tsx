@@ -1,10 +1,12 @@
-﻿import type { Metadata } from "next";
+import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
 import { AuthProvider } from "@/app/context/AuthContext";
 import { PerfilAtivoProvider } from "@/app/context/PerfilAtivoContext";
 import { EventoProvider } from "@/app/components/core/eventos/EventoProvider";
+import ReceptorChamadasMorador from "@/app/components/core/morador/ReceptorChamadasMorador";
+
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -39,16 +41,15 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col">
         <AuthProvider>
-  <PerfilAtivoProvider>
-    <EventoProvider>
-      {children}
-    </EventoProvider>
-  </PerfilAtivoProvider>
-</AuthProvider>
+          <PerfilAtivoProvider>
+            <EventoProvider>
+              <ReceptorChamadasMorador />
+
+              {children}
+            </EventoProvider>
+          </PerfilAtivoProvider>
+        </AuthProvider>
       </body>
     </html>
   );
 }
-
-
-

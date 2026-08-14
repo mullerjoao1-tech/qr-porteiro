@@ -1,8 +1,6 @@
-﻿import type {
+import type {
   ReactNode,
 } from "react";
-
-import ReceptorChamadasMorador from "@/app/components/core/morador/ReceptorChamadasMorador";
 
 export default function LayoutMorador({
   children,
@@ -12,8 +10,6 @@ export default function LayoutMorador({
 }) {
   return (
     <>
-      <ReceptorChamadasMorador />
-
       {children}
     </>
   );
