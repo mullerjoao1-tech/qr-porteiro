@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -819,6 +819,80 @@ function PaginaStudio() {
     vinculoSelecionadoId ===
     null;
 
+  /*
+   * Entrada direta do morador.
+   *
+   * Quando o PWA abre pela raiz "/", o AuthContext restaura
+   * o último vínculo salvo. Se esse vínculo pertence a um
+   * morador/residente, não exibimos novamente a Carteira QR Core:
+   * seguimos direto para o Painel do Morador.
+   */
+  useEffect(() => {
+    if (
+      !usuario ||
+      !vinculoSelecionadoId ||
+      !vinculoSelecionado
+    ) {
+      return;
+    }
+
+    const perfilPrincipal = (
+      vinculoSelecionado.perfilPrincipal ||
+      ""
+    )
+      .trim()
+      .toLowerCase()
+      .replaceAll("-", "_");
+
+    const perfisAtivos =
+      Object.entries(
+        vinculoSelecionado.perfis ?? {}
+      )
+        .filter(
+          ([, ativo]) =>
+            ativo === true
+        )
+        .map(
+          ([perfil]) =>
+            perfil
+              .trim()
+              .toLowerCase()
+              .replaceAll("-", "_")
+        );
+
+    const perfisMorador =
+      new Set([
+        "morador",
+        "proprietario",
+        "inquilino",
+        "residente",
+      ]);
+
+    const pertenceAoPainelMorador =
+      perfisMorador.has(
+        perfilPrincipal
+      ) ||
+      perfisAtivos.some(
+        (perfil) =>
+          perfisMorador.has(
+            perfil
+          )
+      );
+
+    if (!pertenceAoPainelMorador) {
+      return;
+    }
+
+    router.replace(
+      "/dashboard/morador"
+    );
+  }, [
+    usuario,
+    vinculoSelecionadoId,
+    vinculoSelecionado,
+    router,
+  ]);
+
   const possuiPerfilSindico = useMemo(
     () =>
       vinculosAtivos.some(([, vinculo]) => {
@@ -1389,3 +1463,4 @@ export default function Home() {
     <PaginaStudio />
   );
 }
+
