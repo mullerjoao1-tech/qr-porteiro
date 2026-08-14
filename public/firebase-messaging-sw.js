@@ -1,4 +1,4 @@
-﻿/* QR Acesso Studio Ã¢â‚¬â€ Firebase Cloud Messaging Service Worker */
+/* QR Acesso Studio Ã¢â‚¬â€ Firebase Cloud Messaging Service Worker */
 
 importScripts(
   "https://www.gstatic.com/firebasejs/12.14.0/firebase-app-compat.js"
@@ -67,7 +67,7 @@ messaging.onBackgroundMessage((payload) => {
     tag:
   dados.tipo === "comunicado-v2"
     ? `comunicado-${comunicadoId || Date.now()}-${Date.now()}`
-    : `chamada-${unidadeId || "sem-unidade"}-${Date.now()}`,
+    : `chamada-${unidadeId || "sem-unidade"}`,
     renotify: true,
     requireInteraction: dados.tipo === "chamada-v2",
 
