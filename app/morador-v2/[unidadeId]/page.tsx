@@ -6,6 +6,7 @@ import { getToken } from "firebase/messaging";
 import { ref, onValue, update, remove, push, set, get } from "firebase/database";
 import { db, messagingPromise } from "../../services/firebase";
 import { useLocalAtual } from "@/app/hooks/useLocalAtual";
+import { useAuth } from "@/app/context/AuthContext";
 import {
   listarResponsaveisDaUnidade,
   recusarEEncaminhar,
@@ -113,6 +114,11 @@ function textoTipoComunicado(tipo: ComunicadoMorador["tipo"]) {
 export default function MoradorV2() {
   const params = useParams();
   const searchParams = useSearchParams();
+
+  const {
+    usuario,
+  } = useAuth();
+
   const comunicadoIdPeloLink = searchParams.get("comunicado") || "";
 
   const slug = String(
@@ -480,6 +486,30 @@ const nomeLocal =
       ultimaChamadaAtivaRef.current = true;
       ultimaChamadaDadosRef.current = dados;
 
+      const responsavelAtualUid =
+        String(
+          dados.responsavelAtualUid ||
+          dados.responsavelAtualId ||
+          ""
+        );
+
+      /*
+       * Compatibilidade:
+       * chamadas antigas sem responsável individual
+       * continuam funcionando como antes.
+       *
+       * Chamadas novas com responsável definido
+       * pertencem somente ao usuário selecionado
+       * pelo MotorEscalonamento.
+       */
+      const chamadaDestinadaAoUsuario =
+        !responsavelAtualUid ||
+        (
+          Boolean(usuario?.uid) &&
+          responsavelAtualUid ===
+            usuario?.uid
+        );
+
       setNome(dados.nome || "Nenhuma solicitação");
       setMotivo(dados.motivo || "Aguardando visitante");
       setStatus(dados.status || "Sem chamado ativo");
@@ -521,7 +551,11 @@ const nomeLocal =
       const audioVisitanteAtual = ultimoAudioVisitante?.audioBase64 || dados.audioBase64 || "";
       setAudioVisitante(audioVisitanteAtual);
 
-      if (audioVisitanteAtual && ultimoAudioPopupRef.current !== audioVisitanteAtual) {
+      if (
+        chamadaDestinadaAoUsuario &&
+        audioVisitanteAtual &&
+        ultimoAudioPopupRef.current !== audioVisitanteAtual
+      ) {
         ultimoAudioPopupRef.current = audioVisitanteAtual;
 
         setAudioPopup({
@@ -543,6 +577,7 @@ const nomeLocal =
       }
 
       const deveTocar =
+        chamadaDestinadaAoUsuario &&
         dados.notificar === true &&
         dados.status === "Aguardando atendimento" &&
         !toqueSilenciadoPorAudioRef.current;
@@ -565,6 +600,10 @@ const nomeLocal =
         }
       } else {
         pararToqueContinuo();
+
+        if (!chamadaDestinadaAoUsuario) {
+          setPopupAtendimentoAberto(false);
+        }
       }
 
       programarFinalizacaoAutomatica(dados);
@@ -575,7 +614,10 @@ const nomeLocal =
       pararToqueContinuo();
       pararDeOuvir();
     };
-  }, [caminhoFirebase]);
+  }, [
+    caminhoFirebase,
+    usuario?.uid,
+  ]);
 
   async function capturarFotoCamera() {
     setCapturandoCamera(true);
@@ -813,6 +855,25 @@ const nomeLocal =
         ""
       );
 
+    const responsavelAtualUid =
+      String(
+        chamadaAtual.responsavelAtualUid ||
+        responsavelAtualId ||
+        ""
+      );
+
+    if (
+      responsavelAtualUid &&
+      responsavelAtualUid !==
+        usuario?.uid
+    ) {
+      alert(
+        "Esta chamada esta destinada a outro responsavel."
+      );
+
+      return;
+    }
+
     /*
      * Enquanto ainda não houver responsável individual
      * definido na chamada, preserva o funcionamento atual.
@@ -929,6 +990,25 @@ async function naoPossoAtender() {
         chamadaAtual.responsavelAtualId ||
         ""
       );
+
+    const responsavelAtualUid =
+      String(
+        chamadaAtual.responsavelAtualUid ||
+        responsavelAtualId ||
+        ""
+      );
+
+    if (
+      responsavelAtualUid &&
+      responsavelAtualUid !==
+        usuario?.uid
+    ) {
+      alert(
+        "Esta chamada esta destinada a outro responsavel."
+      );
+
+      return;
+    }
 
     if (!responsavelAtualId) {
       alert(
@@ -2514,6 +2594,7 @@ Mensagem: ${mensagemErro}`
     </main>
   );
 }
+
 
 
 
