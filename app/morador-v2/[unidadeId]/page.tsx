@@ -157,6 +157,15 @@ export default function MoradorV2() {
   const [popupAudioMoradorAberto, setPopupAudioMoradorAberto] = useState(false);
   const [respostasRapidasAbertas, setRespostasRapidasAbertas] = useState(true);
   const [popupAtendimentoAberto, setPopupAtendimentoAberto] = useState(false);
+
+  // Indica se a chamada atual pertence ao usuario autenticado.
+  // Quando o MotorEscalonamento encaminha para outro responsavel,
+  // esta tela deixa imediatamente de considerar a chamada como sua.
+  const [
+    chamadaDestinadaAoUsuarioAtual,
+    setChamadaDestinadaAoUsuarioAtual,
+  ] = useState(true);
+
   const [mostrarHistorico, setMostrarHistorico] = useState(false);
   const [mostrarCameraGrande, setMostrarCameraGrande] = useState(false);
   const [audioPopup, setAudioPopup] = useState<{
@@ -221,13 +230,23 @@ const nomeLocal =
   const TEMPO_EM_ATENDIMENTO = 3 * 60 * 1000;
 
   const chamadaAtiva =
+    chamadaDestinadaAoUsuarioAtual &&
     nome !== "Nenhuma solicitação" &&
     status !== "Sem chamado ativo" &&
     status !== "Encerrado";
 
-  const aguardandoAtendimento = status === "Aguardando atendimento";
-  const atendimentoEmAndamento = status === "Em atendimento";
-  const mostrarPopupChamada = chamadaAtiva && popupAtendimentoAberto && aguardandoAtendimento;
+  const aguardandoAtendimento =
+    chamadaDestinadaAoUsuarioAtual &&
+    status === "Aguardando atendimento";
+
+  const atendimentoEmAndamento =
+    chamadaDestinadaAoUsuarioAtual &&
+    status === "Em atendimento";
+
+  const mostrarPopupChamada =
+    chamadaAtiva &&
+    popupAtendimentoAberto &&
+    aguardandoAtendimento;
 
   async function registrarLog(tipo: string, detalhes: string) {
     try {
@@ -509,6 +528,10 @@ const nomeLocal =
           responsavelAtualUid ===
             usuario?.uid
         );
+
+      setChamadaDestinadaAoUsuarioAtual(
+        chamadaDestinadaAoUsuario
+      );
 
       setNome(dados.nome || "Nenhuma solicitação");
       setMotivo(dados.motivo || "Aguardando visitante");
@@ -2799,6 +2822,7 @@ Mensagem: ${mensagemErro}`
     </main>
   );
 }
+
 
 
 
