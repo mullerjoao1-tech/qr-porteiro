@@ -606,7 +606,14 @@ const nomeLocal =
         }
       }
 
-      programarFinalizacaoAutomatica(dados);
+      if (chamadaDestinadaAoUsuario) {
+        programarFinalizacaoAutomatica(
+          dados
+        );
+      } else {
+        limparFinalizacaoAutomatica();
+        setAvisoAuto("");
+      }
     });
 
     return () => {
@@ -704,7 +711,17 @@ const nomeLocal =
     const agora = Date.now();
 
     let tempoLimite = TEMPO_AGUARDANDO;
-    let dataBase = dados.criadoEm;
+
+    /*
+     * Enquanto estiver aguardando, cada responsavel recebe
+     * sua propria janela de atendimento.
+     *
+     * escalonamentoAtualizadoEm muda quando a prioridade
+     * passa para o proximo responsavel.
+     */
+    let dataBase =
+      dados.escalonamentoAtualizadoEm ||
+      dados.criadoEm;
 
     if (dados.status === "Em atendimento") {
       tempoLimite = TEMPO_EM_ATENDIMENTO;
@@ -736,7 +753,80 @@ const nomeLocal =
     pararToqueContinuo();
     limparFinalizacaoAutomatica();
 
-    const timeoutAguardando = status === "Aguardando atendimento";
+    /*
+     * Protecao contra timer antigo.
+     *
+     * Antes de encerrar qualquer chamada, confirmamos que:
+     * - ela ainda existe;
+     * - ainda esta aguardando/em atendimento;
+     * - ainda pertence ao usuario deste aparelho;
+     * - continua sendo a mesma chamada observada.
+     */
+    try {
+      const snapshotAtual =
+        await get(
+          ref(
+            db,
+            caminhoFirebase
+          )
+        );
+
+      const chamadaAtual =
+        snapshotAtual.val();
+
+      if (!chamadaAtual) {
+        return;
+      }
+
+      const responsavelAtualUid =
+        String(
+          chamadaAtual.responsavelAtualUid ||
+          chamadaAtual.responsavelAtualId ||
+          ""
+        );
+
+      if (
+        responsavelAtualUid &&
+        responsavelAtualUid !==
+          usuario?.uid
+      ) {
+        return;
+      }
+
+      if (
+        chamadaAtual.status !==
+          "Aguardando atendimento" &&
+        chamadaAtual.status !==
+          "Em atendimento"
+      ) {
+        return;
+      }
+
+      const chamadaObservada =
+        ultimaChamadaDadosRef.current;
+
+      if (
+        chamadaObservada?.criadoEm &&
+        chamadaAtual.criadoEm !==
+          chamadaObservada.criadoEm
+      ) {
+        return;
+      }
+    } catch (erro) {
+      console.error(
+        "Erro ao validar chamada antes do timeout:",
+        erro
+      );
+
+      /*
+       * Em caso de duvida, nao apagamos uma chamada.
+       */
+      return;
+    }
+
+    const timeoutAguardando =
+      status ===
+      "Aguardando atendimento";
 
     ultimaChamadaAtivaRef.current = false;
     setPopupAtendimentoAberto(false);
@@ -2666,6 +2756,7 @@ Mensagem: ${mensagemErro}`
     </main>
   );
 }
+
 
 
 
