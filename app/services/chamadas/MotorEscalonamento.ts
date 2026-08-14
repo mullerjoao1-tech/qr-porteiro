@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import {
   get,
@@ -575,6 +575,109 @@ export async function encaminharParaPrimeiroDisponivel(
   return resultado;
 }
 
+export async function iniciarEscalonamento(
+  unidadeId: string,
+  caminhoChamada: string
+): Promise<ResultadoEncaminhamento> {
+  const resultado = await obterProximoResponsavel(
+    unidadeId,
+    []
+  );
+
+  if (
+    !resultado.sucesso ||
+    !resultado.responsavel
+  ) {
+    await update(
+      ref(
+        db,
+        caminhoChamada
+      ),
+      {
+        responsaveisIgnorados: [],
+        responsavelAtualId: null,
+        responsavelAtualUid: null,
+        responsavelAtualNome: null,
+        responsavelAtualPrioridade: null,
+        aguardandoResponsavel: true,
+        motivoSemResponsavel:
+          resultado.motivo ||
+          "Nenhum responsável disponível.",
+        escalonamentoAtualizadoEm:
+          Date.now(),
+      }
+    );
+
+    await registrarHistoricoEscalonamento(
+      caminhoChamada,
+      {
+        tipo: "sem-responsavel",
+        detalhes:
+          resultado.motivo ||
+          "Nenhum responsável disponível.",
+      }
+    );
+
+    return resultado;
+  }
+
+  const responsavel =
+    resultado.responsavel;
+
+  await update(
+    ref(
+      db,
+      caminhoChamada
+    ),
+    {
+      responsaveisIgnorados: [],
+
+      responsavelAtualId:
+        responsavel.id,
+
+      responsavelAtualUid:
+        responsavel.uid ||
+        null,
+
+      responsavelAtualNome:
+        responsavel.nome,
+
+      responsavelAtualPrioridade:
+        responsavel.ordemAtendimento,
+
+      aguardandoResponsavel:
+        false,
+
+      encaminhamentoAutomatico:
+        true,
+
+      escalonamentoAtualizadoEm:
+        Date.now(),
+    }
+  );
+
+  await registrarHistoricoEscalonamento(
+    caminhoChamada,
+    {
+      tipo: "encaminhada",
+
+      responsavelId:
+        responsavel.id,
+
+      responsavelNome:
+        responsavel.nome,
+
+      prioridade:
+        responsavel.ordemAtendimento,
+
+      detalhes:
+        "Chamada iniciada pelo responsável de maior prioridade disponível.",
+    }
+  );
+
+  return resultado;
+}
+
 export async function recusarEEncaminhar(
   unidadeId:
     string,
@@ -817,3 +920,4 @@ export async function registrarAtendimentoDoResponsavel(
     }
   );
 }
+

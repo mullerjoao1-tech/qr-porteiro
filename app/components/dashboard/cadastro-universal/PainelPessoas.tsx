@@ -17,6 +17,7 @@ import {
 } from "../../../services/firebase";
 
 import NovoVinculoModal from "./NovoVinculoModal";
+import ResponsaveisUnidade from "../ResponsaveisUnidade";
 
 type PerfilUsuario = {
   [perfil: string]:
@@ -1754,12 +1755,24 @@ A exclusão removerá a pessoa de usuarios-v2.`
                                     );
 
                                 return (
-                                  <p
+                                  <div
                                     key={unidadeId}
-                                    className="mt-1 text-xs font-bold text-cyan-300"
+                                    className="mt-3"
                                   >
-                                    {nomeUnidade}
-                                  </p>
+                                    <p className="text-xs font-bold text-cyan-300">
+                                      {nomeUnidade}
+                                    </p>
+
+                                    <div className="mt-3 rounded-xl border border-slate-700 bg-slate-950/70 p-3">
+                                      <p className="mb-3 text-[10px] font-black uppercase tracking-wider text-blue-300">
+                                        📞 Responsáveis pelas chamadas
+                                      </p>
+
+                                      <ResponsaveisUnidade
+                                        unidadeId={unidadeId}
+                                      />
+                                    </div>
+                                  </div>
                                 );
                               }
                             )}
@@ -1809,6 +1822,7 @@ A exclusão removerá a pessoa de usuarios-v2.`
     </div>
   );
 }
+
 
 
 

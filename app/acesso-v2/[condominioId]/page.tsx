@@ -1,5 +1,9 @@
 ﻿"use client";
 
+import {
+  iniciarEscalonamento,
+} from "@/app/services/chamadas/MotorEscalonamento";
+
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import { ref, onValue, update, remove, set, get } from "firebase/database";
@@ -472,6 +476,11 @@ export default function AcessoV2Condominio() {
         }
       );
 
+      await iniciarEscalonamento(
+        unidadeIdAtual,
+        `unidades-v2/${unidadeIdAtual}/chamada`
+      );
+
       setEnviando(false);
       setDiagnostico("✅ Chamada enviada.");
       setMensagem(
@@ -659,6 +668,11 @@ export default function AcessoV2Condominio() {
           mensagemMorador: null,
           visualizadoPeloVisitante: false,
         });
+
+        await iniciarEscalonamento(
+          unidadeSelecionada.id,
+          `unidades-v2/${unidadeSelecionada.id}/chamada`
+        );
       }
 
       await set(
@@ -1382,6 +1396,7 @@ export default function AcessoV2Condominio() {
     </main>
   );
 }
+
 
 
 

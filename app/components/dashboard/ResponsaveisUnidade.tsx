@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import {
   useEffect,
@@ -261,17 +261,73 @@ export default function ResponsaveisUnidade({
    * Agora a lista de inclusão mostra somente os moradores
    * já vinculados à unidade aberta.
    */
+  /*
+   * Lista de pessoas elegíveis para receber chamadas.
+   *
+   * Fonte principal:
+   * usuarios-v2, respeitando o vínculo universal da pessoa com a unidade.
+   *
+   * Compatibilidade:
+   * qrCentral/moradores continua sendo lido enquanto condomínios antigos
+   * ainda dependerem dessa estrutura.
+   */
   useEffect(
     () => {
-      const referencia =
-        ref(
-          db,
-          "qrCentral/moradores"
+      let moradoresLegados: MoradorDaUnidade[] = [];
+      let moradoresUniversais: MoradorDaUnidade[] = [];
+
+      function publicarLista() {
+        const mapa =
+          new Map<
+            string,
+            MoradorDaUnidade
+          >();
+
+        [
+          ...moradoresLegados,
+          ...moradoresUniversais,
+        ].forEach(
+          (morador) => {
+            const identidade =
+              morador.uid ||
+              morador.id;
+
+            mapa.set(
+              identidade,
+              morador
+            );
+          }
         );
 
-      const desligar =
+        const lista =
+          Array.from(
+            mapa.values()
+          ).sort(
+            (
+              a,
+              b
+            ) =>
+              a.nome.localeCompare(
+                b.nome,
+                "pt-BR"
+              )
+          );
+
+        setMoradoresDaUnidade(
+          lista
+        );
+
+        setCarregandoMoradores(
+          false
+        );
+      }
+
+      const desligarLegado =
         onValue(
-          referencia,
+          ref(
+            db,
+            "qrCentral/moradores"
+          ),
           (
             snapshot
           ) => {
@@ -280,113 +336,199 @@ export default function ResponsaveisUnidade({
                 Record<
                   string,
                   {
-                    uid?:
-                      string;
-
-                    nome?:
-                      string;
-
-                    email?:
-                      string;
-
-                    telefone?:
-                      string;
-
-                    unidadeId?:
-                      string;
-
-                    status?:
-                      string;
+                    uid?: string;
+                    nome?: string;
+                    email?: string;
+                    telefone?: string;
+                    unidadeId?: string;
+                    status?: string;
                   }
                 > | null;
 
-            if (
-              !dados
-            ) {
-              setMoradoresDaUnidade(
-                []
-              );
+            moradoresLegados =
+              dados
+                ? Object.entries(
+                    dados
+                  )
+                    .map(
+                      (
+                        [
+                          id,
+                          valor,
+                        ]
+                      ) => ({
+                        id,
 
-              setCarregandoMoradores(
-                false
-              );
+                        uid:
+                          valor.uid,
 
-              return;
-            }
+                        nome:
+                          String(
+                            valor.nome ||
+                            valor.email ||
+                            id
+                          ),
 
-            const lista =
-              Object.entries(
-                dados
-              )
-                .map(
-                  (
-                    [
-                      id,
-                      valor,
-                    ]
-                  ) => ({
-                    id,
+                        email:
+                          valor.email,
 
-                    uid:
-                      valor.uid,
+                        telefone:
+                          valor.telefone,
 
-                    nome:
-                      String(
-                        valor.nome ||
-                        valor.email ||
-                        id
-                      ),
+                        unidadeId:
+                          String(
+                            valor.unidadeId ||
+                            ""
+                          ),
 
-                    email:
-                      valor.email,
-
-                    telefone:
-                      valor.telefone,
-
-                    unidadeId:
-                      String(
-                        valor.unidadeId ||
-                        ""
-                      ),
-
-                    status:
-                      valor.status,
-                  })
-                )
-                .filter(
-                  (
-                    morador
-                  ) =>
-                    morador.unidadeId ===
-                      unidadeId &&
-                    morador.status !==
-                      "bloqueado" &&
-                    morador.status !==
-                      "inativo"
-                )
-                .sort(
-                  (
-                    a,
-                    b
-                  ) =>
-                    a.nome.localeCompare(
-                      b.nome,
-                      "pt-BR"
+                        status:
+                          valor.status,
+                      })
                     )
-                );
+                    .filter(
+                      (
+                        morador
+                      ) =>
+                        morador.unidadeId ===
+                          unidadeId &&
+                        morador.status !==
+                          "bloqueado" &&
+                        morador.status !==
+                          "inativo"
+                    )
+                : [];
 
-            setMoradoresDaUnidade(
-              lista
-            );
-
-            setCarregandoMoradores(
-              false
-            );
+            publicarLista();
           }
         );
 
-      return () =>
-        desligar();
+      const desligarUniversal =
+        onValue(
+          ref(
+            db,
+            "usuarios-v2"
+          ),
+          (
+            snapshot
+          ) => {
+            const dados =
+              snapshot.val() as
+                Record<
+                  string,
+                  {
+                    uid?: string;
+                    nome?: string;
+                    email?: string;
+                    telefone?: string;
+                    status?: string;
+
+                    locais?: Record<
+                      string,
+                      {
+                        unidades?: Record<
+                          string,
+                          boolean
+                        >;
+                      }
+                    >;
+
+                    condominios?: Record<
+                      string,
+                      {
+                        unidades?: Record<
+                          string,
+                          boolean
+                        >;
+                      }
+                    >;
+                  }
+                > | null;
+
+            moradoresUniversais =
+              dados
+                ? Object.entries(
+                    dados
+                  )
+                    .filter(
+                      (
+                        [
+                          ,
+                          pessoa,
+                        ]
+                      ) => {
+                        if (
+                          pessoa.status ===
+                            "bloqueado" ||
+                          pessoa.status ===
+                            "inativo"
+                        ) {
+                          return false;
+                        }
+
+                        const vinculos = [
+                          ...Object.values(
+                            pessoa.locais ||
+                              {}
+                          ),
+                          ...Object.values(
+                            pessoa.condominios ||
+                              {}
+                          ),
+                        ];
+
+                        return vinculos.some(
+                          (
+                            vinculo
+                          ) =>
+                            vinculo
+                              .unidades?.[
+                              unidadeId
+                            ] === true
+                        );
+                      }
+                    )
+                    .map(
+                      (
+                        [
+                          id,
+                          pessoa,
+                        ]
+                      ) => ({
+                        id,
+
+                        uid:
+                          pessoa.uid,
+
+                        nome:
+                          String(
+                            pessoa.nome ||
+                            pessoa.email ||
+                            id
+                          ),
+
+                        email:
+                          pessoa.email,
+
+                        telefone:
+                          pessoa.telefone,
+
+                        unidadeId,
+
+                        status:
+                          pessoa.status ||
+                          "ativo",
+                      })
+                    )
+                : [];
+
+            publicarLista();
+          }
+        );
+
+      return () => {
+        desligarLegado();
+        desligarUniversal();
+      };
     },
     [
       unidadeId,
@@ -1100,3 +1242,4 @@ export default function ResponsaveisUnidade({
     </div>
   );
 }
+
