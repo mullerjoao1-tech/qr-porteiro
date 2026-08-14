@@ -1205,10 +1205,14 @@ async function naoPossoAtender() {
       return;
     }
 
-    alert(
+    setAvisoAuto(
       resultado.motivo ||
-      "Não existe outro responsável disponível no momento."
+      "Nenhum responsável disponível. Chamada encerrada."
     );
+
+    setTimeout(() => {
+      setAvisoAuto("");
+    }, 2000);
   } catch (erro) {
     console.error(
       "Erro ao encaminhar chamada:",
@@ -2826,6 +2830,7 @@ Mensagem: ${mensagemErro}`
     </main>
   );
 }
+
 
 
 
