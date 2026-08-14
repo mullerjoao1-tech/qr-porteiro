@@ -598,6 +598,14 @@ export async function POST(request: Request) {
           await messaging.send({
             token,
 
+            notification: {
+              title:
+                `🔔 ${nome} está chamando`,
+
+              body:
+                `Motivo: ${motivo}`,
+            },
+
             data: {
               unidadeId:
                 String(unidadeId),
