@@ -66,6 +66,11 @@ export default function ReceptorChamadasMorador() {
       null
     );
 
+  const audioPreparadoRef =
+    useRef(
+      false
+    );
+
   const unidadeId =
     Object.entries(
       vinculoSelecionado
@@ -81,6 +86,124 @@ export default function ReceptorChamadasMorador() {
         ativo === true
     )?.[0] ||
     "";
+
+  function obterAudioContext() {
+    if (
+      typeof window ===
+      "undefined"
+    ) {
+      return null;
+    }
+
+    const AudioContextClass =
+      window.AudioContext ||
+      (
+        window as typeof window & {
+          webkitAudioContext?:
+            typeof AudioContext;
+        }
+      ).webkitAudioContext;
+
+    if (!AudioContextClass) {
+      return null;
+    }
+
+    if (
+      !audioContextRef.current
+    ) {
+      audioContextRef.current =
+        new AudioContextClass();
+    }
+
+    return audioContextRef.current;
+  }
+
+  async function prepararAudio() {
+    try {
+      const contexto =
+        obterAudioContext();
+
+      if (!contexto) {
+        return;
+      }
+
+      if (
+        contexto.state ===
+        "suspended"
+      ) {
+        await contexto.resume();
+      }
+
+      if (
+        contexto.state ===
+        "running"
+      ) {
+        audioPreparadoRef.current =
+          true;
+      }
+    } catch (
+      erro
+    ) {
+      console.log(
+        "Audio ainda nao liberado:",
+        erro
+      );
+    }
+  }
+
+  /*
+   * IMPORTANTE:
+   *
+   * O AudioContext precisa ser preparado enquanto
+   * existe uma interacao real do usuario.
+   *
+   * Assim, quando o PWA permanecer em segundo plano,
+   * o receptor ja possui um contexto de audio
+   * previamente utilizado/liberado.
+   */
+  useEffect(() => {
+    const liberarAudio = () => {
+      void prepararAudio();
+    };
+
+    window.addEventListener(
+      "pointerdown",
+      liberarAudio,
+      {
+        passive: true,
+      }
+    );
+
+    window.addEventListener(
+      "touchstart",
+      liberarAudio,
+      {
+        passive: true,
+      }
+    );
+
+    window.addEventListener(
+      "keydown",
+      liberarAudio
+    );
+
+    return () => {
+      window.removeEventListener(
+        "pointerdown",
+        liberarAudio
+      );
+
+      window.removeEventListener(
+        "touchstart",
+        liberarAudio
+      );
+
+      window.removeEventListener(
+        "keydown",
+        liberarAudio
+      );
+    };
+  }, []);
 
   function pararToque() {
     if (
@@ -104,28 +227,12 @@ export default function ReceptorChamadasMorador() {
     }
 
     try {
-      const AudioContextClass =
-        window.AudioContext ||
-        (
-          window as typeof window & {
-            webkitAudioContext?:
-              typeof AudioContext;
-          }
-        ).webkitAudioContext;
+      const contexto =
+        obterAudioContext();
 
-      if (!AudioContextClass) {
+      if (!contexto) {
         return;
       }
-
-      if (
-        !audioContextRef.current
-      ) {
-        audioContextRef.current =
-          new AudioContextClass();
-      }
-
-      const contexto =
-        audioContextRef.current;
 
       if (
         contexto.state ===
@@ -151,20 +258,25 @@ export default function ReceptorChamadasMorador() {
       oscilador.frequency.value =
         880;
 
-      ganho.gain.value =
-        0.18;
+      oscilador.type =
+        "sine";
+
+      ganho.gain.setValueAtTime(
+        0.35,
+        contexto.currentTime
+      );
+
+      ganho.gain.exponentialRampToValueAtTime(
+        0.01,
+        contexto.currentTime +
+          0.45
+      );
 
       oscilador.start();
 
-      ganho.gain.exponentialRampToValueAtTime(
-        0.001,
-        contexto.currentTime +
-          0.35
-      );
-
       oscilador.stop(
         contexto.currentTime +
-          0.36
+          0.45
       );
     } catch (
       erro
@@ -190,7 +302,7 @@ export default function ReceptorChamadasMorador() {
         () => {
           tocarBip();
         },
-        1200
+        900
       );
   }
 
