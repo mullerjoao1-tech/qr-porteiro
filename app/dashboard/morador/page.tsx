@@ -1,7 +1,8 @@
-"use client";
+﻿"use client";
 
 import {
   Suspense,
+  useEffect,
   useMemo,
   useState,
 } from "react";
@@ -10,6 +11,15 @@ import {
   useRouter,
   useSearchParams,
 } from "next/navigation";
+
+import {
+  onValue,
+  ref,
+} from "firebase/database";
+
+import {
+  db,
+} from "@/app/services/firebase";
 
 import DashboardBase from "@/app/components/core/dashboard/DashboardBase";
 import MateriaisDoLocal from "@/app/components/core/dashboard/MateriaisDoLocal";
@@ -67,6 +77,12 @@ function ConteudoPaginaMorador() {
   const [
     saindo,
     setSaindo,
+  ] =
+    useState(false);
+
+  const [
+    responsavelChamadasAtivo,
+    setResponsavelChamadasAtivo,
   ] =
     useState(false);
 
@@ -134,6 +150,53 @@ function ConteudoPaginaMorador() {
       vinculoSelecionado,
     ]);
 
+  useEffect(
+    () => {
+      if (
+        !usuario?.uid ||
+        !unidadeId
+      ) {
+        setResponsavelChamadasAtivo(false);
+        return;
+      }
+
+      const referenciaResponsavel = ref(
+        db,
+        `unidades-v2/${unidadeId}/responsaveis/${usuario.uid}`
+      );
+
+      const desligarResponsavel = onValue(
+        referenciaResponsavel,
+        (snapshot) => {
+          const dados = snapshot.val() as
+            | {
+                ativo?: boolean;
+                status?: string;
+                prioridade?: number;
+              }
+            | null;
+
+          const habilitado =
+            Boolean(dados) &&
+            dados?.ativo !== false &&
+            dados?.status === "disponivel";
+
+          setResponsavelChamadasAtivo(
+            habilitado
+          );
+        }
+      );
+
+      return () => {
+        desligarResponsavel();
+      };
+    },
+    [
+      usuario?.uid,
+      unidadeId,
+    ]
+  );
+
   const tipoLocal =
     normalizarTexto(
       vinculoSelecionado
@@ -164,9 +227,8 @@ function ConteudoPaginaMorador() {
     {};
 
   const podeReceberChamadas =
-    permissoes
-      .receberChamadas ===
-    true;
+    permissoes.receberChamadas === true ||
+    responsavelChamadasAtivo;
 
   const podeAbrirPortao =
     permissoes
@@ -1045,3 +1107,4 @@ export default function PaginaMorador() {
     </Suspense>
   );
 }
+
