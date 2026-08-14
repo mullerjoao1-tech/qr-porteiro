@@ -780,12 +780,27 @@ export async function recusarEEncaminhar(
         responsavelAtualNome:
           null,
 
+        responsavelAtualPrioridade:
+          null,
+
         aguardandoResponsavel:
-          true,
+          false,
+
+        status:
+          "Encerrado",
+
+        notificar:
+          false,
 
         motivoSemResponsavel:
           resultado.motivo ||
           "Nenhum outro responsável disponível.",
+
+        mensagemResponsavel:
+          "Nenhum responsável pôde atender no momento.",
+
+        encerradoEm:
+          new Date().toISOString(),
 
         escalonamentoAtualizadoEm:
           Date.now(),
@@ -799,7 +814,8 @@ export async function recusarEEncaminhar(
           "sem-responsavel",
 
         detalhes:
-          resultado.motivo,
+          resultado.motivo ||
+          "Todos os responsáveis disponíveis recusaram a chamada.",
       }
     );
 
