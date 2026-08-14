@@ -717,14 +717,43 @@ export default function AtendimentoVisitantesMorador({
         "Atendimento encerrado."
       );
 
+      const criadoEmEncerrado =
+        dados.criadoEm;
+
       setTimeout(
-        () => {
-          void remove(
-            ref(
-              db,
-              caminhoChamada
-            )
-          );
+        async () => {
+          try {
+            const snapshotAtual =
+              await get(
+                ref(
+                  db,
+                  caminhoChamada
+                )
+              );
+
+            const chamadaAtual =
+              snapshotAtual.val();
+
+            if (
+              chamadaAtual &&
+              chamadaAtual.status ===
+                "Encerrado" &&
+              chamadaAtual.criadoEm ===
+                criadoEmEncerrado
+            ) {
+              await remove(
+                ref(
+                  db,
+                  caminhoChamada
+                )
+              );
+            }
+          } catch (erro) {
+            console.error(
+              "Erro ao limpar chamada encerrada:",
+              erro
+            );
+          }
         },
         2000
       );
@@ -1612,14 +1641,43 @@ export default function AtendimentoVisitantesMorador({
         false
       );
 
+      const criadoEmEncerrado =
+        ultimaChamadaDadosRef.current?.criadoEm;
+
       setTimeout(
-        () => {
-          void remove(
-            ref(
-              db,
-              caminhoChamada
-            )
-          );
+        async () => {
+          try {
+            const snapshotAtual =
+              await get(
+                ref(
+                  db,
+                  caminhoChamada
+                )
+              );
+
+            const chamadaAtual =
+              snapshotAtual.val();
+
+            if (
+              chamadaAtual &&
+              chamadaAtual.status ===
+                "Encerrado" &&
+              chamadaAtual.criadoEm ===
+                criadoEmEncerrado
+            ) {
+              await remove(
+                ref(
+                  db,
+                  caminhoChamada
+                )
+              );
+            }
+          } catch (erro) {
+            console.error(
+              "Erro ao limpar chamada encerrada:",
+              erro
+            );
+          }
         },
         2000
       );
@@ -1981,3 +2039,5 @@ export default function AtendimentoVisitantesMorador({
     </section>
   );
 }
+
+

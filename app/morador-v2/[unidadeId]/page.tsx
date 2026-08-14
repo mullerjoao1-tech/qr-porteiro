@@ -728,10 +728,49 @@ const nomeLocal =
       salvarHistorico(timeoutAguardando ? "Não atendida" : "Automática"),
     ]);
 
-    setTimeout(() => {
-      void remove(ref(db, caminhoFirebase)).catch((erro) => {
-        console.error("Erro ao limpar chamada encerrada:", erro);
-      });
+    const identificadorEncerramento =
+      new Date().toISOString();
+
+    setTimeout(async () => {
+      try {
+        const snapshotAtual =
+          await get(
+            ref(
+              db,
+              caminhoFirebase
+            )
+          );
+
+        if (!snapshotAtual.exists()) {
+          return;
+        }
+
+        const chamadaAtual =
+          snapshotAtual.val();
+
+        /*
+         * Nunca permite que o timer de uma chamada antiga
+         * apague uma chamada nova que nasceu no mesmo caminho.
+         */
+        if (
+          chamadaAtual?.status !==
+          "Encerrado"
+        ) {
+          return;
+        }
+
+        await remove(
+          ref(
+            db,
+            caminhoFirebase
+          )
+        );
+      } catch (erro) {
+        console.error(
+          "Erro ao limpar chamada encerrada:",
+          erro
+        );
+      }
     }, 2000);
   }
 
@@ -1223,10 +1262,49 @@ async function naoPossoAtender() {
       salvarHistorico("Manual"),
     ]);
 
-    setTimeout(() => {
-      void remove(ref(db, caminhoFirebase)).catch((erro) => {
-        console.error("Erro ao limpar chamada encerrada:", erro);
-      });
+    const identificadorEncerramento =
+      new Date().toISOString();
+
+    setTimeout(async () => {
+      try {
+        const snapshotAtual =
+          await get(
+            ref(
+              db,
+              caminhoFirebase
+            )
+          );
+
+        if (!snapshotAtual.exists()) {
+          return;
+        }
+
+        const chamadaAtual =
+          snapshotAtual.val();
+
+        /*
+         * Nunca permite que o timer de uma chamada antiga
+         * apague uma chamada nova que nasceu no mesmo caminho.
+         */
+        if (
+          chamadaAtual?.status !==
+          "Encerrado"
+        ) {
+          return;
+        }
+
+        await remove(
+          ref(
+            db,
+            caminhoFirebase
+          )
+        );
+      } catch (erro) {
+        console.error(
+          "Erro ao limpar chamada encerrada:",
+          erro
+        );
+      }
     }, 2000);
   }
 
@@ -2436,6 +2514,7 @@ Mensagem: ${mensagemErro}`
     </main>
   );
 }
+
 
 
 
