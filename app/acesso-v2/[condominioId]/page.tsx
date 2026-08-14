@@ -273,14 +273,20 @@ export default function AcessoV2Condominio() {
         chamada?.status === "Em atendimento"
       );
 
-      if (!chamada) {
+      if (!chamada || chamada.status === "Encerrado") {
         setMensagensConversa([]);
 
         if (chamadaAtivaRef.current && chamadaFoiEnviadaRef.current) {
           setPopupTipo("encerrado");
           setPopupAudioBase64("");
           setPopupAudioFoiOuvido(false);
-          setPopupTexto("Atendimento encerrado pelo responsável.");
+
+          const mensagemEncerramento =
+            chamada?.motivoSemResponsavel ||
+            "Atendimento encerrado pelo responsável.";
+
+          setPopupTexto(mensagemEncerramento);
+
           setUnidadeSelecionada(null);
           setNome("");
           setMotivo("");
@@ -1396,6 +1402,7 @@ export default function AcessoV2Condominio() {
     </main>
   );
 }
+
 
 
 
