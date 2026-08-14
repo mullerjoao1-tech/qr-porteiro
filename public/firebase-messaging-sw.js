@@ -1,4 +1,4 @@
-/* QR Acesso Studio Ã¢â‚¬â€ Firebase Cloud Messaging Service Worker */
+/* QR Acesso Studio ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Firebase Cloud Messaging Service Worker */
 
 importScripts(
   "https://www.gstatic.com/firebasejs/12.14.0/firebase-app-compat.js"
@@ -22,7 +22,7 @@ const messaging = firebase.messaging();
 
 messaging.onBackgroundMessage((payload) => {
   console.log(
-    "[firebase-messaging-sw] NotificaÃƒÂ§ÃƒÂ£o recebida em segundo plano:",
+    "[firebase-messaging-sw] NotificaÃƒÆ’Ã‚Â§ÃƒÆ’Ã‚Â£o recebida em segundo plano:",
     payload
   );
 
@@ -32,15 +32,45 @@ messaging.onBackgroundMessage((payload) => {
   const titulo =
     notificacao.title ||
     dados.titulo ||
-    "Ã°Å¸â€œÂ¢ Novo comunicado";
+    "ÃƒÂ°Ã…Â¸Ã¢â‚¬Å“Ã‚Â¢ Novo comunicado";
 
   const mensagem =
     notificacao.body ||
     dados.mensagem ||
-    "VocÃƒÂª recebeu uma nova comunicaÃƒÂ§ÃƒÂ£o do condomÃƒÂ­nio.";
+    "VocÃƒÆ’Ã‚Âª recebeu uma nova comunicaÃƒÆ’Ã‚Â§ÃƒÆ’Ã‚Â£o do condomÃƒÆ’Ã‚Â­nio.";
 
   const unidadeId = dados.unidadeId || "";
   const comunicadoId = dados.comunicadoId || "";
+
+  /*
+   * Ponte entre o push em segundo plano e a tela do morador.
+   *
+   * O Service Worker recebe o push mesmo quando a pagina
+   * nao esta em primeiro plano. Se existir uma janela/PWA
+   * ainda vivo, avisamos essa pagina imediatamente.
+   *
+   * A pagina reutiliza o MESMO toque continuo que ja existe.
+   */
+  if (
+    dados.tipo === "chamada-v2" &&
+    unidadeId
+  ) {
+    void clients
+      .matchAll({
+        type: "window",
+        includeUncontrolled: true,
+      })
+      .then((janelas) => {
+        for (const janela of janelas) {
+          janela.postMessage({
+            tipo: "qr-chamada-push-recebido",
+            unidadeId,
+            responsavelAtualUid:
+              dados.responsavelAtualUid || "",
+          });
+        }
+      });
+  }
 
   let urlDestino = "/";
 
