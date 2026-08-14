@@ -1,4 +1,4 @@
-/* QR Acesso Studio â€” Firebase Cloud Messaging Service Worker */
+﻿/* QR Acesso Studio Ã¢â‚¬â€ Firebase Cloud Messaging Service Worker */
 
 importScripts(
   "https://www.gstatic.com/firebasejs/12.14.0/firebase-app-compat.js"
@@ -22,7 +22,7 @@ const messaging = firebase.messaging();
 
 messaging.onBackgroundMessage((payload) => {
   console.log(
-    "[firebase-messaging-sw] NotificaÃ§Ã£o recebida em segundo plano:",
+    "[firebase-messaging-sw] NotificaÃƒÂ§ÃƒÂ£o recebida em segundo plano:",
     payload
   );
 
@@ -32,12 +32,12 @@ messaging.onBackgroundMessage((payload) => {
   const titulo =
     notificacao.title ||
     dados.titulo ||
-    "ðŸ“¢ Novo comunicado";
+    "Ã°Å¸â€œÂ¢ Novo comunicado";
 
   const mensagem =
     notificacao.body ||
     dados.mensagem ||
-    "VocÃª recebeu uma nova comunicaÃ§Ã£o do condomÃ­nio.";
+    "VocÃƒÂª recebeu uma nova comunicaÃƒÂ§ÃƒÂ£o do condomÃƒÂ­nio.";
 
   const unidadeId = dados.unidadeId || "";
   const comunicadoId = dados.comunicadoId || "";
@@ -70,6 +70,19 @@ messaging.onBackgroundMessage((payload) => {
     : `chamada-${unidadeId || "sem-unidade"}-${Date.now()}`,
     renotify: true,
     requireInteraction: dados.tipo === "chamada-v2",
+
+    vibrate:
+      dados.tipo === "chamada-v2"
+        ? [
+            500,
+            250,
+            500,
+            250,
+            500,
+            250,
+            1000,
+          ]
+        : undefined,
     data: {
       ...dados,
       url: urlDestino,
