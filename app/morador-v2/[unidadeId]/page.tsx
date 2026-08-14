@@ -1128,6 +1128,49 @@ async function naoPossoAtender() {
       resultado.sucesso &&
       resultado.responsavel
     ) {
+      /*
+       * O MotorEscalonamento ja concluiu a transferencia.
+       * Agora a API consulta o novo responsavelAtualUid
+       * e envia o push ao proximo responsavel.
+       */
+      try {
+        const respostaPush =
+          await fetch(
+            "/api/enviar-notificacao-v2",
+            {
+              method: "POST",
+
+              headers: {
+                "Content-Type":
+                  "application/json",
+              },
+
+              body:
+                JSON.stringify({
+                  unidadeId:
+                    slug,
+                }),
+            }
+          );
+
+        const dadosPush =
+          await respostaPush
+            .json()
+            .catch(
+              () => null
+            );
+
+        console.log(
+          "PUSH APOS TRANSFERENCIA:",
+          dadosPush
+        );
+      } catch (erroPush) {
+        console.error(
+          "Erro ao enviar push para o proximo responsavel:",
+          erroPush
+        );
+      }
+
       alert(
         `Chamada encaminhada para ${resultado.responsavel.nome}.`
       );
@@ -2756,6 +2799,7 @@ Mensagem: ${mensagemErro}`
     </main>
   );
 }
+
 
 
 
