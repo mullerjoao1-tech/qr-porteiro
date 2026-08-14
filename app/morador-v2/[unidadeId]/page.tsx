@@ -594,8 +594,34 @@ const nomeLocal =
         ultimaChamadaDadosRef.current = null;
 
         pararToqueContinuo();
+        limparFinalizacaoAutomatica();
+
         setPopupAtendimentoAberto(false);
-        setAvisoAuto("Atendimento encerrado. Limpando em instantes.");
+        setAudioPopup(null);
+
+        setNome("Nenhuma solicitação");
+        setMotivo("Aguardando visitante");
+        setStatus("Sem chamado ativo");
+        setHoraChamada("");
+        setModo("");
+        setMensagemResponsavel("");
+        setVisitanteVisualizou(false);
+
+        setAudioVisitante("");
+        setMensagensConversa([]);
+        setAudioRespostaBlob(null);
+
+        ultimoAudioPopupRef.current = "";
+        idChamadaAtualRef.current = "";
+
+        setChamadaDestinadaAoUsuarioAtual(true);
+
+        setAvisoAuto("Atendimento encerrado.");
+
+        setTimeout(() => {
+          setAvisoAuto("");
+        }, 2000);
+
         return;
       }
 
@@ -2830,6 +2856,7 @@ Mensagem: ${mensagemErro}`
     </main>
   );
 }
+
 
 
 
