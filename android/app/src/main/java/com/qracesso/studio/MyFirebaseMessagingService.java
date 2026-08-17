@@ -5,6 +5,9 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.media.AudioAttributes;
+import android.media.RingtoneManager;
+import android.net.Uri;
 import android.os.Build;
 import android.util.Log;
 import androidx.core.app.NotificationCompat;
@@ -45,13 +48,22 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
         );
 
         NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        Uri soundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            AudioAttributes audioAttributes = new AudioAttributes.Builder()
+                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                    .setUsage(AudioAttributes.USAGE_NOTIFICATION)
+                    .build();
+
             NotificationChannel channel = new NotificationChannel(
                     CHANNEL_ID,
                     "Chamadas QR Acesso",
                     NotificationManager.IMPORTANCE_HIGH
             );
+            channel.enableVibration(true);
+            channel.setVibrationPattern(new long[]{0, 500, 200, 500});
+            channel.setSound(soundUri, audioAttributes);
             manager.createNotificationChannel(channel);
         }
 
@@ -60,6 +72,8 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
                 .setContentTitle("Visitante chamando")
                 .setContentText(nome + (motivo.isEmpty() ? "" : ": " + motivo))
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setSound(soundUri)
+                .setVibrate(new long[]{0, 500, 200, 500})
                 .setContentIntent(pendingIntent)
                 .setAutoCancel(true);
 
