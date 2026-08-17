@@ -531,6 +531,42 @@ export async function POST(request: Request) {
           }
         }
       }
+      
+      // ADICIONADO: Buscar tokens nativos
+      const dispositivosNativosSnapshot =
+        await db
+          .ref(
+            `configuracoes-v2/tokensNativos/${unidadeId}`
+          )
+          .get();
+
+      const dispositivosNativos =
+        dispositivosNativosSnapshot.val() as
+          Record<
+            string,
+            {
+              token?: string;
+            }
+          > | null;
+
+      if (dispositivosNativos) {
+        for (
+          const dispositivo
+          of Object.values(dispositivosNativos)
+        ) {
+          const token =
+            String(
+              dispositivo?.token ||
+              ""
+            ).trim();
+
+          if (token) {
+            tokens.add(
+              token
+            );
+          }
+        }
+      }
     }
 
     let usouFallbackLegado =

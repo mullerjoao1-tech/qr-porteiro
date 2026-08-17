@@ -7,6 +7,8 @@ import { ref, onValue, update, remove, push, set, get } from "firebase/database"
 import { db, messagingPromise } from "../../services/firebase";
 import { useLocalAtual } from "@/app/hooks/useLocalAtual";
 import { useAuth } from "@/app/context/AuthContext";
+import { Capacitor } from "@capacitor/core";
+import { PushNotifications } from "@capacitor/push-notifications";
 import {
   listarResponsaveisDaUnidade,
   recusarEEncaminhar,
@@ -291,6 +293,35 @@ const nomeLocal =
       console.error("Erro analytics:", erro);
     }
   }
+
+  useEffect(() => {
+    if (Capacitor.isNativePlatform()) {
+      PushNotifications.requestPermissions().then((result) => {
+        if (result.receive === "granted") {
+          PushNotifications.register();
+        }
+      });
+
+      PushNotifications.addListener("registration", async (token) => {
+        const condominioId = identificarCondominioPeloSlug(slug);
+        const chaveDeviceId = "qr-core:device-id-nativo";
+
+        let deviceId = window.localStorage.getItem(chaveDeviceId) || "";
+        if (!deviceId) {
+          deviceId = crypto.randomUUID();
+          window.localStorage.setItem(chaveDeviceId, deviceId);
+        }
+
+        await set(
+          ref(db, `configuracoes-v2/tokensNativos/${slug}/${deviceId}`),
+          {
+            token: token.value,
+            atualizadoEm: Date.now(),
+          }
+        );
+      });
+    }
+  }, [slug]);
 
   useEffect(() => {
     const referenciaComunicados = ref(db, caminhoComunicados);
