@@ -664,6 +664,10 @@ export async function POST(request: Request) {
                 )}`,
             },
 
+            android: {
+              priority: "high",
+            },
+
             webpush: {
               headers: {
                 Urgency: "high",
