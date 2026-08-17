@@ -8,6 +8,7 @@ import {
 
 import {
   useRouter,
+  useSearchParams,
 } from "next/navigation";
 
 import {
@@ -33,6 +34,9 @@ export default function ReceptorChamadasMorador() {
   const router =
     useRouter();
 
+  const searchParams =
+    useSearchParams();
+
   const {
     usuario,
     carregando,
@@ -48,6 +52,16 @@ export default function ReceptorChamadasMorador() {
       ChamadaRecebida | null
     >(
       null
+    );
+
+  const [
+    aguardandoChamadaFullscreen,
+    setAguardandoChamadaFullscreen,
+  ] =
+    useState(
+      searchParams.get(
+        "chamadaFullscreen"
+      ) === "1"
     );
 
   const intervaloSomRef =
@@ -337,6 +351,10 @@ export default function ReceptorChamadasMorador() {
             const dados =
               snapshot.val();
 
+            setAguardandoChamadaFullscreen(
+              false
+            );
+
             if (!dados) {
               pararToque();
 
@@ -402,7 +420,7 @@ export default function ReceptorChamadasMorador() {
                 ),
             });
 
-            iniciarToque();
+            // Bip web desativado: o Android já reproduz o toque nativo da chamada.
           }
         );
 
@@ -433,7 +451,10 @@ export default function ReceptorChamadasMorador() {
     );
   }
 
-  if (!chamada) {
+  if (
+    !chamada &&
+    !aguardandoChamadaFullscreen
+  ) {
     return null;
   }
 
@@ -448,29 +469,39 @@ export default function ReceptorChamadasMorador() {
           CHAMADA RECEBIDA
         </h2>
 
-        <div className="mt-5 rounded-2xl border border-slate-700 bg-slate-900 p-5">
-          <p className="text-2xl font-black text-white">
-            {chamada.nome}
-          </p>
+        {chamada ? (
+          <>
+            <div className="mt-5 rounded-2xl border border-slate-700 bg-slate-900 p-5">
+              <p className="text-2xl font-black text-white">
+                {chamada.nome}
+              </p>
 
-          <p className="mt-2 text-base text-slate-300">
-            {chamada.motivo}
-          </p>
-        </div>
+              <p className="mt-2 text-base text-slate-300">
+                {chamada.motivo}
+              </p>
+            </div>
 
-        <button
-          type="button"
-          onClick={
-            abrirAtendimento
-          }
-          className="mt-6 w-full rounded-2xl bg-green-600 px-5 py-5 text-xl font-black text-white transition hover:bg-green-500 active:scale-[0.98]"
-        >
-          ABRIR ATENDIMENTO
-        </button>
+            <button
+              type="button"
+              onClick={
+                abrirAtendimento
+              }
+              className="mt-6 w-full rounded-2xl bg-green-600 px-5 py-5 text-xl font-black text-white transition hover:bg-green-500 active:scale-[0.98]"
+            >
+              ABRIR ATENDIMENTO
+            </button>
 
-        <p className="mt-4 text-sm font-semibold text-slate-400">
-          Esta chamada está destinada a você.
-        </p>
+            <p className="mt-4 text-sm font-semibold text-slate-400">
+              Esta chamada está destinada a você.
+            </p>
+          </>
+        ) : (
+          <div className="mt-5 rounded-2xl border border-slate-700 bg-slate-900 p-5">
+            <p className="text-lg font-black text-white">
+              Conectando à chamada...
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

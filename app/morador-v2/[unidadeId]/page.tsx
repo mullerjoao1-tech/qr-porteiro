@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useRef, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
@@ -7,13 +7,19 @@ import { ref, onValue, update, remove, push, set, get } from "firebase/database"
 import { db, messagingPromise } from "../../services/firebase";
 import { useLocalAtual } from "@/app/hooks/useLocalAtual";
 import { useAuth } from "@/app/context/AuthContext";
-import { Capacitor } from "@capacitor/core";
+import { Capacitor, registerPlugin } from "@capacitor/core";
 import { PushNotifications } from "@capacitor/push-notifications";
 import {
   listarResponsaveisDaUnidade,
   recusarEEncaminhar,
   registrarAtendimentoDoResponsavel,
 } from "@/app/services/chamadas/MotorEscalonamento";
+
+type CallControlPlugin = {
+  stopIncomingCall: () => Promise<any>;
+};
+
+const callControl = registerPlugin<CallControlPlugin>("CallControl");
 type MensagemConversa = {
   id?: string;
   autor: "visitante" | "morador";
@@ -663,7 +669,7 @@ const nomeLocal =
         !toqueSilenciadoPorAudioRef.current;
 
       if (deveTocar) {
-        iniciarToqueContinuo();
+        // Bip web desativado: o Android ja possui toque nativo da chamada.
         setPopupAtendimentoAberto(true);
 
         const idChamada = dados.criadoEm || dados.nome || "";
@@ -1093,6 +1099,17 @@ const nomeLocal =
         caminhoFirebase,
         responsavelAtual
       );
+    }
+
+    if (Capacitor.isNativePlatform()) {
+      try {
+        await callControl.stopIncomingCall();
+      } catch (erroCallControl) {
+        console.error(
+          "Erro ao parar alerta nativo da chamada:",
+          erroCallControl
+        );
+      }
     }
 
     setStatus(
