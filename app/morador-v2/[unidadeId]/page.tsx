@@ -122,6 +122,8 @@ function textoTipoComunicado(tipo: ComunicadoMorador["tipo"]) {
 export default function MoradorV2() {
   const params = useParams();
   const searchParams = useSearchParams();
+  const chamadaFullscreenAndroid =
+    searchParams.get("chamadaFullscreen") === "1";
 
   const {
     usuario,
@@ -560,11 +562,8 @@ const nomeLocal =
        */
       const chamadaDestinadaAoUsuario =
         !responsavelAtualUid ||
-        (
-          Boolean(usuario?.uid) &&
-          responsavelAtualUid ===
-            usuario?.uid
-        );
+        !usuario?.uid ||
+        responsavelAtualUid === usuario?.uid;
 
       setChamadaDestinadaAoUsuarioAtual(
         chamadaDestinadaAoUsuario
@@ -668,8 +667,15 @@ const nomeLocal =
         dados.status === "Aguardando atendimento" &&
         !toqueSilenciadoPorAudioRef.current;
 
-      if (deveTocar) {
-        // Bip web desativado: o Android ja possui toque nativo da chamada.
+      if (
+        deveTocar &&
+        (
+          !Capacitor.isNativePlatform() ||
+          chamadaFullscreenAndroid
+        )
+      ) {
+        // No Android, a interface aguarda o fluxo nativo iniciar a chamada.
+        // Na web/PWA, continua abrindo diretamente pelo Firebase.
         setPopupAtendimentoAberto(true);
 
         const idChamada = dados.criadoEm || dados.nome || "";
@@ -1010,7 +1016,6 @@ const nomeLocal =
     return;
   }
 
-  setPopupAtendimentoAberto(false);
   pararToqueContinuo();
 
   try {
@@ -2634,19 +2639,9 @@ Mensagem: ${mensagemErro}`
         )}
 
         <div className="grid grid-cols-2 gap-3 mt-5">
-          <button
-            onClick={tocarBip}
-            className="bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold py-3 rounded-2xl"
-          >
-            🔊 Testar Som
-          </button>
+          
 
-          <button
-            onClick={ativarNotificacoes}
-            className="bg-yellow-500 hover:bg-yellow-400 text-black text-sm font-bold py-3 rounded-2xl"
-          >
-            🔔 Notificações
-          </button>
+          
         </div>
 
         <div className="grid grid-cols-2 gap-3 mt-3">
@@ -2710,16 +2705,7 @@ Mensagem: ${mensagemErro}`
         )}
 
         <div className="grid grid-cols-2 gap-3 mt-3">
-          <button
-            onClick={instalarApp}
-            className={
-              appInstalavel
-                ? "bg-green-600 hover:bg-green-500 text-white text-sm font-bold py-3 rounded-2xl"
-                : "bg-slate-700 hover:bg-slate-600 text-white text-sm font-bold py-3 rounded-2xl"
-            }
-          >
-            📲 Instalar app
-          </button>
+          
 
 
         </div>
