@@ -122,8 +122,6 @@ function textoTipoComunicado(tipo: ComunicadoMorador["tipo"]) {
 export default function MoradorV2() {
   const params = useParams();
   const searchParams = useSearchParams();
-  const chamadaFullscreenAndroid =
-    searchParams.get("chamadaFullscreen") === "1";
 
   const {
     usuario,
@@ -667,15 +665,8 @@ const nomeLocal =
         dados.status === "Aguardando atendimento" &&
         !toqueSilenciadoPorAudioRef.current;
 
-      if (
-        deveTocar &&
-        (
-          !Capacitor.isNativePlatform() ||
-          chamadaFullscreenAndroid
-        )
-      ) {
-        // No Android, a interface aguarda o fluxo nativo iniciar a chamada.
-        // Na web/PWA, continua abrindo diretamente pelo Firebase.
+      if (deveTocar) {
+        // Bip web desativado: o Android ja possui toque nativo da chamada.
         setPopupAtendimentoAberto(true);
 
         const idChamada = dados.criadoEm || dados.nome || "";
