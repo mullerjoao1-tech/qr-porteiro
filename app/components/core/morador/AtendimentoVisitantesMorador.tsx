@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import {
   useEffect,
@@ -289,6 +289,13 @@ export default function AtendimentoVisitantesMorador({
 
   const chamadaEstavaAtivaRef =
     useRef(false);
+
+  const ausenciaChamadaRef =
+    useRef<
+      ReturnType<
+        typeof setTimeout
+      > | null
+    >(null);
 
   const caminhoChamada =
     `unidades-v2/${unidadeId}/chamada`;
@@ -891,76 +898,123 @@ export default function AtendimentoVisitantesMorador({
             limparFinalizacao();
 
             if (!dados) {
-              if (
-                chamadaEstavaAtivaRef.current &&
-                ultimaChamadaDadosRef.current
-              ) {
-                void registrarAnalytics(
-                  "falha"
-                );
-
-                void salvarHistoricoComDados(
-                  "Cancelada pelo visitante",
-                  ultimaChamadaDadosRef.current
+              if (ausenciaChamadaRef.current) {
+                clearTimeout(
+                  ausenciaChamadaRef.current
                 );
               }
 
-              chamadaEstavaAtivaRef.current =
-                false;
+              ausenciaChamadaRef.current =
+                setTimeout(
+                  async () => {
+                    ausenciaChamadaRef.current =
+                      null;
 
-              ultimaChamadaDadosRef.current =
-                null;
+                    try {
+                      const confirmacao =
+                        await get(
+                          ref(
+                            db,
+                            caminhoChamada
+                          )
+                        );
 
-              ultimaChamadaRef.current =
-                "";
+                      if (
+                        confirmacao.exists()
+                      ) {
+                        return;
+                      }
+                    } catch (erro) {
+                      console.error(
+                        "Erro ao confirmar ausencia temporaria da chamada:",
+                        erro
+                      );
 
-              setNome(
-                "Nenhuma solicitação"
-              );
+                      return;
+                    }
 
-              setMotivo(
-                "Aguardando visitante"
-              );
+                    if (
+                      chamadaEstavaAtivaRef.current &&
+                      ultimaChamadaDadosRef.current
+                    ) {
+                      void registrarAnalytics(
+                        "falha"
+                      );
 
-              setStatus(
-                "Sem chamado ativo"
-              );
+                      void salvarHistoricoComDados(
+                        "Cancelada pelo visitante",
+                        ultimaChamadaDadosRef.current
+                      );
+                    }
 
-              setHoraChamada(
-                ""
-              );
+                    chamadaEstavaAtivaRef.current =
+                      false;
 
-              setMensagemResponsavel(
-                ""
-              );
+                    ultimaChamadaDadosRef.current =
+                      null;
 
-              setMensagensConversa(
-                []
-              );
+                    ultimaChamadaRef.current =
+                      "";
 
-              setAudioVisitante(
-                ""
-              );
+                    setNome(
+                      "Nenhuma solicitação"
+                    );
 
-              setAudioRespostaBlob(
-                null
-              );
+                    setMotivo(
+                      "Aguardando visitante"
+                    );
 
-              setVisitanteVisualizou(
-                false
-              );
+                    setStatus(
+                      "Sem chamado ativo"
+                    );
 
-              setPopupAberto(
-                false
-              );
+                    setHoraChamada(
+                      ""
+                    );
 
-              setAviso(
-                ""
-              );
+                    setMensagemResponsavel(
+                      ""
+                    );
 
-              pararToque();
+                    setMensagensConversa(
+                      []
+                    );
+
+                    setAudioVisitante(
+                      ""
+                    );
+
+                    setAudioRespostaBlob(
+                      null
+                    );
+
+                    setVisitanteVisualizou(
+                      false
+                    );
+
+                    setPopupAberto(
+                      false
+                    );
+
+                    setAviso(
+                      ""
+                    );
+
+                    pararToque();
+                  },
+                  700
+                );
 
               return;
+            }
+
+            if (ausenciaChamadaRef.current) {
+              clearTimeout(
+                ausenciaChamadaRef.current
+              );
+
+              ausenciaChamadaRef.current =
+                null;
             }
 
             chamadaEstavaAtivaRef.current =
@@ -1097,6 +1151,15 @@ export default function AtendimentoVisitantesMorador({
         pararToque();
 
         limparFinalizacao();
+
+        if (ausenciaChamadaRef.current) {
+          clearTimeout(
+            ausenciaChamadaRef.current
+          );
+
+          ausenciaChamadaRef.current =
+            null;
+        }
       };
     },
     [
