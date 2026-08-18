@@ -7,6 +7,11 @@ import {
 } from "react";
 
 import {
+  Capacitor,
+  registerPlugin,
+} from "@capacitor/core";
+
+import {
   get,
   onValue,
   push,
@@ -43,6 +48,28 @@ type MensagemConversa = {
 
   criadoEm: number;
 };
+
+type CallControlPlugin = {
+  stopIncomingCall: () =>
+    Promise<{
+      ok: boolean;
+      etapa: string;
+      pluginRecebeuChamada: boolean;
+      actionStopEnviado: boolean;
+      actionStopRecebido: boolean;
+      stopAlertExecutado: boolean;
+      stopForegroundExecutado: boolean;
+      notificationCancelExecutado: boolean;
+      stopSelfExecutado: boolean;
+    }>;
+};
+
+const callControl =
+  registerPlugin<
+    CallControlPlugin
+  >(
+    "CallControl"
+  );
 
 type Props = {
   unidadeId: string;
@@ -1172,6 +1199,53 @@ export default function AtendimentoVisitantesMorador({
         await registrarAtendimentoDoResponsavel(
           caminhoChamada,
           responsavel
+        );
+      }
+
+      const plataforma =
+        Capacitor.getPlatform();
+
+      const diagnostico = [
+        "1. ATENDER AGORA chegou ao trecho do plugin: SIM",
+        `2. Capacitor.getPlatform(): ${plataforma}`,
+        "3. CallControl.stopIncomingCall() será chamado: SIM",
+      ];
+
+      if (Capacitor.isNativePlatform()) {
+        try {
+          const resultado =
+            await callControl
+            .stopIncomingCall();
+
+          alert(
+            [
+              ...diagnostico,
+              "4. Promise do plugin: RESOLVEU",
+              `5. Retorno Android: ${JSON.stringify(resultado)}`,
+            ].join("\n")
+          );
+        } catch (
+          erro
+        ) {
+          console.error(
+            "Erro ao parar alerta nativo da chamada:",
+            erro
+          );
+
+          alert(
+            [
+              ...diagnostico,
+              "4. Promise do plugin: REJEITOU",
+              `5. Erro: ${String(erro)}`,
+            ].join("\n")
+          );
+        }
+      } else {
+        alert(
+          [
+            ...diagnostico,
+            "4. Plugin não chamado: plataforma não nativa",
+          ].join("\n")
         );
       }
 

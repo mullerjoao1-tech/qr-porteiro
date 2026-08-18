@@ -1,5 +1,6 @@
 package com.qracesso.studio;
 
+import android.app.KeyguardManager;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -17,6 +18,7 @@ import android.os.IBinder;
 import android.os.Looper;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
+import android.provider.Settings;
 import android.util.Log;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.Person;
@@ -30,6 +32,7 @@ public class IncomingCallService extends Service {
     public static final String EXTRA_DIAGNOSTIC_TOKEN = "diagnosticToken";
     public static final String DIAGNOSTIC_PREFS = "call_control_diagnostic";
     private static final String CHANNEL_ID = "qr_acesso_chamadas_v3";
+    private static final String CHANNEL_ID_DISCRETO = "qr_acesso_chamadas_discreto_v1";
     private static final int NOTIFICATION_ID = 1001;
     
     private Ringtone ringtone;
@@ -68,6 +71,8 @@ public class IncomingCallService extends Service {
         String nome = intent != null ? intent.getStringExtra(EXTRA_NOME) : null;
         String motivo = intent != null ? intent.getStringExtra(EXTRA_MOTIVO) : null;
 
+        android.util.Log.d("QR_OVERLAY_DIAG", "1. unidadeId recebido: " + unidadeId);
+
         if (ACTION_START.equals(action)) {
             if (isRunning) {
                 if (unidadeId != null && unidadeId.equals(activeUnidadeId)) return START_NOT_STICKY;
@@ -76,13 +81,47 @@ public class IncomingCallService extends Service {
             
             isRunning = true;
             activeUnidadeId = unidadeId;
-            
-            startForegroundServiceNotification(unidadeId, nome, motivo);
+
+            KeyguardManager keyguardManager =
+                    (KeyguardManager) getSystemService(Context.KEYGUARD_SERVICE);
+            boolean telaBloqueada =
+                    keyguardManager != null && keyguardManager.isKeyguardLocked();
+
+            startForegroundServiceNotification(unidadeId, nome, motivo, telaBloqueada);
             startAlert();
+
+            boolean temPermissaoSobreposicao =
+                    Build.VERSION.SDK_INT < Build.VERSION_CODES.M ||
+                    Settings.canDrawOverlays(this);
+
+            android.util.Log.d("QR_OVERLAY_DIAG", "2. telaBloqueada: " + telaBloqueada);
+            android.util.Log.d("QR_OVERLAY_DIAG", "3. temPermissaoSobreposicao: " + temPermissaoSobreposicao);
+
+            if (!telaBloqueada) {
+                String route = "/morador-v2/" + unidadeId;
+
+                Intent chamadaIntent = new Intent(this, MainActivity.class);
+                chamadaIntent.addFlags(
+                        Intent.FLAG_ACTIVITY_NEW_TASK |
+                        Intent.FLAG_ACTIVITY_SINGLE_TOP |
+                        Intent.FLAG_ACTIVITY_CLEAR_TOP
+                );
+
+                chamadaIntent.putExtra("route", route);
+                chamadaIntent.putExtra("chamadaFullscreen", true);
+
+                try {
+                    startActivity(chamadaIntent);
+                    Log.d("QR_TELA_PADRAO", "MainActivity solicitada diretamente");
+                } catch (Exception e) {
+                    Log.e("QR_TELA_PADRAO", "Erro ao abrir tela padrao diretamente", e);
+                }
+            }
             
             handler.removeCallbacks(timeoutRunnable);
             handler.postDelayed(timeoutRunnable, 60000); 
         } else if (ACTION_STOP.equals(action)) {
+            CallOverlayManager.dismiss();
             String diagnosticToken = intent != null
                     ? intent.getStringExtra(EXTRA_DIAGNOSTIC_TOKEN)
                     : null;
@@ -122,7 +161,7 @@ public class IncomingCallService extends Service {
         return START_NOT_STICKY;
     }
 
-    private void startForegroundServiceNotification(String unidadeId, String nome, String motivo) {
+    private void startForegroundServiceNotification(String unidadeId, String nome, String motivo, boolean telaBloqueada) {
         NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
 
         // DIAGNOSTICO FULLSCREEN - remover depois dos testes
@@ -141,6 +180,15 @@ public class IncomingCallService extends Service {
             channel.setSound(null, null);
             channel.enableVibration(true);
             manager.createNotificationChannel(channel);
+
+            NotificationChannel canalDiscreto = new NotificationChannel(
+                    CHANNEL_ID_DISCRETO,
+                    "Chamada em andamento",
+                    NotificationManager.IMPORTANCE_LOW
+            );
+            canalDiscreto.setSound(null, null);
+            canalDiscreto.enableVibration(false);
+            manager.createNotificationChannel(canalDiscreto);
 
             NotificationChannel canalReal = manager.getNotificationChannel(CHANNEL_ID);
 
@@ -209,25 +257,38 @@ public class IncomingCallService extends Service {
 
         String descricao = motivoChamada.isEmpty()
                 ? "Unidade " + unidadeId
-                : motivoChamada + " â€¢ Unidade " + unidadeId;
+                : motivoChamada + " ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¢ Unidade " + unidadeId;
 
-        Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
-                .setContentTitle(nomeVisitante)
-                .setContentText(descricao)
-                .setSmallIcon(android.R.drawable.ic_menu_call)
-                .setCategory(NotificationCompat.CATEGORY_CALL)
-                .setPriority(NotificationCompat.PRIORITY_MAX)
-                .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-                .setOngoing(true)
-                .setFullScreenIntent(fullScreenPendingIntent, true)
-                .setContentIntent(answerPendingIntent)
-                .setStyle(NotificationCompat.CallStyle.forIncomingCall(
-                        visitante,
-                        declinePendingIntent,
-                        answerPendingIntent
-                ))
-                .addPerson(visitante)
-                .build();
+        Notification notification;
+
+        if (telaBloqueada) {
+            notification = new NotificationCompat.Builder(this, CHANNEL_ID)
+                    .setContentTitle(nomeVisitante)
+                    .setContentText(descricao)
+                    .setSmallIcon(android.R.drawable.ic_menu_call)
+                    .setCategory(NotificationCompat.CATEGORY_CALL)
+                    .setPriority(NotificationCompat.PRIORITY_MAX)
+                    .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+                    .setOngoing(true)
+                    .setFullScreenIntent(fullScreenPendingIntent, true)
+                    .setContentIntent(answerPendingIntent)
+                    .setStyle(NotificationCompat.CallStyle.forIncomingCall(
+                            visitante,
+                            declinePendingIntent,
+                            answerPendingIntent
+                    ))
+                    .addPerson(visitante)
+                    .build();
+        } else {
+            notification = new NotificationCompat.Builder(this, CHANNEL_ID_DISCRETO)
+                    .setContentTitle("QR Acesso")
+                    .setContentText("Chamada em andamento")
+                    .setSmallIcon(android.R.drawable.ic_menu_call)
+                    .setPriority(NotificationCompat.PRIORITY_LOW)
+                    .setOngoing(true)
+                    .setSilent(true)
+                    .build();
+        }
 
         startForeground(NOTIFICATION_ID, notification);
     }
@@ -262,6 +323,7 @@ public class IncomingCallService extends Service {
     }
 
     private void stopAlert() {
+        CallOverlayManager.dismiss();
         if (ringtone != null && ringtone.isPlaying()) {
             ringtone.stop();
         }
@@ -290,4 +352,5 @@ public class IncomingCallService extends Service {
     @Override
     public IBinder onBind(Intent intent) { return null; }
 }
+
 
