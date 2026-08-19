@@ -23,6 +23,63 @@ public class MainActivity extends BridgeActivity {
     private int tentativasInterfaceChamada = 0;
     private int confirmacoesInterfaceChamada = 0;
 
+    private boolean aguardandoQrCallAtendimento = false;
+    private android.widget.TextView coberturaQrCallAtendimento = null;
+
+    private final Runnable verificarQrCallAtendimento =
+        new Runnable() {
+            @Override
+            public void run() {
+                if (
+                    !aguardandoQrCallAtendimento ||
+                    getBridge() == null ||
+                    getBridge().getWebView() == null
+                ) {
+                    return;
+                }
+
+                getBridge().getWebView().evaluateJavascript(
+                    "Boolean(document.getElementById('qrcall-atendimento-pronto'))",
+                    resultado -> {
+                        if ("true".equals(resultado)) {
+                            revelarQrCallAtendimento();
+                            return;
+                        }
+
+                        chamadaHandler.postDelayed(
+                            verificarQrCallAtendimento,
+                            50
+                        );
+                    }
+                );
+            }
+        };
+
+    private void revelarQrCallAtendimento() {
+        aguardandoQrCallAtendimento = false;
+
+        chamadaHandler.removeCallbacks(
+            verificarQrCallAtendimento
+        );
+
+        if (
+            getBridge() != null &&
+            getBridge().getWebView() != null
+        ) {
+            getBridge()
+                .getWebView()
+                .setVisibility(
+                    android.view.View.VISIBLE
+                );
+        }
+
+        if (coberturaQrCallAtendimento != null) {
+            coberturaQrCallAtendimento.setVisibility(
+                android.view.View.GONE
+            );
+        }
+    }
+
     private final Runnable verificarInterfaceChamada =
         new Runnable() {
             @Override
@@ -199,6 +256,46 @@ public class MainActivity extends BridgeActivity {
             return;
         }
 
+        if (intent.getBooleanExtra("qrcallAtendimento", false)) {
+            aguardandoQrCallAtendimento = true;
+
+            if (
+                getBridge() != null &&
+                getBridge().getWebView() != null
+            ) {
+                getBridge()
+                    .getWebView()
+                    .setVisibility(
+                        android.view.View.INVISIBLE
+                    );
+            }
+
+            if (coberturaQrCallAtendimento == null) {
+                coberturaQrCallAtendimento =
+                    new android.widget.TextView(this);
+
+                coberturaQrCallAtendimento.setText("");
+
+                coberturaQrCallAtendimento.setBackgroundColor(
+                    android.graphics.Color.rgb(2, 6, 23)
+                );
+
+                coberturaQrCallAtendimento.setElevation(200f);
+
+                addContentView(
+                    coberturaQrCallAtendimento,
+                    new android.view.ViewGroup.LayoutParams(
+                        android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                        android.view.ViewGroup.LayoutParams.MATCH_PARENT
+                    )
+                );
+            }
+
+            coberturaQrCallAtendimento.setVisibility(
+                android.view.View.VISIBLE
+            );
+        }
+
         if (intent.getBooleanExtra("chamadaFullscreen", false)) {
             ocultarWebViewParaChamada();
         }
@@ -322,6 +419,12 @@ public class MainActivity extends BridgeActivity {
                         .getWebView()
                         .loadUrl(destino);
 
+                    if (aguardandoQrCallAtendimento) {
+                        chamadaHandler.post(
+                            verificarQrCallAtendimento
+                        );
+                    }
+
                     if (aguardandoInterfaceChamada) {
                         chamadaHandler.post(
                             verificarInterfaceChamada
@@ -343,6 +446,7 @@ public class MainActivity extends BridgeActivity {
     @Override
     public void onDestroy() {
         chamadaHandler.removeCallbacks(verificarInterfaceChamada);
+        chamadaHandler.removeCallbacks(verificarQrCallAtendimento);
         super.onDestroy();
     }
 }

@@ -112,6 +112,11 @@ public class QrCallActivity extends AppCompatActivity {
                         "?iniciar=1"
                 );
 
+                atendimento.putExtra(
+                        "qrcallAtendimento",
+                        true
+                );
+
                 startActivity(atendimento);
             }
 
