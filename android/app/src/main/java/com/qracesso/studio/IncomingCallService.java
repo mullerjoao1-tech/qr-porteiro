@@ -239,12 +239,15 @@ public class IncomingCallService extends Service {
 
         int requestCodeBase = unidadeId != null ? unidadeId.hashCode() : 0;
 
-        Intent fullScreenIntent = new Intent(this, MainActivity.class);
+        Intent fullScreenIntent = new Intent(this, IncomingCallActivity.class);
         fullScreenIntent.addFlags(
                 Intent.FLAG_ACTIVITY_NEW_TASK |
                 Intent.FLAG_ACTIVITY_SINGLE_TOP |
                 Intent.FLAG_ACTIVITY_CLEAR_TOP
         );
+        fullScreenIntent.putExtra("nome", nomeVisitante);
+        fullScreenIntent.putExtra("unidadeId", unidadeId);
+        fullScreenIntent.putExtra("motivo", motivoChamada);
         fullScreenIntent.putExtra("route", route);
         fullScreenIntent.putExtra("chamadaFullscreen", true);
 
