@@ -1,0 +1,1569 @@
+﻿diff --git a/app/acesso-v2/[condominioId]/page.tsx b/app/acesso-v2/[condominioId]/page.tsx
+index d6f9edd..c7017e7 100644
+--- a/app/acesso-v2/[condominioId]/page.tsx
++++ b/app/acesso-v2/[condominioId]/page.tsx
+@@ -5,7 +5,6 @@ import { useParams } from "next/navigation";
+ import { ref, onValue, update, remove, set, get } from "firebase/database";
+ import { db } from "../../services/firebase";
+ 
+-
+ type MensagemConversa = {
+   autor: "visitante" | "morador";
+   tipo: "texto" | "audio";
+@@ -14,11 +13,22 @@ type MensagemConversa = {
+   criadoEm: number;
+ };
+ 
++type MensagemConversaComId = MensagemConversa & {
++  id: string;
++};
++
+ type Unidade = {
+   id: string;
+   nome: string;
+   tipo?: string;
+   bloco?: string;
++  estruturaPaiId?: string;
++  estruturaPaiNome?: string;
++  condominioId?: string;
++  localId?: string;
++  localNome?: string;
++  localSlug?: string;
++  tipoLocal?: string;
+   chamada?: {
+     nome?: string;
+     motivo?: string;
+@@ -36,57 +46,129 @@ type Unidade = {
+   };
+ };
+ 
++type LocalCadastro = {
++  id: string;
++  nome: string;
++  slug?: string;
++  tipo?: string;
++  tipoLocal?: string;
++  segmento?: string;
++  status?: string;
++  configuracao?: {
++    modoAtendimento?: string;
++    [chave: string]: unknown;
++  };
++};
+ 
+ function blobParaBase64(blob: Blob): Promise<string> {
+   return new Promise((resolve, reject) => {
+     const reader = new FileReader();
+-
+-    reader.onloadend = () => {
+-      resolve(reader.result as string);
+-    };
+-
++    reader.onloadend = () => resolve(reader.result as string);
+     reader.onerror = reject;
+     reader.readAsDataURL(blob);
+   });
+ }
+ 
+ export default function AcessoV2Condominio() {
++  console.log("VERSAO BUILD 05/08/2026 18:45");
+   const params = useParams();
+   const condominioId = String(params.condominioId || "condominio-teste");
+ 
++  const [localCadastro, setLocalCadastro] = useState<LocalCadastro | null>(null);
+   const [unidades, setUnidades] = useState<Unidade[]>([]);
+   const [carregando, setCarregando] = useState(true);
+ 
++  const tipoLocalNormalizado = (
++    localCadastro?.tipo ||
++    localCadastro?.tipoLocal ||
++    localCadastro?.segmento ||
++    ""
++  )
++    .trim()
++    .toLowerCase();
++
++  const localEhResidencia =
++    tipoLocalNormalizado === "residencia" ||
++    tipoLocalNormalizado === "resid├¬ncia" ||
++    localCadastro?.configuracao?.modoAtendimento === "residencia";
++
+   const [busca, setBusca] = useState("");
+   const [blocoSelecionado, setBlocoSelecionado] = useState("");
+   const [unidadeSelecionada, setUnidadeSelecionada] = useState<Unidade | null>(null);
+-
+   const [nome, setNome] = useState("");
+   const [motivo, setMotivo] = useState("");
+   const [outroMotivo, setOutroMotivo] = useState("");
+-
+   const [enviando, setEnviando] = useState(false);
+   const [mensagem, setMensagem] = useState("");
+   const [diagnostico, setDiagnostico] = useState("");
+-
+   const [gravandoAudio, setGravandoAudio] = useState(false);
+   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
+   const [enviandoAudio, setEnviandoAudio] = useState(false);
+-
+   const [popupTexto, setPopupTexto] = useState("");
+   const [popupAudioBase64, setPopupAudioBase64] = useState("");
+   const [popupTipo, setPopupTipo] = useState<"mensagem" | "audio" | "encerrado">("mensagem");
++  const [popupAudioFoiOuvido, setPopupAudioFoiOuvido] = useState(false);
++  const [mensagensConversa, setMensagensConversa] = useState<MensagemConversaComId[]>([]);
+ 
+   const chamadaAtivaRef = useRef(false);
+   const chamadaFoiEnviadaRef = useRef(false);
+   const ultimoPopupRef = useRef("");
+-
+   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+   const audioChunksRef = useRef<Blob[]>([]);
+ 
+   useEffect(() => {
+-    const referencia = ref(db, "unidades-v2");
++    let cancelado = false;
++
++    async function carregarLocal() {
++      try {
++        const referenciaDireta = ref(db, `locais-v2/${condominioId}`);
++        const snapshotDireto = await get(referenciaDireta);
++
++        if (snapshotDireto.exists()) {
++          if (!cancelado) {
++            setLocalCadastro({
++              id: condominioId,
++              ...snapshotDireto.val(),
++            });
++          }
++          return;
++        }
+ 
++        const snapshotLocais = await get(ref(db, "locais-v2"));
++
++        if (!snapshotLocais.exists()) {
++          if (!cancelado) setLocalCadastro(null);
++          return;
++        }
++
++        const locais = snapshotLocais.val() as Record<string, Partial<LocalCadastro>>;
++        const encontrado = Object.entries(locais).find(
++          ([id, local]) =>
++            id === condominioId ||
++            local.slug === condominioId ||
++            local.id === condominioId
++        );
++
++        if (!cancelado) {
++          setLocalCadastro(
++            encontrado
++              ? {
++                  ...encontrado[1],
++                  id: encontrado[1].id || encontrado[0],
++                  nome: encontrado[1].nome || "QR Acesso",
++                }
++              : null
++          );
++        }
++      } catch (erro) {
++        console.error("Erro ao carregar o local no Cadastro Universal:", erro);
++        if (!cancelado) setLocalCadastro(null);
++      }
++    }
++
++    carregarLocal();
++
++    const referencia = ref(db, "unidades-v2");
+     const pararDeOuvir = onValue(referencia, (snapshot) => {
+       const dados = snapshot.val();
+ 
+@@ -96,21 +178,81 @@ export default function AcessoV2Condominio() {
+         return;
+       }
+ 
+-      const lista = Object.entries(dados).map(([id, valor]: any) => ({
+-        id,
+-        ...valor,
+-      })) as Unidade[];
++      const todasAsUnidades = Object.entries(dados).map(
++        ([id, valor]: [string, any]) => {
++          const nomeUnidade =
++            typeof valor.nome === "string"
++              ? valor.nome.trim()
++              : "";
++
++          const blocoPeloNome =
++            nomeUnidade.match(/^(Bloco\s+\d+)/i)?.[1] || "";
++
++          const blocoNormalizado =
++            valor.bloco ||
++            valor.estruturaPaiNome ||
++            (valor.estruturaPaiId
++              ? String(valor.estruturaPaiId)
++                  .replace(/^bloco-/i, "Bloco ")
++                  .replace(/-/g, " ")
++              : "") ||
++            blocoPeloNome;
++
++          return {
++            id,
++            ...valor,
++            bloco: blocoNormalizado,
++          };
++        }
++      ) as Unidade[];
++
++      const localIdAtual = localCadastro?.id || condominioId;
++
++      const unidadesVinculadas = todasAsUnidades.filter(
++        (unidade) =>
++          unidade.localId === localIdAtual ||
++          unidade.condominioId === localIdAtual ||
++          unidade.localId === condominioId ||
++          unidade.condominioId === condominioId
++      );
++
++      const unidadesSemVinculo = todasAsUnidades.filter(
++        (unidade) => !unidade.localId && !unidade.condominioId
++      );
++
++      const lista = unidadesVinculadas.length > 0
++        ? unidadesVinculadas
++        : unidadesSemVinculo;
++
++      lista.sort((a, b) =>
++        a.nome.localeCompare(b.nome, "pt-BR", { numeric: true })
++      );
+ 
+-      lista.sort((a, b) => a.nome.localeCompare(b.nome));
+       setUnidades(lista);
+       setCarregando(false);
+     });
+ 
+-    return () => pararDeOuvir();
+-  }, []);
++    return () => {
++      cancelado = true;
++      pararDeOuvir();
++    };
++  }, [condominioId, localCadastro?.id]);
+ 
+   useEffect(() => {
+-    if (!unidadeSelecionada) return;
++    if (
++      localEhResidencia &&
++      unidades.length === 1 &&
++      !unidadeSelecionada
++    ) {
++      setUnidadeSelecionada(unidades[0]);
++    }
++  }, [localEhResidencia, unidadeSelecionada, unidades]);
++
++  useEffect(() => {
++    if (!unidadeSelecionada) {
++      setMensagensConversa([]);
++      return;
++    }
+ 
+     const referencia = ref(db, `unidades-v2/${unidadeSelecionada.id}/chamada`);
+ 
+@@ -118,11 +260,13 @@ export default function AcessoV2Condominio() {
+       const chamada = snapshot.val();
+ 
+       if (!chamada) {
++        setMensagensConversa([]);
++
+         if (chamadaAtivaRef.current && chamadaFoiEnviadaRef.current) {
+           setPopupTipo("encerrado");
+           setPopupAudioBase64("");
++          setPopupAudioFoiOuvido(false);
+           setPopupTexto("Atendimento encerrado pelo respons├ível.");
+-
+           setUnidadeSelecionada(null);
+           setNome("");
+           setMotivo("");
+@@ -141,29 +285,34 @@ export default function AcessoV2Condominio() {
+         return;
+       }
+ 
+-      if (!chamadaFoiEnviadaRef.current) {
+-        return;
+-      }
++      if (!chamadaFoiEnviadaRef.current) return;
+ 
+       chamadaAtivaRef.current = true;
+ 
+-      const mensagens = chamada.mensagens
+-        ? (Object.entries(chamada.mensagens) as Array<
+-            [string, MensagemConversa]
+-          >)
+-            .filter(([, item]) => item?.autor === "morador")
++      const todasAsMensagens: MensagemConversaComId[] = chamada.mensagens
++        ? (Object.entries(chamada.mensagens) as Array<[string, MensagemConversa]>)
++            .map(([id, item]) => ({ id, ...item }))
+             .sort(
+-              ([idA, itemA], [idB, itemB]) =>
+-                Number(itemA?.criadoEm || idA) - Number(itemB?.criadoEm || idB)
++              (mensagemA, mensagemB) =>
++                Number(mensagemA.criadoEm || mensagemA.id) -
++                Number(mensagemB.criadoEm || mensagemB.id)
+             )
+         : [];
+ 
++      setMensagensConversa(todasAsMensagens);
++
++      const mensagensMorador = todasAsMensagens.filter(
++        (item) => item.autor === "morador"
++      );
++
+       const ultimaMensagemMorador =
+-        mensagens.length > 0 ? mensagens[mensagens.length - 1] : null;
++        mensagensMorador.length > 0
++          ? mensagensMorador[mensagensMorador.length - 1]
++          : null;
+ 
+       if (ultimaMensagemMorador) {
+-        const [idMensagemBanco, item] = ultimaMensagemMorador;
+-        const idMensagem = `${idMensagemBanco}-${item.criadoEm || ""}`;
++        const item = ultimaMensagemMorador;
++        const idMensagem = `${item.id}-${item.criadoEm || ""}`;
+ 
+         if (idMensagem !== ultimoPopupRef.current) {
+           ultimoPopupRef.current = idMensagem;
+@@ -172,12 +321,14 @@ export default function AcessoV2Condominio() {
+             setPopupTipo("audio");
+             setPopupTexto("Voc├¬ recebeu um ├íudio do morador.");
+             setPopupAudioBase64(item.audioBase64);
++            setPopupAudioFoiOuvido(false);
+             return;
+           }
+ 
+           if (item.tipo === "texto" && item.texto) {
+             setPopupTipo("mensagem");
+             setPopupAudioBase64("");
++            setPopupAudioFoiOuvido(false);
+             setPopupTexto(item.texto);
+             return;
+           }
+@@ -202,6 +353,7 @@ export default function AcessoV2Condominio() {
+         ultimoPopupRef.current = idMensagemAntiga;
+         setPopupTipo("mensagem");
+         setPopupAudioBase64("");
++        setPopupAudioFoiOuvido(false);
+         setPopupTexto(textoResposta);
+       }
+     });
+@@ -214,7 +366,9 @@ export default function AcessoV2Condominio() {
+       .map((unidade) => unidade.bloco || "├Ünico")
+       .filter((valor, index, array) => array.indexOf(valor) === index);
+ 
+-    return lista.sort();
++    return lista.sort((a, b) =>
++      a.localeCompare(b, "pt-BR", { numeric: true })
++    );
+   }, [unidades]);
+ 
+   const temBlocos = blocos.length > 1 || blocos[0] !== "├Ünico";
+@@ -229,7 +383,6 @@ export default function AcessoV2Condominio() {
+ 
+   const unidadesFiltradas = useMemo(() => {
+     const texto = busca.toLowerCase().trim();
+-
+     if (!texto) return unidadesDoBloco;
+ 
+     return unidadesDoBloco.filter((unidade) =>
+@@ -242,153 +395,125 @@ export default function AcessoV2Condominio() {
+   const precisaNome = motivo === "Visitante";
+   const precisaDescricao = motivo === "Outros";
+ 
+-  
+   async function chamarUnidade() {
+-  if (!unidadeSelecionada) {
+-    alert("Selecione uma unidade.");
+-    return;
+-  }
+-
+-  if (!motivo) {
+-    alert("Escolha o motivo da chamada.");
+-    return;
+-  }
+-
+-  if (precisaNome && !nome.trim()) {
+-    alert("Digite seu nome.");
+-    return;
+-  }
+-
+-  if (precisaDescricao && !outroMotivo.trim()) {
+-    alert("Descreva o motivo.");
+-    return;
+-  }
+-
+-  const motivoFinal =
+-    motivo === "Outros" ? outroMotivo.trim() : motivo;
+-
+-  let nomeFinal = nome.trim();
+-
+-  if (motivo === "Entrega") {
+-    nomeFinal = "Entrega";
+-  }
+-
+-  if (motivo === "Entrega de comida") {
+-    nomeFinal = "Entrega de comida";
+-  }
+-
+-  if (motivo === "Outros" && !nomeFinal) {
+-    nomeFinal = "Outro chamado";
+-  }
++    if (!unidadeSelecionada) {
++      alert("Selecione uma unidade.");
++      return;
++    }
+ 
+-  const unidadeIdAtual = unidadeSelecionada.id;
+-  const unidadeNomeAtual = unidadeSelecionada.nome;
++    if (!motivo) {
++      alert("Escolha o motivo da chamada.");
++      return;
++    }
+ 
+-  try {
+-    setDiagnostico("");
+-    setMensagem("");
+-    setEnviando(true);
++    if (precisaNome && !nome.trim()) {
++      alert("Digite seu nome.");
++      return;
++    }
+ 
+-    setPopupTexto("");
+-    setPopupAudioBase64("");
++    if (precisaDescricao && !outroMotivo.trim()) {
++      alert("Descreva o motivo.");
++      return;
++    }
+ 
+-    ultimoPopupRef.current = "";
+-    chamadaFoiEnviadaRef.current = true;
+-    chamadaAtivaRef.current = true;
+-
+-    setDiagnostico("Gravando chamada...");
+-
+-    await update(
+-      ref(db, `unidades-v2/${unidadeIdAtual}/chamada`),
+-      {
+-        nome: nomeFinal,
+-        motivo: motivoFinal,
+-        status: "Aguardando atendimento",
+-        criadoEm: new Date().toISOString(),
+-        notificar: true,
+-        condominioId,
+-        origem: "acesso-v2",
+-
+-        mensagemRapida: null,
+-        respostaRapida: null,
+-        mensagemResponsavel: null,
+-        resposta: null,
+-        mensagemMorador: null,
+-        enviadoEm: null,
+-      }
+-    );
++    const motivoFinal = motivo === "Outros" ? outroMotivo.trim() : motivo;
++    let nomeFinal = nome.trim();
+ 
+-    /*
+-     * A chamada j├í est├í gravada neste ponto.
+-     * O morador recebe o evento pelo Realtime Database.
+-     * Portanto, liberamos imediatamente a tela do visitante.
+-     */
+-    setEnviando(false);
+-    setDiagnostico("Ô£à Chamada enviada.");
++    if (motivo === "Entrega") nomeFinal = "Entrega";
++    if (motivo === "Entrega de comida") nomeFinal = "Entrega de comida";
++    if (motivo === "Outros" && !nomeFinal) nomeFinal = "Outro chamado";
+ 
+-    setMensagem(
+-      `Ô£à Chamada enviada para ${unidadeNomeAtual}. Aguarde o atendimento.`
+-    );
++    const unidadeIdAtual = unidadeSelecionada.id;
++    const unidadeNomeAtual = unidadeSelecionada.nome;
+ 
+-    /*
+-     * O push ├® enviado separadamente.
+-     * Ele n├úo deixa mais o bot├úo preso em "Enviando...".
+-     */
+-    fetch("/api/enviar-notificacao-v2", {
+-      method: "POST",
+-      headers: {
+-        "Content-Type": "application/json",
+-      },
+-      body: JSON.stringify({
+-        unidadeId: unidadeIdAtual,
+-      }),
+-    })
+-      .then(async (respostaPush) => {
+-        const textoResposta = await respostaPush.text();
+-
+-        let dadosPush: any = null;
++    try {
++      setDiagnostico("");
++      setMensagem("");
++      setEnviando(true);
++      setPopupTexto("");
++      setPopupAudioBase64("");
++      setPopupAudioFoiOuvido(false);
++      setMensagensConversa([]);
++
++      ultimoPopupRef.current = "";
++      chamadaFoiEnviadaRef.current = true;
++      chamadaAtivaRef.current = true;
++      setDiagnostico("Gravando chamada...");
+ 
+-        try {
+-          dadosPush = textoResposta
+-            ? JSON.parse(textoResposta)
+-            : null;
+-        } catch {
+-          dadosPush = textoResposta;
++      await update(
++        ref(db, `unidades-v2/${unidadeIdAtual}/chamada`),
++        {
++          nome: nomeFinal,
++          motivo: motivoFinal,
++          status: "Aguardando atendimento",
++          criadoEm: new Date().toISOString(),
++          notificar: true,
++          condominioId,
++          origem: "acesso-v2",
++          mensagemRapida: null,
++          respostaRapida: null,
++          mensagemResponsavel: null,
++          resposta: null,
++          mensagemMorador: null,
++          enviadoEm: null,
+         }
++      );
+ 
+-        console.log("RESPOSTA PUSH V2:", dadosPush);
++      setEnviando(false);
++      setDiagnostico("Ô£à Chamada enviada.");
++      setMensagem(
++        `Ô£à Chamada enviada para ${unidadeNomeAtual}. Aguarde o atendimento.`
++      );
+ 
+-        if (!respostaPush.ok) {
+-          console.warn(
+-            "A chamada foi gravada, mas o push n├úo foi confirmado:",
+-            dadosPush
+-          );
+-        }
++      fetch("/api/enviar-notificacao-v2", {
++        method: "POST",
++        headers: {
++          "Content-Type": "application/json",
++        },
++        body: JSON.stringify({
++          unidadeId: unidadeIdAtual,
++        }),
+       })
+-      .catch((erroPush) => {
+-        console.warn(
+-          "A chamada foi gravada, mas ocorreu falha no push:",
+-          erroPush
+-        );
+-      });
+-  } catch (erro: any) {
+-    console.error("Falha ao gravar a chamada:", erro);
+-
+-    const detalhe =
+-      erro?.message ||
+-      erro?.code ||
+-      String(erro) ||
+-      "Erro desconhecido";
++        .then(async (respostaPush) => {
++          const textoResposta = await respostaPush.text();
++          let dadosPush: unknown = null;
++
++          try {
++            dadosPush = textoResposta ? JSON.parse(textoResposta) : null;
++          } catch {
++            dadosPush = textoResposta;
++          }
+ 
+-    setDiagnostico(`ÔØî ERRO: ${detalhe}`);
+-    setMensagem("");
++          console.log("RESPOSTA PUSH V2:", dadosPush);
+ 
+-    chamadaAtivaRef.current = false;
+-    chamadaFoiEnviadaRef.current = false;
+-
+-    setEnviando(false);
++          if (!respostaPush.ok) {
++            console.warn(
++              "A chamada foi gravada, mas o push n├úo foi confirmado:",
++              dadosPush
++            );
++          }
++        })
++        .catch((erroPush) => {
++          console.warn(
++            "A chamada foi gravada, mas ocorreu falha no push:",
++            erroPush
++          );
++        });
++    } catch (erro: unknown) {
++      console.error("Falha ao gravar a chamada:", erro);
++
++      const detalhe =
++        erro instanceof Error
++          ? erro.message
++          : String(erro) || "Erro desconhecido";
++
++      setDiagnostico(`ÔØî ERRO: ${detalhe}`);
++      setMensagem("");
++      chamadaAtivaRef.current = false;
++      chamadaFoiEnviadaRef.current = false;
++      setEnviando(false);
++    }
+   }
+-}
+ 
+   async function iniciarGravacao() {
+     if (!unidadeSelecionada) {
+@@ -422,14 +547,11 @@ export default function AcessoV2Condominio() {
+ 
+       mediaRecorderRef.current = recorder;
+       recorder.start();
+-
+       setAudioBlob(null);
+       setGravandoAudio(true);
+ 
+       setTimeout(() => {
+-        if (recorder.state === "recording") {
+-          recorder.stop();
+-        }
++        if (recorder.state === "recording") recorder.stop();
+       }, 15000);
+     } catch (erro) {
+       console.error("Erro ao acessar o microfone:", erro);
+@@ -498,18 +620,12 @@ export default function AcessoV2Condominio() {
+       const idMensagem = String(criadoEmMensagem);
+ 
+       if (!chamadaJaAtiva) {
+-        const motivoFinal =
+-          motivo === "Outros" ? outroMotivo.trim() : motivo;
+-
++        const motivoFinal = motivo === "Outros" ? outroMotivo.trim() : motivo;
+         let nomeFinal = nome.trim();
+ 
+         if (motivo === "Entrega") nomeFinal = "Entrega";
+-        if (motivo === "Entrega de comida") {
+-          nomeFinal = "Entrega de comida";
+-        }
+-        if (motivo === "Outros" && !nomeFinal) {
+-          nomeFinal = "Outro chamado";
+-        }
++        if (motivo === "Entrega de comida") nomeFinal = "Entrega de comida";
++        if (motivo === "Outros" && !nomeFinal) nomeFinal = "Outro chamado";
+ 
+         chamadaFoiEnviadaRef.current = true;
+         chamadaAtivaRef.current = true;
+@@ -559,26 +675,20 @@ export default function AcessoV2Condominio() {
+ 
+       if (!chamadaJaAtiva) {
+         try {
+-          const respostaPush = await fetch(
+-            "/api/enviar-notificacao-v2",
+-            {
+-              method: "POST",
+-              headers: {
+-                "Content-Type": "application/json",
+-              },
+-              body: JSON.stringify({
+-                unidadeId: unidadeSelecionada.id,
+-              }),
+-            }
+-          );
++          const respostaPush = await fetch("/api/enviar-notificacao-v2", {
++            method: "POST",
++            headers: {
++              "Content-Type": "application/json",
++            },
++            body: JSON.stringify({
++              unidadeId: unidadeSelecionada.id,
++            }),
++          });
+ 
+           const dadosPush = await respostaPush.json();
+           console.log("RESPOSTA PUSH V2 - ├üUDIO:", dadosPush);
+         } catch (erroPush) {
+-          console.error(
+-            "Erro ao enviar push da chamada por ├íudio:",
+-            erroPush
+-          );
++          console.error("Erro ao enviar push da chamada por ├íudio:", erroPush);
+         }
+       }
+ 
+@@ -597,44 +707,53 @@ export default function AcessoV2Condominio() {
+   }
+ 
+   async function cancelarChamada() {
+-  if (!unidadeSelecionada) return;
+-
+-  try {
+-    await update(
+-      ref(db, `unidades-v2/${unidadeSelecionada.id}/chamada`),
+-      {
+-        status: "Cancelado pelo visitante",
+-        notificar: false,
+-        canceladoEm: Date.now(),
+-      }
+-    );
++    if (!unidadeSelecionada) return;
+ 
+-    await remove(ref(db, `unidades-v2/${unidadeSelecionada.id}/chamada`));
+-setEnviando(false);
+-setEnviandoAudio(false);
++    try {
++      await update(
++        ref(db, `unidades-v2/${unidadeSelecionada.id}/chamada`),
++        {
++          status: "Cancelado pelo visitante",
++          notificar: false,
++          canceladoEm: Date.now(),
++        }
++      );
+ 
+-setDiagnostico("");
+-setBusca("");
+-setBlocoSelecionado("");
+-    setMensagem("");
+-    setPopupTexto("");
+-    setPopupAudioBase64("");
+-    setUnidadeSelecionada(null);
+-    setNome("");
+-    setMotivo("");
+-    setOutroMotivo("");
+-    setAudioBlob(null);
+-    setGravandoAudio(false);
++      await remove(
++        ref(db, `unidades-v2/${unidadeSelecionada.id}/chamada`)
++      );
+ 
+-    chamadaAtivaRef.current = false;
+-    chamadaFoiEnviadaRef.current = false;
+-    ultimoPopupRef.current = "";
+-  } catch (erro) {
+-    console.error("Erro ao cancelar:", erro);
++      setEnviando(false);
++      setEnviandoAudio(false);
++      setDiagnostico("");
++      setBusca("");
++      setBlocoSelecionado("");
++      setMensagem("");
++      setPopupTexto("");
++      setPopupAudioBase64("");
++      setPopupAudioFoiOuvido(false);
++      setMensagensConversa([]);
++      setUnidadeSelecionada(null);
++      setNome("");
++      setMotivo("");
++      setOutroMotivo("");
++      setAudioBlob(null);
++      setGravandoAudio(false);
++
++      chamadaAtivaRef.current = false;
++      chamadaFoiEnviadaRef.current = false;
++      ultimoPopupRef.current = "";
++    } catch (erro) {
++      console.error("Erro ao cancelar:", erro);
++    }
+   }
+-}
++
+   function limparSelecao() {
+-    setUnidadeSelecionada(null);
++    setMensagensConversa([]);
++    setPopupAudioFoiOuvido(false);
++    setUnidadeSelecionada(
++      localEhResidencia && unidades.length === 1 ? unidades[0] : null
++    );
+     setNome("");
+     setMotivo("");
+     setOutroMotivo("");
+@@ -650,6 +769,8 @@ setBlocoSelecionado("");
+   }
+ 
+   function voltarBloco() {
++    setMensagensConversa([]);
++    setPopupAudioFoiOuvido(false);
+     setBlocoSelecionado("");
+     setBusca("");
+     setUnidadeSelecionada(null);
+@@ -705,13 +826,20 @@ setBlocoSelecionado("");
+                   className="w-full"
+                   src={popupAudioBase64}
+                   onPlay={async () => {
++                    setPopupAudioFoiOuvido(true);
++
+                     if (!unidadeSelecionada) return;
+ 
+                     await update(
+-                      ref(db, `unidades-v2/${unidadeSelecionada.id}/chamada`),
++                      ref(
++                        db,
++                        `unidades-v2/${unidadeSelecionada.id}/chamada`
++                      ),
+                       {
+                         visualizadoPeloVisitante: true,
+                         mensagemVisualizada: true,
++                        audioOuvidoPeloVisitante: true,
++                        audioOuvidoEm: Date.now(),
+                       }
+                     );
+                   }}
+@@ -720,22 +848,36 @@ setBlocoSelecionado("");
+             )}
+ 
+             <button
++              type="button"
++              disabled={popupTipo === "audio" && !popupAudioFoiOuvido}
+               onClick={async () => {
+-  if (unidadeSelecionada) {
+-    await update(
+-      ref(db, `unidades-v2/${unidadeSelecionada.id}/chamada`),
+-      {
+-        visualizadoPeloVisitante: true,
+-      }
+-    );
+-  }
++                if (popupTipo === "audio" && !popupAudioFoiOuvido) return;
++
++                if (unidadeSelecionada) {
++                  await update(
++                    ref(
++                      db,
++                      `unidades-v2/${unidadeSelecionada.id}/chamada`
++                    ),
++                    {
++                      visualizadoPeloVisitante: true,
++                    }
++                  );
++                }
+ 
+-  setPopupTexto("");
+-  setPopupAudioBase64("");
+-}}
+-              className="mt-7 w-full bg-white text-black text-2xl font-black py-5 rounded-2xl"
++                setPopupTexto("");
++                setPopupAudioBase64("");
++                setPopupAudioFoiOuvido(false);
++              }}
++              className={
++                popupTipo === "audio" && !popupAudioFoiOuvido
++                  ? "mt-7 w-full bg-slate-500 text-slate-300 text-2xl font-black py-5 rounded-2xl cursor-not-allowed"
++                  : "mt-7 w-full bg-white text-black text-2xl font-black py-5 rounded-2xl"
++              }
+             >
+-              ENTENDI
++              {popupTipo === "audio" && !popupAudioFoiOuvido
++                ? "OU├çA O ├üUDIO PRIMEIRO"
++                : "ENTENDI"}
+             </button>
+           </div>
+         </div>
+@@ -747,10 +889,15 @@ setBlocoSelecionado("");
+             QR ACESSO ÔÇó V2
+           </p>
+ 
+-          <h1 className="text-3xl font-black">­ƒÅó Chamar Unidade</h1>
++          <h1 className="text-3xl font-black">
++            {localEhResidencia ? "­ƒÅá" : "­ƒÅó"} {" "}
++            {localCadastro?.nome || "Chamar Unidade"}
++          </h1>
+ 
+           <p className="text-slate-400 mt-2">
+-            Escolha bloco, unidade e motivo da chamada.
++            {localEhResidencia
++              ? "Informe o motivo da visita para chamar a resid├¬ncia."
++              : "Escolha bloco, unidade e motivo da chamada."}
+           </p>
+         </section>
+ 
+@@ -760,25 +907,29 @@ setBlocoSelecionado("");
+           </section>
+         )}
+ 
+-        {!carregando && temBlocos && !blocoSelecionado && (
+-          <section className="bg-slate-900 border border-slate-700 rounded-3xl p-5">
+-            <h2 className="text-2xl font-black mb-4">Escolha o bloco</h2>
++        {!carregando &&
++          !localEhResidencia &&
++          temBlocos &&
++          !blocoSelecionado && (
++            <section className="bg-slate-900 border border-slate-700 rounded-3xl p-5">
++              <h2 className="text-2xl font-black mb-4">Escolha o bloco</h2>
+ 
+-            <div className="grid grid-cols-1 gap-3">
+-              {blocos.map((bloco) => (
+-                <button
+-                  key={bloco}
+-                  onClick={() => setBlocoSelecionado(bloco)}
+-                  className="w-full bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-2xl p-5 text-left"
+-                >
+-                  <p className="text-2xl font-black">­ƒÅó {bloco}</p>
+-                </button>
+-              ))}
+-            </div>
+-          </section>
+-        )}
++              <div className="grid grid-cols-1 gap-3">
++                {blocos.map((bloco) => (
++                  <button
++                    key={bloco}
++                    onClick={() => setBlocoSelecionado(bloco)}
++                    className="w-full bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-2xl p-5 text-left"
++                  >
++                    <p className="text-2xl font-black">­ƒÅó {bloco}</p>
++                  </button>
++                ))}
++              </div>
++            </section>
++          )}
+ 
+         {!carregando &&
++          !localEhResidencia &&
+           (!temBlocos || blocoSelecionado) &&
+           !unidadeSelecionada && (
+             <section className="bg-slate-900 border border-slate-700 rounded-3xl p-5">
+@@ -807,21 +958,19 @@ setBlocoSelecionado("");
+               {unidadesFiltradas.length > 0 ? (
+                 <div className="space-y-3">
+                   {unidadesFiltradas.map((unidade) => {
+-                    
+-
+-const statusChamada = unidade.chamada?.status || "";
+-const temNome = unidade.chamada?.nome || "";
+-const temMotivo = unidade.chamada?.motivo || "";
+-
+-const ocupada =
+-  !!unidade.chamada &&
+-  !!temNome &&
+-  !!temMotivo &&
+-  statusChamada !== "Encerrado" &&
+-  statusChamada !== "Finalizado" &&
+-  statusChamada !== "Cancelado pelo visitante" &&
+-  statusChamada !== "Cancelada pelo visitante" &&
+-  statusChamada !== "Atendimento encerrado";
++                    const statusChamada = unidade.chamada?.status || "";
++                    const temNome = unidade.chamada?.nome || "";
++                    const temMotivo = unidade.chamada?.motivo || "";
++
++                    const ocupada =
++                      !!unidade.chamada &&
++                      !!temNome &&
++                      !!temMotivo &&
++                      statusChamada !== "Encerrado" &&
++                      statusChamada !== "Finalizado" &&
++                      statusChamada !== "Cancelado pelo visitante" &&
++                      statusChamada !== "Cancelada pelo visitante" &&
++                      statusChamada !== "Atendimento encerrado";
+ 
+                     return (
+                       <button
+@@ -893,25 +1042,27 @@ const ocupada =
+             </p>
+ 
+             <div className="grid grid-cols-1 gap-3 mb-5">
+-              {["Visitante", "Entrega", "Entrega de comida", "Outros"].map((item) => (
+-                <button
+-                  key={item}
+-                  onClick={() => {
+-                    setMotivo(item);
+-                    setMensagem("");
+-                  }}
+-                  className={
+-                    motivo === item
+-                      ? "bg-green-500 text-black font-black py-4 rounded-2xl"
+-                      : "bg-slate-800 text-white font-bold py-4 rounded-2xl border border-slate-600"
+-                  }
+-                >
+-                  {item === "Visitante" && "­ƒæñ Visitante"}
+-                  {item === "Entrega" && "­ƒôª Entrega / encomenda"}
+-                  {item === "Entrega de comida" && "­ƒìö Entrega de comida"}
+-                  {item === "Outros" && "Ô£ì´©Å Outros"}
+-                </button>
+-              ))}
++              {["Visitante", "Entrega", "Entrega de comida", "Outros"].map(
++                (item) => (
++                  <button
++                    key={item}
++                    onClick={() => {
++                      setMotivo(item);
++                      setMensagem("");
++                    }}
++                    className={
++                      motivo === item
++                        ? "bg-green-500 text-black font-black py-4 rounded-2xl"
++                        : "bg-slate-800 text-white font-bold py-4 rounded-2xl border border-slate-600"
++                    }
++                  >
++                    {item === "Visitante" && "­ƒæñ Visitante"}
++                    {item === "Entrega" && "­ƒôª Entrega / encomenda"}
++                    {item === "Entrega de comida" && "­ƒìö Entrega de comida"}
++                    {item === "Outros" && "Ô£ì´©Å Outros"}
++                  </button>
++                )
++              )}
+             </div>
+ 
+             {motivo === "Visitante" && (
+@@ -948,7 +1099,7 @@ const ocupada =
+               </div>
+             )}
+ 
+-                       <button
++            <button
+               onClick={chamarUnidade}
+               disabled={enviando || !motivo}
+               className="w-full sticky bottom-4 z-40 bg-green-500 hover:bg-green-400 disabled:bg-gray-500 text-black text-xl font-black py-4 rounded-2xl shadow-2xl"
+@@ -956,7 +1107,7 @@ const ocupada =
+               {enviando ? "Enviando..." : "­ƒöö CHAMAR"}
+             </button>
+ 
+-                        {diagnostico && (
++            {diagnostico && (
+               <div
+                 className={
+                   diagnostico.startsWith("ÔØî")
+@@ -985,6 +1136,70 @@ const ocupada =
+               </div>
+             )}
+ 
++            {mensagensConversa.length > 0 && (
++              <div className="mt-5 bg-slate-950 border border-slate-700 rounded-2xl p-4">
++                <h3 className="text-lg font-black mb-4">­ƒÆ¼ Conversa</h3>
++
++                <div className="space-y-3">
++                  {mensagensConversa.map((item) => {
++                    const mensagemMorador = item.autor === "morador";
++
++                    return (
++                      <div
++                        key={item.id}
++                        className={
++                          mensagemMorador
++                            ? "flex justify-start"
++                            : "flex justify-end"
++                        }
++                      >
++                        <div
++                          className={
++                            mensagemMorador
++                              ? "max-w-[88%] bg-blue-600 rounded-2xl rounded-bl-md p-3"
++                              : "max-w-[88%] bg-green-600 text-black rounded-2xl rounded-br-md p-3"
++                          }
++                        >
++                          <p className="text-xs font-black mb-2 opacity-80">
++                            {mensagemMorador ? "Morador" : "Voc├¬"}
++                          </p>
++
++                          {item.tipo === "texto" && item.texto && (
++                            <p className="font-bold break-words">{item.texto}</p>
++                          )}
++
++                          {item.tipo === "audio" && item.audioBase64 && (
++                            <audio
++                              controls
++                              className="w-full min-w-[220px]"
++                              src={item.audioBase64}
++                              onPlay={async () => {
++                                if (!unidadeSelecionada || !mensagemMorador) {
++                                  return;
++                                }
++
++                                await update(
++                                  ref(
++                                    db,
++                                    `unidades-v2/${unidadeSelecionada.id}/chamada`
++                                  ),
++                                  {
++                                    visualizadoPeloVisitante: true,
++                                    audioOuvidoPeloVisitante: true,
++                                    audioOuvidoEm: Date.now(),
++                                  }
++                                );
++                              }}
++                            />
++                          )}
++                        </div>
++                      </div>
++                    );
++                  })}
++                </div>
++              </div>
++            )}
++
+             <div className="mt-4 space-y-3">
+               <button
+                 onClick={gravandoAudio ? pararGravacao : iniciarGravacao}
+@@ -1017,9 +1232,7 @@ const ocupada =
+                     disabled={enviandoAudio}
+                     className="w-full bg-blue-500 hover:bg-blue-400 disabled:bg-gray-500 text-white text-xl font-black py-4 rounded-2xl"
+                   >
+-                    {enviandoAudio
+-                      ? "Enviando..."
+-                      : "­ƒôñ ENVIAR ├üUDIO"}
++                    {enviandoAudio ? "Enviando..." : "­ƒôñ ENVIAR ├üUDIO"}
+                   </button>
+                 </div>
+               )}
+@@ -1029,4 +1242,4 @@ const ocupada =
+       </div>
+     </main>
+   );
+-}
+\ No newline at end of file
++}
+diff --git a/app/api/enviar-notificacao-v2/route.ts b/app/api/enviar-notificacao-v2/route.ts
+index af45075..e0b6728 100644
+--- a/app/api/enviar-notificacao-v2/route.ts
++++ b/app/api/enviar-notificacao-v2/route.ts
+@@ -371,8 +371,10 @@ export async function POST(request: Request) {
+       ? `${mensagem.slice(0, 117)}...`
+       : mensagem,
+   url:
+-    `${urlBase}/morador-v2/${encodeURIComponent(unidadeId)}` +
+-    `?comunicado=${encodeURIComponent(comunicadoId)}`,
++    `${urlBase}/dashboard/morador/comunicados` +
++                  `?local=${encodeURIComponent(condominioId)}` +
++                  `&unidade=${encodeURIComponent(unidadeId)}` +
++                  `&comunicado=${encodeURIComponent(comunicadoId)}`,
+ },
+             webpush: {
+           headers: {
+@@ -381,8 +383,10 @@ export async function POST(request: Request) {
+           },
+           fcmOptions: {
+                 link:
+-                  `${urlBase}/morador-v2/${encodeURIComponent(unidadeId)}` +
+-                  `?comunicado=${encodeURIComponent(comunicadoId)}`,
++                  `${urlBase}/dashboard/morador/comunicados` +
++                  `?local=${encodeURIComponent(condominioId)}` +
++                  `&unidade=${encodeURIComponent(unidadeId)}` +
++                  `&comunicado=${encodeURIComponent(comunicadoId)}`,
+               },
+             },
+           });
+diff --git a/app/morador-v2/[unidadeId]/page.tsx b/app/morador-v2/[unidadeId]/page.tsx
+index 4e3b162..da68296 100644
+--- a/app/morador-v2/[unidadeId]/page.tsx
++++ b/app/morador-v2/[unidadeId]/page.tsx
+@@ -5,8 +5,12 @@ import { useParams, useSearchParams } from "next/navigation";
+ import { getToken } from "firebase/messaging";
+ import { ref, onValue, update, remove, push, set, get } from "firebase/database";
+ import { db, messagingPromise } from "../../services/firebase";
+-
+-
++import { useLocalAtual } from "@/app/hooks/useLocalAtual";
++import {
++  listarResponsaveisDaUnidade,
++  recusarEEncaminhar,
++  registrarAtendimentoDoResponsavel,
++} from "@/app/services/chamadas/MotorEscalonamento";
+ type MensagemConversa = {
+   id?: string;
+   autor: "visitante" | "morador";
+@@ -161,6 +165,10 @@ export default function MoradorV2() {
+   function identificarCondominioPeloSlug(unidadeSlug: string) {
+     const valor = unidadeSlug.toLowerCase();
+ 
++    if (valor.includes("residencial-costa")) {
++      return "residencial-costa";
++    }
++
+     if (valor.includes("tulipas")) return "cnd-tulipas";
+     if (valor.includes("flores")) return "cnd-flores";
+     if (valor.includes("alfa")) return "cnd-alfa";
+@@ -168,7 +176,18 @@ export default function MoradorV2() {
+     return "cnd-tulipas";
+   }
+ 
+-  const condominioId = identificarCondominioPeloSlug(slug);
++  const {
++  localId,
++  localNome,
++  ehResidencia,
++} = useLocalAtual(slug);
++
++const condominioId =
++  localId || identificarCondominioPeloSlug(slug);
++
++const nomeLocal =
++  localNome || "Morador V2";
++
+   const caminhoComunicados = `comunicados-v2/${condominioId}`;
+   const caminhoFirebase = `unidades-v2/${slug}/chamada`;
+   const caminhoHistorico = `historico-v2/${slug}`;
+@@ -176,8 +195,8 @@ export default function MoradorV2() {
+   const caminhoLogs = `logs-v2/${slug}`;
+   const caminhoAnalytics = `analytics-v2/${slug}`;
+ 
+-  const TEMPO_AGUARDANDO = 5 * 60 * 1000;
+-  const TEMPO_EM_ATENDIMENTO = 3 * 60 * 1000;
++  const TEMPO_AGUARDANDO = 2 * 60 * 1000;
++  const TEMPO_EM_ATENDIMENTO = 1 * 60 * 1000;
+ 
+   const chamadaAtiva =
+     nome !== "Nenhuma solicita├º├úo" &&
+@@ -626,7 +645,10 @@ export default function MoradorV2() {
+ 
+     if (dados.status === "Em atendimento") {
+       tempoLimite = TEMPO_EM_ATENDIMENTO;
+-      dataBase = dados.atendidoEm || dados.criadoEm;
++      dataBase =
++        dados.ultimaAtividade ||
++        dados.atendidoEm ||
++        dados.criadoEm;
+     }
+ 
+     if (!dataBase) return;
+@@ -690,7 +712,7 @@ export default function MoradorV2() {
+       void remove(ref(db, caminhoFirebase)).catch((erro) => {
+         console.error("Erro ao limpar chamada encerrada:", erro);
+       });
+-    }, 5000);
++    }, 2000);
+   }
+ 
+   function limparFinalizacaoAutomatica() {
+@@ -701,38 +723,208 @@ export default function MoradorV2() {
+   }
+ 
+   async function atenderSolicitacao() {
+-    if (status === "Sem chamado ativo") {
+-      alert("N├úo existe chamada ativa para atender.");
+-      return;
++  if (status === "Sem chamado ativo") {
++    alert("N├úo existe chamada ativa para atender.");
++    return;
++  }
++
++  if (status === "Em atendimento") {
++    alert("Esta chamada j├í est├í em atendimento.");
++    return;
++  }
++
++  setPopupAtendimentoAberto(false);
++  pararToqueContinuo();
++
++  try {
++    const chamadaSnapshot =
++      await get(
++        ref(
++          db,
++          caminhoFirebase
++        )
++      );
++
++    const chamadaAtual =
++      chamadaSnapshot.val() || {};
++
++    const responsavelAtualId =
++      String(
++        chamadaAtual.responsavelAtualId ||
++        ""
++      );
++
++    /*
++     * Enquanto ainda n├úo houver respons├ível individual
++     * definido na chamada, preserva o funcionamento atual.
++     */
++    if (!responsavelAtualId) {
++      await update(
++        ref(
++          db,
++          caminhoFirebase
++        ),
++        {
++          status:
++            "Em atendimento",
++
++          notificar:
++            false,
++
++          atendidoEm:
++            new Date().toISOString(),
++
++          ultimaAtividade:
++            Date.now(),
++        }
++      );
++    } else {
++      const responsaveis =
++        await listarResponsaveisDaUnidade(
++          slug
++        );
++
++      const responsavelAtual =
++        responsaveis.find(
++          (
++            responsavel
++          ) =>
++            responsavel.id ===
++            responsavelAtualId
++        );
++
++      if (!responsavelAtual) {
++        throw new Error(
++          "O respons├ível atual da chamada n├úo foi encontrado."
++        );
++      }
++
++      await registrarAtendimentoDoResponsavel(
++        caminhoFirebase,
++        responsavelAtual
++      );
+     }
+ 
+-    if (status === "Em atendimento") {
+-      alert("Esta chamada j├í est├í em atendimento.");
++    setStatus(
++      "Em atendimento"
++    );
++
++    void Promise.allSettled([
++      registrarAnalytics(
++        "atendida"
++      ),
++
++      registrarLog(
++        "chamada_atendida",
++        responsavelAtualId
++          ? `Chamada atendida pelo respons├ível ${responsavelAtualId}`
++          : "Chamada atendida pelo painel"
++      ),
++    ]);
++  } catch (erro) {
++    console.error(
++      "Erro ao atender chamada:",
++      erro
++    );
++
++    alert(
++      erro instanceof Error
++        ? erro.message
++        : "N├úo foi poss├¡vel confirmar o atendimento."
++    );
++  }
++}
++async function naoPossoAtender() {
++  if (
++    status ===
++    "Sem chamado ativo"
++  ) {
++    alert(
++      "N├úo existe chamada ativa."
++    );
++
++    return;
++  }
++
++  pararToqueContinuo();
++  setPopupAtendimentoAberto(
++    false
++  );
++
++  try {
++    const chamadaSnapshot =
++      await get(
++        ref(
++          db,
++          caminhoFirebase
++        )
++      );
++
++    const chamadaAtual =
++      chamadaSnapshot.val() || {};
++
++    const responsavelAtualId =
++      String(
++        chamadaAtual.responsavelAtualId ||
++        ""
++      );
++
++    if (!responsavelAtualId) {
++      alert(
++        "A chamada ainda n├úo possui um respons├ível individual definido."
++      );
++
++      setPopupAtendimentoAberto(
++        true
++      );
++
+       return;
+     }
+ 
+-    setStatus("Em atendimento");
+-    setPopupAtendimentoAberto(false);
+-    pararToqueContinuo();
++    const resultado =
++      await recusarEEncaminhar(
++        slug,
++        caminhoFirebase,
++        responsavelAtualId
++      );
++
++    await registrarLog(
++      "chamada_recusada",
++      `Respons├ível ${responsavelAtualId} informou que n├úo pode atender.`
++    );
++
++    if (
++      resultado.sucesso &&
++      resultado.responsavel
++    ) {
++      alert(
++        `Chamada encaminhada para ${resultado.responsavel.nome}.`
++      );
+ 
+-    try {
+-      await update(ref(db, caminhoFirebase), {
+-        status: "Em atendimento",
+-        notificar: false,
+-        atendidoEm: new Date().toISOString(),
+-      });
+-    } catch (erro) {
+-      console.error("Erro ao atender chamada:", erro);
+-      alert("N├úo foi poss├¡vel confirmar o atendimento.");
+       return;
+     }
+ 
+-    void Promise.allSettled([
+-      registrarAnalytics("atendida"),
+-      registrarLog("chamada_atendida", "Chamada atendida pelo painel"),
+-    ]);
+-  }
++    alert(
++      resultado.motivo ||
++      "N├úo existe outro respons├ível dispon├¡vel no momento."
++    );
++  } catch (erro) {
++    console.error(
++      "Erro ao encaminhar chamada:",
++      erro
++    );
++
++    setPopupAtendimentoAberto(
++      true
++    );
+ 
++    alert(
++      erro instanceof Error
++        ? erro.message
++        : "N├úo foi poss├¡vel encaminhar a chamada."
++    );
++  }
++}
+   async function enviarMensagemRapida(mensagem: string) {
+     if (status === "Sem chamado ativo") {
+       alert("N├úo existe chamada ativa para responder.");
+@@ -811,13 +1003,32 @@ export default function MoradorV2() {
+       };
+ 
+       recorder.onstop = () => {
+-        const blob = new Blob(audioChunksMoradorRef.current, {
+-          type: "audio/webm",
+-        });
++        /*
++         * Usa o formato real produzido pelo navegador.
++         * Firefox normalmente pode gravar em audio/ogg,
++         * enquanto Chrome costuma usar audio/webm.
++         * For├ºar audio/webm em todos os navegadores pode
++         * fazer o ├íudio chegar sem som no aparelho visitante.
++         */
++        const tipoAudio =
++          recorder.mimeType ||
++          audioChunksMoradorRef.current[0]?.type ||
++          "audio/webm";
++
++        const blob = new Blob(
++          audioChunksMoradorRef.current,
++          {
++            type: tipoAudio,
++          }
++        );
+ 
+         setAudioRespostaBlob(blob);
+         setGravandoAudioMorador(false);
+-        stream.getTracks().forEach((track) => track.stop());
++        stream
++          .getTracks()
++          .forEach((track) =>
++            track.stop()
++          );
+       };
+ 
+       mediaRecorderMoradorRef.current = recorder;
+@@ -953,7 +1164,7 @@ export default function MoradorV2() {
+       void remove(ref(db, caminhoFirebase)).catch((erro) => {
+         console.error("Erro ao limpar chamada encerrada:", erro);
+       });
+-    }, 5000);
++    }, 2000);
+   }
+ 
+   function tocarBip() {
+@@ -1511,20 +1722,20 @@ Mensagem: ${mensagemErro}`
+             >
+               Ô£à ATENDER AGORA
+             </button>
+-
++<button
++  type="button"
++  onClick={naoPossoAtender}
++  className="w-full mt-3 rounded-2xl bg-blue-600 py-4 text-lg font-black text-white transition-all hover:bg-blue-500 active:scale-95"
++>
++  ­ƒöÁ N├âO POSSO ATENDER
++</button>
+             <div className="mt-4 bg-slate-800 border border-yellow-500/40 rounded-2xl p-3">
+               <p className="text-yellow-300 text-sm font-bold">
+                 Ou├ºa o ├íudio e veja a c├ómera. Para responder, clique em ATENDER AGORA.
+               </p>
+             </div>
+-
+-            <button
+-              onClick={finalizarSolicitacao}
+-              className="w-full mt-3 bg-red-600 hover:bg-red-500 text-white font-bold py-3 rounded-2xl"
+-            >
+-              ÔØî FINALIZAR
+-            </button>
+-          </div>
++           
++                      </div>
+         </div>
+       )}
+ 
+@@ -1663,8 +1874,14 @@ Mensagem: ${mensagemErro}`
+       <div className="w-full max-w-md mx-auto bg-slate-900 rounded-3xl p-5 shadow-2xl border border-slate-800">
+         <div className="flex items-start justify-between gap-3">
+           <div>
+-            <h1 className="text-3xl font-black">­ƒÅá Morador V2</h1>
+-            <p className="text-slate-400 text-sm mt-1">Unidade: {slug}</p>
++            <h1 className="text-3xl font-black">
++              ­ƒÅá {nomeLocal}
++            </h1>
++            <p className="text-slate-400 text-sm mt-1">
++              {ehResidencia
++                ? "Casa Principal"
++                : `Unidade: ${slug}`}
++            </p>
+           </div>
+ 
+           <div
+@@ -1695,6 +1912,8 @@ Mensagem: ${mensagemErro}`
+                         (item) =>
+                           item.visualizacoes?.[slug]?.ciente !== true
+                       ).length} comunicado(s) aguardando sua ci├¬ncia`
++                    : ehResidencia
++                    ? "Avisos da resid├¬ncia"
+                     : "Comunicados do condom├¡nio"}
+                 </h2>
+               </div>

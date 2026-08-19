@@ -21,7 +21,6 @@ public class MainActivity extends BridgeActivity {
     private android.widget.TextView coberturaChamada = null;
     private boolean aguardandoInterfaceChamada = false;
     private int tentativasInterfaceChamada = 0;
-    private int confirmacoesInterfaceChamada = 0;
 
     private final Runnable verificarInterfaceChamada =
         new Runnable() {
@@ -39,14 +38,8 @@ public class MainActivity extends BridgeActivity {
                     "Boolean(document.body && document.body.innerText.includes('CHAMADA RECEBIDA'))",
                     resultado -> {
                         if ("true".equals(resultado)) {
-                            confirmacoesInterfaceChamada++;
-
-                            if (confirmacoesInterfaceChamada >= 5) {
-                                revelarInterfaceChamada();
-                                return;
-                            }
-                        } else {
-                            confirmacoesInterfaceChamada = 0;
+                            revelarInterfaceChamada();
+                            return;
                         }
 
                         tentativasInterfaceChamada++;
@@ -72,7 +65,6 @@ public class MainActivity extends BridgeActivity {
     private void ocultarWebViewParaChamada() {
         aguardandoInterfaceChamada = true;
         tentativasInterfaceChamada = 0;
-        confirmacoesInterfaceChamada = 0;
         chamadaHandler.removeCallbacks(verificarInterfaceChamada);
 
         if (
@@ -86,7 +78,9 @@ public class MainActivity extends BridgeActivity {
 
         if (coberturaChamada == null) {
             coberturaChamada = new android.widget.TextView(this);
-            coberturaChamada.setText("");
+            coberturaChamada.setText(
+                "CHAMADA RECEBIDA\n\nConectando Ã  chamada..."
+            );
             coberturaChamada.setTextColor(android.graphics.Color.WHITE);
             coberturaChamada.setTextSize(26);
             coberturaChamada.setGravity(android.view.Gravity.CENTER);
@@ -244,18 +238,6 @@ public class MainActivity extends BridgeActivity {
                     rotaPendente.contains("?")
                         ? "&chamadaFullscreen=1"
                         : "?chamadaFullscreen=1";
-            }
-
-            if (
-                acaoChamadaPendente != null &&
-                !acaoChamadaPendente.isEmpty()
-            ) {
-                rotaPendente +=
-                    rotaPendente.contains("?")
-                        ? "&acaoChamada=" + acaoChamadaPendente
-                        : "?acaoChamada=" + acaoChamadaPendente;
-
-                acaoChamadaPendente = null;
             }
 
             Log.d(

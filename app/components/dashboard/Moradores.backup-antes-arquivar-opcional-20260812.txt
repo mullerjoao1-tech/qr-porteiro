@@ -83,6 +83,9 @@ atualizarMorador: (
     status: string;
   }
 ) => Promise<void>;
+  arquivarMorador: (
+    moradorId: string
+  ) => Promise<void>;
   salvandoMorador: boolean;
 };
 
@@ -194,6 +197,7 @@ export default function Moradores({
   setPodeAbrirPortao,
   cadastrarMorador,
   atualizarMorador,
+  arquivarMorador,
   salvandoMorador,
 }: Props) {
   const [busca, setBusca] = useState("");
@@ -210,6 +214,8 @@ export default function Moradores({
 
   const [editandoMorador, setEditandoMorador] = useState(false);
   const [salvandoEdicao, setSalvandoEdicao] = useState(false);
+  const [arquivandoMoradorId, setArquivandoMoradorId] =
+    useState<string | null>(null);
 
   const [nomeEdicao, setNomeEdicao] = useState("");
   const [telefoneEdicao, setTelefoneEdicao] = useState("");
@@ -396,6 +402,50 @@ export default function Moradores({
       );
     } finally {
       setSalvandoEdicao(false);
+    }
+  }
+
+  async function confirmarArquivamentoMorador(
+    morador: Morador
+  ) {
+    if (arquivandoMoradorId) {
+      return;
+    }
+
+    const confirmou =
+      window.confirm(
+        `Remover "${morador.nome}" da lista ativa deste local?
+
+O hist?rico e a identidade universal ser?o preservados.`
+      );
+
+    if (!confirmou) {
+      return;
+    }
+
+    try {
+      setArquivandoMoradorId(
+        morador.id
+      );
+
+      await arquivarMorador(
+        morador.id
+      );
+    } catch (erro) {
+      console.error(
+        "Erro ao arquivar morador:",
+        erro
+      );
+
+      alert(
+        erro instanceof Error
+          ? erro.message
+          : "N?o foi poss?vel arquivar o morador."
+      );
+    } finally {
+      setArquivandoMoradorId(
+        null
+      );
     }
   }
 
@@ -641,11 +691,17 @@ export default function Moradores({
               const ativo = morador.status === "ativo";
 
               return (
-                <button
+                <div
                   key={morador.id}
-                  type="button"
+                  role="button"
+                  tabIndex={0}
                   onClick={() => abrirMorador(morador)}
-                  className="rounded-2xl border border-slate-700 bg-slate-800 p-4 text-left transition-all hover:border-blue-500 hover:bg-slate-700 active:scale-[0.98]"
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      abrirMorador(morador);
+                    }
+                  }}
+                  className="cursor-pointer rounded-2xl border border-slate-700 bg-slate-800 p-4 text-left transition-all hover:border-blue-500 hover:bg-slate-700 active:scale-[0.98]"
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex min-w-0 items-start gap-3">
@@ -679,6 +735,25 @@ export default function Moradores({
                     </div>
 
                     <div className="shrink-0 text-right">
+                      <button
+                        type="button"
+                        title="Remover da lista ativa"
+                        disabled={
+                          arquivandoMoradorId ===
+                          morador.id
+                        }
+                        onClick={(event) => {
+                          event.stopPropagation();
+
+                          void confirmarArquivamentoMorador(
+                            morador
+                          );
+                        }}
+                        className="mb-3 ml-auto flex h-9 w-9 items-center justify-center rounded-xl border border-red-900 bg-red-950/30 text-base text-red-300 transition hover:bg-red-950/60 disabled:opacity-50"
+                      >
+                        ???
+                      </button>
+
                       <span
                         className={`inline-flex rounded-full px-3 py-1 text-[10px] font-black ${
                           ativo
@@ -710,7 +785,7 @@ export default function Moradores({
                       </p>
                     </div>
                   </div>
-                </button>
+                </div>
               );
             })}
           </div>

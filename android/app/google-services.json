@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "173365953626",
+    "firebase_url": "https://qr-acesso-studio-default-rtdb.firebaseio.com",
+    "project_id": "qr-acesso-studio",
+    "storage_bucket": "qr-acesso-studio.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:173365953626:android:a0926c63c48afaf98e0463",
+        "android_client_info": {
+          "package_name": "com.qracesso.studio"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBneG7Eaxwd_isbmsZrEQK33h-_oPT7OB0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

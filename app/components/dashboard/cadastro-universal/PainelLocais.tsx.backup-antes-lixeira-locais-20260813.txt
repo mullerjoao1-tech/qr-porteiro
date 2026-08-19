@@ -1,0 +1,678 @@
+﻿"use client";
+
+import {
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+
+import {
+  onValue,
+  ref,
+} from "firebase/database";
+
+import {
+  db,
+} from "../../../services/firebase";
+
+type VinculoUsuario = {
+  localId?: string;
+  localNome?: string;
+  localSlug?: string;
+  ativo?: boolean;
+};
+
+type UsuarioUniversal = {
+  locais?: Record<
+    string,
+    VinculoUsuario
+  >;
+
+  condominios?: Record<
+    string,
+    VinculoUsuario
+  >;
+
+  vinculos?: Record<
+    string,
+    VinculoUsuario
+  >;
+};
+
+type UnidadeLocal = {
+  unidadeId?: string;
+  nome?: string;
+  status?: string;
+};
+
+type LocalUniversal = {
+  id: string;
+
+  localId?: string;
+  nome?: string;
+  nomeExibicao?: string;
+  slug?: string;
+
+  tipo?: string;
+  tipoLocal?: string;
+  segmento?: string;
+
+  status?: string;
+  ativo?: boolean;
+
+  cidade?: string;
+  estado?: string;
+
+  unidades?: Record<
+    string,
+    UnidadeLocal
+  >;
+
+  estruturas?: {
+    totalUnidades?: number;
+
+    unidades?: Record<
+      string,
+      UnidadeLocal
+    >;
+  };
+
+  estatisticas?: {
+    totalUnidades?: number;
+    totalUsuarios?: number;
+    totalMoradores?: number;
+  };
+};
+
+type LocalResumo = {
+  id: string;
+  nome: string;
+  tipo: string;
+  status: string;
+  cidade: string;
+  estado: string;
+  totalUnidades: number;
+  totalPessoas: number;
+};
+
+type Props = {
+  onVerPessoas: (
+    localId: string
+  ) => void;
+};
+
+function nomeTipoLocal(
+  tipo?: string
+): string {
+  switch (
+    String(
+      tipo || ""
+    ).toLowerCase()
+  ) {
+    case "condominio":
+      return "Condom\u00EDnio";
+
+    case "residencia":
+      return "Resid\u00EAncia";
+
+    case "beauty":
+      return "Beauty";
+
+    case "barber":
+      return "Barbearia";
+
+    case "empresa":
+      return "Empresa";
+
+    default:
+      return tipo || "Local";
+  }
+}
+
+function usuarioTemLocal(
+  usuario: UsuarioUniversal,
+  localId: string
+): boolean {
+  const fontes = [
+    usuario.locais,
+    usuario.condominios,
+    usuario.vinculos,
+  ];
+
+  return fontes.some(
+    (fonte) => {
+      if (!fonte) {
+        return false;
+      }
+
+      const direto =
+        fonte[localId];
+
+      if (
+        direto &&
+        direto.ativo !== false
+      ) {
+        return true;
+      }
+
+      return Object.entries(
+        fonte
+      ).some(
+        (
+          [
+            vinculoId,
+            vinculo,
+          ]
+        ) =>
+          vinculo?.ativo !== false &&
+          (
+            vinculoId === localId ||
+            vinculo?.localId === localId ||
+            vinculo?.localSlug === localId
+          )
+      );
+    }
+  );
+}
+
+function contarUnidades(
+  local: LocalUniversal
+): number {
+  const unidadesDiretas =
+    Object.keys(
+      local.unidades || {}
+    ).length;
+
+  if (
+    unidadesDiretas > 0
+  ) {
+    return unidadesDiretas;
+  }
+
+  const unidadesEstrutura =
+    Object.keys(
+      local.estruturas?.unidades ||
+      {}
+    ).length;
+
+  if (
+    unidadesEstrutura > 0
+  ) {
+    return unidadesEstrutura;
+  }
+
+  const totalEstrutura =
+    Number(
+      local.estruturas
+        ?.totalUnidades || 0
+    );
+
+  if (
+    totalEstrutura > 0
+  ) {
+    return totalEstrutura;
+  }
+
+  return Number(
+    local.estatisticas
+      ?.totalUnidades || 0
+  );
+}
+
+export default function PainelLocais({
+  onVerPessoas,
+}: Props) {
+  const [
+    locais,
+    setLocais,
+  ] = useState<
+    Record<
+      string,
+      LocalUniversal
+    >
+  >({});
+
+  const [
+    usuarios,
+    setUsuarios,
+  ] = useState<
+    Record<
+      string,
+      UsuarioUniversal
+    >
+  >({});
+
+  const [
+    carregandoLocais,
+    setCarregandoLocais,
+  ] = useState(true);
+
+  const [
+    carregandoUsuarios,
+    setCarregandoUsuarios,
+  ] = useState(true);
+
+  const [
+    pesquisa,
+    setPesquisa,
+  ] = useState("");
+
+  useEffect(() => {
+    const parar =
+      onValue(
+        ref(
+          db,
+          "locais-v2"
+        ),
+        (
+          snapshot
+        ) => {
+          const dados =
+            snapshot.val() || {};
+
+          const normalizados =
+            Object.fromEntries(
+              Object.entries(
+                dados
+              ).map(
+                (
+                  [
+                    id,
+                    valor,
+                  ]
+                ) => [
+                  id,
+                  {
+                    id,
+                    ...(
+                      valor as
+                        Omit<
+                          LocalUniversal,
+                          "id"
+                        >
+                    ),
+                  },
+                ]
+              )
+            );
+
+          setLocais(
+            normalizados
+          );
+
+          setCarregandoLocais(
+            false
+          );
+        }
+      );
+
+    return () => {
+      parar();
+    };
+  }, []);
+
+  useEffect(() => {
+    const parar =
+      onValue(
+        ref(
+          db,
+          "usuarios-v2"
+        ),
+        (
+          snapshot
+        ) => {
+          setUsuarios(
+            snapshot.val() ||
+            {}
+          );
+
+          setCarregandoUsuarios(
+            false
+          );
+        }
+      );
+
+    return () => {
+      parar();
+    };
+  }, []);
+
+  const locaisResumo =
+    useMemo<
+      LocalResumo[]
+    >(
+      () => {
+        return Object.entries(
+          locais
+        )
+          .map(
+            (
+              [
+                localId,
+                local,
+              ]
+            ) => {
+              const totalPessoas =
+                Object.values(
+                  usuarios
+                ).filter(
+                  (
+                    usuario
+                  ) =>
+                    usuarioTemLocal(
+                      usuario,
+                      localId
+                    )
+                ).length;
+
+              return {
+                id:
+                  localId,
+
+                nome:
+                  local.nomeExibicao ||
+                  local.nome ||
+                  localId,
+
+                tipo:
+                  nomeTipoLocal(
+                    local.tipoLocal ||
+                    local.tipo ||
+                    local.segmento
+                  ),
+
+                status:
+                  local.status ||
+                  (
+                    local.ativo ===
+                    false
+                      ? "inativo"
+                      : "ativo"
+                  ),
+
+                cidade:
+                  local.cidade ||
+                  "",
+
+                estado:
+                  local.estado ||
+                  "",
+
+                totalUnidades:
+                  contarUnidades(
+                    local
+                  ),
+
+                totalPessoas,
+              };
+            }
+          )
+          .sort(
+            (
+              a,
+              b
+            ) =>
+              a.nome.localeCompare(
+                b.nome,
+                "pt-BR"
+              )
+          );
+      },
+      [
+        locais,
+        usuarios,
+      ]
+    );
+
+  const locaisFiltrados =
+    useMemo(
+      () => {
+        const termo =
+          pesquisa
+            .trim()
+            .toLowerCase();
+
+        if (!termo) {
+          return locaisResumo;
+        }
+
+        return locaisResumo.filter(
+          (
+            local
+          ) =>
+            [
+              local.nome,
+              local.tipo,
+              local.cidade,
+              local.estado,
+              local.id,
+            ]
+              .join(" ")
+              .toLowerCase()
+              .includes(
+                termo
+              )
+        );
+      },
+      [
+        locaisResumo,
+        pesquisa,
+      ]
+    );
+
+  const totalPessoasVinculadas =
+    locaisResumo.reduce(
+      (
+        total,
+        local
+      ) =>
+        total +
+        local.totalPessoas,
+      0
+    );
+
+  const totalUnidades =
+    locaisResumo.reduce(
+      (
+        total,
+        local
+      ) =>
+        total +
+        local.totalUnidades,
+      0
+    );
+
+  const carregando =
+    carregandoLocais ||
+    carregandoUsuarios;
+
+  return (
+    <div className="space-y-5">
+      <section className="rounded-3xl border border-cyan-800 bg-gradient-to-r from-cyan-950/50 to-slate-900 p-5 md:p-6">
+        <p className="text-xs font-black uppercase tracking-wider text-cyan-300">
+          PAINEL DE LOCAIS
+        </p>
+
+        <h3 className="mt-2 text-2xl font-black text-white md:text-3xl">
+          Locais conectados ao QR Core
+        </h3>
+
+        <p className="mt-2 max-w-3xl text-sm leading-relaxed text-slate-400">
+          Cada local usa os vínculos universais para identificar pessoas, perfis e unidades relacionados.
+        </p>
+      </section>
+
+      <section className="grid grid-cols-2 gap-3 lg:grid-cols-3">
+        <div className="rounded-2xl border border-slate-700 bg-slate-900 p-4">
+          <p className="text-xs font-bold text-slate-400">
+            LOCAIS
+          </p>
+
+          <p className="mt-2 text-3xl font-black text-white">
+            {locaisResumo.length}
+          </p>
+        </div>
+
+        <div className="rounded-2xl border border-cyan-800 bg-cyan-950/20 p-4">
+          <p className="text-xs font-bold text-cyan-300">
+            UNIDADES
+          </p>
+
+          <p className="mt-2 text-3xl font-black text-white">
+            {totalUnidades}
+          </p>
+        </div>
+
+        <div className="col-span-2 rounded-2xl border border-blue-800 bg-blue-950/20 p-4 lg:col-span-1">
+          <p className="text-xs font-bold text-blue-300">
+            VINCULOS COM PESSOAS
+          </p>
+
+          <p className="mt-2 text-3xl font-black text-white">
+            {totalPessoasVinculadas}
+          </p>
+        </div>
+      </section>
+
+      <section className="rounded-2xl border border-slate-800 bg-slate-900 p-4">
+        <input
+          value={pesquisa}
+          onChange={(event) =>
+            setPesquisa(
+              event.target.value
+            )
+          }
+          placeholder="Pesquisar local, tipo ou cidade..."
+          className="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-white outline-none placeholder:text-slate-500 focus:border-cyan-500"
+        />
+
+        <p className="mt-3 text-sm text-slate-400">
+          {locaisFiltrados.length} local
+          {locaisFiltrados.length === 1
+            ? ""
+            : "is"} encontrado
+          {locaisFiltrados.length === 1
+            ? ""
+            : "s"}.
+        </p>
+      </section>
+
+      {carregando ? (
+        <section className="rounded-3xl border border-slate-800 bg-slate-900 p-8 text-center">
+          <p className="font-black text-slate-300">
+            Carregando locais e vínculos...
+          </p>
+        </section>
+      ) : (
+        <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          {locaisFiltrados.map(
+            (
+              local
+            ) => (
+              <article
+                key={local.id}
+                className="rounded-3xl border border-slate-700 bg-slate-900 p-5"
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-xs font-black uppercase tracking-wider text-cyan-400">
+                      {local.tipo}
+                    </p>
+
+                    <h4 className="mt-1 text-xl font-black text-white">
+                      {local.nome}
+                    </h4>
+
+                    {(local.cidade ||
+                      local.estado) && (
+                      <p className="mt-1 text-sm text-slate-400">
+                        {local.cidade}
+                        {local.cidade &&
+                        local.estado
+                          ? " - "
+                          : ""}
+                        {local.estado}
+                      </p>
+                    )}
+                  </div>
+
+                  <span
+                    className={`rounded-full px-3 py-1 text-[10px] font-black uppercase ${
+                      local.status ===
+                      "ativo"
+                        ? "bg-green-950 text-green-300"
+                        : "bg-slate-800 text-slate-400"
+                    }`}
+                  >
+                    {local.status}
+                  </span>
+                </div>
+
+                <div className="mt-5 grid grid-cols-2 gap-3">
+                  <div className="rounded-xl border border-slate-700 bg-slate-800 p-3">
+                    <p className="text-[10px] font-black uppercase text-slate-500">
+                      Pessoas
+                    </p>
+
+                    <p className="mt-1 text-xl font-black text-white">
+                      {local.totalPessoas}
+                    </p>
+                  </div>
+
+                  <div className="rounded-xl border border-slate-700 bg-slate-800 p-3">
+                    <p className="text-[10px] font-black uppercase text-slate-500">
+                      Unidades
+                    </p>
+
+                    <p className="mt-1 text-xl font-black text-white">
+                      {local.totalUnidades}
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    onVerPessoas(
+                      local.id
+                    )
+                  }
+                  disabled={
+                    local.totalPessoas ===
+                    0
+                  }
+                  className="mt-4 w-full rounded-xl bg-blue-600 px-4 py-3 font-black text-white transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:bg-slate-800 disabled:text-slate-500"
+                  title={
+                    local.totalPessoas >
+                    0
+                      ? "Na próxima etapa este botão abrirá Pessoas já filtrado por este local."
+                      : "Nenhuma pessoa vinculada a este local."
+                  }
+                >
+                  {local.totalPessoas >
+                  0
+                    ? `Ver ${local.totalPessoas} pessoa${
+                        local.totalPessoas ===
+                        1
+                          ? ""
+                          : "s"
+                      }`
+                    : "Nenhuma pessoa vinculada"}
+                </button>
+              </article>
+            )
+          )}
+
+          {locaisFiltrados.length ===
+            0 && (
+            <div className="md:col-span-2 rounded-3xl border border-slate-800 bg-slate-900 p-8 text-center">
+              <p className="font-black text-slate-300">
+                Nenhum local encontrado.
+              </p>
+            </div>
+          )}
+        </section>
+      )}
+    </div>
+  );
+}

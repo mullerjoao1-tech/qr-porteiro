@@ -1,0 +1,1713 @@
+﻿diff --git a/app/api/enviar-notificacao-v2/route.ts b/app/api/enviar-notificacao-v2/route.ts
+index e0b6728..2ec801c 100644
+--- a/app/api/enviar-notificacao-v2/route.ts
++++ b/app/api/enviar-notificacao-v2/route.ts
+@@ -1,4 +1,4 @@
+-import { NextResponse } from "next/server";
++´╗┐import { NextResponse } from "next/server";
+ import {
+   cert,
+   getApp,
+@@ -467,58 +467,228 @@ export async function POST(request: Request) {
+       );
+     }
+ 
+-    const tokenSnapshot = await db
+-      .ref(`configuracoes-v2/tokensMorador/${unidadeId}`)
++    const chamadaSnapshot = await db
++      .ref(`unidades-v2/${unidadeId}/chamada`)
+       .get();
+ 
+-    const registroToken = tokenSnapshot.val() as RegistroTokenMorador | null;
+-    const tokenNormalizado = registroToken
+-      ? normalizarRegistroToken(unidadeId, registroToken)
+-      : null;
+-    const token = tokenNormalizado?.token || "";
++    const chamada =
++      chamadaSnapshot.val() || {};
++
++    const responsavelAtualUid =
++      String(
++        chamada.responsavelAtualUid ||
++        chamada.responsavelAtualId ||
++        ""
++      ).trim();
++
++    const nome =
++      chamada?.nome ||
++      "Visitante";
++
++    const motivo =
++      chamada?.motivo ||
++      "N├úo informado";
++
++    const tokens =
++      new Set<string>();
++
++    if (responsavelAtualUid) {
++      const dispositivosSnapshot =
++        await db
++          .ref(
++            `configuracoes-v2/tokensUsuarios/${responsavelAtualUid}`
++          )
++          .get();
++
++      const dispositivos =
++        dispositivosSnapshot.val() as
++          Record<
++            string,
++            {
++              token?: string;
++              ativo?: boolean;
++            }
++          > | null;
++
++      if (dispositivos) {
++        for (
++          const dispositivo
++          of Object.values(dispositivos)
++        ) {
++          const token =
++            String(
++              dispositivo?.token ||
++              ""
++            ).trim();
++
++          if (
++            token &&
++            dispositivo?.ativo !== false
++          ) {
++            tokens.add(
++              token
++            );
++          }
++        }
++      }
++    }
++
++    let usouFallbackLegado =
++      false;
++
++    if (tokens.size === 0) {
++      const tokenSnapshot =
++        await db
++          .ref(
++            `configuracoes-v2/tokensMorador/${unidadeId}`
++          )
++          .get();
++
++      const registroToken =
++        tokenSnapshot.val() as
++          RegistroTokenMorador | null;
++
++      const tokenNormalizado =
++        registroToken
++          ? normalizarRegistroToken(
++              unidadeId,
++              registroToken
++            )
++          : null;
++
++      const tokenLegado =
++        tokenNormalizado?.token ||
++        "";
++
++      if (tokenLegado) {
++        tokens.add(
++          tokenLegado
++        );
++
++        usouFallbackLegado =
++          true;
++      }
++    }
+ 
+-    if (!token) {
++    if (tokens.size === 0) {
+       return NextResponse.json(
+-        { ok: false, erro: "Token do morador V2 n├úo encontrado" },
+-        { status: 400 }
++        {
++          ok: false,
++          erro:
++            "Nenhum token encontrado para o respons├ível atual.",
++          unidadeId,
++          responsavelAtualUid:
++            responsavelAtualUid ||
++            null,
++        },
++        {
++          status: 400,
++        }
+       );
+     }
+ 
+-    const chamadaSnapshot = await db
+-      .ref(`unidades-v2/${unidadeId}/chamada`)
+-      .get();
++    const resultados = [];
+ 
+-    const chamada = chamadaSnapshot.val();
++    for (
++      const token
++      of Array.from(tokens)
++    ) {
++      try {
++        const resposta =
++          await messaging.send({
++            token,
+ 
+-    const nome = chamada?.nome || "Visitante";
+-    const motivo = chamada?.motivo || "N├úo informado";
++            data: {
++              unidadeId:
++                String(unidadeId),
+ 
+-    const resposta = await messaging.send({
+-      token,
+-     data: {
+-  unidadeId: String(unidadeId),
+-  nome: String(nome),
+-  motivo: String(motivo),
+-  tipo: "chamada-v2",
+-  titulo: `­ƒöö ${nome} est├í chamando`,
+-  mensagem: `Motivo: ${motivo}`,
+-  url: `${urlBase}/morador-v2/${encodeURIComponent(unidadeId)}`,
+-},
+-      webpush: {
+-          headers: {
+-            Urgency: "high",
+-            TTL: "86400",
+-          },
+-          fcmOptions: {
+-          link: `${urlBase}/morador-v2/${encodeURIComponent(unidadeId)}`,
+-        },
+-      },
+-    });
++              responsavelAtualUid:
++                String(
++                  responsavelAtualUid
++                ),
++
++              nome:
++                String(nome),
++
++              motivo:
++                String(motivo),
++
++              tipo:
++                "chamada-v2",
++
++              titulo:
++                `­ƒöö ${nome} est├í chamando`,
++
++              mensagem:
++                `Motivo: ${motivo}`,
++
++              url:
++                `${urlBase}/morador-v2/${encodeURIComponent(
++                  unidadeId
++                )}`,
++            },
++
++            webpush: {
++              headers: {
++                Urgency: "high",
++                TTL: "86400",
++              },
++
++              fcmOptions: {
++                link:
++                  `${urlBase}/morador-v2/${encodeURIComponent(
++                    unidadeId
++                  )}`,
++              },
++            },
++          });
++
++        resultados.push({
++          enviado: true,
++          resposta,
++        });
++      } catch (
++        erroEnvio
++      ) {
++        resultados.push({
++          enviado: false,
++          erro:
++            detalharErroPush(
++              erroEnvio
++            ),
++        });
++      }
++    }
++
++    const enviados =
++      resultados.filter(
++        (
++          resultado
++        ) =>
++          resultado.enviado
++      ).length;
+ 
+     return NextResponse.json({
+-      ok: true,
+-      mensagem: "Notifica├º├úo V2 enviada",
+-      resposta,
++      ok:
++        enviados > 0,
++
++      mensagem:
++        "Notifica├º├úo V2 processada",
++
++      unidadeId,
++
++      responsavelAtualUid:
++        responsavelAtualUid ||
++        null,
++
++      totalTokens:
++        tokens.size,
++
++      enviados,
++
++      usouFallbackLegado,
++
++      resultados,
+     });
+   } catch (erro) {
+     console.error("ERRO PUSH V2:", erro);
+diff --git a/app/morador-v2/[unidadeId]/page.tsx b/app/morador-v2/[unidadeId]/page.tsx
+index da68296..829fcef 100644
+--- a/app/morador-v2/[unidadeId]/page.tsx
++++ b/app/morador-v2/[unidadeId]/page.tsx
+@@ -1,4 +1,4 @@
+-"use client";
++´╗┐"use client";
+ 
+ import { useEffect, useRef, useState } from "react";
+ import { useParams, useSearchParams } from "next/navigation";
+@@ -6,6 +6,7 @@ import { getToken } from "firebase/messaging";
+ import { ref, onValue, update, remove, push, set, get } from "firebase/database";
+ import { db, messagingPromise } from "../../services/firebase";
+ import { useLocalAtual } from "@/app/hooks/useLocalAtual";
++import { useAuth } from "@/app/context/AuthContext";
+ import {
+   listarResponsaveisDaUnidade,
+   recusarEEncaminhar,
+@@ -18,6 +19,10 @@ type MensagemConversa = {
+   texto?: string;
+   audioBase64?: string;
+   criadoEm: number;
++  visualizadoPeloMorador?: boolean;
++  visualizadoPeloMoradorEm?: number;
++  audioOuvidoPeloMorador?: boolean;
++  audioOuvidoPeloMoradorEm?: number;
+ };
+ 
+ type ComunicadoMorador = {
+@@ -109,6 +114,11 @@ function textoTipoComunicado(tipo: ComunicadoMorador["tipo"]) {
+ export default function MoradorV2() {
+   const params = useParams();
+   const searchParams = useSearchParams();
++
++  const {
++    usuario,
++  } = useAuth();
++
+   const comunicadoIdPeloLink = searchParams.get("comunicado") || "";
+ 
+   const slug = String(
+@@ -128,6 +138,11 @@ export default function MoradorV2() {
+   const [historicoLista, setHistoricoLista] = useState<any[]>([]);
+   const [avisoAuto, setAvisoAuto] = useState("");
+   const [online, setOnline] = useState(true);
++  // Recursos opcionais do local.
++  // TEMPORARIO: depois estas flags virao do pacote contratado.
++  const cameraContratada = false;
++  const portaoContratado = false;
++
+   const [fotoCameraAtual, setFotoCameraAtual] = useState("");
+   const [fotoCameraAtualizadaEm, setFotoCameraAtualizadaEm] = useState(Date.now());
+   const [capturandoCamera, setCapturandoCamera] = useState(false);
+@@ -139,10 +154,26 @@ export default function MoradorV2() {
+   const [gravandoAudioMorador, setGravandoAudioMorador] = useState(false);
+   const [audioRespostaBlob, setAudioRespostaBlob] = useState<Blob | null>(null);
+   const [enviandoAudioMorador, setEnviandoAudioMorador] = useState(false);
++  const [popupAudioMoradorAberto, setPopupAudioMoradorAberto] = useState(false);
++  const [respostasRapidasAbertas, setRespostasRapidasAbertas] = useState(true);
+   const [popupAtendimentoAberto, setPopupAtendimentoAberto] = useState(false);
++
++  // Indica se a chamada atual pertence ao usuario autenticado.
++  // Quando o MotorEscalonamento encaminha para outro responsavel,
++  // esta tela deixa imediatamente de considerar a chamada como sua.
++  const [
++    chamadaDestinadaAoUsuarioAtual,
++    setChamadaDestinadaAoUsuarioAtual,
++  ] = useState(true);
++
+   const [mostrarHistorico, setMostrarHistorico] = useState(false);
+   const [mostrarCameraGrande, setMostrarCameraGrande] = useState(false);
+-  const [audioPopup, setAudioPopup] = useState<{ titulo: string; audio: string } | null>(null);
++  const [audioPopup, setAudioPopup] = useState<{
++    titulo: string;
++    audio: string;
++    mensagemId?: string;
++    autor?: "visitante" | "morador";
++  } | null>(null);
+   const [installPrompt, setInstallPrompt] = useState<any>(null);
+   const [appInstalavel, setAppInstalavel] = useState(false);
+   const [comunicados, setComunicados] = useState<ComunicadoMorador[]>([]);
+@@ -195,17 +226,27 @@ const nomeLocal =
+   const caminhoLogs = `logs-v2/${slug}`;
+   const caminhoAnalytics = `analytics-v2/${slug}`;
+ 
+-  const TEMPO_AGUARDANDO = 2 * 60 * 1000;
+-  const TEMPO_EM_ATENDIMENTO = 1 * 60 * 1000;
++  const TEMPO_AGUARDANDO = 5 * 60 * 1000;
++  const TEMPO_EM_ATENDIMENTO = 3 * 60 * 1000;
+ 
+   const chamadaAtiva =
++    chamadaDestinadaAoUsuarioAtual &&
+     nome !== "Nenhuma solicita├º├úo" &&
+     status !== "Sem chamado ativo" &&
+     status !== "Encerrado";
+ 
+-  const aguardandoAtendimento = status === "Aguardando atendimento";
+-  const atendimentoEmAndamento = status === "Em atendimento";
+-  const mostrarPopupChamada = chamadaAtiva && popupAtendimentoAberto && aguardandoAtendimento;
++  const aguardandoAtendimento =
++    chamadaDestinadaAoUsuarioAtual &&
++    status === "Aguardando atendimento";
++
++  const atendimentoEmAndamento =
++    chamadaDestinadaAoUsuarioAtual &&
++    status === "Em atendimento";
++
++  const mostrarPopupChamada =
++    chamadaAtiva &&
++    popupAtendimentoAberto &&
++    aguardandoAtendimento;
+ 
+   async function registrarLog(tipo: string, detalhes: string) {
+     try {
+@@ -454,6 +495,7 @@ const nomeLocal =
+         setAudioRespostaBlob(null);
+         setAvisoAuto("");
+         setPopupAtendimentoAberto(false);
++        setRespostasRapidasAbertas(true);
+         toqueSilenciadoPorAudioRef.current = false;
+         idChamadaAtualRef.current = "";
+         pararToqueContinuo();
+@@ -463,6 +505,34 @@ const nomeLocal =
+       ultimaChamadaAtivaRef.current = true;
+       ultimaChamadaDadosRef.current = dados;
+ 
++      const responsavelAtualUid =
++        String(
++          dados.responsavelAtualUid ||
++          dados.responsavelAtualId ||
++          ""
++        );
++
++      /*
++       * Compatibilidade:
++       * chamadas antigas sem respons├ível individual
++       * continuam funcionando como antes.
++       *
++       * Chamadas novas com respons├ível definido
++       * pertencem somente ao usu├írio selecionado
++       * pelo MotorEscalonamento.
++       */
++      const chamadaDestinadaAoUsuario =
++        !responsavelAtualUid ||
++        (
++          Boolean(usuario?.uid) &&
++          responsavelAtualUid ===
++            usuario?.uid
++        );
++
++      setChamadaDestinadaAoUsuarioAtual(
++        chamadaDestinadaAoUsuario
++      );
++
+       setNome(dados.nome || "Nenhuma solicita├º├úo");
+       setMotivo(dados.motivo || "Aguardando visitante");
+       setStatus(dados.status || "Sem chamado ativo");
+@@ -504,12 +574,18 @@ const nomeLocal =
+       const audioVisitanteAtual = ultimoAudioVisitante?.audioBase64 || dados.audioBase64 || "";
+       setAudioVisitante(audioVisitanteAtual);
+ 
+-      if (audioVisitanteAtual && ultimoAudioPopupRef.current !== audioVisitanteAtual) {
++      if (
++        chamadaDestinadaAoUsuario &&
++        audioVisitanteAtual &&
++        ultimoAudioPopupRef.current !== audioVisitanteAtual
++      ) {
+         ultimoAudioPopupRef.current = audioVisitanteAtual;
+ 
+         setAudioPopup({
+           titulo: "­ƒÄÖ´©Å Novo ├íudio do visitante",
+           audio: audioVisitanteAtual,
++          mensagemId: ultimoAudioVisitante?.id,
++          autor: "visitante",
+         });
+       }
+ 
+@@ -518,12 +594,39 @@ const nomeLocal =
+         ultimaChamadaDadosRef.current = null;
+ 
+         pararToqueContinuo();
++        limparFinalizacaoAutomatica();
++
+         setPopupAtendimentoAberto(false);
+-        setAvisoAuto("Atendimento encerrado. Limpando em instantes.");
++        setAudioPopup(null);
++
++        setNome("Nenhuma solicita├º├úo");
++        setMotivo("Aguardando visitante");
++        setStatus("Sem chamado ativo");
++        setHoraChamada("");
++        setModo("");
++        setMensagemResponsavel("");
++        setVisitanteVisualizou(false);
++
++        setAudioVisitante("");
++        setMensagensConversa([]);
++        setAudioRespostaBlob(null);
++
++        ultimoAudioPopupRef.current = "";
++        idChamadaAtualRef.current = "";
++
++        setChamadaDestinadaAoUsuarioAtual(true);
++
++        setAvisoAuto("Atendimento encerrado.");
++
++        setTimeout(() => {
++          setAvisoAuto("");
++        }, 2000);
++
+         return;
+       }
+ 
+       const deveTocar =
++        chamadaDestinadaAoUsuario &&
+         dados.notificar === true &&
+         dados.status === "Aguardando atendimento" &&
+         !toqueSilenciadoPorAudioRef.current;
+@@ -540,13 +643,26 @@ const nomeLocal =
+           registrarAnalytics("recebida");
+           registrarLog("chamada_recebida", "Nova chamada recebida no painel");
+ 
+-          capturarFotoCamera();
++          if (cameraContratada) {
++            capturarFotoCamera();
++          }
+         }
+       } else {
+         pararToqueContinuo();
++
++        if (!chamadaDestinadaAoUsuario) {
++          setPopupAtendimentoAberto(false);
++        }
+       }
+ 
+-      programarFinalizacaoAutomatica(dados);
++      if (chamadaDestinadaAoUsuario) {
++        programarFinalizacaoAutomatica(
++          dados
++        );
++      } else {
++        limparFinalizacaoAutomatica();
++        setAvisoAuto("");
++      }
+     });
+ 
+     return () => {
+@@ -554,7 +670,10 @@ const nomeLocal =
+       pararToqueContinuo();
+       pararDeOuvir();
+     };
+-  }, [caminhoFirebase]);
++  }, [
++    caminhoFirebase,
++    usuario?.uid,
++  ]);
+ 
+   async function capturarFotoCamera() {
+     setCapturandoCamera(true);
+@@ -641,12 +760,21 @@ const nomeLocal =
+     const agora = Date.now();
+ 
+     let tempoLimite = TEMPO_AGUARDANDO;
+-    let dataBase = dados.criadoEm;
++
++    /*
++     * Enquanto estiver aguardando, cada responsavel recebe
++     * sua propria janela de atendimento.
++     *
++     * escalonamentoAtualizadoEm muda quando a prioridade
++     * passa para o proximo responsavel.
++     */
++    let dataBase =
++      dados.escalonamentoAtualizadoEm ||
++      dados.criadoEm;
+ 
+     if (dados.status === "Em atendimento") {
+       tempoLimite = TEMPO_EM_ATENDIMENTO;
+       dataBase =
+-        dados.ultimaAtividade ||
+         dados.atendidoEm ||
+         dados.criadoEm;
+     }
+@@ -674,7 +802,80 @@ const nomeLocal =
+     pararToqueContinuo();
+     limparFinalizacaoAutomatica();
+ 
+-    const timeoutAguardando = status === "Aguardando atendimento";
++    /*
++     * Protecao contra timer antigo.
++     *
++     * Antes de encerrar qualquer chamada, confirmamos que:
++     * - ela ainda existe;
++     * - ainda esta aguardando/em atendimento;
++     * - ainda pertence ao usuario deste aparelho;
++     * - continua sendo a mesma chamada observada.
++     */
++    try {
++      const snapshotAtual =
++        await get(
++          ref(
++            db,
++            caminhoFirebase
++          )
++        );
++
++      const chamadaAtual =
++        snapshotAtual.val();
++
++      if (!chamadaAtual) {
++        return;
++      }
++
++      const responsavelAtualUid =
++        String(
++          chamadaAtual.responsavelAtualUid ||
++          chamadaAtual.responsavelAtualId ||
++          ""
++        );
++
++      if (
++        responsavelAtualUid &&
++        responsavelAtualUid !==
++          usuario?.uid
++      ) {
++        return;
++      }
++
++      if (
++        chamadaAtual.status !==
++          "Aguardando atendimento" &&
++        chamadaAtual.status !==
++          "Em atendimento"
++      ) {
++        return;
++      }
++
++      const chamadaObservada =
++        ultimaChamadaDadosRef.current;
++
++      if (
++        chamadaObservada?.criadoEm &&
++        chamadaAtual.criadoEm !==
++          chamadaObservada.criadoEm
++      ) {
++        return;
++      }
++    } catch (erro) {
++      console.error(
++        "Erro ao validar chamada antes do timeout:",
++        erro
++      );
++
++      /*
++       * Em caso de duvida, nao apagamos uma chamada.
++       */
++      return;
++    }
++
++    const timeoutAguardando =
++      status ===
++      "Aguardando atendimento";
+ 
+     ultimaChamadaAtivaRef.current = false;
+     setPopupAtendimentoAberto(false);
+@@ -708,10 +909,49 @@ const nomeLocal =
+       salvarHistorico(timeoutAguardando ? "N├úo atendida" : "Autom├ítica"),
+     ]);
+ 
+-    setTimeout(() => {
+-      void remove(ref(db, caminhoFirebase)).catch((erro) => {
+-        console.error("Erro ao limpar chamada encerrada:", erro);
+-      });
++    const identificadorEncerramento =
++      new Date().toISOString();
++
++    setTimeout(async () => {
++      try {
++        const snapshotAtual =
++          await get(
++            ref(
++              db,
++              caminhoFirebase
++            )
++          );
++
++        if (!snapshotAtual.exists()) {
++          return;
++        }
++
++        const chamadaAtual =
++          snapshotAtual.val();
++
++        /*
++         * Nunca permite que o timer de uma chamada antiga
++         * apague uma chamada nova que nasceu no mesmo caminho.
++         */
++        if (
++          chamadaAtual?.status !==
++          "Encerrado"
++        ) {
++          return;
++        }
++
++        await remove(
++          ref(
++            db,
++            caminhoFirebase
++          )
++        );
++      } catch (erro) {
++        console.error(
++          "Erro ao limpar chamada encerrada:",
++          erro
++        );
++      }
+     }, 2000);
+   }
+ 
+@@ -754,6 +994,25 @@ const nomeLocal =
+         ""
+       );
+ 
++    const responsavelAtualUid =
++      String(
++        chamadaAtual.responsavelAtualUid ||
++        responsavelAtualId ||
++        ""
++      );
++
++    if (
++      responsavelAtualUid &&
++      responsavelAtualUid !==
++        usuario?.uid
++    ) {
++      alert(
++        "Esta chamada esta destinada a outro responsavel."
++      );
++
++      return;
++    }
++
+     /*
+      * Enquanto ainda n├úo houver respons├ível individual
+      * definido na chamada, preserva o funcionamento atual.
+@@ -809,6 +1068,8 @@ const nomeLocal =
+       "Em atendimento"
+     );
+ 
++    setRespostasRapidasAbertas(true);
++
+     void Promise.allSettled([
+       registrarAnalytics(
+         "atendida"
+@@ -869,6 +1130,25 @@ async function naoPossoAtender() {
+         ""
+       );
+ 
++    const responsavelAtualUid =
++      String(
++        chamadaAtual.responsavelAtualUid ||
++        responsavelAtualId ||
++        ""
++      );
++
++    if (
++      responsavelAtualUid &&
++      responsavelAtualUid !==
++        usuario?.uid
++    ) {
++      alert(
++        "Esta chamada esta destinada a outro responsavel."
++      );
++
++      return;
++    }
++
+     if (!responsavelAtualId) {
+       alert(
+         "A chamada ainda n├úo possui um respons├ível individual definido."
+@@ -897,17 +1177,68 @@ async function naoPossoAtender() {
+       resultado.sucesso &&
+       resultado.responsavel
+     ) {
+-      alert(
+-        `Chamada encaminhada para ${resultado.responsavel.nome}.`
++      /*
++       * O MotorEscalonamento ja concluiu a transferencia.
++       * Agora a API consulta o novo responsavelAtualUid
++       * e envia o push ao proximo responsavel.
++       */
++      try {
++        const respostaPush =
++          await fetch(
++            "/api/enviar-notificacao-v2",
++            {
++              method: "POST",
++
++              headers: {
++                "Content-Type":
++                  "application/json",
++              },
++
++              body:
++                JSON.stringify({
++                  unidadeId:
++                    slug,
++                }),
++            }
++          );
++
++        const dadosPush =
++          await respostaPush
++            .json()
++            .catch(
++              () => null
++            );
++
++        console.log(
++          "PUSH APOS TRANSFERENCIA:",
++          dadosPush
++        );
++      } catch (erroPush) {
++        console.error(
++          "Erro ao enviar push para o proximo responsavel:",
++          erroPush
++        );
++      }
++
++      setAvisoAuto(
++        `Ô£ô Chamada encaminhada para ${resultado.responsavel.nome}.`
+       );
+ 
++      setTimeout(() => {
++        setAvisoAuto("");
++      }, 2000);
++
+       return;
+     }
+ 
+-    alert(
++    setAvisoAuto(
+       resultado.motivo ||
+-      "N├úo existe outro respons├ível dispon├¡vel no momento."
++      "Nenhum respons├ível dispon├¡vel. Chamada encerrada."
+     );
++
++    setTimeout(() => {
++      setAvisoAuto("");
++    }, 2000);
+   } catch (erro) {
+     console.error(
+       "Erro ao encaminhar chamada:",
+@@ -925,6 +1256,44 @@ async function naoPossoAtender() {
+     );
+   }
+ }
++  useEffect(() => {
++    if (status !== "Em atendimento") return;
++
++    if (
++      typeof document !== "undefined" &&
++      document.visibilityState !== "visible"
++    ) {
++      return;
++    }
++
++    const mensagensPendentes = mensagensConversa.filter(
++      (item) =>
++        item.autor === "visitante" &&
++        item.tipo === "texto" &&
++        Boolean(item.id) &&
++        item.visualizadoPeloMorador !== true
++    );
++
++    if (mensagensPendentes.length === 0) return;
++
++    Promise.all(
++      mensagensPendentes.map((item) =>
++        update(
++          ref(db, `${caminhoFirebase}/mensagens/${item.id}`),
++          {
++            visualizadoPeloMorador: true,
++            visualizadoPeloMoradorEm: Date.now(),
++          }
++        )
++      )
++    ).catch((erro) => {
++      console.error(
++        "Erro ao registrar leitura das mensagens pelo morador:",
++        erro
++      );
++    });
++  }, [mensagensConversa, status, caminhoFirebase]);
++
+   async function enviarMensagemRapida(mensagem: string) {
+     if (status === "Sem chamado ativo") {
+       alert("N├úo existe chamada ativa para responder.");
+@@ -958,6 +1327,7 @@ async function naoPossoAtender() {
+ 
+     setMensagemResponsavel(mensagem);
+     setVisitanteVisualizou(false);
++    setRespostasRapidasAbertas(false);
+     pararToqueContinuo();
+   }
+ 
+@@ -1045,6 +1415,7 @@ async function naoPossoAtender() {
+       console.error(erro);
+       alert("N├úo foi poss├¡vel acessar o microfone.");
+       setGravandoAudioMorador(false);
++      setPopupAudioMoradorAberto(false);
+     }
+   }
+ 
+@@ -1101,6 +1472,7 @@ async function naoPossoAtender() {
+       await registrarLog("audio_morador", "Morador enviou ├íudio ao visitante");
+ 
+       setAudioRespostaBlob(null);
++      setPopupAudioMoradorAberto(false);
+       pararToqueContinuo();
+     } catch (erro) {
+       console.error(erro);
+@@ -1160,10 +1532,49 @@ async function naoPossoAtender() {
+       salvarHistorico("Manual"),
+     ]);
+ 
+-    setTimeout(() => {
+-      void remove(ref(db, caminhoFirebase)).catch((erro) => {
+-        console.error("Erro ao limpar chamada encerrada:", erro);
+-      });
++    const identificadorEncerramento =
++      new Date().toISOString();
++
++    setTimeout(async () => {
++      try {
++        const snapshotAtual =
++          await get(
++            ref(
++              db,
++              caminhoFirebase
++            )
++          );
++
++        if (!snapshotAtual.exists()) {
++          return;
++        }
++
++        const chamadaAtual =
++          snapshotAtual.val();
++
++        /*
++         * Nunca permite que o timer de uma chamada antiga
++         * apague uma chamada nova que nasceu no mesmo caminho.
++         */
++        if (
++          chamadaAtual?.status !==
++          "Encerrado"
++        ) {
++          return;
++        }
++
++        await remove(
++          ref(
++            db,
++            caminhoFirebase
++          )
++        );
++      } catch (erro) {
++        console.error(
++          "Erro ao limpar chamada encerrada:",
++          erro
++        );
++      }
+     }, 2000);
+   }
+ 
+@@ -1337,13 +1748,85 @@ async function naoPossoAtender() {
+           "O Firebase n├úo retornou um token de notifica├º├úo."
+         );
+       }
+-const condominioId = identificarCondominioPeloSlug(slug);
+-      await set(ref(db, `configuracoes-v2/tokensMorador/${slug}`), {
+-        token,
+-        unidadeId: slug,
+-        condominioId,
+-        atualizadoEm: Date.now(),
+-      });
++      const condominioId =
++        identificarCondominioPeloSlug(
++          slug
++        );
++
++      /*
++       * Compatibilidade com Tulipas e fluxos legados.
++       * Mantemos temporariamente o token antigo por unidade.
++       */
++      await set(
++        ref(
++          db,
++          `configuracoes-v2/tokensMorador/${slug}`
++        ),
++        {
++          token,
++          unidadeId: slug,
++          condominioId,
++          atualizadoEm: Date.now(),
++        }
++      );
++
++      /*
++       * Token individual do QR Core.
++       *
++       * Cada usuario pode possuir varios dispositivos.
++       * O identificador fica salvo neste navegador/PWA
++       * e nao depende da unidade.
++       */
++      if (usuario?.uid) {
++        const chaveDeviceId =
++          "qr-core:device-id";
++
++        let deviceId =
++          window.localStorage.getItem(
++            chaveDeviceId
++          ) || "";
++
++        if (!deviceId) {
++          deviceId =
++            typeof crypto !== "undefined" &&
++            typeof crypto.randomUUID ===
++              "function"
++              ? crypto.randomUUID()
++              : `device-${Date.now()}-${Math.random()
++                  .toString(36)
++                  .slice(2)}`;
++
++          window.localStorage.setItem(
++            chaveDeviceId,
++            deviceId
++          );
++        }
++
++        await set(
++          ref(
++            db,
++            `configuracoes-v2/tokensUsuarios/${usuario.uid}/${deviceId}`
++          ),
++          {
++            token,
++            uid:
++              usuario.uid,
++
++            deviceId,
++
++            unidadeId:
++              slug,
++
++            condominioId,
++
++            ativo:
++              true,
++
++            atualizadoEm:
++              Date.now(),
++          }
++        );
++      }
+ 
+       await registrarLog(
+         "push_token_salvo",
+@@ -1468,6 +1951,11 @@ Mensagem: ${mensagemErro}`
+     },
+   ];
+ 
++  const ultimaMensagemMoradorId =
++    [...mensagensConversa]
++      .reverse()
++      .find((item) => item.autor === "morador")?.id || "";
++
+   return (
+     <main className="min-h-screen bg-slate-950 text-white p-4 relative">
+       {comunicadoAberto && (() => {
+@@ -1739,7 +2227,111 @@ Mensagem: ${mensagemErro}`
+         </div>
+       )}
+ 
++      {popupAudioMoradorAberto && (
++        <div className="fixed inset-0 z-[1100] bg-black/90 flex items-center justify-center p-4">
++          <div className="relative w-full max-w-md bg-slate-900 border-2 border-cyan-500 rounded-3xl p-5 shadow-2xl">
++
++            {!gravandoAudioMorador && !enviandoAudioMorador && (
++              <button
++                type="button"
++                onClick={() => {
++                  setAudioRespostaBlob(null);
++                  setPopupAudioMoradorAberto(false);
++                }}
++                className="absolute top-3 right-4 text-slate-400 hover:text-white text-3xl font-black"
++              >
++                ├ù
++              </button>
++            )}
++
++            <div className="text-center mb-5">
++              <div className="text-5xl mb-3">
++                {gravandoAudioMorador ? "­ƒÄÖ´©Å" : "­ƒÄº"}
++              </div>
++
++              <h2 className="text-2xl font-black">
++                {gravandoAudioMorador
++                  ? "GRAVANDO ├üUDIO"
++                  : "├üUDIO GRAVADO"}
++              </h2>
++
++              <p className="text-slate-400 text-sm mt-2">
++                {gravandoAudioMorador
++                  ? "Fale normalmente e toque em parar quando terminar."
++                  : "Confira o ├íudio antes de enviar ao visitante."}
++              </p>
++            </div>
++
++            {gravandoAudioMorador && (
++              <div className="space-y-4">
++
++                <div className="bg-red-500/10 border border-red-500/40 rounded-2xl p-4 text-center">
++                  <p className="text-red-400 font-black animate-pulse">
++                    GRAVA├ç├âO EM ANDAMENTO
++                  </p>
++                </div>
++
++                <button
++                  type="button"
++                  onClick={pararGravacaoMorador}
++                  className="w-full bg-red-600 hover:bg-red-500 text-white text-xl font-black py-4 rounded-2xl"
++                >
++                  ÔÅ╣´©Å PARAR GRAVA├ç├âO
++                </button>
++
++              </div>
++            )}
++
++            {!gravandoAudioMorador && audioRespostaBlob && (
++              <div className="space-y-4">
++
++                <div className="bg-slate-800 border border-slate-700 rounded-2xl p-3">
++                  <audio
++                    controls
++                    className="w-full"
++                    src={URL.createObjectURL(audioRespostaBlob)}
++                  />
++                </div>
++
++                <button
++                  type="button"
++                  onClick={enviarAudioMorador}
++                  disabled={enviandoAudioMorador}
++                  className="w-full bg-blue-600 hover:bg-blue-500 disabled:bg-slate-700 text-white text-xl font-black py-4 rounded-2xl"
++                >
++                  {enviandoAudioMorador
++                    ? "Enviando..."
++                    : "­ƒôñ ENVIAR ├üUDIO"}
++                </button>
++
++                {!enviandoAudioMorador && (
++                  <button
++                    type="button"
++                    onClick={() => {
++                      setAudioRespostaBlob(null);
++                      iniciarGravacaoMorador();
++                    }}
++                    className="w-full bg-slate-800 hover:bg-slate-700 border border-slate-600 text-white font-bold py-3 rounded-2xl"
++                  >
++                    ­ƒöä GRAVAR NOVAMENTE
++                  </button>
++                )}
++
++              </div>
++            )}
++
++            {!gravandoAudioMorador && !audioRespostaBlob && (
++              <div className="bg-slate-800 border border-slate-700 rounded-2xl p-5 text-center text-slate-300 font-bold">
++                Preparando microfone...
++              </div>
++            )}
++
++          </div>
++        </div>
++      )}
++
+       {audioPopup && (
++
+         <div className="fixed inset-0 z-[999] bg-black/95 flex items-center justify-center p-4">
+           <div className="w-full max-w-md bg-slate-900 border-4 border-blue-400 rounded-3xl p-5 text-center shadow-2xl">
+             <p className="text-6xl mb-3">­ƒÄÖ´©Å</p>
+@@ -1755,7 +2347,29 @@ Mensagem: ${mensagemErro}`
+                 onPointerDown={silenciarToqueAoOuvirAudio}
+                 onTouchStart={silenciarToqueAoOuvirAudio}
+                 onClick={silenciarToqueAoOuvirAudio}
+-                onPlay={silenciarToqueAoOuvirAudio}
++                onPlay={async () => {
++                  silenciarToqueAoOuvirAudio();
++
++                  if (
++                    audioPopup.autor === "visitante" &&
++                    audioPopup.mensagemId
++                  ) {
++                    const agora = Date.now();
++
++                    await update(
++                      ref(
++                        db,
++                        `${caminhoFirebase}/mensagens/${audioPopup.mensagemId}`
++                      ),
++                      {
++                        visualizadoPeloMorador: true,
++                        visualizadoPeloMoradorEm: agora,
++                        audioOuvidoPeloMorador: true,
++                        audioOuvidoPeloMoradorEm: agora,
++                      }
++                    );
++                  }
++                }}
+                 onPlaying={silenciarToqueAoOuvirAudio}
+               />
+             </div>
+@@ -1884,15 +2498,18 @@ Mensagem: ${mensagemErro}`
+             </p>
+           </div>
+ 
+-          <div
++          <button
++            type="button"
++            onClick={alterarStatusOnline}
++            title="Alterar disponibilidade para receber chamadas"
+             className={
+               online
+-                ? "bg-green-500/10 border border-green-500/40 text-green-400 text-xs font-bold px-3 py-2 rounded-xl"
+-                : "bg-red-500/10 border border-red-500/40 text-red-400 text-xs font-bold px-3 py-2 rounded-xl"
++                ? "bg-green-500/10 hover:bg-green-500/20 border border-green-500/40 text-green-400 text-xs font-bold px-3 py-2 rounded-xl transition"
++                : "bg-red-500/10 hover:bg-red-500/20 border border-red-500/40 text-red-400 text-xs font-bold px-3 py-2 rounded-xl transition"
+             }
+           >
+             {online ? "­ƒƒó Dispon├¡vel" : "­ƒö┤ Ausente"}
+-          </div>
++          </button>
+         </div>
+ 
+         {comunicados.length > 0 && (
+@@ -1986,19 +2603,55 @@ Mensagem: ${mensagemErro}`
+ 
+         <div className="grid grid-cols-2 gap-3 mt-3">
+           <button
+-            onClick={abrirCameraGrande}
+-            disabled={capturandoCamera}
+-            className="bg-slate-700 hover:bg-slate-600 disabled:bg-gray-500 text-white text-sm font-bold py-3 rounded-2xl"
++            type="button"
++            onClick={() => {
++              if (!cameraContratada) {
++                alert(
++                  "­ƒôÀ Recurso opcional\n\nA c├ómera ├® um recurso opcional do QR Acesso. Consulte a administra├º├úo para ativa├º├úo."
++                );
++                return;
++              }
++
++              abrirCameraGrande();
++            }}
++            disabled={cameraContratada && capturandoCamera}
++            className={
++              cameraContratada
++                ? "bg-slate-700 hover:bg-slate-600 disabled:bg-gray-500 text-white text-sm font-bold py-3 rounded-2xl"
++                : "bg-slate-800 border border-slate-600 text-slate-300 text-sm font-bold py-3 rounded-2xl"
++            }
+           >
+-            {capturandoCamera ? "­ƒô© Atualizando" : "­ƒôÀ C├ómera"}
++            {cameraContratada
++              ? capturandoCamera
++                ? "­ƒô© Atualizando"
++                : "­ƒôÀ C├ómera"
++              : "­ƒöÆ C├ómera"}
+           </button>
+ 
+           <button
+-            onClick={acionarPortao}
+-            disabled={abrindoPortao}
+-            className="bg-purple-600 hover:bg-purple-500 disabled:bg-gray-500 text-white text-sm font-bold py-3 rounded-2xl"
++            type="button"
++            onClick={() => {
++              if (!portaoContratado) {
++                alert(
++                  "­ƒÜ¬ Recurso opcional\n\nA abertura de port├úo ├® um recurso opcional do QR Acesso. Consulte a administra├º├úo para ativa├º├úo."
++                );
++                return;
++              }
++
++              acionarPortao();
++            }}
++            disabled={portaoContratado && abrindoPortao}
++            className={
++              portaoContratado
++                ? "bg-purple-600 hover:bg-purple-500 disabled:bg-gray-500 text-white text-sm font-bold py-3 rounded-2xl"
++                : "bg-slate-800 border border-slate-600 text-slate-300 text-sm font-bold py-3 rounded-2xl"
++            }
+           >
+-            {abrindoPortao ? "ÔÅ│ Abrindo" : "­ƒÜ¬ Abrir port├úo"}
++            {portaoContratado
++              ? abrindoPortao
++                ? "ÔÅ│ Abrindo"
++                : "­ƒÜ¬ Abrir port├úo"
++              : "­ƒöÆ Abrir port├úo"}
+           </button>
+         </div>
+ 
+@@ -2020,56 +2673,25 @@ Mensagem: ${mensagemErro}`
+             ­ƒô▓ Instalar app
+           </button>
+ 
+-          <button
+-            onClick={() => setMostrarHistorico(true)}
+-            className="bg-slate-700 hover:bg-slate-600 text-white text-sm font-bold py-3 rounded-2xl"
+-          >
+-            ­ƒôï Hist├│rico
+-          </button>
+-        </div>
+-
+-        <div className="bg-slate-800 rounded-2xl p-4 mt-5 border border-slate-700">
+-          <div className="flex items-center justify-between gap-3">
+-            <div>
+-              <p
+-                className={
+-                  online ? "text-green-400 font-bold" : "text-red-400 font-bold"
+-                }
+-              >
+-                {online ? "­ƒƒó Atendimento ativo" : "­ƒö┤ Atendimento pausado"}
+-              </p>
+-              <p className="text-slate-400 text-xs mt-1">
+-                Use quando estiver dispon├¡vel ou ausente.
+-              </p>
+-            </div>
+ 
+-            <button
+-              onClick={alterarStatusOnline}
+-              className="bg-slate-600 hover:bg-slate-500 text-white text-xs font-bold px-3 py-2 rounded-xl"
+-            >
+-              ALTERAR
+-            </button>
+-          </div>
+         </div>
+ 
+         <div className="bg-slate-800 rounded-2xl p-4 mt-4 border border-green-500/20">
+           <h2 className="font-black text-green-400 text-xl">­ƒöö {nome}</h2>
+ 
+-          <p className="text-sm text-slate-300 mt-3">Motivo: {motivo}</p>
++          {nome.trim().toLowerCase() !== motivo.trim().toLowerCase() && (
++            <p className="text-sm text-slate-300 mt-3">
++              Motivo: {motivo}
++            </p>
++          )}
++
++
++
++
+ 
+-          <p className="text-sm text-cyan-400 mt-2">
+-            Modo: {modo === "porteiro" ? "Portaria" : "Direto para morador"}
+-          </p>
+ 
+-          <p className="text-sm text-yellow-400 mt-2">Status: {status}</p>
+ 
+-          {horaChamada && (
+-            <p className="text-sm text-blue-300 mt-2">Hor├írio: {horaChamada}</p>
+-          )}
+ 
+-          {avisoAuto && (
+-            <p className="text-sm text-orange-300 mt-2">ÔÅ▒ {avisoAuto}</p>
+-          )}
+ 
+           {aguardandoAtendimento && (
+             <button
+@@ -2081,145 +2703,144 @@ Mensagem: ${mensagemErro}`
+           )}
+ 
+           {atendimentoEmAndamento ? (
+-            <div className="mt-4 bg-slate-900 border border-slate-700 rounded-2xl p-4">
+-              <h3 className="font-bold text-blue-300 mb-3">­ƒÆ¼ Respostas r├ípidas</h3>
++            <>
++              {respostasRapidasAbertas ? (
++                <div className="mt-4 bg-slate-900 border border-slate-700 rounded-2xl p-4">
++                  <div className="flex items-center justify-between gap-3 mb-3">
++                    <h3 className="font-bold text-blue-300">
++                      ­ƒÆ¼ Respostas r├ípidas
++                    </h3>
++
++                    <button
++                      type="button"
++                      onClick={() => setRespostasRapidasAbertas(false)}
++                      className="text-xs font-bold text-slate-400 hover:text-white"
++                    >
++                      RECOLHER
++                    </button>
++                  </div>
+ 
+-              {respostasRapidas.map((item) => (
++                  {respostasRapidas.map((item) => (
++                    <button
++                      key={item.texto}
++                      onClick={() => enviarMensagemRapida(item.mensagem)}
++                      className="w-full mb-2 last:mb-0 bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-2xl"
++                    >
++                      {item.icone} {item.texto}
++                    </button>
++                  ))}
++                </div>
++              ) : (
+                 <button
+-                  key={item.texto}
+-                  onClick={() => enviarMensagemRapida(item.mensagem)}
+-                  className="w-full mb-2 last:mb-0 bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-2xl"
++                  type="button"
++                  onClick={() => setRespostasRapidasAbertas(true)}
++                  className="w-full mt-4 bg-slate-800 hover:bg-slate-700 border border-blue-500/40 text-blue-300 font-black py-3 rounded-2xl"
+                 >
+-                  {item.icone} {item.texto}
++                  ­ƒÆ¼ RESPOSTAS R├üPIDAS
+                 </button>
+-              ))}
+-
+-              {mensagemResponsavel && (
+-                <div className="mt-4 bg-slate-800 rounded-xl p-3 border border-slate-700">
+-                  <p className="text-sm text-green-400 font-bold">
+-                    ├Ültima mensagem enviada:
+-                  </p>
+-                  <p className="text-sm text-white mt-1">{mensagemResponsavel}</p>
+-
+-                  <p
+-                    className={
+-                      visitanteVisualizou
+-                        ? "text-xs text-green-400 mt-2 font-bold"
+-                        : "text-xs text-yellow-400 mt-2 font-bold"
+-                    }
+-                  >
+-                    {visitanteVisualizou
+-                      ? "Ô£à Visitante visualizou"
+-                      : "ÔÅ│ Aguardando visitante visualizar"}
+-                  </p>
+-                </div>
+               )}
+-            </div>
+-          ) : (
+-            <div className="mt-4 bg-slate-900 border border-yellow-500/40 rounded-2xl p-4">
+-              <p className="text-yellow-300 text-sm font-bold">
+-                Respostas r├ípidas ficam liberadas depois de atender.
+-              </p>
+-            </div>
+-          )}
+-
+-          {mensagensConversa.length > 0 && (
+-            <div className="mt-4 bg-slate-900 border border-blue-500/40 rounded-2xl p-4">
+-              <h3 className="font-bold text-blue-300 mb-3">
+-                ­ƒÆ¼ Conversa do atendimento
+-              </h3>
+-
+-              <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
+-                {mensagensConversa.map((item) => (
+-                  <div
+-                    key={item.id}
+-                    className={
+-                      item.autor === "morador"
+-                        ? "bg-green-600/30 border border-green-500 rounded-2xl p-3"
+-                        : "bg-blue-600/30 border border-blue-500 rounded-2xl p-3"
+-                    }
+-                  >
+-                    <p className="text-xs font-black mb-2">
+-                      {item.autor === "morador" ? "Voc├¬" : "Visitante"}
+-                    </p>
+-
+-                    {item.tipo === "texto" && (
+-                      <p className="text-white font-bold">{item.texto}</p>
+-                    )}
+ 
+-                    {item.tipo === "audio" && item.audioBase64 && (
+-                      <button
+-                        onClick={() => {
+-                          if (item.autor === "visitante") {
+-                            silenciarToqueAoOuvirAudio();
+-                          }
+-
+-                          setAudioPopup({
+-                            titulo:
+-                              item.autor === "morador"
+-                                ? "­ƒÄÖ´©Å Seu ├íudio enviado"
+-                                : "­ƒÄÖ´©Å ├üudio do visitante",
+-                            audio: item.audioBase64 || "",
+-                          });
+-                        }}
+-                        className="w-full bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-xl py-3 font-bold text-white"
++              {mensagensConversa.length > 0 && (
++                <div className="mt-4 bg-slate-900 border border-blue-500/40 rounded-2xl p-4">
++                  <h3 className="font-bold text-blue-300 mb-3">
++                    ­ƒÆ¼ Conversa do atendimento
++                  </h3>
++
++                  <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
++                    {mensagensConversa.map((item) => (
++                      <div
++                        key={item.id}
++                        className={
++                          item.autor === "morador"
++                            ? "bg-green-600/30 border border-green-500 rounded-2xl p-3"
++                            : "bg-blue-600/30 border border-blue-500 rounded-2xl p-3"
++                        }
+                       >
+-                        ­ƒÄÖ´©Å Ouvir ├íudio
+-                      </button>
+-                    )}
+-                  </div>
+-                ))}
+-              </div>
+-            </div>
+-          )}
+-
+-          {atendimentoEmAndamento ? (
+-            <div className="mt-4 bg-slate-900 border border-cyan-500/40 rounded-2xl p-4 space-y-3">
+-              <button
+-                onClick={
+-                  gravandoAudioMorador
+-                    ? pararGravacaoMorador
+-                    : iniciarGravacaoMorador
+-                }
+-                disabled={enviandoAudioMorador}
+-                className={
+-                  gravandoAudioMorador
+-                    ? "w-full bg-red-600 py-3 rounded-xl font-black animate-pulse"
+-                    : "w-full bg-cyan-600 hover:bg-cyan-500 disabled:bg-slate-700 py-3 rounded-xl font-black"
+-                }
+-              >
+-                {gravandoAudioMorador ? "ÔÅ╣´©Å PARAR GRAVA├ç├âO" : "­ƒÄÖ´©Å GRAVAR ├üUDIO"}
+-              </button>
+-
+-              {audioRespostaBlob && (
+-                <div className="space-y-3">
+-                  <audio
+-                    controls
+-                    className="w-full"
+-                    src={URL.createObjectURL(audioRespostaBlob)}
+-                  />
++                        <p className="text-xs font-black mb-2">
++                          {item.autor === "morador" ? "Voc├¬" : "Visitante"}
++                        </p>
+ 
+-                  <button
+-                    onClick={enviarAudioMorador}
+-                    disabled={enviandoAudioMorador}
+-                    className="w-full bg-blue-600 hover:bg-blue-500 disabled:bg-slate-700 py-3 rounded-xl font-black"
+-                  >
+-                    {enviandoAudioMorador
+-                      ? "Enviando..."
+-                      : "­ƒôñ ENVIAR ├üUDIO AO VISITANTE"}
+-                  </button>
++                        {item.tipo === "texto" && (
++                          <p className="text-white font-bold">{item.texto}</p>
++                        )}
++
++                        {item.tipo === "audio" && item.audioBase64 && (
++                          <button
++                            type="button"
++                            onClick={async () => {
++                              if (item.autor === "visitante") {
++                                silenciarToqueAoOuvirAudio();
++
++                                if (item.id) {
++                                  const agora = Date.now();
++
++                                  await update(
++                                    ref(
++                                      db,
++                                      `${caminhoFirebase}/mensagens/${item.id}`
++                                    ),
++                                    {
++                                      visualizadoPeloMorador: true,
++                                      visualizadoPeloMoradorEm: agora,
++                                      audioOuvidoPeloMorador: true,
++                                      audioOuvidoPeloMoradorEm: agora,
++                                    }
++                                  );
++                                }
++                              }
++
++                              setAudioPopup({
++                                titulo:
++                                  item.autor === "morador"
++                                    ? "­ƒÄÖ´©Å Seu ├íudio enviado"
++                                    : "­ƒÄÖ´©Å ├üudio do visitante",
++                                audio: item.audioBase64 || "",
++                              });
++                            }}
++                            className="w-full bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-xl py-3 font-bold text-white"
++                          >
++                            ­ƒÄÖ´©Å Ouvir ├íudio
++                          </button>
++                        )}
++
++                        {item.autor === "morador" &&
++                          item.id === ultimaMensagemMoradorId && (
++                            <p
++                              className={
++                                visitanteVisualizou
++                                  ? "text-xs text-green-400 font-bold mt-2 text-right"
++                                  : "text-xs text-slate-400 font-bold mt-2 text-right"
++                              }
++                            >
++                              {visitanteVisualizou
++                                ? "Ô£ôÔ£ô Lido"
++                                : "Ô£ô Enviado"}
++                            </p>
++                          )}
++                      </div>
++                    ))}
++                  </div>
+                 </div>
+               )}
+-            </div>
+-          ) : (
+-            <div className="mt-4 bg-slate-900 border border-cyan-500/20 rounded-2xl p-4">
+-              <p className="text-slate-400 text-sm">
+-                ­ƒÄÖ´©Å Grava├º├úo de resposta liberada depois de atender.
+-              </p>
+-            </div>
+-          )}
+ 
+-          {!gravandoAudioMorador &&
++              <div className="mt-4">
++                <button
++                  type="button"
++                  onClick={() => {
++                    setPopupAudioMoradorAberto(true);
++                    iniciarGravacaoMorador();
++                  }}
++                  disabled={enviandoAudioMorador}
++                  className="w-full bg-cyan-600 hover:bg-cyan-500 disabled:bg-slate-700 py-3 rounded-xl font-black"
++                >
++                  ­ƒÄÖ´©Å GRAVAR ├üUDIO
++                </button>
++              </div>
++            </>
++          ) : null}
++
++          {chamadaAtiva &&
++            !gravandoAudioMorador &&
+             !audioRespostaBlob &&
+             !enviandoAudioMorador && (
+               <button
+@@ -2235,3 +2856,29 @@ Mensagem: ${mensagemErro}`
+     </main>
+   );
+ }
++
++
++
++
++
++
++
++
++
++
++
++
++
++
++
++
++
++
++
++
++
++
++
++
++
++
+diff --git a/public/firebase-messaging-sw.js b/public/firebase-messaging-sw.js
+index 8f47087..5fb2d7b 100644
+--- a/public/firebase-messaging-sw.js
++++ b/public/firebase-messaging-sw.js
+@@ -1,4 +1,4 @@
+-/* QR Acesso Studio ├óÔé¼ÔÇØ Firebase Cloud Messaging Service Worker */
++´╗┐/* QR Acesso Studio ├â┬ó├óÔÇÜ┬¼├óÔé¼┬Ø Firebase Cloud Messaging Service Worker */
+ 
+ importScripts(
+   "https://www.gstatic.com/firebasejs/12.14.0/firebase-app-compat.js"
+@@ -22,7 +22,7 @@ const messaging = firebase.messaging();
+ 
+ messaging.onBackgroundMessage((payload) => {
+   console.log(
+-    "[firebase-messaging-sw] Notifica├â┬º├â┬úo recebida em segundo plano:",
++    "[firebase-messaging-sw] Notifica├âãÆ├é┬º├âãÆ├é┬úo recebida em segundo plano:",
+     payload
+   );
+ 
+@@ -32,12 +32,12 @@ messaging.onBackgroundMessage((payload) => {
+   const titulo =
+     notificacao.title ||
+     dados.titulo ||
+-    "├░┼©ÔÇ£┬ó Novo comunicado";
++    "├â┬░├à┬©├óÔé¼┼ô├é┬ó Novo comunicado";
+ 
+   const mensagem =
+     notificacao.body ||
+     dados.mensagem ||
+-    "Voc├â┬¬ recebeu uma nova comunica├â┬º├â┬úo do condom├â┬¡nio.";
++    "Voc├âãÆ├é┬¬ recebeu uma nova comunica├âãÆ├é┬º├âãÆ├é┬úo do condom├âãÆ├é┬¡nio.";
+ 
+   const unidadeId = dados.unidadeId || "";
+   const comunicadoId = dados.comunicadoId || "";
+@@ -70,6 +70,19 @@ messaging.onBackgroundMessage((payload) => {
+     : `chamada-${unidadeId || "sem-unidade"}-${Date.now()}`,
+     renotify: true,
+     requireInteraction: dados.tipo === "chamada-v2",
++
++    vibrate:
++      dados.tipo === "chamada-v2"
++        ? [
++            500,
++            250,
++            500,
++            250,
++            500,
++            250,
++            1000,
++          ]
++        : undefined,
+     data: {
+       ...dados,
+       url: urlDestino,

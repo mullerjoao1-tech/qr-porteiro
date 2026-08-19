@@ -86,7 +86,9 @@ public class MainActivity extends BridgeActivity {
 
         if (coberturaChamada == null) {
             coberturaChamada = new android.widget.TextView(this);
-            coberturaChamada.setText("");
+            coberturaChamada.setText(
+                "CHAMADA RECEBIDA\n\nConectando Ã  chamada..."
+            );
             coberturaChamada.setTextColor(android.graphics.Color.WHITE);
             coberturaChamada.setTextSize(26);
             coberturaChamada.setGravity(android.view.Gravity.CENTER);
@@ -244,18 +246,6 @@ public class MainActivity extends BridgeActivity {
                     rotaPendente.contains("?")
                         ? "&chamadaFullscreen=1"
                         : "?chamadaFullscreen=1";
-            }
-
-            if (
-                acaoChamadaPendente != null &&
-                !acaoChamadaPendente.isEmpty()
-            ) {
-                rotaPendente +=
-                    rotaPendente.contains("?")
-                        ? "&acaoChamada=" + acaoChamadaPendente
-                        : "?acaoChamada=" + acaoChamadaPendente;
-
-                acaoChamadaPendente = null;
             }
 
             Log.d(

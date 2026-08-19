@@ -1,0 +1,1038 @@
+﻿QR ACESSO STUDIO - ANALISE OVERLAY ANDROID 14
+
+
+============================================================
+ARQUIVO: android/app/src/main/java/com/qracesso/studio/IncomingCallService.java
+============================================================
+
+package com.qracesso.studio;
+
+import android.app.KeyguardManager;
+import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
+import android.app.Service;
+import android.content.Context;
+import android.content.Intent;
+import android.media.AudioAttributes;
+import android.media.Ringtone;
+import android.media.RingtoneManager;
+import android.net.Uri;
+import android.os.Build;
+import android.os.Handler;
+import android.os.IBinder;
+import android.os.Looper;
+import android.os.VibrationEffect;
+import android.os.Vibrator;
+import android.provider.Settings;
+import android.util.Log;
+import androidx.core.app.NotificationCompat;
+import androidx.core.app.Person;
+
+public class IncomingCallService extends Service {
+    public static final String ACTION_START = "ACTION_START";
+    public static final String ACTION_STOP = "ACTION_STOP";
+    public static final String EXTRA_UNIDADE_ID = "unidadeId";
+    public static final String EXTRA_NOME = "nome";
+    public static final String EXTRA_MOTIVO = "motivo";
+    public static final String EXTRA_DIAGNOSTIC_TOKEN = "diagnosticToken";
+    public static final String DIAGNOSTIC_PREFS = "call_control_diagnostic";
+    private static final String CHANNEL_ID = "qr_acesso_chamadas_v3";
+    private static final int NOTIFICATION_ID = 1001;
+    
+    private Ringtone ringtone;
+    private Vibrator vibrator;
+    private final Handler handler = new Handler(Looper.getMainLooper());
+    private static boolean isRunning = false;
+    private static String activeUnidadeId = null;
+
+    private final Runnable timeoutRunnable = this::stopSelf;
+
+    private void registrarEtapaDiagnostico(
+            String token,
+            String etapa
+    ) {
+        if (token == null || token.isEmpty()) {
+            return;
+        }
+
+        getSharedPreferences(DIAGNOSTIC_PREFS, MODE_PRIVATE)
+                .edit()
+                .putString("token", token)
+                .putBoolean(etapa, true)
+                .commit();
+    }
+
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+    }
+
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        String action = intent != null ? intent.getAction() : null;
+        String unidadeId = intent != null ? intent.getStringExtra(EXTRA_UNIDADE_ID) : null;
+        String nome = intent != null ? intent.getStringExtra(EXTRA_NOME) : null;
+        String motivo = intent != null ? intent.getStringExtra(EXTRA_MOTIVO) : null;
+
+        if (ACTION_START.equals(action)) {
+            if (isRunning) {
+                if (unidadeId != null && unidadeId.equals(activeUnidadeId)) return START_NOT_STICKY;
+                stopAlert();
+            }
+            
+            isRunning = true;
+            activeUnidadeId = unidadeId;
+            
+            startForegroundServiceNotification(unidadeId, nome, motivo);
+            startAlert();
+
+            KeyguardManager keyguardManager =
+                    (KeyguardManager) getSystemService(Context.KEYGUARD_SERVICE);
+            boolean telaBloqueada =
+                    keyguardManager != null && keyguardManager.isKeyguardLocked();
+
+            boolean temPermissaoSobreposicao =
+                    Build.VERSION.SDK_INT < Build.VERSION_CODES.M ||
+                    Settings.canDrawOverlays(this);
+
+            if (!telaBloqueada && temPermissaoSobreposicao) {
+                String nomeVisitante = nome != null && !nome.trim().isEmpty() ? nome.trim() : "Visitante";
+                String motivoChamada = motivo != null ? motivo.trim() : "";
+                String route = "/morador-v2/" + unidadeId;
+                CallOverlayManager.show(this, unidadeId, nomeVisitante, motivoChamada, route);
+            }
+            
+            handler.removeCallbacks(timeoutRunnable);
+            handler.postDelayed(timeoutRunnable, 60000); 
+        } else if (ACTION_STOP.equals(action)) {
+            CallOverlayManager.dismiss();
+            String diagnosticToken = intent != null
+                    ? intent.getStringExtra(EXTRA_DIAGNOSTIC_TOKEN)
+                    : null;
+            registrarEtapaDiagnostico(
+                    diagnosticToken,
+                    "actionStopRecebido"
+            );
+
+            stopAlert();
+            registrarEtapaDiagnostico(
+                    diagnosticToken,
+                    "stopAlertExecutado"
+            );
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                stopForeground(STOP_FOREGROUND_REMOVE);
+            } else {
+                stopForeground(true);
+            }
+            registrarEtapaDiagnostico(
+                    diagnosticToken,
+                    "stopForegroundExecutado"
+            );
+            NotificationManager manager =
+                    (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+            manager.cancel(NOTIFICATION_ID);
+            registrarEtapaDiagnostico(
+                    diagnosticToken,
+                    "notificationCancelExecutado"
+            );
+            stopSelf();
+            registrarEtapaDiagnostico(
+                    diagnosticToken,
+                    "stopSelfExecutado"
+            );
+        }
+
+        return START_NOT_STICKY;
+    }
+
+    private void startForegroundServiceNotification(String unidadeId, String nome, String motivo) {
+        NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+
+        // DIAGNOSTICO FULLSCREEN - remover depois dos testes
+        if (Build.VERSION.SDK_INT >= 34) {
+            Log.d("QR_FULLSCREEN", "canUseFullScreenIntent=" + manager.canUseFullScreenIntent());
+        } else {
+            Log.d("QR_FULLSCREEN", "canUseFullScreenIntent=NAO_APLICAVEL_API_MENOR_34");
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel channel = new NotificationChannel(
+                    CHANNEL_ID,
+                    "Chamadas QR Acesso",
+                    NotificationManager.IMPORTANCE_HIGH
+            );
+            channel.setSound(null, null);
+            channel.enableVibration(true);
+            manager.createNotificationChannel(channel);
+
+            NotificationChannel canalReal = manager.getNotificationChannel(CHANNEL_ID);
+
+            if (canalReal != null) {
+                Log.d(
+                    "QR_FULLSCREEN",
+                    "channelId=" + canalReal.getId() +
+                    " importance=" + canalReal.getImportance() +
+                    " expectedHigh=" + NotificationManager.IMPORTANCE_HIGH
+                );
+            } else {
+                Log.d("QR_FULLSCREEN", "CANAL_NAO_ENCONTRADO");
+            }
+        }
+
+        String nomeVisitante = nome != null && !nome.trim().isEmpty() ? nome.trim() : "Visitante";
+        String motivoChamada = motivo != null ? motivo.trim() : "";
+        String route = "/morador-v2/" + unidadeId;
+
+        Intent answerIntent = new Intent(this, MainActivity.class);
+        answerIntent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        answerIntent.putExtra("route", route);
+        answerIntent.putExtra("pararToqueChamada", true);
+
+        Intent declineIntent = new Intent(this, MainActivity.class);
+        declineIntent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        declineIntent.putExtra("route", route);
+        declineIntent.putExtra("pararToqueChamada", true);
+        declineIntent.putExtra("acaoChamada", "nao-posso-atender");
+
+        int requestCodeBase = unidadeId != null ? unidadeId.hashCode() : 0;
+
+        Intent fullScreenIntent = new Intent(this, MainActivity.class);
+        fullScreenIntent.addFlags(
+                Intent.FLAG_ACTIVITY_NEW_TASK |
+                Intent.FLAG_ACTIVITY_SINGLE_TOP |
+                Intent.FLAG_ACTIVITY_CLEAR_TOP
+        );
+        fullScreenIntent.putExtra("route", route);
+        fullScreenIntent.putExtra("chamadaFullscreen", true);
+
+        PendingIntent fullScreenPendingIntent = PendingIntent.getActivity(
+                this,
+                requestCodeBase * 31 + 3,
+                fullScreenIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+        );
+
+        PendingIntent answerPendingIntent = PendingIntent.getActivity(
+                this,
+                requestCodeBase * 31 + 1,
+                answerIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+        );
+        PendingIntent declinePendingIntent = PendingIntent.getActivity(
+                this,
+                requestCodeBase * 31 + 2,
+                declineIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+        );
+
+        Person visitante = new Person.Builder()
+                .setName(nomeVisitante)
+                .setImportant(true)
+                .build();
+
+        String descricao = motivoChamada.isEmpty()
+                ? "Unidade " + unidadeId
+                : motivoChamada + " â€¢ Unidade " + unidadeId;
+
+        Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
+                .setContentTitle(nomeVisitante)
+                .setContentText(descricao)
+                .setSmallIcon(android.R.drawable.ic_menu_call)
+                .setCategory(NotificationCompat.CATEGORY_CALL)
+                .setPriority(NotificationCompat.PRIORITY_MAX)
+                .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+                .setOngoing(true)
+                .setFullScreenIntent(fullScreenPendingIntent, true)
+                .setContentIntent(answerPendingIntent)
+                .setStyle(NotificationCompat.CallStyle.forIncomingCall(
+                        visitante,
+                        declinePendingIntent,
+                        answerPendingIntent
+                ))
+                .addPerson(visitante)
+                .build();
+
+        startForeground(NOTIFICATION_ID, notification);
+    }
+
+    private void startAlert() {
+        Uri ringtoneUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE);
+        if (ringtoneUri != null) {
+            ringtone = RingtoneManager.getRingtone(this, ringtoneUri);
+        }
+        
+        if (ringtone != null) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                ringtone.setLooping(true);
+            }
+            
+            AudioAttributes audioAttributes = new AudioAttributes.Builder()
+                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                    .setUsage(AudioAttributes.USAGE_NOTIFICATION_RINGTONE)
+                    .build();
+            ringtone.setAudioAttributes(audioAttributes);
+            ringtone.play();
+        }
+
+        if (vibrator != null) {
+            long[] pattern = {0, 500, 200, 500};
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                vibrator.vibrate(VibrationEffect.createWaveform(pattern, 0));
+            } else {
+                vibrator.vibrate(pattern, 0);
+            }
+        }
+    }
+
+    private void stopAlert() {
+        CallOverlayManager.dismiss();
+        if (ringtone != null && ringtone.isPlaying()) {
+            ringtone.stop();
+        }
+        if (vibrator != null) {
+            vibrator.cancel();
+        }
+    }
+
+    @Override
+    public void onDestroy() {
+        handler.removeCallbacks(timeoutRunnable);
+        stopAlert();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            stopForeground(STOP_FOREGROUND_REMOVE);
+        } else {
+            stopForeground(true);
+        }
+        NotificationManager manager =
+                (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        manager.cancel(NOTIFICATION_ID);
+        isRunning = false;
+        activeUnidadeId = null;
+        super.onDestroy();
+    }
+
+    @Override
+    public IBinder onBind(Intent intent) { return null; }
+}
+
+
+============================================================
+ARQUIVO: android/app/src/main/java/com/qracesso/studio/CallOverlayManager.java
+============================================================
+
+package com.qracesso.studio;
+
+import android.content.Context;
+import android.content.Intent;
+import android.graphics.Color;
+import android.graphics.PixelFormat;
+import android.graphics.Typeface;
+import android.graphics.drawable.GradientDrawable;
+import android.os.Build;
+import android.os.Handler;
+import android.os.Looper;
+import android.util.Log;
+import android.util.TypedValue;
+import android.view.Gravity;
+import android.view.View;
+import android.view.WindowManager;
+import android.widget.Button;
+import android.widget.FrameLayout;
+import android.widget.LinearLayout;
+import android.widget.TextView;
+
+public class CallOverlayManager {
+    private static final String TAG = "CallOverlayManager";
+    private static final Handler mainHandler = new Handler(Looper.getMainLooper());
+    private static View activeOverlayView = null;
+    private static WindowManager activeWindowManager = null;
+
+    private static int dpToPx(Context context, int dp) {
+        return (int) TypedValue.applyDimension(
+                TypedValue.COMPLEX_UNIT_DIP,
+                dp,
+                context.getResources().getDisplayMetrics()
+        );
+    }
+
+    public static synchronized void show(
+            final Context context,
+            final String unidadeId,
+            final String nomeVisitante,
+            final String motivoChamada,
+            final String route
+    ) {
+        if (Looper.myLooper() != Looper.getMainLooper()) {
+            mainHandler.post(() -> show(context, unidadeId, nomeVisitante, motivoChamada, route));
+            return;
+        }
+
+        dismiss();
+
+        try {
+            final WindowManager windowManager =
+                    (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
+            if (windowManager == null) {
+                Log.e(TAG, "WindowManager indisponÃƒÂ­vel");
+                return;
+            }
+
+            int layoutType = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
+                    ? WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
+                    : WindowManager.LayoutParams.TYPE_PHONE;
+
+            WindowManager.LayoutParams windowParams = new WindowManager.LayoutParams(
+                    WindowManager.LayoutParams.MATCH_PARENT,
+                    WindowManager.LayoutParams.MATCH_PARENT,
+                    layoutType,
+                    WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL |
+                    WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON |
+                    WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
+                    PixelFormat.TRANSLUCENT
+            );
+            windowParams.gravity = Gravity.CENTER;
+
+            // Layout Raiz (Fundo escuro translÃƒÂºcido em tela cheia)
+            FrameLayout rootLayout = new FrameLayout(context);
+            rootLayout.setBackgroundColor(Color.argb(235, 10, 15, 30));
+
+            // Card Central
+            LinearLayout card = new LinearLayout(context);
+            card.setOrientation(LinearLayout.VERTICAL);
+            card.setGravity(Gravity.CENTER_HORIZONTAL);
+
+            GradientDrawable cardBg = new GradientDrawable();
+            cardBg.setColor(Color.parseColor("#1E293B"));
+            cardBg.setCornerRadius(dpToPx(context, 20));
+            cardBg.setStroke(dpToPx(context, 1), Color.parseColor("#334155"));
+            card.setBackground(cardBg);
+
+            int cardPadding = dpToPx(context, 28);
+            card.setPadding(cardPadding, cardPadding, cardPadding, cardPadding);
+
+            FrameLayout.LayoutParams cardParams = new FrameLayout.LayoutParams(
+                    FrameLayout.LayoutParams.MATCH_PARENT,
+                    FrameLayout.LayoutParams.WRAP_CONTENT
+            );
+            cardParams.gravity = Gravity.CENTER;
+            cardParams.leftMargin = dpToPx(context, 24);
+            cardParams.rightMargin = dpToPx(context, 24);
+            card.setLayoutParams(cardParams);
+
+            // 1. Badge "CHAMADA RECEBIDA"
+            TextView badge = new TextView(context);
+            badge.setText("CHAMADA RECEBIDA");
+            badge.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13);
+            badge.setTextColor(Color.parseColor("#38BDF8"));
+            badge.setTypeface(Typeface.DEFAULT_BOLD);
+            badge.setGravity(Gravity.CENTER);
+
+            GradientDrawable badgeBg = new GradientDrawable();
+            badgeBg.setColor(Color.parseColor("#0C4A6E"));
+            badgeBg.setCornerRadius(dpToPx(context, 12));
+            badge.setBackground(badgeBg);
+            badge.setPadding(
+                    dpToPx(context, 14),
+                    dpToPx(context, 6),
+                    dpToPx(context, 14),
+                    dpToPx(context, 6)
+            );
+            card.addView(badge);
+
+            // 2. Nome do Visitante
+            TextView txtNome = new TextView(context);
+            String nome = (nomeVisitante != null && !nomeVisitante.trim().isEmpty())
+                    ? nomeVisitante.trim()
+                    : "Visitante";
+            txtNome.setText(nome);
+            txtNome.setTextSize(TypedValue.COMPLEX_UNIT_SP, 24);
+            txtNome.setTextColor(Color.WHITE);
+            txtNome.setTypeface(Typeface.DEFAULT_BOLD);
+            txtNome.setGravity(Gravity.CENTER);
+
+            LinearLayout.LayoutParams paramsNome = new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+            );
+            paramsNome.topMargin = dpToPx(context, 18);
+            txtNome.setLayoutParams(paramsNome);
+            card.addView(txtNome);
+
+            // 3. DescriÃƒÂ§ÃƒÂ£o / Unidade
+            TextView txtDesc = new TextView(context);
+            String desc = (motivoChamada != null && !motivoChamada.trim().isEmpty())
+                    ? (motivoChamada.trim() + " â€¢ Unidade " + unidadeId)
+                    : ("Unidade " + unidadeId);
+            txtDesc.setText(desc);
+            txtDesc.setTextSize(TypedValue.COMPLEX_UNIT_SP, 15);
+            txtDesc.setTextColor(Color.parseColor("#94A3B8"));
+            txtDesc.setGravity(Gravity.CENTER);
+
+            LinearLayout.LayoutParams paramsDesc = new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+            );
+            paramsDesc.topMargin = dpToPx(context, 8);
+            paramsDesc.bottomMargin = dpToPx(context, 28);
+            txtDesc.setLayoutParams(paramsDesc);
+            card.addView(txtDesc);
+
+            // 4. Container de BotÃƒÂµes
+            LinearLayout buttonLayout = new LinearLayout(context);
+            buttonLayout.setOrientation(LinearLayout.HORIZONTAL);
+            buttonLayout.setLayoutParams(new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+            ));
+
+            // BotÃƒÂ£o RECUSAR
+            Button btnRecusar = new Button(context);
+            btnRecusar.setText("RECUSAR");
+            btnRecusar.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16);
+            btnRecusar.setTextColor(Color.WHITE);
+            btnRecusar.setTypeface(Typeface.DEFAULT_BOLD);
+
+            GradientDrawable btnRecusarBg = new GradientDrawable();
+            btnRecusarBg.setColor(Color.parseColor("#DC2626"));
+            btnRecusarBg.setCornerRadius(dpToPx(context, 12));
+            btnRecusar.setBackground(btnRecusarBg);
+
+            LinearLayout.LayoutParams paramsRecusar = new LinearLayout.LayoutParams(
+                    0,
+                    dpToPx(context, 54),
+                    1.0f
+            );
+            paramsRecusar.rightMargin = dpToPx(context, 6);
+            btnRecusar.setLayoutParams(paramsRecusar);
+
+            btnRecusar.setOnClickListener(v -> {
+                dismiss();
+                Intent declineIntent = new Intent(context, MainActivity.class);
+                declineIntent.addFlags(
+                        Intent.FLAG_ACTIVITY_NEW_TASK |
+                        Intent.FLAG_ACTIVITY_SINGLE_TOP |
+                        Intent.FLAG_ACTIVITY_CLEAR_TOP
+                );
+                declineIntent.putExtra("route", route);
+                declineIntent.putExtra("pararToqueChamada", true);
+                declineIntent.putExtra("acaoChamada", "nao-posso-atender");
+                try {
+                    context.startActivity(declineIntent);
+                } catch (Exception e) {
+                    Log.e(TAG, "Erro ao enviar recusa de chamada pelo overlay", e);
+                }
+            });
+            buttonLayout.addView(btnRecusar);
+
+            // BotÃƒÂ£o ATENDER
+            Button btnAtender = new Button(context);
+            btnAtender.setText("ATENDER");
+            btnAtender.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16);
+            btnAtender.setTextColor(Color.WHITE);
+            btnAtender.setTypeface(Typeface.DEFAULT_BOLD);
+
+            GradientDrawable btnAtenderBg = new GradientDrawable();
+            btnAtenderBg.setColor(Color.parseColor("#16A34A"));
+            btnAtenderBg.setCornerRadius(dpToPx(context, 12));
+            btnAtender.setBackground(btnAtenderBg);
+
+            LinearLayout.LayoutParams paramsAtender = new LinearLayout.LayoutParams(
+                    0,
+                    dpToPx(context, 54),
+                    1.0f
+            );
+            paramsAtender.leftMargin = dpToPx(context, 6);
+            btnAtender.setLayoutParams(paramsAtender);
+
+            btnAtender.setOnClickListener(v -> {
+                dismiss();
+                Intent answerIntent = new Intent(context, MainActivity.class);
+                answerIntent.addFlags(
+                        Intent.FLAG_ACTIVITY_NEW_TASK |
+                        Intent.FLAG_ACTIVITY_SINGLE_TOP |
+                        Intent.FLAG_ACTIVITY_CLEAR_TOP
+                );
+                answerIntent.putExtra("route", route);
+                answerIntent.putExtra("pararToqueChamada", true);
+                try {
+                    context.startActivity(answerIntent);
+                } catch (Exception e) {
+                    Log.e(TAG, "Erro ao abrir MainActivity ao atender pelo overlay", e);
+                }
+            });
+            buttonLayout.addView(btnAtender);
+
+            card.addView(buttonLayout);
+            rootLayout.addView(card);
+
+            windowManager.addView(rootLayout, windowParams);
+            activeOverlayView = rootLayout;
+            activeWindowManager = windowManager;
+            Log.d(TAG, "Call overlay exibido com sucesso");
+
+        } catch (Exception e) {
+            Log.e(TAG, "Erro ao exibir call overlay", e);
+            dismiss();
+        }
+    }
+
+    public static synchronized void dismiss() {
+        if (Looper.myLooper() != Looper.getMainLooper()) {
+            mainHandler.post(CallOverlayManager::dismiss);
+            return;
+        }
+
+        if (activeOverlayView != null && activeWindowManager != null) {
+            try {
+                activeWindowManager.removeView(activeOverlayView);
+                Log.d(TAG, "Call overlay removido");
+            } catch (Exception e) {
+                Log.w(TAG, "Erro ao remover call overlay", e);
+            }
+            activeOverlayView = null;
+            activeWindowManager = null;
+        }
+    }
+}
+
+
+
+============================================================
+ARQUIVO: android/app/src/main/java/com/qracesso/studio/MyFirebaseMessagingService.java
+============================================================
+
+package com.qracesso.studio;
+
+import android.content.Intent;
+import android.util.Log;
+import com.google.firebase.messaging.FirebaseMessagingService;
+import com.google.firebase.messaging.RemoteMessage;
+import java.util.Map;
+
+public class MyFirebaseMessagingService extends FirebaseMessagingService {
+    private static final String TAG = "FCM_NATIVO";
+
+    @Override
+    public void onMessageReceived(RemoteMessage remoteMessage) {
+        Map<String, String> data = remoteMessage.getData();
+        if (data != null && "chamada-v2".equals(data.get("tipo"))) {
+            Log.d(TAG, "Chamada V2 recebida: " + data.toString());
+            
+            String unidadeId = data.get("unidadeId");
+            String nome = data.get("nome");
+            String motivo = data.get("motivo");
+
+            if (unidadeId != null) {
+                // Iniciar serviÃ§o de toque contÃ­nuo
+                Intent serviceIntent = new Intent(this, IncomingCallService.class);
+                serviceIntent.setAction(IncomingCallService.ACTION_START);
+                serviceIntent.putExtra(IncomingCallService.EXTRA_UNIDADE_ID, unidadeId);
+                serviceIntent.putExtra(IncomingCallService.EXTRA_NOME, nome != null ? nome : "Visitante");
+                serviceIntent.putExtra(IncomingCallService.EXTRA_MOTIVO, motivo != null ? motivo : "");
+                try {
+                    androidx.core.content.ContextCompat.startForegroundService(this, serviceIntent);
+                } catch (Exception e) {
+                    android.util.Log.e(TAG, "Erro ao iniciar IncomingCallService", e);
+                }
+            }
+        }
+    }
+}
+
+
+============================================================
+ARQUIVO: android/app/src/main/java/com/qracesso/studio/MainActivity.java
+============================================================
+
+package com.qracesso.studio;
+
+import android.content.Intent;
+import android.os.Bundle;
+import android.util.Log;
+
+import com.getcapacitor.BridgeActivity;
+
+public class MainActivity extends BridgeActivity {
+
+    private String rotaPendente = null;
+    private String acaoChamadaPendente = null;
+    private final android.os.Handler chamadaHandler =
+        new android.os.Handler(android.os.Looper.getMainLooper());
+    private android.widget.TextView coberturaChamada = null;
+    private boolean aguardandoInterfaceChamada = false;
+    private int tentativasInterfaceChamada = 0;
+
+    private final Runnable verificarInterfaceChamada =
+        new Runnable() {
+            @Override
+            public void run() {
+                if (
+                    !aguardandoInterfaceChamada ||
+                    getBridge() == null ||
+                    getBridge().getWebView() == null
+                ) {
+                    return;
+                }
+
+                getBridge().getWebView().evaluateJavascript(
+                    "Boolean(document.body && document.body.innerText.includes('CHAMADA RECEBIDA'))",
+                    resultado -> {
+                        if ("true".equals(resultado)) {
+                            revelarInterfaceChamada();
+                            return;
+                        }
+
+                        tentativasInterfaceChamada++;
+
+                        if (tentativasInterfaceChamada >= 150) {
+                            Log.w(
+                                "MainActivity",
+                                "Tempo limite aguardando interface web da chamada"
+                            );
+                            revelarInterfaceChamada();
+                            return;
+                        }
+
+                        chamadaHandler.postDelayed(
+                            verificarInterfaceChamada,
+                            100
+                        );
+                    }
+                );
+            }
+        };
+
+    private void ocultarWebViewParaChamada() {
+        aguardandoInterfaceChamada = true;
+        tentativasInterfaceChamada = 0;
+        chamadaHandler.removeCallbacks(verificarInterfaceChamada);
+
+        if (
+            getBridge() != null &&
+            getBridge().getWebView() != null
+        ) {
+            getBridge().getWebView().setVisibility(
+                android.view.View.INVISIBLE
+            );
+        }
+
+        if (coberturaChamada == null) {
+            coberturaChamada = new android.widget.TextView(this);
+            coberturaChamada.setText(
+                "CHAMADA RECEBIDA\n\nConectando Ã  chamada..."
+            );
+            coberturaChamada.setTextColor(android.graphics.Color.WHITE);
+            coberturaChamada.setTextSize(26);
+            coberturaChamada.setGravity(android.view.Gravity.CENTER);
+            coberturaChamada.setBackgroundColor(
+                android.graphics.Color.rgb(2, 6, 23)
+            );
+            coberturaChamada.setElevation(100f);
+
+            addContentView(
+                coberturaChamada,
+                new android.view.ViewGroup.LayoutParams(
+                    android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                    android.view.ViewGroup.LayoutParams.MATCH_PARENT
+                )
+            );
+        }
+
+        coberturaChamada.setVisibility(android.view.View.VISIBLE);
+    }
+
+    private void revelarInterfaceChamada() {
+        aguardandoInterfaceChamada = false;
+        chamadaHandler.removeCallbacks(verificarInterfaceChamada);
+
+        if (
+            getBridge() != null &&
+            getBridge().getWebView() != null
+        ) {
+            getBridge().getWebView().setVisibility(
+                android.view.View.VISIBLE
+            );
+        }
+
+        if (coberturaChamada != null) {
+            coberturaChamada.setVisibility(android.view.View.GONE);
+        }
+    }
+
+    private void prepararTelaDeChamada() {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O_MR1) {
+            setShowWhenLocked(true);
+            setTurnScreenOn(true);
+        } else {
+            getWindow().addFlags(
+                android.view.WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED |
+                android.view.WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
+            );
+        }
+    }
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+
+        prepararTelaDeChamada();
+
+        registerPlugin(CallControlPlugin.class);
+        super.onCreate(savedInstanceState);
+        handleIntent(getIntent());
+    }
+
+    private void enviarParadaParaServicoDeChamada() {
+        Log.d(
+            "MainActivity",
+            "Solicitacao de parada do alerta nativo"
+        );
+
+        Intent stopIntent =
+            new Intent(this, IncomingCallService.class);
+
+        stopIntent.setAction(
+            IncomingCallService.ACTION_STOP
+        );
+
+        try {
+            startService(stopIntent);
+        } catch (Exception e) {
+            Log.e(
+                "MainActivity",
+                "Erro ao enviar ACTION_STOP para IncomingCallService",
+                e
+            );
+        }
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+
+        prepararTelaDeChamada();
+
+        setIntent(intent);
+        handleIntent(intent);
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        abrirRotaPendente();
+    }
+
+    private void handleIntent(Intent intent) {
+        if (intent == null) {
+            return;
+        }
+
+        if (intent.getBooleanExtra("chamadaFullscreen", false)) {
+            ocultarWebViewParaChamada();
+        }
+
+        if (intent.getBooleanExtra("pararToqueChamada", false)) {
+            enviarParadaParaServicoDeChamada();
+        }
+
+        String route =
+            intent.getStringExtra("route");
+
+        boolean chamadaFullscreen =
+            intent.getBooleanExtra(
+                "chamadaFullscreen",
+                false
+            );
+
+        String acaoChamada =
+            intent.getStringExtra("acaoChamada");
+
+        if (
+            acaoChamada != null &&
+            !acaoChamada.trim().isEmpty()
+        ) {
+            acaoChamadaPendente =
+                acaoChamada.trim();
+
+            Log.d(
+                "MainActivity",
+                "Acao de chamada recebida para integracao futura: " +
+                acaoChamadaPendente
+            );
+        }
+
+        if (
+            route != null &&
+            !route.trim().isEmpty()
+        ) {
+            rotaPendente = route.trim();
+
+            if (chamadaFullscreen) {
+                rotaPendente +=
+                    rotaPendente.contains("?")
+                        ? "&chamadaFullscreen=1"
+                        : "?chamadaFullscreen=1";
+            }
+
+            Log.d(
+                "MainActivity",
+                "Rota recebida pela notificacao: " +
+                rotaPendente
+            );
+
+            abrirRotaPendente();
+        }
+    }
+
+    private void abrirRotaPendente() {
+        if (
+            rotaPendente == null ||
+            rotaPendente.isEmpty()
+        ) {
+            return;
+        }
+
+        if (
+            getBridge() == null ||
+            getBridge().getWebView() == null
+        ) {
+            return;
+        }
+
+        final String route = rotaPendente;
+        rotaPendente = null;
+
+        getBridge()
+            .getWebView()
+            .post(() -> {
+                try {
+                    String origem =
+                        getBridge()
+                            .getWebView()
+                            .getUrl();
+
+                    if (
+                        origem == null ||
+                        origem.isEmpty()
+                    ) {
+                        rotaPendente = route;
+                        return;
+                    }
+
+                    java.net.URI uri =
+                        java.net.URI.create(origem);
+
+                    String destino =
+                        uri.getScheme() +
+                        "://" +
+                        uri.getAuthority() +
+                        route;
+
+                    Log.d(
+                        "MainActivity",
+                        "Abrindo rota da chamada: " +
+                        destino
+                    );
+
+                    getBridge()
+                        .getWebView()
+                        .loadUrl(destino);
+
+                    if (aguardandoInterfaceChamada) {
+                        chamadaHandler.post(
+                            verificarInterfaceChamada
+                        );
+                    }
+
+                } catch (Exception e) {
+                    rotaPendente = route;
+
+                    Log.e(
+                        "MainActivity",
+                        "Erro ao abrir rota da chamada",
+                        e
+                    );
+                }
+            });
+    }
+
+    @Override
+    public void onDestroy() {
+        chamadaHandler.removeCallbacks(verificarInterfaceChamada);
+        super.onDestroy();
+    }
+}
+
+
+
+============================================================
+ARQUIVO: android/app/src/main/AndroidManifest.xml
+============================================================
+
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <application
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/AppTheme">
+
+        <activity
+            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode|navigation|density"
+            android:name=".MainActivity"
+            android:label="@string/title_activity_main"
+            android:theme="@style/AppTheme.NoActionBarLaunch"
+            android:launchMode="singleTask"
+            android:showWhenLocked="true"
+            android:turnScreenOn="true"
+            android:exported="true">
+
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+        </activity>
+
+        <service
+            android:name=".MyFirebaseMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+
+        <service
+            android:name=".IncomingCallService"
+            android:exported="false"
+            android:foregroundServiceType="mediaPlayback" />
+
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths"></meta-data>
+        </provider>
+    </application>
+
+    <!-- Permissions -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+</manifest>
+
+

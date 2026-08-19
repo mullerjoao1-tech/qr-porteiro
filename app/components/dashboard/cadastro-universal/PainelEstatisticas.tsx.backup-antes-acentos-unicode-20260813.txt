@@ -1,0 +1,903 @@
+﻿"use client";
+
+import {
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+
+import {
+  onValue,
+  ref,
+} from "firebase/database";
+
+import {
+  db,
+} from "../../../services/firebase";
+
+type Vinculo = {
+  localId?: string;
+  localNome?: string;
+  localSlug?: string;
+  tipoLocal?: string;
+  perfilPrincipal?: string;
+  perfis?: Record<string, boolean | undefined>;
+  unidades?: Record<string, boolean>;
+  ativo?: boolean;
+};
+
+type Usuario = {
+  nome?: string;
+  status?: string;
+
+  locais?: Record<
+    string,
+    Vinculo
+  >;
+
+  condominios?: Record<
+    string,
+    Vinculo
+  >;
+
+  vinculos?: Record<
+    string,
+    Vinculo
+  >;
+};
+
+type Unidade = {
+  id?: string;
+  localId?: string;
+  condominioId?: string;
+  status?: string;
+  ativo?: boolean;
+};
+
+type Local = {
+  nome?: string;
+  nomeExibicao?: string;
+  tipo?: string;
+  tipoLocal?: string;
+  segmento?: string;
+
+  unidades?: Record<
+    string,
+    Unidade
+  >;
+
+  estruturas?: {
+    unidades?: Record<
+      string,
+      Unidade
+    >;
+  };
+};
+
+type ItemContagem = {
+  id: string;
+  nome: string;
+  total: number;
+};
+
+function nomeTipoLocal(
+  tipo?: string
+) {
+  const nomes: Record<
+    string,
+    string
+  > = {
+    condominio:
+      "Condom?nio",
+
+    residencia:
+      "Resid?ncia",
+
+    beauty:
+      "Beauty",
+
+    barbearia:
+      "Barbearia",
+
+    clinica:
+      "Cl?nica",
+
+    empresa:
+      "Empresa",
+
+    restaurante:
+      "Restaurante",
+
+    outro:
+      "Outro",
+  };
+
+  return (
+    nomes[
+      String(
+        tipo || ""
+      ).toLowerCase()
+    ] ||
+    tipo ||
+    "Outro"
+  );
+}
+
+function nomePerfil(
+  perfil?: string
+) {
+  const nomes: Record<
+    string,
+    string
+  > = {
+    morador:
+      "Morador",
+
+    sindico:
+      "S?ndico",
+
+    administradora:
+      "Administradora",
+
+    gestor_local:
+      "Gestor local",
+
+    porteiro:
+      "Porteiro",
+
+    central:
+      "Central",
+
+    funcionario:
+      "Funcion?rio",
+
+    financeiro:
+      "Financeiro",
+
+    prestador:
+      "Prestador",
+
+    conselheiro:
+      "Conselheiro",
+
+    administrador_master:
+      "Administrador master",
+
+    proprietario:
+      "Propriet?rio",
+
+    inquilino:
+      "Inquilino",
+
+    responsavel:
+      "Respons?vel",
+
+    gerente:
+      "Gerente",
+
+    outro:
+      "Outro",
+  };
+
+  return (
+    nomes[
+      perfil || ""
+    ] ||
+    perfil ||
+    "Outro"
+  );
+}
+
+function obterVinculos(
+  usuario: Usuario
+) {
+  const locais =
+    usuario.locais || {};
+
+  if (
+    Object.keys(
+      locais
+    ).length > 0
+  ) {
+    return Object.entries(
+      locais
+    );
+  }
+
+  return Object.entries(
+    usuario.condominios ||
+    {}
+  );
+}
+
+function normalizarPerfil(
+  perfil: string
+): string {
+  return perfil
+    .trim()
+    .toLowerCase()
+    .replace(
+      /-/g,
+      "_"
+    );
+}
+
+export default function PainelEstatisticas() {
+  const [
+    usuarios,
+    setUsuarios,
+  ] = useState<
+    Record<string, Usuario>
+  >({});
+
+  const [
+    locais,
+    setLocais,
+  ] = useState<
+    Record<string, Local>
+  >({});
+
+  const [
+    unidadesBanco,
+    setUnidadesBanco,
+  ] = useState<
+    Record<string, Unidade>
+  >({});
+
+  const [
+    carregandoUsuarios,
+    setCarregandoUsuarios,
+  ] = useState(true);
+
+  const [
+    carregandoLocais,
+    setCarregandoLocais,
+  ] = useState(true);
+
+  const [
+    carregandoUnidades,
+    setCarregandoUnidades,
+  ] = useState(true);
+
+  useEffect(() => {
+    const parar =
+      onValue(
+        ref(
+          db,
+          "usuarios-v2"
+        ),
+        (
+          snapshot
+        ) => {
+          setUsuarios(
+            snapshot.val() ||
+            {}
+          );
+
+          setCarregandoUsuarios(
+            false
+          );
+        }
+      );
+
+    return () => {
+      parar();
+    };
+  }, []);
+
+  useEffect(() => {
+    const parar =
+      onValue(
+        ref(
+          db,
+          "locais-v2"
+        ),
+        (
+          snapshot
+        ) => {
+          setLocais(
+            snapshot.val() ||
+            {}
+          );
+
+          setCarregandoLocais(
+            false
+          );
+        }
+      );
+
+    return () => {
+      parar();
+    };
+  }, []);
+
+  useEffect(() => {
+    const parar =
+      onValue(
+        ref(
+          db,
+          "unidades-v2"
+        ),
+        (
+          snapshot
+        ) => {
+          setUnidadesBanco(
+            snapshot.val() ||
+            {}
+          );
+
+          setCarregandoUnidades(
+            false
+          );
+        }
+      );
+
+    return () => {
+      parar();
+    };
+  }, []);
+
+  const resumo =
+    useMemo(
+      () => {
+        const listaUsuarios =
+          Object.values(
+            usuarios
+          );
+
+        const totalPessoas =
+          listaUsuarios.length;
+
+        const pessoasAtivas =
+          listaUsuarios.filter(
+            (
+              usuario
+            ) =>
+              usuario.status !==
+                "inativo" &&
+              usuario.status !==
+                "bloqueado"
+          ).length;
+
+        const totalLocais =
+          Object.keys(
+            locais
+          ).length;
+
+        // ================================================
+        // UNIDADES OFICIAIS
+        // mesma regra do PainelUnidades
+        // ================================================
+
+        const mapaUnidades =
+          new Map<
+            string,
+            {
+              localId: string;
+              unidade: Unidade;
+            }
+          >();
+
+        Object.entries(
+          locais
+        ).forEach(
+          (
+            [
+              localId,
+              local,
+            ]
+          ) => {
+            Object.entries(
+              local.unidades ||
+              {}
+            ).forEach(
+              (
+                [
+                  unidadeId,
+                  unidade,
+                ]
+              ) => {
+                mapaUnidades.set(
+                  unidadeId,
+                  {
+                    localId,
+                    unidade,
+                  }
+                );
+              }
+            );
+
+            Object.entries(
+              local.estruturas
+                ?.unidades ||
+              {}
+            ).forEach(
+              (
+                [
+                  unidadeId,
+                  unidade,
+                ]
+              ) => {
+                if (
+                  !mapaUnidades.has(
+                    unidadeId
+                  )
+                ) {
+                  mapaUnidades.set(
+                    unidadeId,
+                    {
+                      localId,
+                      unidade,
+                    }
+                  );
+                }
+              }
+            );
+          }
+        );
+
+        Object.entries(
+          unidadesBanco
+        ).forEach(
+          (
+            [
+              unidadeId,
+              unidade,
+            ]
+          ) => {
+            const localId =
+              unidade.localId ||
+              unidade.condominioId ||
+              "";
+
+            if (
+              !localId ||
+              !locais[
+                localId
+              ] ||
+              mapaUnidades.has(
+                unidadeId
+              )
+            ) {
+              return;
+            }
+
+            mapaUnidades.set(
+              unidadeId,
+              {
+                localId,
+                unidade,
+              }
+            );
+          }
+        );
+
+        const totalUnidades =
+          mapaUnidades.size;
+
+        // ================================================
+        // VINCULOS
+        // ================================================
+
+        let totalVinculos =
+          0;
+
+        let vinculosAtivos =
+          0;
+
+        let pessoasMultiplosLocais =
+          0;
+
+        const unidadesComPessoas =
+          new Set<string>();
+
+        const tiposLocal =
+          new Map<
+            string,
+            number
+          >();
+
+        const perfis =
+          new Map<
+            string,
+            number
+          >();
+
+        Object.entries(
+          locais
+        ).forEach(
+          (
+            [
+              ,
+              local,
+            ]
+          ) => {
+            const tipo =
+              String(
+                local.tipoLocal ||
+                local.tipo ||
+                local.segmento ||
+                "outro"
+              ).toLowerCase();
+
+            tiposLocal.set(
+              tipo,
+              (
+                tiposLocal.get(
+                  tipo
+                ) || 0
+              ) + 1
+            );
+          }
+        );
+
+        listaUsuarios.forEach(
+          (
+            usuario
+          ) => {
+            const vinculos =
+              obterVinculos(
+                usuario
+              );
+
+            totalVinculos +=
+              vinculos.length;
+
+            if (
+              vinculos.length >
+              1
+            ) {
+              pessoasMultiplosLocais++;
+            }
+
+            vinculos.forEach(
+              (
+                [
+                  ,
+                  vinculo,
+                ]
+              ) => {
+                if (
+                  vinculo.ativo !==
+                  false
+                ) {
+                  vinculosAtivos++;
+                }
+
+                const perfisVinculo =
+                  Object.entries(
+                    vinculo.perfis ||
+                    {}
+                  )
+                    .filter(
+                      (
+                        [
+                          ,
+                          ativo,
+                        ]
+                      ) =>
+                        ativo
+                    )
+                    .map(
+                      (
+                        [
+                          perfil,
+                        ]
+                      ) =>
+                        perfil
+                    );
+
+                if (
+                  vinculo
+                    .perfilPrincipal &&
+                  !perfisVinculo.includes(
+                    vinculo
+                      .perfilPrincipal
+                  )
+                ) {
+                  perfisVinculo.push(
+                    vinculo
+                      .perfilPrincipal
+                  );
+                }
+
+                Array.from(
+                  new Set(
+                    perfisVinculo.map(
+                      normalizarPerfil
+                    )
+                  )
+                ).forEach(
+                  (
+                    perfil
+                  ) => {
+                    perfis.set(
+                      perfil,
+                      (
+                        perfis.get(
+                          perfil
+                        ) || 0
+                      ) + 1
+                    );
+                  }
+                );
+
+                Object.entries(
+                  vinculo.unidades ||
+                  {}
+                )
+                  .filter(
+                    (
+                      [
+                        ,
+                        ativo,
+                      ]
+                    ) =>
+                      ativo
+                  )
+                  .forEach(
+                    (
+                      [
+                        unidadeId,
+                      ]
+                    ) => {
+                      unidadesComPessoas.add(
+                        unidadeId
+                      );
+                    }
+                  );
+              }
+            );
+          }
+        );
+
+        const distribuicaoTipos:
+          ItemContagem[] =
+          Array.from(
+            tiposLocal.entries()
+          )
+            .map(
+              (
+                [
+                  id,
+                  total,
+                ]
+              ) => ({
+                id,
+                nome:
+                  nomeTipoLocal(
+                    id
+                  ),
+                total,
+              })
+            )
+            .sort(
+              (
+                a,
+                b
+              ) =>
+                b.total -
+                a.total
+            );
+
+        const distribuicaoPerfis:
+          ItemContagem[] =
+          Array.from(
+            perfis.entries()
+          )
+            .map(
+              (
+                [
+                  id,
+                  total,
+                ]
+              ) => ({
+                id,
+                nome:
+                  nomePerfil(
+                    id
+                  ),
+                total,
+              })
+            )
+            .sort(
+              (
+                a,
+                b
+              ) =>
+                b.total -
+                a.total
+            );
+
+        return {
+          totalPessoas,
+          pessoasAtivas,
+          totalLocais,
+          totalUnidades,
+          totalVinculos,
+          vinculosAtivos,
+          pessoasMultiplosLocais,
+
+          unidadesComPessoas:
+            unidadesComPessoas.size,
+
+          distribuicaoTipos,
+          distribuicaoPerfis,
+        };
+      },
+      [
+        usuarios,
+        locais,
+        unidadesBanco,
+      ]
+    );
+
+  const carregando =
+    carregandoUsuarios ||
+    carregandoLocais ||
+    carregandoUnidades;
+
+  if (carregando) {
+    return (
+      <section className="rounded-3xl border border-slate-800 bg-slate-900 p-10 text-center">
+        <p className="font-black text-slate-300">
+          Carregando estat?sticas...
+        </p>
+      </section>
+    );
+  }
+
+  return (
+    <div className="space-y-5">
+      <section className="rounded-3xl border border-indigo-800 bg-gradient-to-r from-indigo-950/60 to-slate-900 p-5 md:p-6">
+        <p className="text-xs font-black uppercase tracking-wider text-indigo-300">
+          PAINEL DE ESTAT?STICAS
+        </p>
+
+        <h3 className="mt-2 text-2xl font-black text-white md:text-3xl">
+          Vis?o consolidada do QR Core
+        </h3>
+
+        <p className="mt-2 max-w-3xl text-sm leading-relaxed text-slate-400">
+          Indicadores calculados a partir das pessoas, locais, unidades e v?nculos universais atualmente cadastrados.
+        </p>
+      </section>
+
+      <section className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+        <div className="rounded-2xl border border-blue-800 bg-blue-950/20 p-4">
+          <p className="text-xs font-bold text-blue-300">
+            PESSOAS
+          </p>
+
+          <p className="mt-2 text-3xl font-black text-white">
+            {resumo.totalPessoas}
+          </p>
+
+          <p className="mt-1 text-xs text-slate-400">
+            {resumo.pessoasAtivas} ativas
+          </p>
+        </div>
+
+        <div className="rounded-2xl border border-cyan-800 bg-cyan-950/20 p-4">
+          <p className="text-xs font-bold text-cyan-300">
+            LOCAIS
+          </p>
+
+          <p className="mt-2 text-3xl font-black text-white">
+            {resumo.totalLocais}
+          </p>
+        </div>
+
+        <div className="rounded-2xl border border-violet-800 bg-violet-950/20 p-4">
+          <p className="text-xs font-bold text-violet-300">
+            UNIDADES
+          </p>
+
+          <p className="mt-2 text-3xl font-black text-white">
+            {resumo.totalUnidades}
+          </p>
+
+          <p className="mt-1 text-xs text-slate-400">
+            {resumo.unidadesComPessoas} com pessoas
+          </p>
+        </div>
+
+        <div className="rounded-2xl border border-green-800 bg-green-950/20 p-4">
+          <p className="text-xs font-bold text-green-300">
+            V?NCULOS
+          </p>
+
+          <p className="mt-2 text-3xl font-black text-white">
+            {resumo.totalVinculos}
+          </p>
+
+          <p className="mt-1 text-xs text-slate-400">
+            {resumo.vinculosAtivos} ativos
+          </p>
+        </div>
+
+        <div className="rounded-2xl border border-slate-700 bg-slate-900 p-4">
+          <p className="text-xs font-bold text-slate-400">
+            M?LTIPLOS LOCAIS
+          </p>
+
+          <p className="mt-2 text-3xl font-black text-white">
+            {
+              resumo
+                .pessoasMultiplosLocais
+            }
+          </p>
+
+          <p className="mt-1 text-xs text-slate-500">
+            pessoas em mais de um local
+          </p>
+        </div>
+      </section>
+
+      <section className="rounded-3xl border border-slate-800 bg-slate-900 p-5">
+        <p className="text-xs font-black uppercase tracking-wider text-cyan-300">
+          LOCAIS POR TIPO
+        </p>
+
+        <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          {resumo.distribuicaoTipos.map(
+            (
+              item
+            ) => (
+              <article
+                key={
+                  item.id
+                }
+                className="rounded-2xl border border-slate-700 bg-slate-800 p-4"
+              >
+                <p className="text-sm font-black text-white">
+                  {item.nome}
+                </p>
+
+                <p className="mt-2 text-3xl font-black text-cyan-300">
+                  {item.total}
+                </p>
+              </article>
+            )
+          )}
+        </div>
+      </section>
+
+      <section className="rounded-3xl border border-slate-800 bg-slate-900 p-5">
+        <p className="text-xs font-black uppercase tracking-wider text-violet-300">
+          PERFIS NOS V?NCULOS
+        </p>
+
+        {resumo.distribuicaoPerfis.length >
+        0 ? (
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            {resumo.distribuicaoPerfis.map(
+              (
+                item
+              ) => (
+                <article
+                  key={
+                    item.id
+                  }
+                  className="rounded-2xl border border-slate-700 bg-slate-800 p-4"
+                >
+                  <p className="text-sm font-black text-white">
+                    {item.nome}
+                  </p>
+
+                  <p className="mt-2 text-3xl font-black text-violet-300">
+                    {item.total}
+                  </p>
+                </article>
+              )
+            )}
+          </div>
+        ) : (
+          <p className="mt-4 text-sm text-slate-400">
+            Nenhum perfil encontrado.
+          </p>
+        )}
+      </section>
+    </div>
+  );
+}

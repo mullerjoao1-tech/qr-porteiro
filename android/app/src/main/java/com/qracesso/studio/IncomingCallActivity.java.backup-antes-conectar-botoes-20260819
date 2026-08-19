@@ -1,6 +1,5 @@
 package com.qracesso.studio;
 
-import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.WindowManager;
@@ -59,46 +58,7 @@ public class IncomingCallActivity extends AppCompatActivity {
         }
 
         // Bloco 2B: Ações ainda apenas fecham a tela
-        btnAtender.setOnClickListener(v ->
-                encaminharAcaoParaPainel("atender", unidadeDisplay)
-        );
-        btnNaoPossoAtender.setOnClickListener(v ->
-                encaminharAcaoParaPainel("nao-posso-atender", unidadeDisplay)
-        );
+        btnAtender.setOnClickListener(v -> finish());
+        btnNaoPossoAtender.setOnClickListener(v -> finish());
     }
-
-    private void encaminharAcaoParaPainel(
-            String acao,
-            String unidadeId
-    ) {
-        // Para imediatamente ringtone, vibracao e foreground.
-        Intent stopIntent =
-                new Intent(this, IncomingCallService.class);
-        stopIntent.setAction(IncomingCallService.ACTION_STOP);
-
-        try {
-            startService(stopIntent);
-        } catch (Exception ignored) {
-        }
-
-        // Entrega a acao ao mesmo painel Morador V2 ja usado no fluxo aberto.
-        String route = "/morador-v2/" + unidadeId;
-
-        Intent painelIntent =
-                new Intent(this, MainActivity.class);
-
-        painelIntent.addFlags(
-                Intent.FLAG_ACTIVITY_NEW_TASK |
-                Intent.FLAG_ACTIVITY_SINGLE_TOP |
-                Intent.FLAG_ACTIVITY_CLEAR_TOP
-        );
-
-        painelIntent.putExtra("route", route);
-        painelIntent.putExtra("pararToqueChamada", true);
-        painelIntent.putExtra("acaoChamada", acao);
-
-        startActivity(painelIntent);
-        finish();
-    }
-
 }

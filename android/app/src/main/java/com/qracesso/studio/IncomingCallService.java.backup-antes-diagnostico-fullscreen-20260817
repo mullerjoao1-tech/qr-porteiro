@@ -1,0 +1,225 @@
+package com.qracesso.studio;
+
+import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
+import android.app.Service;
+import android.content.Context;
+import android.content.Intent;
+import android.media.AudioAttributes;
+import android.media.Ringtone;
+import android.media.RingtoneManager;
+import android.net.Uri;
+import android.os.Build;
+import android.os.Handler;
+import android.os.IBinder;
+import android.os.Looper;
+import android.os.VibrationEffect;
+import android.os.Vibrator;
+import androidx.core.app.NotificationCompat;
+import androidx.core.app.Person;
+
+public class IncomingCallService extends Service {
+    public static final String ACTION_START = "ACTION_START";
+    public static final String ACTION_STOP = "ACTION_STOP";
+    public static final String EXTRA_UNIDADE_ID = "unidadeId";
+    public static final String EXTRA_NOME = "nome";
+    public static final String EXTRA_MOTIVO = "motivo";
+    private static final String CHANNEL_ID = "qr_acesso_chamadas_v3";
+    private static final int NOTIFICATION_ID = 1001;
+    
+    private Ringtone ringtone;
+    private Vibrator vibrator;
+    private final Handler handler = new Handler(Looper.getMainLooper());
+    private static boolean isRunning = false;
+    private static String activeUnidadeId = null;
+
+    private final Runnable timeoutRunnable = this::stopSelf;
+
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+    }
+
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        String action = intent != null ? intent.getAction() : null;
+        String unidadeId = intent != null ? intent.getStringExtra(EXTRA_UNIDADE_ID) : null;
+        String nome = intent != null ? intent.getStringExtra(EXTRA_NOME) : null;
+        String motivo = intent != null ? intent.getStringExtra(EXTRA_MOTIVO) : null;
+
+        if (ACTION_START.equals(action)) {
+            if (isRunning) {
+                if (unidadeId != null && unidadeId.equals(activeUnidadeId)) return START_NOT_STICKY;
+                stopAlert();
+            }
+            
+            isRunning = true;
+            activeUnidadeId = unidadeId;
+            
+            startForegroundServiceNotification(unidadeId, nome, motivo);
+            startAlert();
+            
+            handler.removeCallbacks(timeoutRunnable);
+            handler.postDelayed(timeoutRunnable, 60000); 
+        } else if (ACTION_STOP.equals(action)) {
+            stopAlert();
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                stopForeground(STOP_FOREGROUND_REMOVE);
+            } else {
+                stopForeground(true);
+            }
+            stopSelf();
+        }
+
+        return START_NOT_STICKY;
+    }
+
+    private void startForegroundServiceNotification(String unidadeId, String nome, String motivo) {
+        NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel channel = new NotificationChannel(
+                    CHANNEL_ID,
+                    "Chamadas QR Acesso",
+                    NotificationManager.IMPORTANCE_HIGH
+            );
+            channel.setSound(null, null);
+            channel.enableVibration(true);
+            manager.createNotificationChannel(channel);
+        }
+
+        String nomeVisitante = nome != null && !nome.trim().isEmpty() ? nome.trim() : "Visitante";
+        String motivoChamada = motivo != null ? motivo.trim() : "";
+        String route = "/morador-v2/" + unidadeId;
+
+        Intent answerIntent = new Intent(this, MainActivity.class);
+        answerIntent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        answerIntent.putExtra("route", route);
+        answerIntent.putExtra("pararToqueChamada", true);
+
+        Intent declineIntent = new Intent(this, MainActivity.class);
+        declineIntent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        declineIntent.putExtra("route", route);
+        declineIntent.putExtra("pararToqueChamada", true);
+        declineIntent.putExtra("acaoChamada", "nao-posso-atender");
+
+        int requestCodeBase = unidadeId != null ? unidadeId.hashCode() : 0;
+
+        Intent fullScreenIntent = new Intent(this, MainActivity.class);
+        fullScreenIntent.addFlags(
+                Intent.FLAG_ACTIVITY_NEW_TASK |
+                Intent.FLAG_ACTIVITY_SINGLE_TOP |
+                Intent.FLAG_ACTIVITY_CLEAR_TOP
+        );
+        fullScreenIntent.putExtra("route", route);
+        fullScreenIntent.putExtra("chamadaFullscreen", true);
+
+        PendingIntent fullScreenPendingIntent = PendingIntent.getActivity(
+                this,
+                requestCodeBase * 31 + 3,
+                fullScreenIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+        );
+
+        PendingIntent answerPendingIntent = PendingIntent.getActivity(
+                this,
+                requestCodeBase * 31 + 1,
+                answerIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+        );
+        PendingIntent declinePendingIntent = PendingIntent.getActivity(
+                this,
+                requestCodeBase * 31 + 2,
+                declineIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+        );
+
+        Person visitante = new Person.Builder()
+                .setName(nomeVisitante)
+                .setImportant(true)
+                .build();
+
+        String descricao = motivoChamada.isEmpty()
+                ? "Unidade " + unidadeId
+                : motivoChamada + " â€¢ Unidade " + unidadeId;
+
+        Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
+                .setContentTitle(nomeVisitante)
+                .setContentText(descricao)
+                .setSmallIcon(android.R.drawable.ic_menu_call)
+                .setCategory(NotificationCompat.CATEGORY_CALL)
+                .setPriority(NotificationCompat.PRIORITY_MAX)
+                .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+                .setOngoing(true)
+                .setSilent(true)
+                .setFullScreenIntent(fullScreenPendingIntent, true)
+                .setContentIntent(answerPendingIntent)
+                .setStyle(NotificationCompat.CallStyle.forIncomingCall(
+                        visitante,
+                        declinePendingIntent,
+                        answerPendingIntent
+                ))
+                .addPerson(visitante)
+                .build();
+
+        startForeground(NOTIFICATION_ID, notification);
+    }
+
+    private void startAlert() {
+        Uri ringtoneUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE);
+        if (ringtoneUri != null) {
+            ringtone = RingtoneManager.getRingtone(this, ringtoneUri);
+        }
+        
+        if (ringtone != null) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                ringtone.setLooping(true);
+            }
+            
+            AudioAttributes audioAttributes = new AudioAttributes.Builder()
+                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                    .setUsage(AudioAttributes.USAGE_NOTIFICATION_RINGTONE)
+                    .build();
+            ringtone.setAudioAttributes(audioAttributes);
+            ringtone.play();
+        }
+
+        if (vibrator != null) {
+            long[] pattern = {0, 500, 200, 500};
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                vibrator.vibrate(VibrationEffect.createWaveform(pattern, 0));
+            } else {
+                vibrator.vibrate(pattern, 0);
+            }
+        }
+    }
+
+    private void stopAlert() {
+        if (ringtone != null && ringtone.isPlaying()) {
+            ringtone.stop();
+        }
+        if (vibrator != null) {
+            vibrator.cancel();
+        }
+    }
+
+    @Override
+    public void onDestroy() {
+        handler.removeCallbacks(timeoutRunnable);
+        stopAlert();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            stopForeground(STOP_FOREGROUND_REMOVE);
+        } else {
+            stopForeground(true);
+        }
+        isRunning = false;
+        activeUnidadeId = null;
+        super.onDestroy();
+    }
+
+    @Override
+    public IBinder onBind(Intent intent) { return null; }
+}
+

@@ -246,18 +246,6 @@ public class MainActivity extends BridgeActivity {
                         : "?chamadaFullscreen=1";
             }
 
-            if (
-                acaoChamadaPendente != null &&
-                !acaoChamadaPendente.isEmpty()
-            ) {
-                rotaPendente +=
-                    rotaPendente.contains("?")
-                        ? "&acaoChamada=" + acaoChamadaPendente
-                        : "?acaoChamada=" + acaoChamadaPendente;
-
-                acaoChamadaPendente = null;
-            }
-
             Log.d(
                 "MainActivity",
                 "Rota recebida pela notificacao: " +

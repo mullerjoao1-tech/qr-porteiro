@@ -1,0 +1,34 @@
+package com.qracesso.studio;
+
+import android.content.Intent;
+import android.os.Bundle;
+import android.util.Log;
+import com.getcapacitor.BridgeActivity;
+
+public class MainActivity extends BridgeActivity {
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        handleIntent(getIntent());
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        handleIntent(intent);
+    }
+
+    private void handleIntent(Intent intent) {
+        if (intent != null && intent.getBooleanExtra("pararToqueChamada", false)) {
+            Log.d("MainActivity", "Solicitação de parada de toque recebida via Intent");
+            Intent stopIntent = new Intent(this, IncomingCallService.class);
+            stopIntent.setAction(IncomingCallService.ACTION_STOP);
+            try {
+                startService(stopIntent);
+            } catch (Exception e) {
+                Log.e("MainActivity", "Erro ao enviar ACTION_STOP para IncomingCallService", e);
+            }
+        }
+    }
+}

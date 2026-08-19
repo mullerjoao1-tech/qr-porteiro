@@ -1,0 +1,1170 @@
+﻿
+  app\acesso-v2\[condominioId]\page.tsx:16:  audioOuvidoPeloMorador?: boolean;
+  app\acesso-v2\[condominioId]\page.tsx:17:  audioOuvidoPeloMoradorEm?: number;
+  app\acesso-v2\[condominioId]\page.tsx:18:};
+  app\acesso-v2\[condominioId]\page.tsx:19:
+  app\acesso-v2\[condominioId]\page.tsx:20:type MensagemConversaComId = MensagemConversa & {
+  app\acesso-v2\[condominioId]\page.tsx:21:  id: string;
+  app\acesso-v2\[condominioId]\page.tsx:22:};
+  app\acesso-v2\[condominioId]\page.tsx:23:
+  app\acesso-v2\[condominioId]\page.tsx:24:type Unidade = {
+  app\acesso-v2\[condominioId]\page.tsx:25:  id: string;
+  app\acesso-v2\[condominioId]\page.tsx:26:  nome: string;
+  app\acesso-v2\[condominioId]\page.tsx:27:  tipo?: string;
+  app\acesso-v2\[condominioId]\page.tsx:28:  bloco?: string;
+  app\acesso-v2\[condominioId]\page.tsx:29:  estruturaPaiId?: string;
+  app\acesso-v2\[condominioId]\page.tsx:30:  estruturaPaiNome?: string;
+  app\acesso-v2\[condominioId]\page.tsx:31:  condominioId?: string;
+  app\acesso-v2\[condominioId]\page.tsx:32:  localId?: string;
+  app\acesso-v2\[condominioId]\page.tsx:33:  localNome?: string;
+  app\acesso-v2\[condominioId]\page.tsx:34:  localSlug?: string;
+  app\acesso-v2\[condominioId]\page.tsx:35:  tipoLocal?: string;
+> app\acesso-v2\[condominioId]\page.tsx:36:  chamada?: {
+  app\acesso-v2\[condominioId]\page.tsx:37:    nome?: string;
+  app\acesso-v2\[condominioId]\page.tsx:38:    motivo?: string;
+  app\acesso-v2\[condominioId]\page.tsx:39:    status?: string;
+  app\acesso-v2\[condominioId]\page.tsx:40:    criadoEm?: string;
+  app\acesso-v2\[condominioId]\page.tsx:41:    mensagemRapida?: string;
+  app\acesso-v2\[condominioId]\page.tsx:42:    respostaRapida?: string;
+  app\acesso-v2\[condominioId]\page.tsx:43:    resposta?: string;
+  app\acesso-v2\[condominioId]\page.tsx:44:    mensagemMorador?: string;
+  app\acesso-v2\[condominioId]\page.tsx:45:    mensagemResponsavel?: string;
+  app\acesso-v2\[condominioId]\page.tsx:46:    enviadoEm?: number;
+  app\acesso-v2\[condominioId]\page.tsx:47:    ultimaAtividade?: number;
+  app\acesso-v2\[condominioId]\page.tsx:48:    audioBase64?: string;
+  app\acesso-v2\[condominioId]\page.tsx:49:    mensagens?: Record<string, MensagemConversa>;
+  app\acesso-v2\[condominioId]\page.tsx:50:  };
+  app\acesso-v2\[condominioId]\page.tsx:51:};
+  app\acesso-v2\[condominioId]\page.tsx:52:
+  app\acesso-v2\[condominioId]\page.tsx:53:type LocalCadastro = {
+  app\acesso-v2\[condominioId]\page.tsx:54:  id: string;
+  app\acesso-v2\[condominioId]\page.tsx:55:  nome: string;
+  app\acesso-v2\[condominioId]\page.tsx:56:  slug?: string;
+  app\acesso-v2\[condominioId]\page.tsx:57:  tipo?: string;
+  app\acesso-v2\[condominioId]\page.tsx:58:  tipoLocal?: string;
+  app\acesso-v2\[condominioId]\page.tsx:59:  segmento?: string;
+  app\acesso-v2\[condominioId]\page.tsx:60:  status?: string;
+  app\acesso-v2\[condominioId]\page.tsx:61:  configuracao?: {
+  app\acesso-v2\[condominioId]\page.tsx:62:    modoAtendimento?: string;
+  app\acesso-v2\[condominioId]\page.tsx:63:    [chave: string]: unknown;
+  app\acesso-v2\[condominioId]\page.tsx:64:  };
+  app\acesso-v2\[condominioId]\page.tsx:65:};
+  app\acesso-v2\[condominioId]\page.tsx:66:
+  app\acesso-v2\[condominioId]\page.tsx:67:function blobParaBase64(blob: Blob): Promise<string> {
+  app\acesso-v2\[condominioId]\page.tsx:68:  return new Promise((resolve, reject) => {
+  app\acesso-v2\[condominioId]\page.tsx:69:    const reader = new FileReader();
+  app\acesso-v2\[condominioId]\page.tsx:70:    reader.onloadend = () => resolve(reader.result as string);
+  app\acesso-v2\[condominioId]\page.tsx:71:    reader.onerror = reject;
+  app\acesso-v2\[condominioId]\page.tsx:72:    reader.readAsDataURL(blob);
+  app\acesso-v2\[condominioId]\page.tsx:73:  });
+  app\acesso-v2\[condominioId]\page.tsx:74:}
+  app\acesso-v2\[condominioId]\page.tsx:75:
+  app\acesso-v2\[condominioId]\page.tsx:76:export default function AcessoV2Condominio() {
+  app\acesso-v2\[condominioId]\page.tsx:87:    localCadastro?.tipoLocal ||
+  app\acesso-v2\[condominioId]\page.tsx:88:    localCadastro?.segmento ||
+  app\acesso-v2\[condominioId]\page.tsx:89:    ""
+  app\acesso-v2\[condominioId]\page.tsx:90:  )
+  app\acesso-v2\[condominioId]\page.tsx:91:    .trim()
+  app\acesso-v2\[condominioId]\page.tsx:92:    .toLowerCase();
+  app\acesso-v2\[condominioId]\page.tsx:93:
+  app\acesso-v2\[condominioId]\page.tsx:94:  const localEhResidencia =
+  app\acesso-v2\[condominioId]\page.tsx:95:    tipoLocalNormalizado === "residencia" ||
+  app\acesso-v2\[condominioId]\page.tsx:96:    tipoLocalNormalizado === "residência" ||
+  app\acesso-v2\[condominioId]\page.tsx:97:    localCadastro?.configuracao?.modoAtendimento === "residencia";
+  app\acesso-v2\[condominioId]\page.tsx:98:
+  app\acesso-v2\[condominioId]\page.tsx:99:  const [busca, setBusca] = useState("");
+  app\acesso-v2\[condominioId]\page.tsx:100:  const [blocoSelecionado, setBlocoSelecionado] = useState("");
+  app\acesso-v2\[condominioId]\page.tsx:101:  const [unidadeSelecionada, setUnidadeSelecionada] = useState<Unidade | null>(null);
+  app\acesso-v2\[condominioId]\page.tsx:102:  const [nome, setNome] = useState("");
+  app\acesso-v2\[condominioId]\page.tsx:103:  const [motivo, setMotivo] = useState("");
+  app\acesso-v2\[condominioId]\page.tsx:104:  const [outroMotivo, setOutroMotivo] = useState("");
+  app\acesso-v2\[condominioId]\page.tsx:105:  const [enviando, setEnviando] = useState(false);
+  app\acesso-v2\[condominioId]\page.tsx:106:  const [mensagem, setMensagem] = useState("");
+> app\acesso-v2\[condominioId]\page.tsx:107:  const [chamadaEmAtendimento, setChamadaEmAtendimento] = useState(false);
+  app\acesso-v2\[condominioId]\page.tsx:108:  const [diagnostico, setDiagnostico] = useState("");
+  app\acesso-v2\[condominioId]\page.tsx:109:  const [gravandoAudio, setGravandoAudio] = useState(false);
+  app\acesso-v2\[condominioId]\page.tsx:110:  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
+  app\acesso-v2\[condominioId]\page.tsx:111:  const [enviandoAudio, setEnviandoAudio] = useState(false);
+  app\acesso-v2\[condominioId]\page.tsx:112:  const [popupTexto, setPopupTexto] = useState("");
+  app\acesso-v2\[condominioId]\page.tsx:113:  const [popupAudioBase64, setPopupAudioBase64] = useState("");
+  app\acesso-v2\[condominioId]\page.tsx:114:  const [popupTipo, setPopupTipo] = useState<"mensagem" | "audio" | "encerrado">("mensagem");
+  app\acesso-v2\[condominioId]\page.tsx:115:  const [popupAudioFoiOuvido, setPopupAudioFoiOuvido] = useState(false);
+  app\acesso-v2\[condominioId]\page.tsx:116:  const [popupAudioVisitanteAberto, setPopupAudioVisitanteAberto] = useState(false);
+  app\acesso-v2\[condominioId]\page.tsx:117:  const [mensagensConversa, setMensagensConversa] = useState<MensagemConversaComId[]>([]);
+  app\acesso-v2\[condominioId]\page.tsx:118:
+> app\acesso-v2\[condominioId]\page.tsx:119:  const chamadaAtivaRef = useRef(false);
+> app\acesso-v2\[condominioId]\page.tsx:120:  const chamadaFoiEnviadaRef = useRef(false);
+  app\acesso-v2\[condominioId]\page.tsx:121:  const ultimoPopupRef = useRef("");
+  app\acesso-v2\[condominioId]\page.tsx:122:  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  app\acesso-v2\[condominioId]\page.tsx:123:  const audioChunksRef = useRef<Blob[]>([]);
+  app\acesso-v2\[condominioId]\page.tsx:124:
+  app\acesso-v2\[condominioId]\page.tsx:125:  useEffect(() => {
+  app\acesso-v2\[condominioId]\page.tsx:126:    let cancelado = false;
+  app\acesso-v2\[condominioId]\page.tsx:127:
+  app\acesso-v2\[condominioId]\page.tsx:128:    async function carregarLocal() {
+  app\acesso-v2\[condominioId]\page.tsx:129:      try {
+  app\acesso-v2\[condominioId]\page.tsx:130:        const referenciaDireta = ref(db, `locais-v2/${condominioId}`);
+  app\acesso-v2\[condominioId]\page.tsx:131:        const snapshotDireto = await get(referenciaDireta);
+  app\acesso-v2\[condominioId]\page.tsx:132:
+  app\acesso-v2\[condominioId]\page.tsx:133:        if (snapshotDireto.exists()) {
+  app\acesso-v2\[condominioId]\page.tsx:134:          if (!cancelado) {
+  app\acesso-v2\[condominioId]\page.tsx:135:            setLocalCadastro({
+  app\acesso-v2\[condominioId]\page.tsx:136:              id: condominioId,
+  app\acesso-v2\[condominioId]\page.tsx:137:              ...snapshotDireto.val(),
+  app\acesso-v2\[condominioId]\page.tsx:138:            });
+  app\acesso-v2\[condominioId]\page.tsx:139:          }
+  app\acesso-v2\[condominioId]\page.tsx:140:          return;
+  app\acesso-v2\[condominioId]\page.tsx:141:        }
+  app\acesso-v2\[condominioId]\page.tsx:142:
+  app\acesso-v2\[condominioId]\page.tsx:143:        const snapshotLocais = await get(ref(db, "locais-v2"));
+  app\acesso-v2\[condominioId]\page.tsx:144:
+  app\acesso-v2\[condominioId]\page.tsx:145:        if (!snapshotLocais.exists()) {
+  app\acesso-v2\[condominioId]\page.tsx:146:          if (!cancelado) setLocalCadastro(null);
+  app\acesso-v2\[condominioId]\page.tsx:147:          return;
+  app\acesso-v2\[condominioId]\page.tsx:148:        }
+  app\acesso-v2\[condominioId]\page.tsx:149:
+  app\acesso-v2\[condominioId]\page.tsx:150:        const locais = snapshotLocais.val() as Record<string, Partial<LocalCadastro>>;
+  app\acesso-v2\[condominioId]\page.tsx:151:        const encontrado = Object.entries(locais).find(
+  app\acesso-v2\[condominioId]\page.tsx:152:          ([id, local]) =>
+  app\acesso-v2\[condominioId]\page.tsx:153:            id === condominioId ||
+  app\acesso-v2\[condominioId]\page.tsx:154:            local.slug === condominioId ||
+  app\acesso-v2\[condominioId]\page.tsx:155:            local.id === condominioId
+  app\acesso-v2\[condominioId]\page.tsx:156:        );
+  app\acesso-v2\[condominioId]\page.tsx:157:
+  app\acesso-v2\[condominioId]\page.tsx:158:        if (!cancelado) {
+  app\acesso-v2\[condominioId]\page.tsx:159:          setLocalCadastro(
+  app\acesso-v2\[condominioId]\page.tsx:160:            encontrado
+  app\acesso-v2\[condominioId]\page.tsx:243:      pararDeOuvir();
+  app\acesso-v2\[condominioId]\page.tsx:244:    };
+  app\acesso-v2\[condominioId]\page.tsx:245:  }, [condominioId, localCadastro?.id]);
+  app\acesso-v2\[condominioId]\page.tsx:246:
+  app\acesso-v2\[condominioId]\page.tsx:247:  useEffect(() => {
+  app\acesso-v2\[condominioId]\page.tsx:248:    if (
+  app\acesso-v2\[condominioId]\page.tsx:249:      localEhResidencia &&
+  app\acesso-v2\[condominioId]\page.tsx:250:      unidades.length === 1 &&
+  app\acesso-v2\[condominioId]\page.tsx:251:      !unidadeSelecionada
+  app\acesso-v2\[condominioId]\page.tsx:252:    ) {
+  app\acesso-v2\[condominioId]\page.tsx:253:      setUnidadeSelecionada(unidades[0]);
+  app\acesso-v2\[condominioId]\page.tsx:254:    }
+  app\acesso-v2\[condominioId]\page.tsx:255:  }, [localEhResidencia, unidadeSelecionada, unidades]);
+  app\acesso-v2\[condominioId]\page.tsx:256:
+  app\acesso-v2\[condominioId]\page.tsx:257:  useEffect(() => {
+  app\acesso-v2\[condominioId]\page.tsx:258:    if (!unidadeSelecionada) {
+  app\acesso-v2\[condominioId]\page.tsx:259:      setMensagensConversa([]);
+  app\acesso-v2\[condominioId]\page.tsx:260:      return;
+  app\acesso-v2\[condominioId]\page.tsx:261:    }
+  app\acesso-v2\[condominioId]\page.tsx:262:
+> app\acesso-v2\[condominioId]\page.tsx:263:    const referencia = ref(db, `unidades-v2/${unidadeSelecionada.id}/chamada`);
+  app\acesso-v2\[condominioId]\page.tsx:264:
+  app\acesso-v2\[condominioId]\page.tsx:265:    const pararDeOuvir = onValue(referencia, (snapshot) => {
+> app\acesso-v2\[condominioId]\page.tsx:266:      const chamada = snapshot.val();
+  app\acesso-v2\[condominioId]\page.tsx:267:
+> app\acesso-v2\[condominioId]\page.tsx:268:      setChamadaEmAtendimento(
+> app\acesso-v2\[condominioId]\page.tsx:269:        chamada?.status === "Em atendimento"
+  app\acesso-v2\[condominioId]\page.tsx:270:      );
+  app\acesso-v2\[condominioId]\page.tsx:271:
+> app\acesso-v2\[condominioId]\page.tsx:272:      if (!chamada) {
+  app\acesso-v2\[condominioId]\page.tsx:273:        setMensagensConversa([]);
+  app\acesso-v2\[condominioId]\page.tsx:274:
+> app\acesso-v2\[condominioId]\page.tsx:275:        if (chamadaAtivaRef.current && chamadaFoiEnviadaRef.current) {
+  app\acesso-v2\[condominioId]\page.tsx:276:          setPopupTipo("encerrado");
+  app\acesso-v2\[condominioId]\page.tsx:277:          setPopupAudioBase64("");
+  app\acesso-v2\[condominioId]\page.tsx:278:          setPopupAudioFoiOuvido(false);
+  app\acesso-v2\[condominioId]\page.tsx:279:          setPopupTexto("Atendimento encerrado pelo responsável.");
+  app\acesso-v2\[condominioId]\page.tsx:280:          setUnidadeSelecionada(null);
+  app\acesso-v2\[condominioId]\page.tsx:281:          setNome("");
+  app\acesso-v2\[condominioId]\page.tsx:282:          setMotivo("");
+  app\acesso-v2\[condominioId]\page.tsx:283:          setOutroMotivo("");
+  app\acesso-v2\[condominioId]\page.tsx:284:          setMensagem("");
+  app\acesso-v2\[condominioId]\page.tsx:285:          setAudioBlob(null);
+  app\acesso-v2\[condominioId]\page.tsx:286:          setGravandoAudio(false);
+  app\acesso-v2\[condominioId]\page.tsx:287:          setEnviandoAudio(false);
+  app\acesso-v2\[condominioId]\page.tsx:288:          setBusca("");
+  app\acesso-v2\[condominioId]\page.tsx:289:          setBlocoSelecionado("");
+  app\acesso-v2\[condominioId]\page.tsx:290:        }
+  app\acesso-v2\[condominioId]\page.tsx:291:
+> app\acesso-v2\[condominioId]\page.tsx:292:        chamadaAtivaRef.current = false;
+> app\acesso-v2\[condominioId]\page.tsx:293:        chamadaFoiEnviadaRef.current = false;
+  app\acesso-v2\[condominioId]\page.tsx:294:        ultimoPopupRef.current = "";
+  app\acesso-v2\[condominioId]\page.tsx:295:        return;
+  app\acesso-v2\[condominioId]\page.tsx:296:      }
+  app\acesso-v2\[condominioId]\page.tsx:297:
+> app\acesso-v2\[condominioId]\page.tsx:298:      if (!chamadaFoiEnviadaRef.current) return;
+  app\acesso-v2\[condominioId]\page.tsx:299:
+> app\acesso-v2\[condominioId]\page.tsx:300:      chamadaAtivaRef.current = true;
+  app\acesso-v2\[condominioId]\page.tsx:301:
+> app\acesso-v2\[condominioId]\page.tsx:302:      const todasAsMensagens: MensagemConversaComId[] = chamada.mensagens
+> app\acesso-v2\[condominioId]\page.tsx:303:        ? (Object.entries(chamada.mensagens) as Array<[string, MensagemConversa]>)
+  app\acesso-v2\[condominioId]\page.tsx:304:            .map(([id, item]) => ({ id, ...item }))
+  app\acesso-v2\[condominioId]\page.tsx:305:            .sort(
+  app\acesso-v2\[condominioId]\page.tsx:306:              (mensagemA, mensagemB) =>
+  app\acesso-v2\[condominioId]\page.tsx:307:                Number(mensagemA.criadoEm || mensagemA.id) -
+  app\acesso-v2\[condominioId]\page.tsx:308:                Number(mensagemB.criadoEm || mensagemB.id)
+  app\acesso-v2\[condominioId]\page.tsx:309:            )
+  app\acesso-v2\[condominioId]\page.tsx:310:        : [];
+  app\acesso-v2\[condominioId]\page.tsx:311:
+  app\acesso-v2\[condominioId]\page.tsx:312:      setMensagensConversa(todasAsMensagens);
+  app\acesso-v2\[condominioId]\page.tsx:313:
+  app\acesso-v2\[condominioId]\page.tsx:314:      const mensagensMorador = todasAsMensagens.filter(
+  app\acesso-v2\[condominioId]\page.tsx:315:        (item) => item.autor === "morador"
+  app\acesso-v2\[condominioId]\page.tsx:316:      );
+  app\acesso-v2\[condominioId]\page.tsx:317:
+  app\acesso-v2\[condominioId]\page.tsx:318:      const ultimaMensagemMorador =
+  app\acesso-v2\[condominioId]\page.tsx:319:        mensagensMorador.length > 0
+  app\acesso-v2\[condominioId]\page.tsx:320:          ? mensagensMorador[mensagensMorador.length - 1]
+  app\acesso-v2\[condominioId]\page.tsx:321:          : null;
+  app\acesso-v2\[condominioId]\page.tsx:322:
+  app\acesso-v2\[condominioId]\page.tsx:323:      if (ultimaMensagemMorador) {
+  app\acesso-v2\[condominioId]\page.tsx:324:        const item = ultimaMensagemMorador;
+  app\acesso-v2\[condominioId]\page.tsx:325:        const idMensagem = `${item.id}-${item.criadoEm || ""}`;
+  app\acesso-v2\[condominioId]\page.tsx:326:
+  app\acesso-v2\[condominioId]\page.tsx:327:        if (idMensagem !== ultimoPopupRef.current) {
+  app\acesso-v2\[condominioId]\page.tsx:328:          ultimoPopupRef.current = idMensagem;
+  app\acesso-v2\[condominioId]\page.tsx:329:
+  app\acesso-v2\[condominioId]\page.tsx:330:          if (item.tipo === "audio" && item.audioBase64) {
+  app\acesso-v2\[condominioId]\page.tsx:331:            setPopupTipo("audio");
+  app\acesso-v2\[condominioId]\page.tsx:332:            setPopupTexto("Você recebeu um áudio do morador.");
+  app\acesso-v2\[condominioId]\page.tsx:333:            setPopupAudioBase64(item.audioBase64);
+  app\acesso-v2\[condominioId]\page.tsx:334:            setPopupAudioFoiOuvido(false);
+  app\acesso-v2\[condominioId]\page.tsx:335:            return;
+  app\acesso-v2\[condominioId]\page.tsx:336:          }
+  app\acesso-v2\[condominioId]\page.tsx:337:
+  app\acesso-v2\[condominioId]\page.tsx:338:          if (item.tipo === "texto" && item.texto) {
+  app\acesso-v2\[condominioId]\page.tsx:339:            setPopupTipo("mensagem");
+  app\acesso-v2\[condominioId]\page.tsx:340:            setPopupAudioBase64("");
+  app\acesso-v2\[condominioId]\page.tsx:341:            setPopupAudioFoiOuvido(false);
+  app\acesso-v2\[condominioId]\page.tsx:342:            setPopupTexto(item.texto);
+  app\acesso-v2\[condominioId]\page.tsx:343:            return;
+  app\acesso-v2\[condominioId]\page.tsx:344:          }
+  app\acesso-v2\[condominioId]\page.tsx:345:        }
+  app\acesso-v2\[condominioId]\page.tsx:346:      }
+  app\acesso-v2\[condominioId]\page.tsx:347:
+  app\acesso-v2\[condominioId]\page.tsx:348:      const textoResposta =
+> app\acesso-v2\[condominioId]\page.tsx:349:        chamada.mensagemRapida ||
+> app\acesso-v2\[condominioId]\page.tsx:350:        chamada.respostaRapida ||
+> app\acesso-v2\[condominioId]\page.tsx:351:        chamada.mensagemResponsavel ||
+> app\acesso-v2\[condominioId]\page.tsx:352:        chamada.resposta ||
+> app\acesso-v2\[condominioId]\page.tsx:353:        chamada.mensagemMorador ||
+  app\acesso-v2\[condominioId]\page.tsx:354:        "";
+  app\acesso-v2\[condominioId]\page.tsx:355:
+> app\acesso-v2\[condominioId]\page.tsx:356:      const idMensagemAntiga = `${textoResposta}-${chamada.enviadoEm || ""}`;
+  app\acesso-v2\[condominioId]\page.tsx:357:
+  app\acesso-v2\[condominioId]\page.tsx:358:      if (
+  app\acesso-v2\[condominioId]\page.tsx:359:        textoResposta &&
+  app\acesso-v2\[condominioId]\page.tsx:360:        idMensagemAntiga !== ultimoPopupRef.current &&
+  app\acesso-v2\[condominioId]\page.tsx:361:        textoResposta !== "ATENDIMENTO_ENCERRADO"
+  app\acesso-v2\[condominioId]\page.tsx:362:      ) {
+  app\acesso-v2\[condominioId]\page.tsx:363:        ultimoPopupRef.current = idMensagemAntiga;
+  app\acesso-v2\[condominioId]\page.tsx:364:        setPopupTipo("mensagem");
+  app\acesso-v2\[condominioId]\page.tsx:365:        setPopupAudioBase64("");
+  app\acesso-v2\[condominioId]\page.tsx:366:        setPopupAudioFoiOuvido(false);
+  app\acesso-v2\[condominioId]\page.tsx:367:        setPopupTexto(textoResposta);
+  app\acesso-v2\[condominioId]\page.tsx:368:      }
+  app\acesso-v2\[condominioId]\page.tsx:369:    });
+  app\acesso-v2\[condominioId]\page.tsx:370:
+  app\acesso-v2\[condominioId]\page.tsx:371:    return () => pararDeOuvir();
+  app\acesso-v2\[condominioId]\page.tsx:372:  }, [unidadeSelecionada]);
+  app\acesso-v2\[condominioId]\page.tsx:373:
+  app\acesso-v2\[condominioId]\page.tsx:374:  const blocos = useMemo(() => {
+  app\acesso-v2\[condominioId]\page.tsx:375:    const lista = unidades
+  app\acesso-v2\[condominioId]\page.tsx:376:      .map((unidade) => unidade.bloco || "Único")
+  app\acesso-v2\[condominioId]\page.tsx:377:      .filter((valor, index, array) => array.indexOf(valor) === index);
+  app\acesso-v2\[condominioId]\page.tsx:378:
+  app\acesso-v2\[condominioId]\page.tsx:379:    return lista.sort((a, b) =>
+  app\acesso-v2\[condominioId]\page.tsx:380:      a.localeCompare(b, "pt-BR", { numeric: true })
+  app\acesso-v2\[condominioId]\page.tsx:381:    );
+  app\acesso-v2\[condominioId]\page.tsx:382:  }, [unidades]);
+  app\acesso-v2\[condominioId]\page.tsx:383:
+  app\acesso-v2\[condominioId]\page.tsx:384:  const temBlocos = blocos.length > 1 || blocos[0] !== "Único";
+  app\acesso-v2\[condominioId]\page.tsx:385:
+  app\acesso-v2\[condominioId]\page.tsx:386:  const unidadesDoBloco = useMemo(() => {
+  app\acesso-v2\[condominioId]\page.tsx:387:    if (!temBlocos) return unidades;
+  app\acesso-v2\[condominioId]\page.tsx:388:
+  app\acesso-v2\[condominioId]\page.tsx:389:    return unidades.filter(
+  app\acesso-v2\[condominioId]\page.tsx:390:      (unidade) => (unidade.bloco || "Único") === blocoSelecionado
+  app\acesso-v2\[condominioId]\page.tsx:391:    );
+  app\acesso-v2\[condominioId]\page.tsx:392:  }, [unidades, blocoSelecionado, temBlocos]);
+  app\acesso-v2\[condominioId]\page.tsx:393:
+  app\acesso-v2\[condominioId]\page.tsx:394:  const unidadesFiltradas = useMemo(() => {
+  app\acesso-v2\[condominioId]\page.tsx:395:    const texto = busca.toLowerCase().trim();
+  app\acesso-v2\[condominioId]\page.tsx:396:    if (!texto) return unidadesDoBloco;
+  app\acesso-v2\[condominioId]\page.tsx:397:
+  app\acesso-v2\[condominioId]\page.tsx:398:    return unidadesDoBloco.filter((unidade) =>
+  app\acesso-v2\[condominioId]\page.tsx:399:      `${unidade.nome} ${unidade.tipo || ""} ${unidade.id}`
+  app\acesso-v2\[condominioId]\page.tsx:400:        .toLowerCase()
+  app\acesso-v2\[condominioId]\page.tsx:401:        .includes(texto)
+  app\acesso-v2\[condominioId]\page.tsx:402:    );
+  app\acesso-v2\[condominioId]\page.tsx:403:  }, [busca, unidadesDoBloco]);
+  app\acesso-v2\[condominioId]\page.tsx:404:
+  app\acesso-v2\[condominioId]\page.tsx:405:  const precisaNome = motivo === "Visitante";
+  app\acesso-v2\[condominioId]\page.tsx:406:  const precisaDescricao = motivo === "Outros";
+  app\acesso-v2\[condominioId]\page.tsx:407:
+> app\acesso-v2\[condominioId]\page.tsx:408:  const chamadaVisualAtiva =
+> app\acesso-v2\[condominioId]\page.tsx:409:    Boolean(mensagem) || chamadaEmAtendimento;
+  app\acesso-v2\[condominioId]\page.tsx:410:
+  app\acesso-v2\[condominioId]\page.tsx:411:  async function chamarUnidade() {
+  app\acesso-v2\[condominioId]\page.tsx:412:    if (!unidadeSelecionada) {
+  app\acesso-v2\[condominioId]\page.tsx:413:      alert("Selecione uma unidade.");
+  app\acesso-v2\[condominioId]\page.tsx:414:      return;
+  app\acesso-v2\[condominioId]\page.tsx:415:    }
+  app\acesso-v2\[condominioId]\page.tsx:416:
+  app\acesso-v2\[condominioId]\page.tsx:417:    if (!motivo) {
+> app\acesso-v2\[condominioId]\page.tsx:418:      alert("Escolha o motivo da chamada.");
+  app\acesso-v2\[condominioId]\page.tsx:419:      return;
+  app\acesso-v2\[condominioId]\page.tsx:420:    }
+  app\acesso-v2\[condominioId]\page.tsx:421:
+  app\acesso-v2\[condominioId]\page.tsx:422:    if (precisaNome && !nome.trim()) {
+  app\acesso-v2\[condominioId]\page.tsx:423:      alert("Digite seu nome.");
+  app\acesso-v2\[condominioId]\page.tsx:424:      return;
+  app\acesso-v2\[condominioId]\page.tsx:425:    }
+  app\acesso-v2\[condominioId]\page.tsx:426:
+  app\acesso-v2\[condominioId]\page.tsx:427:    if (precisaDescricao && !outroMotivo.trim()) {
+  app\acesso-v2\[condominioId]\page.tsx:428:      alert("Descreva o motivo.");
+  app\acesso-v2\[condominioId]\page.tsx:429:      return;
+  app\acesso-v2\[condominioId]\page.tsx:430:    }
+  app\acesso-v2\[condominioId]\page.tsx:431:
+  app\acesso-v2\[condominioId]\page.tsx:432:    const motivoFinal = motivo === "Outros" ? outroMotivo.trim() : motivo;
+  app\acesso-v2\[condominioId]\page.tsx:433:    let nomeFinal = nome.trim();
+  app\acesso-v2\[condominioId]\page.tsx:434:
+  app\acesso-v2\[condominioId]\page.tsx:435:    if (motivo === "Entrega") nomeFinal = "Entrega";
+  app\acesso-v2\[condominioId]\page.tsx:436:    if (motivo === "Entrega de comida") nomeFinal = "Entrega de comida";
+  app\acesso-v2\[condominioId]\page.tsx:437:    if (motivo === "Outros" && !nomeFinal) nomeFinal = "Outro chamado";
+  app\acesso-v2\[condominioId]\page.tsx:438:
+> app\acesso-v2\[condominioId]\page.tsx:439:    const unidadeIdAtual = unidadeSelecionada.id;
+  app\acesso-v2\[condominioId]\page.tsx:440:    const unidadeNomeAtual = unidadeSelecionada.nome;
+  app\acesso-v2\[condominioId]\page.tsx:441:
+  app\acesso-v2\[condominioId]\page.tsx:442:    try {
+  app\acesso-v2\[condominioId]\page.tsx:443:      setDiagnostico("");
+  app\acesso-v2\[condominioId]\page.tsx:444:      setMensagem("");
+  app\acesso-v2\[condominioId]\page.tsx:445:      setEnviando(true);
+  app\acesso-v2\[condominioId]\page.tsx:446:      setPopupTexto("");
+  app\acesso-v2\[condominioId]\page.tsx:447:      setPopupAudioBase64("");
+  app\acesso-v2\[condominioId]\page.tsx:448:      setPopupAudioFoiOuvido(false);
+  app\acesso-v2\[condominioId]\page.tsx:449:      setMensagensConversa([]);
+  app\acesso-v2\[condominioId]\page.tsx:450:
+  app\acesso-v2\[condominioId]\page.tsx:451:      ultimoPopupRef.current = "";
+> app\acesso-v2\[condominioId]\page.tsx:452:      chamadaFoiEnviadaRef.current = true;
+> app\acesso-v2\[condominioId]\page.tsx:453:      chamadaAtivaRef.current = true;
+> app\acesso-v2\[condominioId]\page.tsx:454:      setDiagnostico("Gravando chamada...");
+  app\acesso-v2\[condominioId]\page.tsx:455:
+> app\acesso-v2\[condominioId]\page.tsx:456:      await update(
+> app\acesso-v2\[condominioId]\page.tsx:457:        ref(db, `unidades-v2/${unidadeIdAtual}/chamada`),
+  app\acesso-v2\[condominioId]\page.tsx:458:        {
+  app\acesso-v2\[condominioId]\page.tsx:459:          nome: nomeFinal,
+  app\acesso-v2\[condominioId]\page.tsx:460:          motivo: motivoFinal,
+> app\acesso-v2\[condominioId]\page.tsx:461:          status: "Aguardando atendimento",
+  app\acesso-v2\[condominioId]\page.tsx:462:          criadoEm: new Date().toISOString(),
+> app\acesso-v2\[condominioId]\page.tsx:463:          notificar: true,
+  app\acesso-v2\[condominioId]\page.tsx:464:          condominioId,
+  app\acesso-v2\[condominioId]\page.tsx:465:          origem: "acesso-v2",
+  app\acesso-v2\[condominioId]\page.tsx:466:          mensagemRapida: null,
+  app\acesso-v2\[condominioId]\page.tsx:467:          respostaRapida: null,
+  app\acesso-v2\[condominioId]\page.tsx:468:          mensagemResponsavel: null,
+  app\acesso-v2\[condominioId]\page.tsx:469:          resposta: null,
+  app\acesso-v2\[condominioId]\page.tsx:470:          mensagemMorador: null,
+  app\acesso-v2\[condominioId]\page.tsx:471:          enviadoEm: null,
+  app\acesso-v2\[condominioId]\page.tsx:472:        }
+  app\acesso-v2\[condominioId]\page.tsx:473:      );
+  app\acesso-v2\[condominioId]\page.tsx:474:
+  app\acesso-v2\[condominioId]\page.tsx:475:      setEnviando(false);
+> app\acesso-v2\[condominioId]\page.tsx:476:      setDiagnostico("✅ Chamada enviada.");
+  app\acesso-v2\[condominioId]\page.tsx:477:      setMensagem(
+> app\acesso-v2\[condominioId]\page.tsx:478:        `✅ Chamada enviada para ${unidadeNomeAtual}. Aguarde o atendimento.`
+  app\acesso-v2\[condominioId]\page.tsx:479:      );
+  app\acesso-v2\[condominioId]\page.tsx:480:
+  app\acesso-v2\[condominioId]\page.tsx:481:      fetch("/api/enviar-notificacao-v2", {
+  app\acesso-v2\[condominioId]\page.tsx:482:        method: "POST",
+  app\acesso-v2\[condominioId]\page.tsx:483:        headers: {
+  app\acesso-v2\[condominioId]\page.tsx:484:          "Content-Type": "application/json",
+  app\acesso-v2\[condominioId]\page.tsx:485:        },
+  app\acesso-v2\[condominioId]\page.tsx:486:        body: JSON.stringify({
+> app\acesso-v2\[condominioId]\page.tsx:487:          unidadeId: unidadeIdAtual,
+  app\acesso-v2\[condominioId]\page.tsx:488:        }),
+  app\acesso-v2\[condominioId]\page.tsx:489:      })
+  app\acesso-v2\[condominioId]\page.tsx:490:        .then(async (respostaPush) => {
+  app\acesso-v2\[condominioId]\page.tsx:491:          const textoResposta = await respostaPush.text();
+  app\acesso-v2\[condominioId]\page.tsx:492:          let dadosPush: unknown = null;
+  app\acesso-v2\[condominioId]\page.tsx:493:
+  app\acesso-v2\[condominioId]\page.tsx:494:          try {
+  app\acesso-v2\[condominioId]\page.tsx:495:            dadosPush = textoResposta ? JSON.parse(textoResposta) : null;
+  app\acesso-v2\[condominioId]\page.tsx:496:          } catch {
+  app\acesso-v2\[condominioId]\page.tsx:497:            dadosPush = textoResposta;
+  app\acesso-v2\[condominioId]\page.tsx:498:          }
+  app\acesso-v2\[condominioId]\page.tsx:499:
+  app\acesso-v2\[condominioId]\page.tsx:500:          console.log("RESPOSTA PUSH V2:", dadosPush);
+  app\acesso-v2\[condominioId]\page.tsx:501:
+  app\acesso-v2\[condominioId]\page.tsx:502:          if (!respostaPush.ok) {
+  app\acesso-v2\[condominioId]\page.tsx:503:            console.warn(
+> app\acesso-v2\[condominioId]\page.tsx:504:              "A chamada foi gravada, mas o push não foi confirmado:",
+  app\acesso-v2\[condominioId]\page.tsx:505:              dadosPush
+  app\acesso-v2\[condominioId]\page.tsx:506:            );
+  app\acesso-v2\[condominioId]\page.tsx:507:          }
+  app\acesso-v2\[condominioId]\page.tsx:508:        })
+  app\acesso-v2\[condominioId]\page.tsx:509:        .catch((erroPush) => {
+  app\acesso-v2\[condominioId]\page.tsx:510:          console.warn(
+> app\acesso-v2\[condominioId]\page.tsx:511:            "A chamada foi gravada, mas ocorreu falha no push:",
+  app\acesso-v2\[condominioId]\page.tsx:512:            erroPush
+  app\acesso-v2\[condominioId]\page.tsx:513:          );
+  app\acesso-v2\[condominioId]\page.tsx:514:        });
+  app\acesso-v2\[condominioId]\page.tsx:515:    } catch (erro: unknown) {
+> app\acesso-v2\[condominioId]\page.tsx:516:      console.error("Falha ao gravar a chamada:", erro);
+  app\acesso-v2\[condominioId]\page.tsx:517:
+  app\acesso-v2\[condominioId]\page.tsx:518:      const detalhe =
+  app\acesso-v2\[condominioId]\page.tsx:519:        erro instanceof Error
+  app\acesso-v2\[condominioId]\page.tsx:520:          ? erro.message
+  app\acesso-v2\[condominioId]\page.tsx:521:          : String(erro) || "Erro desconhecido";
+  app\acesso-v2\[condominioId]\page.tsx:522:
+  app\acesso-v2\[condominioId]\page.tsx:523:      setDiagnostico(`❌ ERRO: ${detalhe}`);
+  app\acesso-v2\[condominioId]\page.tsx:524:      setMensagem("");
+> app\acesso-v2\[condominioId]\page.tsx:525:      chamadaAtivaRef.current = false;
+> app\acesso-v2\[condominioId]\page.tsx:526:      chamadaFoiEnviadaRef.current = false;
+  app\acesso-v2\[condominioId]\page.tsx:527:      setEnviando(false);
+  app\acesso-v2\[condominioId]\page.tsx:528:    }
+  app\acesso-v2\[condominioId]\page.tsx:529:  }
+  app\acesso-v2\[condominioId]\page.tsx:530:
+  app\acesso-v2\[condominioId]\page.tsx:531:  async function iniciarGravacao() {
+  app\acesso-v2\[condominioId]\page.tsx:532:    if (!unidadeSelecionada) {
+  app\acesso-v2\[condominioId]\page.tsx:533:      alert("Selecione uma unidade antes de gravar.");
+  app\acesso-v2\[condominioId]\page.tsx:534:      return;
+  app\acesso-v2\[condominioId]\page.tsx:535:    }
+  app\acesso-v2\[condominioId]\page.tsx:536:
+  app\acesso-v2\[condominioId]\page.tsx:537:    try {
+  app\acesso-v2\[condominioId]\page.tsx:538:      const stream = await navigator.mediaDevices.getUserMedia({
+  app\acesso-v2\[condominioId]\page.tsx:539:        audio: true,
+  app\acesso-v2\[condominioId]\page.tsx:540:      });
+  app\acesso-v2\[condominioId]\page.tsx:541:
+  app\acesso-v2\[condominioId]\page.tsx:542:      const recorder = new MediaRecorder(stream);
+  app\acesso-v2\[condominioId]\page.tsx:543:      audioChunksRef.current = [];
+  app\acesso-v2\[condominioId]\page.tsx:544:
+  app\acesso-v2\[condominioId]\page.tsx:545:      recorder.ondataavailable = (evento) => {
+  app\acesso-v2\[condominioId]\page.tsx:546:        if (evento.data.size > 0) {
+  app\acesso-v2\[condominioId]\page.tsx:547:          audioChunksRef.current.push(evento.data);
+  app\acesso-v2\[condominioId]\page.tsx:548:        }
+  app\acesso-v2\[condominioId]\page.tsx:549:      };
+  app\acesso-v2\[condominioId]\page.tsx:550:
+  app\acesso-v2\[condominioId]\page.tsx:551:      recorder.onstop = () => {
+  app\acesso-v2\[condominioId]\page.tsx:552:        const blob = new Blob(audioChunksRef.current, {
+  app\acesso-v2\[condominioId]\page.tsx:553:          type: "audio/webm",
+  app\acesso-v2\[condominioId]\page.tsx:554:        });
+  app\acesso-v2\[condominioId]\page.tsx:555:
+  app\acesso-v2\[condominioId]\page.tsx:556:        setAudioBlob(blob);
+  app\acesso-v2\[condominioId]\page.tsx:557:        setGravandoAudio(false);
+  app\acesso-v2\[condominioId]\page.tsx:558:        stream.getTracks().forEach((track) => track.stop());
+  app\acesso-v2\[condominioId]\page.tsx:559:      };
+  app\acesso-v2\[condominioId]\page.tsx:560:
+  app\acesso-v2\[condominioId]\page.tsx:561:      mediaRecorderRef.current = recorder;
+  app\acesso-v2\[condominioId]\page.tsx:562:      recorder.start();
+  app\acesso-v2\[condominioId]\page.tsx:563:      setAudioBlob(null);
+  app\acesso-v2\[condominioId]\page.tsx:564:      setGravandoAudio(true);
+  app\acesso-v2\[condominioId]\page.tsx:565:
+  app\acesso-v2\[condominioId]\page.tsx:566:      setTimeout(() => {
+  app\acesso-v2\[condominioId]\page.tsx:574:  }
+  app\acesso-v2\[condominioId]\page.tsx:575:
+  app\acesso-v2\[condominioId]\page.tsx:576:  function pararGravacao() {
+  app\acesso-v2\[condominioId]\page.tsx:577:    if (
+  app\acesso-v2\[condominioId]\page.tsx:578:      mediaRecorderRef.current &&
+  app\acesso-v2\[condominioId]\page.tsx:579:      mediaRecorderRef.current.state === "recording"
+  app\acesso-v2\[condominioId]\page.tsx:580:    ) {
+  app\acesso-v2\[condominioId]\page.tsx:581:      mediaRecorderRef.current.stop();
+  app\acesso-v2\[condominioId]\page.tsx:582:      return;
+  app\acesso-v2\[condominioId]\page.tsx:583:    }
+  app\acesso-v2\[condominioId]\page.tsx:584:
+  app\acesso-v2\[condominioId]\page.tsx:585:    setGravandoAudio(false);
+  app\acesso-v2\[condominioId]\page.tsx:586:  }
+  app\acesso-v2\[condominioId]\page.tsx:587:
+  app\acesso-v2\[condominioId]\page.tsx:588:  async function enviarAudioVisitante() {
+  app\acesso-v2\[condominioId]\page.tsx:589:    if (!unidadeSelecionada || !audioBlob) {
+  app\acesso-v2\[condominioId]\page.tsx:590:      alert("Grave um áudio antes de enviar.");
+  app\acesso-v2\[condominioId]\page.tsx:591:      return;
+  app\acesso-v2\[condominioId]\page.tsx:592:    }
+  app\acesso-v2\[condominioId]\page.tsx:593:
+> app\acesso-v2\[condominioId]\page.tsx:594:    const referenciaChamada = ref(
+  app\acesso-v2\[condominioId]\page.tsx:595:      db,
+> app\acesso-v2\[condominioId]\page.tsx:596:      `unidades-v2/${unidadeSelecionada.id}/chamada`
+  app\acesso-v2\[condominioId]\page.tsx:597:    );
+  app\acesso-v2\[condominioId]\page.tsx:598:
+  app\acesso-v2\[condominioId]\page.tsx:599:    try {
+  app\acesso-v2\[condominioId]\page.tsx:600:      setEnviandoAudio(true);
+  app\acesso-v2\[condominioId]\page.tsx:601:
+> app\acesso-v2\[condominioId]\page.tsx:602:      const snapshotChamada = await get(referenciaChamada);
+> app\acesso-v2\[condominioId]\page.tsx:603:      const chamadaAtual = snapshotChamada.val() || {};
+> app\acesso-v2\[condominioId]\page.tsx:604:      const statusAtual = chamadaAtual.status || "";
+  app\acesso-v2\[condominioId]\page.tsx:605:
+> app\acesso-v2\[condominioId]\page.tsx:606:      const chamadaJaAtiva =
+  app\acesso-v2\[condominioId]\page.tsx:607:        statusAtual &&
+  app\acesso-v2\[condominioId]\page.tsx:608:        statusAtual !== "Encerrado" &&
+  app\acesso-v2\[condominioId]\page.tsx:609:        statusAtual !== "Finalizado" &&
+  app\acesso-v2\[condominioId]\page.tsx:610:        statusAtual !== "Cancelado pelo visitante" &&
+  app\acesso-v2\[condominioId]\page.tsx:611:        statusAtual !== "Cancelada pelo visitante" &&
+  app\acesso-v2\[condominioId]\page.tsx:612:        statusAtual !== "Atendimento encerrado";
+  app\acesso-v2\[condominioId]\page.tsx:613:
+> app\acesso-v2\[condominioId]\page.tsx:614:      if (!chamadaJaAtiva) {
+  app\acesso-v2\[condominioId]\page.tsx:615:        if (!motivo) {
+> app\acesso-v2\[condominioId]\page.tsx:616:          alert("Escolha o motivo da chamada antes de enviar o áudio.");
+  app\acesso-v2\[condominioId]\page.tsx:617:          return;
+  app\acesso-v2\[condominioId]\page.tsx:618:        }
+  app\acesso-v2\[condominioId]\page.tsx:619:
+  app\acesso-v2\[condominioId]\page.tsx:620:        if (precisaNome && !nome.trim()) {
+  app\acesso-v2\[condominioId]\page.tsx:621:          alert("Digite seu nome antes de enviar o áudio.");
+  app\acesso-v2\[condominioId]\page.tsx:622:          return;
+  app\acesso-v2\[condominioId]\page.tsx:623:        }
+  app\acesso-v2\[condominioId]\page.tsx:624:
+  app\acesso-v2\[condominioId]\page.tsx:625:        if (precisaDescricao && !outroMotivo.trim()) {
+  app\acesso-v2\[condominioId]\page.tsx:626:          alert("Descreva o motivo antes de enviar o áudio.");
+  app\acesso-v2\[condominioId]\page.tsx:627:          return;
+  app\acesso-v2\[condominioId]\page.tsx:628:        }
+  app\acesso-v2\[condominioId]\page.tsx:629:      }
+  app\acesso-v2\[condominioId]\page.tsx:630:
+  app\acesso-v2\[condominioId]\page.tsx:631:      const audioBase64 = await blobParaBase64(audioBlob);
+  app\acesso-v2\[condominioId]\page.tsx:632:      const criadoEmMensagem = Date.now();
+  app\acesso-v2\[condominioId]\page.tsx:633:      const idMensagem = String(criadoEmMensagem);
+  app\acesso-v2\[condominioId]\page.tsx:634:
+> app\acesso-v2\[condominioId]\page.tsx:635:      if (!chamadaJaAtiva) {
+  app\acesso-v2\[condominioId]\page.tsx:636:        const motivoFinal = motivo === "Outros" ? outroMotivo.trim() : motivo;
+  app\acesso-v2\[condominioId]\page.tsx:637:        let nomeFinal = nome.trim();
+  app\acesso-v2\[condominioId]\page.tsx:638:
+  app\acesso-v2\[condominioId]\page.tsx:639:        if (motivo === "Entrega") nomeFinal = "Entrega";
+  app\acesso-v2\[condominioId]\page.tsx:640:        if (motivo === "Entrega de comida") nomeFinal = "Entrega de comida";
+  app\acesso-v2\[condominioId]\page.tsx:641:        if (motivo === "Outros" && !nomeFinal) nomeFinal = "Outro chamado";
+  app\acesso-v2\[condominioId]\page.tsx:642:
+> app\acesso-v2\[condominioId]\page.tsx:643:        chamadaFoiEnviadaRef.current = true;
+> app\acesso-v2\[condominioId]\page.tsx:644:        chamadaAtivaRef.current = true;
+  app\acesso-v2\[condominioId]\page.tsx:645:        ultimoPopupRef.current = "";
+  app\acesso-v2\[condominioId]\page.tsx:646:
+> app\acesso-v2\[condominioId]\page.tsx:647:        await update(referenciaChamada, {
+  app\acesso-v2\[condominioId]\page.tsx:648:          nome: nomeFinal,
+  app\acesso-v2\[condominioId]\page.tsx:649:          motivo: motivoFinal,
+> app\acesso-v2\[condominioId]\page.tsx:650:          status: "Aguardando atendimento",
+  app\acesso-v2\[condominioId]\page.tsx:651:          criadoEm: new Date().toISOString(),
+> app\acesso-v2\[condominioId]\page.tsx:652:          notificar: true,
+  app\acesso-v2\[condominioId]\page.tsx:653:          condominioId,
+  app\acesso-v2\[condominioId]\page.tsx:654:          origem: "acesso-v2",
+  app\acesso-v2\[condominioId]\page.tsx:655:          mensagemRapida: null,
+  app\acesso-v2\[condominioId]\page.tsx:656:          respostaRapida: null,
+  app\acesso-v2\[condominioId]\page.tsx:657:          mensagemResponsavel: null,
+  app\acesso-v2\[condominioId]\page.tsx:658:          resposta: null,
+  app\acesso-v2\[condominioId]\page.tsx:659:          mensagemMorador: null,
+  app\acesso-v2\[condominioId]\page.tsx:660:          visualizadoPeloVisitante: false,
+  app\acesso-v2\[condominioId]\page.tsx:661:        });
+  app\acesso-v2\[condominioId]\page.tsx:662:      }
+  app\acesso-v2\[condominioId]\page.tsx:663:
+> app\acesso-v2\[condominioId]\page.tsx:664:      await set(
+  app\acesso-v2\[condominioId]\page.tsx:665:        ref(
+  app\acesso-v2\[condominioId]\page.tsx:666:          db,
+> app\acesso-v2\[condominioId]\page.tsx:667:          `unidades-v2/${unidadeSelecionada.id}/chamada/mensagens/${idMensagem}`
+  app\acesso-v2\[condominioId]\page.tsx:668:        ),
+  app\acesso-v2\[condominioId]\page.tsx:669:        {
+  app\acesso-v2\[condominioId]\page.tsx:670:          autor: "visitante",
+  app\acesso-v2\[condominioId]\page.tsx:671:          tipo: "audio",
+  app\acesso-v2\[condominioId]\page.tsx:672:          audioBase64,
+  app\acesso-v2\[condominioId]\page.tsx:673:          criadoEm: criadoEmMensagem,
+  app\acesso-v2\[condominioId]\page.tsx:674:        }
+  app\acesso-v2\[condominioId]\page.tsx:675:      );
+  app\acesso-v2\[condominioId]\page.tsx:676:
+> app\acesso-v2\[condominioId]\page.tsx:677:      await update(referenciaChamada, {
+  app\acesso-v2\[condominioId]\page.tsx:678:        audioBase64,
+  app\acesso-v2\[condominioId]\page.tsx:679:        ultimaAtividade: criadoEmMensagem,
+  app\acesso-v2\[condominioId]\page.tsx:680:        enviadoEm: criadoEmMensagem,
+> app\acesso-v2\[condominioId]\page.tsx:681:        ...(chamadaJaAtiva
+  app\acesso-v2\[condominioId]\page.tsx:682:          ? {}
+  app\acesso-v2\[condominioId]\page.tsx:683:          : {
+> app\acesso-v2\[condominioId]\page.tsx:684:              status: "Aguardando atendimento",
+> app\acesso-v2\[condominioId]\page.tsx:685:              notificar: true,
+  app\acesso-v2\[condominioId]\page.tsx:686:            }),
+  app\acesso-v2\[condominioId]\page.tsx:687:      });
+  app\acesso-v2\[condominioId]\page.tsx:688:
+> app\acesso-v2\[condominioId]\page.tsx:689:      if (!chamadaJaAtiva) {
+  app\acesso-v2\[condominioId]\page.tsx:690:        try {
+  app\acesso-v2\[condominioId]\page.tsx:691:          const respostaPush = await fetch("/api/enviar-notificacao-v2", {
+  app\acesso-v2\[condominioId]\page.tsx:692:            method: "POST",
+  app\acesso-v2\[condominioId]\page.tsx:693:            headers: {
+  app\acesso-v2\[condominioId]\page.tsx:694:              "Content-Type": "application/json",
+  app\acesso-v2\[condominioId]\page.tsx:695:            },
+  app\acesso-v2\[condominioId]\page.tsx:696:            body: JSON.stringify({
+> app\acesso-v2\[condominioId]\page.tsx:697:              unidadeId: unidadeSelecionada.id,
+  app\acesso-v2\[condominioId]\page.tsx:698:            }),
+  app\acesso-v2\[condominioId]\page.tsx:699:          });
+  app\acesso-v2\[condominioId]\page.tsx:700:
+  app\acesso-v2\[condominioId]\page.tsx:701:          const dadosPush = await respostaPush.json();
+  app\acesso-v2\[condominioId]\page.tsx:702:          console.log("RESPOSTA PUSH V2 - ÁUDIO:", dadosPush);
+  app\acesso-v2\[condominioId]\page.tsx:703:        } catch (erroPush) {
+> app\acesso-v2\[condominioId]\page.tsx:704:          console.error("Erro ao enviar push da chamada por áudio:", erroPush);
+  app\acesso-v2\[condominioId]\page.tsx:705:        }
+  app\acesso-v2\[condominioId]\page.tsx:706:      }
+  app\acesso-v2\[condominioId]\page.tsx:707:
+  app\acesso-v2\[condominioId]\page.tsx:708:      setAudioBlob(null);
+  app\acesso-v2\[condominioId]\page.tsx:709:      setPopupAudioVisitanteAberto(false);
+  app\acesso-v2\[condominioId]\page.tsx:710:      setMensagem(
+> app\acesso-v2\[condominioId]\page.tsx:711:        chamadaJaAtiva
+  app\acesso-v2\[condominioId]\page.tsx:712:          ? "✅ Áudio enviado para o responsável."
+> app\acesso-v2\[condominioId]\page.tsx:713:          : `✅ Chamada com áudio enviada para ${unidadeSelecionada.nome}. Aguarde o atendimento.`
+  app\acesso-v2\[condominioId]\page.tsx:714:      );
+  app\acesso-v2\[condominioId]\page.tsx:715:    } catch (erro) {
+  app\acesso-v2\[condominioId]\page.tsx:716:      console.error("Erro ao enviar áudio:", erro);
+  app\acesso-v2\[condominioId]\page.tsx:717:      alert("Erro ao enviar áudio. Tente novamente.");
+  app\acesso-v2\[condominioId]\page.tsx:718:    } finally {
+  app\acesso-v2\[condominioId]\page.tsx:719:      setEnviandoAudio(false);
+  app\acesso-v2\[condominioId]\page.tsx:720:    }
+  app\acesso-v2\[condominioId]\page.tsx:721:  }
+  app\acesso-v2\[condominioId]\page.tsx:722:
+> app\acesso-v2\[condominioId]\page.tsx:723:  async function cancelarChamada() {
+  app\acesso-v2\[condominioId]\page.tsx:724:    if (!unidadeSelecionada) return;
+  app\acesso-v2\[condominioId]\page.tsx:725:
+  app\acesso-v2\[condominioId]\page.tsx:726:    try {
+> app\acesso-v2\[condominioId]\page.tsx:727:      await update(
+> app\acesso-v2\[condominioId]\page.tsx:728:        ref(db, `unidades-v2/${unidadeSelecionada.id}/chamada`),
+  app\acesso-v2\[condominioId]\page.tsx:729:        {
+  app\acesso-v2\[condominioId]\page.tsx:730:          status: "Cancelado pelo visitante",
+> app\acesso-v2\[condominioId]\page.tsx:731:          notificar: false,
+  app\acesso-v2\[condominioId]\page.tsx:732:          canceladoEm: Date.now(),
+  app\acesso-v2\[condominioId]\page.tsx:733:        }
+  app\acesso-v2\[condominioId]\page.tsx:734:      );
+  app\acesso-v2\[condominioId]\page.tsx:735:
+  app\acesso-v2\[condominioId]\page.tsx:736:      await remove(
+> app\acesso-v2\[condominioId]\page.tsx:737:        ref(db, `unidades-v2/${unidadeSelecionada.id}/chamada`)
+  app\acesso-v2\[condominioId]\page.tsx:738:      );
+  app\acesso-v2\[condominioId]\page.tsx:739:
+  app\acesso-v2\[condominioId]\page.tsx:740:      setEnviando(false);
+  app\acesso-v2\[condominioId]\page.tsx:741:      setEnviandoAudio(false);
+  app\acesso-v2\[condominioId]\page.tsx:742:      setDiagnostico("");
+  app\acesso-v2\[condominioId]\page.tsx:743:      setBusca("");
+  app\acesso-v2\[condominioId]\page.tsx:744:      setBlocoSelecionado("");
+  app\acesso-v2\[condominioId]\page.tsx:745:      setMensagem("");
+  app\acesso-v2\[condominioId]\page.tsx:746:      setPopupTexto("");
+  app\acesso-v2\[condominioId]\page.tsx:747:      setPopupAudioBase64("");
+  app\acesso-v2\[condominioId]\page.tsx:748:      setPopupAudioFoiOuvido(false);
+  app\acesso-v2\[condominioId]\page.tsx:749:      setMensagensConversa([]);
+  app\acesso-v2\[condominioId]\page.tsx:750:      setUnidadeSelecionada(null);
+  app\acesso-v2\[condominioId]\page.tsx:751:      setNome("");
+  app\acesso-v2\[condominioId]\page.tsx:752:      setMotivo("");
+  app\acesso-v2\[condominioId]\page.tsx:753:      setOutroMotivo("");
+  app\acesso-v2\[condominioId]\page.tsx:754:      setAudioBlob(null);
+  app\acesso-v2\[condominioId]\page.tsx:755:      setGravandoAudio(false);
+  app\acesso-v2\[condominioId]\page.tsx:756:
+> app\acesso-v2\[condominioId]\page.tsx:757:      chamadaAtivaRef.current = false;
+> app\acesso-v2\[condominioId]\page.tsx:758:      chamadaFoiEnviadaRef.current = false;
+  app\acesso-v2\[condominioId]\page.tsx:759:      ultimoPopupRef.current = "";
+  app\acesso-v2\[condominioId]\page.tsx:760:    } catch (erro) {
+  app\acesso-v2\[condominioId]\page.tsx:761:      console.error("Erro ao cancelar:", erro);
+  app\acesso-v2\[condominioId]\page.tsx:762:    }
+  app\acesso-v2\[condominioId]\page.tsx:763:  }
+  app\acesso-v2\[condominioId]\page.tsx:764:
+  app\acesso-v2\[condominioId]\page.tsx:765:  function limparSelecao() {
+  app\acesso-v2\[condominioId]\page.tsx:766:    setMensagensConversa([]);
+  app\acesso-v2\[condominioId]\page.tsx:767:    setPopupAudioFoiOuvido(false);
+  app\acesso-v2\[condominioId]\page.tsx:768:    setUnidadeSelecionada(
+  app\acesso-v2\[condominioId]\page.tsx:769:      localEhResidencia && unidades.length === 1 ? unidades[0] : null
+  app\acesso-v2\[condominioId]\page.tsx:770:    );
+  app\acesso-v2\[condominioId]\page.tsx:771:    setNome("");
+  app\acesso-v2\[condominioId]\page.tsx:772:    setMotivo("");
+  app\acesso-v2\[condominioId]\page.tsx:773:    setOutroMotivo("");
+  app\acesso-v2\[condominioId]\page.tsx:774:    setMensagem("");
+  app\acesso-v2\[condominioId]\page.tsx:775:    setDiagnostico("");
+  app\acesso-v2\[condominioId]\page.tsx:776:    setPopupTexto("");
+  app\acesso-v2\[condominioId]\page.tsx:777:    setPopupAudioBase64("");
+  app\acesso-v2\[condominioId]\page.tsx:778:    setAudioBlob(null);
+  app\acesso-v2\[condominioId]\page.tsx:779:    setGravandoAudio(false);
+> app\acesso-v2\[condominioId]\page.tsx:780:    chamadaAtivaRef.current = false;
+> app\acesso-v2\[condominioId]\page.tsx:781:    chamadaFoiEnviadaRef.current = false;
+  app\acesso-v2\[condominioId]\page.tsx:782:    ultimoPopupRef.current = "";
+  app\acesso-v2\[condominioId]\page.tsx:783:  }
+  app\acesso-v2\[condominioId]\page.tsx:784:
+  app\acesso-v2\[condominioId]\page.tsx:785:  function voltarBloco() {
+  app\acesso-v2\[condominioId]\page.tsx:786:    setMensagensConversa([]);
+  app\acesso-v2\[condominioId]\page.tsx:787:    setPopupAudioFoiOuvido(false);
+  app\acesso-v2\[condominioId]\page.tsx:788:    setBlocoSelecionado("");
+  app\acesso-v2\[condominioId]\page.tsx:789:    setBusca("");
+  app\acesso-v2\[condominioId]\page.tsx:790:    setUnidadeSelecionada(null);
+  app\acesso-v2\[condominioId]\page.tsx:791:    setNome("");
+  app\acesso-v2\[condominioId]\page.tsx:792:    setMotivo("");
+  app\acesso-v2\[condominioId]\page.tsx:793:    setOutroMotivo("");
+  app\acesso-v2\[condominioId]\page.tsx:794:    setMensagem("");
+  app\acesso-v2\[condominioId]\page.tsx:795:    setDiagnostico("");
+  app\acesso-v2\[condominioId]\page.tsx:796:    setPopupTexto("");
+  app\acesso-v2\[condominioId]\page.tsx:797:    setPopupAudioBase64("");
+  app\acesso-v2\[condominioId]\page.tsx:798:    setAudioBlob(null);
+  app\acesso-v2\[condominioId]\page.tsx:799:    setGravandoAudio(false);
+> app\acesso-v2\[condominioId]\page.tsx:800:    chamadaAtivaRef.current = false;
+> app\acesso-v2\[condominioId]\page.tsx:801:    chamadaFoiEnviadaRef.current = false;
+  app\acesso-v2\[condominioId]\page.tsx:802:    ultimoPopupRef.current = "";
+  app\acesso-v2\[condominioId]\page.tsx:803:  }
+  app\acesso-v2\[condominioId]\page.tsx:804:
+  app\acesso-v2\[condominioId]\page.tsx:805:  return (
+  app\acesso-v2\[condominioId]\page.tsx:806:    <main className="min-h-screen bg-slate-950 text-white p-3 flex justify-center">
+  app\acesso-v2\[condominioId]\page.tsx:807:      {popupTexto && (
+  app\acesso-v2\[condominioId]\page.tsx:808:        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-5">
+  app\acesso-v2\[condominioId]\page.tsx:809:          <div
+  app\acesso-v2\[condominioId]\page.tsx:810:            className={
+  app\acesso-v2\[condominioId]\page.tsx:811:              popupTipo === "encerrado"
+  app\acesso-v2\[condominioId]\page.tsx:812:                ? "w-full max-w-xl bg-green-600 border-4 border-green-300 rounded-3xl p-8 text-center shadow-2xl"
+  app\acesso-v2\[condominioId]\page.tsx:813:                : "w-full max-w-xl bg-blue-600 border-4 border-blue-300 rounded-3xl p-8 text-center shadow-2xl"
+  app\acesso-v2\[condominioId]\page.tsx:814:            }
+  app\acesso-v2\[condominioId]\page.tsx:815:          >
+  app\acesso-v2\[condominioId]\page.tsx:816:            <p className="text-5xl mb-4">
+  app\acesso-v2\[condominioId]\page.tsx:817:              {popupTipo === "encerrado"
+  app\acesso-v2\[condominioId]\page.tsx:818:                ? "✅"
+  app\acesso-v2\[condominioId]\page.tsx:819:                : popupTipo === "audio"
+  app\acesso-v2\[condominioId]\page.tsx:820:                ? "🎧"
+  app\acesso-v2\[condominioId]\page.tsx:821:                : "💬"}
+  app\acesso-v2\[condominioId]\page.tsx:822:            </p>
+  app\acesso-v2\[condominioId]\page.tsx:823:
+  app\acesso-v2\[condominioId]\page.tsx:824:            <h2 className="text-2xl font-black mb-3">
+  app\acesso-v2\[condominioId]\page.tsx:825:              {popupTipo === "encerrado"
+  app\acesso-v2\[condominioId]\page.tsx:826:                ? "ATENDIMENTO ENCERRADO"
+  app\acesso-v2\[condominioId]\page.tsx:827:                : popupTipo === "audio"
+  app\acesso-v2\[condominioId]\page.tsx:828:                ? "NOVO ÁUDIO"
+  app\acesso-v2\[condominioId]\page.tsx:829:                : "NOVA MENSAGEM"}
+  app\acesso-v2\[condominioId]\page.tsx:830:            </h2>
+  app\acesso-v2\[condominioId]\page.tsx:831:
+  app\acesso-v2\[condominioId]\page.tsx:832:            <p className="text-2xl font-black leading-relaxed py-6">
+  app\acesso-v2\[condominioId]\page.tsx:833:              {popupTexto}
+  app\acesso-v2\[condominioId]\page.tsx:834:            </p>
+  app\acesso-v2\[condominioId]\page.tsx:835:
+  app\acesso-v2\[condominioId]\page.tsx:836:            {popupTipo === "audio" && popupAudioBase64 && (
+  app\acesso-v2\[condominioId]\page.tsx:837:              <div className="bg-white/15 border border-white/30 rounded-2xl p-4 mb-4">
+  app\acesso-v2\[condominioId]\page.tsx:838:                <audio
+  app\acesso-v2\[condominioId]\page.tsx:839:                  controls
+  app\acesso-v2\[condominioId]\page.tsx:840:                  className="w-full"
+  app\acesso-v2\[condominioId]\page.tsx:841:                  src={popupAudioBase64}
+  app\acesso-v2\[condominioId]\page.tsx:842:                  onPlay={async () => {
+  app\acesso-v2\[condominioId]\page.tsx:843:                    setPopupAudioFoiOuvido(true);
+  app\acesso-v2\[condominioId]\page.tsx:844:
+  app\acesso-v2\[condominioId]\page.tsx:845:                    if (!unidadeSelecionada) return;
+  app\acesso-v2\[condominioId]\page.tsx:846:
+> app\acesso-v2\[condominioId]\page.tsx:847:                    await update(
+  app\acesso-v2\[condominioId]\page.tsx:848:                      ref(
+  app\acesso-v2\[condominioId]\page.tsx:849:                        db,
+> app\acesso-v2\[condominioId]\page.tsx:850:                        `unidades-v2/${unidadeSelecionada.id}/chamada`
+  app\acesso-v2\[condominioId]\page.tsx:851:                      ),
+  app\acesso-v2\[condominioId]\page.tsx:852:                      {
+  app\acesso-v2\[condominioId]\page.tsx:853:                        visualizadoPeloVisitante: true,
+  app\acesso-v2\[condominioId]\page.tsx:854:                        mensagemVisualizada: true,
+  app\acesso-v2\[condominioId]\page.tsx:855:                        audioOuvidoPeloVisitante: true,
+  app\acesso-v2\[condominioId]\page.tsx:856:                        audioOuvidoEm: Date.now(),
+  app\acesso-v2\[condominioId]\page.tsx:857:                      }
+  app\acesso-v2\[condominioId]\page.tsx:858:                    );
+  app\acesso-v2\[condominioId]\page.tsx:859:                  }}
+  app\acesso-v2\[condominioId]\page.tsx:860:                />
+  app\acesso-v2\[condominioId]\page.tsx:861:              </div>
+  app\acesso-v2\[condominioId]\page.tsx:862:            )}
+  app\acesso-v2\[condominioId]\page.tsx:863:
+  app\acesso-v2\[condominioId]\page.tsx:864:            <button
+  app\acesso-v2\[condominioId]\page.tsx:865:              type="button"
+  app\acesso-v2\[condominioId]\page.tsx:866:              disabled={popupTipo === "audio" && !popupAudioFoiOuvido}
+  app\acesso-v2\[condominioId]\page.tsx:867:              onClick={async () => {
+  app\acesso-v2\[condominioId]\page.tsx:868:                if (popupTipo === "audio" && !popupAudioFoiOuvido) return;
+  app\acesso-v2\[condominioId]\page.tsx:869:
+  app\acesso-v2\[condominioId]\page.tsx:870:                if (unidadeSelecionada) {
+> app\acesso-v2\[condominioId]\page.tsx:871:                  await update(
+  app\acesso-v2\[condominioId]\page.tsx:872:                    ref(
+  app\acesso-v2\[condominioId]\page.tsx:873:                      db,
+> app\acesso-v2\[condominioId]\page.tsx:874:                      `unidades-v2/${unidadeSelecionada.id}/chamada`
+  app\acesso-v2\[condominioId]\page.tsx:875:                    ),
+  app\acesso-v2\[condominioId]\page.tsx:876:                    {
+  app\acesso-v2\[condominioId]\page.tsx:877:                      visualizadoPeloVisitante: true,
+  app\acesso-v2\[condominioId]\page.tsx:878:                    }
+  app\acesso-v2\[condominioId]\page.tsx:879:                  );
+  app\acesso-v2\[condominioId]\page.tsx:880:                }
+  app\acesso-v2\[condominioId]\page.tsx:881:
+  app\acesso-v2\[condominioId]\page.tsx:882:                setPopupTexto("");
+  app\acesso-v2\[condominioId]\page.tsx:883:                setPopupAudioBase64("");
+  app\acesso-v2\[condominioId]\page.tsx:884:                setPopupAudioFoiOuvido(false);
+  app\acesso-v2\[condominioId]\page.tsx:885:              }}
+  app\acesso-v2\[condominioId]\page.tsx:886:              className={
+  app\acesso-v2\[condominioId]\page.tsx:887:                popupTipo === "audio" && !popupAudioFoiOuvido
+  app\acesso-v2\[condominioId]\page.tsx:888:                  ? "mt-7 w-full bg-slate-500 text-slate-300 text-2xl font-black py-5 rounded-2xl cursor-not-allowed"
+  app\acesso-v2\[condominioId]\page.tsx:889:                  : "mt-7 w-full bg-white text-black text-2xl font-black py-5 rounded-2xl"
+  app\acesso-v2\[condominioId]\page.tsx:890:              }
+  app\acesso-v2\[condominioId]\page.tsx:891:            >
+  app\acesso-v2\[condominioId]\page.tsx:892:              {popupTipo === "audio" && !popupAudioFoiOuvido
+  app\acesso-v2\[condominioId]\page.tsx:893:                ? "OUÇA O ÁUDIO PRIMEIRO"
+  app\acesso-v2\[condominioId]\page.tsx:894:                : "ENTENDI"}
+  app\acesso-v2\[condominioId]\page.tsx:895:            </button>
+  app\acesso-v2\[condominioId]\page.tsx:896:          </div>
+  app\acesso-v2\[condominioId]\page.tsx:897:        </div>
+  app\acesso-v2\[condominioId]\page.tsx:898:      )}
+  app\acesso-v2\[condominioId]\page.tsx:899:
+  app\acesso-v2\[condominioId]\page.tsx:900:      {popupAudioVisitanteAberto && (
+  app\acesso-v2\[condominioId]\page.tsx:901:        <div className="fixed inset-0 z-[60] bg-black/90 flex items-center justify-center p-4">
+  app\acesso-v2\[condominioId]\page.tsx:902:          <div className="relative w-full max-w-md bg-slate-900 border-2 border-blue-500 rounded-3xl p-5 shadow-2xl">
+  app\acesso-v2\[condominioId]\page.tsx:903:
+  app\acesso-v2\[condominioId]\page.tsx:904:            {!gravandoAudio && !enviandoAudio && (
+  app\acesso-v2\[condominioId]\page.tsx:905:              <button
+  app\acesso-v2\[condominioId]\page.tsx:906:                type="button"
+  app\acesso-v2\[condominioId]\page.tsx:907:                onClick={() => {
+  app\acesso-v2\[condominioId]\page.tsx:908:                  setAudioBlob(null);
+  app\acesso-v2\[condominioId]\page.tsx:909:                  setPopupAudioVisitanteAberto(false);
+  app\acesso-v2\[condominioId]\page.tsx:910:                }}
+  app\acesso-v2\[condominioId]\page.tsx:911:                className="absolute top-3 right-4 text-slate-400 hover:text-white text-3xl font-black"
+  app\acesso-v2\[condominioId]\page.tsx:912:              >
+  app\acesso-v2\[condominioId]\page.tsx:913:                &times;
+  app\acesso-v2\[condominioId]\page.tsx:914:              </button>
+  app\acesso-v2\[condominioId]\page.tsx:999:
+  app\acesso-v2\[condominioId]\page.tsx:1000:                <button
+  app\acesso-v2\[condominioId]\page.tsx:1001:                  type="button"
+  app\acesso-v2\[condominioId]\page.tsx:1002:                  onClick={() => {
+  app\acesso-v2\[condominioId]\page.tsx:1003:                    setPopupAudioVisitanteAberto(false);
+  app\acesso-v2\[condominioId]\page.tsx:1004:                  }}
+  app\acesso-v2\[condominioId]\page.tsx:1005:                  className="w-full bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 rounded-2xl"
+  app\acesso-v2\[condominioId]\page.tsx:1006:                >
+  app\acesso-v2\[condominioId]\page.tsx:1007:                  FECHAR
+  app\acesso-v2\[condominioId]\page.tsx:1008:                </button>
+  app\acesso-v2\[condominioId]\page.tsx:1009:
+  app\acesso-v2\[condominioId]\page.tsx:1010:              </div>
+  app\acesso-v2\[condominioId]\page.tsx:1011:            )}
+  app\acesso-v2\[condominioId]\page.tsx:1012:
+  app\acesso-v2\[condominioId]\page.tsx:1013:          </div>
+  app\acesso-v2\[condominioId]\page.tsx:1014:        </div>
+  app\acesso-v2\[condominioId]\page.tsx:1015:      )}
+  app\acesso-v2\[condominioId]\page.tsx:1016:
+  app\acesso-v2\[condominioId]\page.tsx:1017:      <div className="w-full max-w-xl">
+  app\acesso-v2\[condominioId]\page.tsx:1018:
+> app\acesso-v2\[condominioId]\page.tsx:1019:        <section className={chamadaVisualAtiva ? "hidden" : "bg-slate-900 border border-slate-700 rounded-3xl p-4 mb-3 text-center"}>
+  app\acesso-v2\[condominioId]\page.tsx:1020:          <p className="text-green-400 font-black text-xs mb-1">
+  app\acesso-v2\[condominioId]\page.tsx:1021:            QR ACESSO • V2
+  app\acesso-v2\[condominioId]\page.tsx:1022:          </p>
+  app\acesso-v2\[condominioId]\page.tsx:1023:
+  app\acesso-v2\[condominioId]\page.tsx:1024:          <h1 className="text-2xl font-black">
+  app\acesso-v2\[condominioId]\page.tsx:1025:            {localEhResidencia ? "🏠" : "🏢"} {" "}
+  app\acesso-v2\[condominioId]\page.tsx:1026:            {localCadastro?.nome || "Chamar Unidade"}
+  app\acesso-v2\[condominioId]\page.tsx:1027:          </h1>
+  app\acesso-v2\[condominioId]\page.tsx:1028:
+  app\acesso-v2\[condominioId]\page.tsx:1029:          <p className="text-slate-400 mt-1 text-sm">
+  app\acesso-v2\[condominioId]\page.tsx:1030:            {localEhResidencia
+  app\acesso-v2\[condominioId]\page.tsx:1031:              ? "Informe o motivo da visita para chamar a residência."
+> app\acesso-v2\[condominioId]\page.tsx:1032:              : "Escolha bloco, unidade e motivo da chamada."}
+  app\acesso-v2\[condominioId]\page.tsx:1033:          </p>
+  app\acesso-v2\[condominioId]\page.tsx:1034:        </section>
+  app\acesso-v2\[condominioId]\page.tsx:1035:
+  app\acesso-v2\[condominioId]\page.tsx:1036:        {carregando && (
+  app\acesso-v2\[condominioId]\page.tsx:1037:          <section className="bg-slate-900 border border-slate-700 rounded-3xl p-8 text-center">
+  app\acesso-v2\[condominioId]\page.tsx:1038:            <p className="text-slate-400">Carregando unidades...</p>
+  app\acesso-v2\[condominioId]\page.tsx:1039:          </section>
+  app\acesso-v2\[condominioId]\page.tsx:1040:        )}
+  app\acesso-v2\[condominioId]\page.tsx:1041:
+  app\acesso-v2\[condominioId]\page.tsx:1042:        {!carregando &&
+  app\acesso-v2\[condominioId]\page.tsx:1043:          !localEhResidencia &&
+  app\acesso-v2\[condominioId]\page.tsx:1044:          temBlocos &&
+  app\acesso-v2\[condominioId]\page.tsx:1045:          !blocoSelecionado && (
+  app\acesso-v2\[condominioId]\page.tsx:1046:            <section className="bg-slate-900 border border-slate-700 rounded-3xl p-5">
+  app\acesso-v2\[condominioId]\page.tsx:1047:              <h2 className="text-2xl font-black mb-4">Escolha o bloco</h2>
+  app\acesso-v2\[condominioId]\page.tsx:1048:
+  app\acesso-v2\[condominioId]\page.tsx:1049:              <div className="grid grid-cols-1 gap-3">
+  app\acesso-v2\[condominioId]\page.tsx:1050:                {blocos.map((bloco) => (
+  app\acesso-v2\[condominioId]\page.tsx:1051:                  <button
+  app\acesso-v2\[condominioId]\page.tsx:1052:                    key={bloco}
+  app\acesso-v2\[condominioId]\page.tsx:1053:                    onClick={() => setBlocoSelecionado(bloco)}
+  app\acesso-v2\[condominioId]\page.tsx:1054:                    className="w-full bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-2xl p-5 text-left"
+  app\acesso-v2\[condominioId]\page.tsx:1055:                  >
+  app\acesso-v2\[condominioId]\page.tsx:1056:                    <p className="text-2xl font-black">🏢 {bloco}</p>
+  app\acesso-v2\[condominioId]\page.tsx:1057:                  </button>
+  app\acesso-v2\[condominioId]\page.tsx:1058:                ))}
+  app\acesso-v2\[condominioId]\page.tsx:1059:              </div>
+  app\acesso-v2\[condominioId]\page.tsx:1060:            </section>
+  app\acesso-v2\[condominioId]\page.tsx:1061:          )}
+  app\acesso-v2\[condominioId]\page.tsx:1062:
+  app\acesso-v2\[condominioId]\page.tsx:1063:        {!carregando &&
+  app\acesso-v2\[condominioId]\page.tsx:1064:          !localEhResidencia &&
+  app\acesso-v2\[condominioId]\page.tsx:1065:          (!temBlocos || blocoSelecionado) &&
+  app\acesso-v2\[condominioId]\page.tsx:1066:          !unidadeSelecionada && (
+  app\acesso-v2\[condominioId]\page.tsx:1067:            <section className="bg-slate-900 border border-slate-700 rounded-3xl p-5">
+  app\acesso-v2\[condominioId]\page.tsx:1068:              {temBlocos && (
+  app\acesso-v2\[condominioId]\page.tsx:1069:                <button
+  app\acesso-v2\[condominioId]\page.tsx:1070:                  onClick={voltarBloco}
+> app\acesso-v2\[condominioId]\page.tsx:1071:                  className={chamadaVisualAtiva ? "hidden" : "mb-3 text-sm text-slate-300 underline"}
+  app\acesso-v2\[condominioId]\page.tsx:1072:                >
+  app\acesso-v2\[condominioId]\page.tsx:1073:                  ← Trocar bloco
+  app\acesso-v2\[condominioId]\page.tsx:1074:                </button>
+  app\acesso-v2\[condominioId]\page.tsx:1075:              )}
+  app\acesso-v2\[condominioId]\page.tsx:1076:
+  app\acesso-v2\[condominioId]\page.tsx:1077:              <h2 className="text-2xl font-black mb-4">Escolha a unidade</h2>
+  app\acesso-v2\[condominioId]\page.tsx:1078:
+  app\acesso-v2\[condominioId]\page.tsx:1079:              <label className="text-sm text-slate-300 font-bold">
+  app\acesso-v2\[condominioId]\page.tsx:1080:                Buscar unidade
+  app\acesso-v2\[condominioId]\page.tsx:1081:              </label>
+  app\acesso-v2\[condominioId]\page.tsx:1082:
+  app\acesso-v2\[condominioId]\page.tsx:1083:              <input
+  app\acesso-v2\[condominioId]\page.tsx:1084:                value={busca}
+  app\acesso-v2\[condominioId]\page.tsx:1085:                onChange={(evento) => setBusca(evento.target.value)}
+  app\acesso-v2\[condominioId]\page.tsx:1086:                placeholder="Ex: 101, casa 5, apto 202"
+  app\acesso-v2\[condominioId]\page.tsx:1087:                className="w-full mt-2 mb-4 bg-slate-950 border border-slate-600 rounded-2xl px-4 py-3 text-white outline-none focus:border-green-400"
+  app\acesso-v2\[condominioId]\page.tsx:1088:              />
+  app\acesso-v2\[condominioId]\page.tsx:1089:
+  app\acesso-v2\[condominioId]\page.tsx:1090:              {unidadesFiltradas.length > 0 ? (
+  app\acesso-v2\[condominioId]\page.tsx:1091:                <div className="space-y-3">
+  app\acesso-v2\[condominioId]\page.tsx:1092:                  {unidadesFiltradas.map((unidade) => {
+> app\acesso-v2\[condominioId]\page.tsx:1093:                    const statusChamada = unidade.chamada?.status || "";
+> app\acesso-v2\[condominioId]\page.tsx:1094:                    const temNome = unidade.chamada?.nome || "";
+> app\acesso-v2\[condominioId]\page.tsx:1095:                    const temMotivo = unidade.chamada?.motivo || "";
+  app\acesso-v2\[condominioId]\page.tsx:1096:
+  app\acesso-v2\[condominioId]\page.tsx:1097:                    const ocupada =
+> app\acesso-v2\[condominioId]\page.tsx:1098:                      !!unidade.chamada &&
+  app\acesso-v2\[condominioId]\page.tsx:1099:                      !!temNome &&
+  app\acesso-v2\[condominioId]\page.tsx:1100:                      !!temMotivo &&
+> app\acesso-v2\[condominioId]\page.tsx:1101:                      statusChamada !== "Encerrado" &&
+> app\acesso-v2\[condominioId]\page.tsx:1102:                      statusChamada !== "Finalizado" &&
+> app\acesso-v2\[condominioId]\page.tsx:1103:                      statusChamada !== "Cancelado pelo visitante" &&
+> app\acesso-v2\[condominioId]\page.tsx:1104:                      statusChamada !== "Cancelada pelo visitante" &&
+> app\acesso-v2\[condominioId]\page.tsx:1105:                      statusChamada !== "Atendimento encerrado";
+  app\acesso-v2\[condominioId]\page.tsx:1106:
+  app\acesso-v2\[condominioId]\page.tsx:1107:                    return (
+  app\acesso-v2\[condominioId]\page.tsx:1108:                      <button
+  app\acesso-v2\[condominioId]\page.tsx:1109:                        key={unidade.id}
+  app\acesso-v2\[condominioId]\page.tsx:1110:                        onClick={() => {
+  app\acesso-v2\[condominioId]\page.tsx:1111:                          if (ocupada) return;
+  app\acesso-v2\[condominioId]\page.tsx:1112:                          setUnidadeSelecionada(unidade);
+  app\acesso-v2\[condominioId]\page.tsx:1113:                        }}
+  app\acesso-v2\[condominioId]\page.tsx:1114:                        disabled={ocupada}
+  app\acesso-v2\[condominioId]\page.tsx:1115:                        className={
+  app\acesso-v2\[condominioId]\page.tsx:1116:                          ocupada
+  app\acesso-v2\[condominioId]\page.tsx:1117:                            ? "w-full bg-slate-900 border border-yellow-500/40 rounded-2xl p-4 text-left opacity-70"
+  app\acesso-v2\[condominioId]\page.tsx:1118:                            : "w-full bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-2xl p-4 text-left"
+  app\acesso-v2\[condominioId]\page.tsx:1119:                        }
+  app\acesso-v2\[condominioId]\page.tsx:1120:                      >
+  app\acesso-v2\[condominioId]\page.tsx:1121:                        <div className="flex items-center justify-between gap-3">
+  app\acesso-v2\[condominioId]\page.tsx:1122:                          <div>
+  app\acesso-v2\[condominioId]\page.tsx:1123:                            <p className="text-xl font-black">
+  app\acesso-v2\[condominioId]\page.tsx:1124:                              🏠 {unidade.nome}
+  app\acesso-v2\[condominioId]\page.tsx:1125:                            </p>
+  app\acesso-v2\[condominioId]\page.tsx:1126:                            <p className="text-sm text-slate-400">
+  app\acesso-v2\[condominioId]\page.tsx:1127:                              {unidade.tipo || "Unidade"}
+  app\acesso-v2\[condominioId]\page.tsx:1128:                            </p>
+  app\acesso-v2\[condominioId]\page.tsx:1129:                          </div>
+  app\acesso-v2\[condominioId]\page.tsx:1130:
+  app\acesso-v2\[condominioId]\page.tsx:1131:                          <span
+  app\acesso-v2\[condominioId]\page.tsx:1132:                            className={
+  app\acesso-v2\[condominioId]\page.tsx:1133:                              ocupada
+  app\acesso-v2\[condominioId]\page.tsx:1134:                                ? "text-yellow-400 text-sm font-bold"
+  app\acesso-v2\[condominioId]\page.tsx:1135:                                : "text-green-400 text-sm font-bold"
+  app\acesso-v2\[condominioId]\page.tsx:1136:                            }
+  app\acesso-v2\[condominioId]\page.tsx:1137:                          >
+  app\acesso-v2\[condominioId]\page.tsx:1138:                            {ocupada ? "Em atendimento" : "Disponível"}
+  app\acesso-v2\[condominioId]\page.tsx:1139:                          </span>
+  app\acesso-v2\[condominioId]\page.tsx:1140:                        </div>
+  app\acesso-v2\[condominioId]\page.tsx:1141:                      </button>
+  app\acesso-v2\[condominioId]\page.tsx:1142:                    );
+  app\acesso-v2\[condominioId]\page.tsx:1143:                  })}
+  app\acesso-v2\[condominioId]\page.tsx:1144:                </div>
+  app\acesso-v2\[condominioId]\page.tsx:1145:              ) : (
+  app\acesso-v2\[condominioId]\page.tsx:1146:                <p className="text-red-400 text-center py-8">
+  app\acesso-v2\[condominioId]\page.tsx:1147:                  Nenhuma unidade encontrada.
+  app\acesso-v2\[condominioId]\page.tsx:1148:                </p>
+  app\acesso-v2\[condominioId]\page.tsx:1149:              )}
+  app\acesso-v2\[condominioId]\page.tsx:1150:            </section>
+  app\acesso-v2\[condominioId]\page.tsx:1151:          )}
+  app\acesso-v2\[condominioId]\page.tsx:1152:
+  app\acesso-v2\[condominioId]\page.tsx:1153:        {unidadeSelecionada && (
+  app\acesso-v2\[condominioId]\page.tsx:1154:          <section className="bg-slate-900 border border-green-500 rounded-3xl p-4">
+  app\acesso-v2\[condominioId]\page.tsx:1155:            <button
+  app\acesso-v2\[condominioId]\page.tsx:1156:              onClick={limparSelecao}
+> app\acesso-v2\[condominioId]\page.tsx:1157:              className={chamadaVisualAtiva ? "hidden" : "mb-3 text-sm text-slate-300 underline"}
+  app\acesso-v2\[condominioId]\page.tsx:1158:            >
+  app\acesso-v2\[condominioId]\page.tsx:1159:              ← Trocar unidade
+  app\acesso-v2\[condominioId]\page.tsx:1160:            </button>
+  app\acesso-v2\[condominioId]\page.tsx:1161:
+> app\acesso-v2\[condominioId]\page.tsx:1162:            {chamadaVisualAtiva ? (
+  app\acesso-v2\[condominioId]\page.tsx:1163:              <div className="mb-3 text-center">
+  app\acesso-v2\[condominioId]\page.tsx:1164:                <span className="text-green-400 font-black text-lg">
+  app\acesso-v2\[condominioId]\page.tsx:1165:                  🏠 {unidadeSelecionada.nome}
+  app\acesso-v2\[condominioId]\page.tsx:1166:                </span>
+  app\acesso-v2\[condominioId]\page.tsx:1167:              </div>
+  app\acesso-v2\[condominioId]\page.tsx:1168:            ) : (
+  app\acesso-v2\[condominioId]\page.tsx:1169:              <div className="bg-slate-800 rounded-2xl p-3 mb-4">
+  app\acesso-v2\[condominioId]\page.tsx:1170:                <p className="text-sm text-slate-400">Unidade selecionada</p>
+  app\acesso-v2\[condominioId]\page.tsx:1171:                <h2 className="text-xl font-black text-green-400">
+  app\acesso-v2\[condominioId]\page.tsx:1172:                  🏠 {unidadeSelecionada.nome}
+  app\acesso-v2\[condominioId]\page.tsx:1173:                </h2>
+  app\acesso-v2\[condominioId]\page.tsx:1174:                <p className="text-slate-400">
+  app\acesso-v2\[condominioId]\page.tsx:1175:                  {unidadeSelecionada.tipo || "Unidade"}
+  app\acesso-v2\[condominioId]\page.tsx:1176:                </p>
+  app\acesso-v2\[condominioId]\page.tsx:1177:              </div>
+  app\acesso-v2\[condominioId]\page.tsx:1178:            )}
+  app\acesso-v2\[condominioId]\page.tsx:1179:
+> app\acesso-v2\[condominioId]\page.tsx:1180:            <p className={chamadaVisualAtiva ? "hidden" : "text-sm text-slate-300 font-bold mb-2"}>
+  app\acesso-v2\[condominioId]\page.tsx:1181:              O que você precisa?
+  app\acesso-v2\[condominioId]\page.tsx:1182:            </p>
+  app\acesso-v2\[condominioId]\page.tsx:1183:
+> app\acesso-v2\[condominioId]\page.tsx:1184:            <div className={chamadaVisualAtiva ? "hidden" : "grid grid-cols-2 gap-2 mb-4"}>
+  app\acesso-v2\[condominioId]\page.tsx:1185:              {["Visitante", "Entrega", "Entrega de comida", "Outros"].map(
+  app\acesso-v2\[condominioId]\page.tsx:1186:                (item) => (
+  app\acesso-v2\[condominioId]\page.tsx:1187:                  <button
+  app\acesso-v2\[condominioId]\page.tsx:1188:                    key={item}
+  app\acesso-v2\[condominioId]\page.tsx:1189:                    onClick={() => {
+  app\acesso-v2\[condominioId]\page.tsx:1190:                      setMotivo(item);
+  app\acesso-v2\[condominioId]\page.tsx:1191:                      setMensagem("");
+  app\acesso-v2\[condominioId]\page.tsx:1192:                    }}
+  app\acesso-v2\[condominioId]\page.tsx:1193:                    className={
+  app\acesso-v2\[condominioId]\page.tsx:1194:                      motivo === item
+  app\acesso-v2\[condominioId]\page.tsx:1195:                        ? "bg-green-500 text-black font-black px-2 py-3 min-h-[72px] rounded-2xl"
+  app\acesso-v2\[condominioId]\page.tsx:1196:                        : "bg-slate-800 text-white font-bold px-2 py-3 min-h-[72px] rounded-2xl border border-slate-600"
+  app\acesso-v2\[condominioId]\page.tsx:1197:                    }
+  app\acesso-v2\[condominioId]\page.tsx:1198:                  >
+  app\acesso-v2\[condominioId]\page.tsx:1199:                    {item === "Visitante" && "👤 Visitante"}
+  app\acesso-v2\[condominioId]\page.tsx:1200:                    {item === "Entrega" && "📦 Entrega / encomenda"}
+  app\acesso-v2\[condominioId]\page.tsx:1201:                    {item === "Entrega de comida" && "🍔 Entrega de comida"}
+  app\acesso-v2\[condominioId]\page.tsx:1202:                    {item === "Outros" && "✍️ Outros"}
+  app\acesso-v2\[condominioId]\page.tsx:1203:                  </button>
+  app\acesso-v2\[condominioId]\page.tsx:1204:                )
+  app\acesso-v2\[condominioId]\page.tsx:1205:              )}
+  app\acesso-v2\[condominioId]\page.tsx:1206:            </div>
+  app\acesso-v2\[condominioId]\page.tsx:1207:
+> app\acesso-v2\[condominioId]\page.tsx:1208:            {!chamadaVisualAtiva && motivo === "Visitante" && (
+  app\acesso-v2\[condominioId]\page.tsx:1209:              <>
+  app\acesso-v2\[condominioId]\page.tsx:1210:                <label className="text-sm text-slate-300 font-bold">
+  app\acesso-v2\[condominioId]\page.tsx:1211:                  Seu nome
+  app\acesso-v2\[condominioId]\page.tsx:1212:                </label>
+  app\acesso-v2\[condominioId]\page.tsx:1213:                <input
+  app\acesso-v2\[condominioId]\page.tsx:1214:                  value={nome}
+  app\acesso-v2\[condominioId]\page.tsx:1215:                  onChange={(evento) => setNome(evento.target.value)}
+  app\acesso-v2\[condominioId]\page.tsx:1216:                  placeholder="Digite seu nome"
+  app\acesso-v2\[condominioId]\page.tsx:1217:                  className="w-full mt-2 mb-4 bg-slate-950 border border-slate-600 rounded-2xl px-4 py-3 text-white outline-none focus:border-green-400"
+  app\acesso-v2\[condominioId]\page.tsx:1218:                />
+  app\acesso-v2\[condominioId]\page.tsx:1219:              </>
+  app\acesso-v2\[condominioId]\page.tsx:1220:            )}
+  app\acesso-v2\[condominioId]\page.tsx:1221:
+> app\acesso-v2\[condominioId]\page.tsx:1222:            {!chamadaVisualAtiva && motivo === "Outros" && (
+  app\acesso-v2\[condominioId]\page.tsx:1223:              <>
+  app\acesso-v2\[condominioId]\page.tsx:1224:                <label className="text-sm text-slate-300 font-bold">
+  app\acesso-v2\[condominioId]\page.tsx:1225:                  Descreva o motivo
+  app\acesso-v2\[condominioId]\page.tsx:1226:                </label>
+  app\acesso-v2\[condominioId]\page.tsx:1227:                <input
+  app\acesso-v2\[condominioId]\page.tsx:1228:                  value={outroMotivo}
+  app\acesso-v2\[condominioId]\page.tsx:1229:                  onChange={(evento) => setOutroMotivo(evento.target.value)}
+  app\acesso-v2\[condominioId]\page.tsx:1230:                  placeholder="Ex: reunião, manutenção, serviço..."
+  app\acesso-v2\[condominioId]\page.tsx:1231:                  className="w-full mt-2 mb-4 bg-slate-950 border border-slate-600 rounded-2xl px-4 py-3 text-white outline-none focus:border-green-400"
+  app\acesso-v2\[condominioId]\page.tsx:1232:                />
+  app\acesso-v2\[condominioId]\page.tsx:1233:              </>
+  app\acesso-v2\[condominioId]\page.tsx:1234:            )}
+  app\acesso-v2\[condominioId]\page.tsx:1235:
+  app\acesso-v2\[condominioId]\page.tsx:1236:
+  app\acesso-v2\[condominioId]\page.tsx:1237:            <button
+  app\acesso-v2\[condominioId]\page.tsx:1238:              onClick={chamarUnidade}
+  app\acesso-v2\[condominioId]\page.tsx:1239:              disabled={enviando || !motivo}
+> app\acesso-v2\[condominioId]\page.tsx:1240:              className={chamadaVisualAtiva ? "hidden" : "w-full sticky bottom-2 z-40 bg-green-500 hover:bg-green-400 disabled:bg-gray-500 text-black text-xl font-black py-3 rounded-2xl shadow-2xl"}
+  app\acesso-v2\[condominioId]\page.tsx:1241:            >
+  app\acesso-v2\[condominioId]\page.tsx:1242:              {enviando ? "Enviando..." : "🔔 CHAMAR"}
+  app\acesso-v2\[condominioId]\page.tsx:1243:            </button>
+  app\acesso-v2\[condominioId]\page.tsx:1244:
+> app\acesso-v2\[condominioId]\page.tsx:1245:            {diagnostico && diagnostico !== "✅ Chamada enviada." && (
+  app\acesso-v2\[condominioId]\page.tsx:1246:              <div
+  app\acesso-v2\[condominioId]\page.tsx:1247:                className={
+  app\acesso-v2\[condominioId]\page.tsx:1248:                  diagnostico.startsWith("❌")
+  app\acesso-v2\[condominioId]\page.tsx:1249:                    ? "mt-5 bg-red-500/15 border border-red-500 rounded-2xl p-4 text-red-300 font-bold text-center break-words"
+  app\acesso-v2\[condominioId]\page.tsx:1250:                    : diagnostico.startsWith("3/3")
+  app\acesso-v2\[condominioId]\page.tsx:1251:                    ? "mt-5 bg-green-500/15 border border-green-500 rounded-2xl p-4 text-green-300 font-bold text-center"
+  app\acesso-v2\[condominioId]\page.tsx:1252:                    : "mt-5 bg-yellow-500/15 border border-yellow-500 rounded-2xl p-4 text-yellow-200 font-bold text-center"
+  app\acesso-v2\[condominioId]\page.tsx:1253:                }
+  app\acesso-v2\[condominioId]\page.tsx:1254:              >
+  app\acesso-v2\[condominioId]\page.tsx:1255:                {diagnostico}
+  app\acesso-v2\[condominioId]\page.tsx:1256:              </div>
+  app\acesso-v2\[condominioId]\page.tsx:1257:            )}
+  app\acesso-v2\[condominioId]\page.tsx:1258:
+  app\acesso-v2\[condominioId]\page.tsx:1259:            {mensagem && (
+  app\acesso-v2\[condominioId]\page.tsx:1260:              <div className="mt-5 space-y-4">
+> app\acesso-v2\[condominioId]\page.tsx:1261:                {chamadaEmAtendimento ? (
+  app\acesso-v2\[condominioId]\page.tsx:1262:                  <div className="bg-blue-500/15 border border-blue-500 rounded-2xl p-3 text-blue-300 font-black text-center">
+  app\acesso-v2\[condominioId]\page.tsx:1263:                    🟢 EM ATENDIMENTO
+  app\acesso-v2\[condominioId]\page.tsx:1264:                  </div>
+  app\acesso-v2\[condominioId]\page.tsx:1265:                ) : (
+  app\acesso-v2\[condominioId]\page.tsx:1266:                  <div className="bg-green-500/15 border border-green-500 rounded-2xl p-4 text-green-300 font-bold text-center">
+  app\acesso-v2\[condominioId]\page.tsx:1267:                    {mensagem}
+  app\acesso-v2\[condominioId]\page.tsx:1268:                  </div>
+  app\acesso-v2\[condominioId]\page.tsx:1269:                )}
+  app\acesso-v2\[condominioId]\page.tsx:1270:
+  app\acesso-v2\[condominioId]\page.tsx:1271:                <button
+> app\acesso-v2\[condominioId]\page.tsx:1272:                  onClick={cancelarChamada}
+  app\acesso-v2\[condominioId]\page.tsx:1273:                  className="w-full bg-red-600 hover:bg-red-500 text-white text-xl font-black py-4 rounded-2xl"
+  app\acesso-v2\[condominioId]\page.tsx:1274:                >
+> app\acesso-v2\[condominioId]\page.tsx:1275:                  ❌ CANCELAR CHAMADA
+  app\acesso-v2\[condominioId]\page.tsx:1276:                </button>
+  app\acesso-v2\[condominioId]\page.tsx:1277:              </div>
+  app\acesso-v2\[condominioId]\page.tsx:1278:            )}
+  app\acesso-v2\[condominioId]\page.tsx:1279:
+  app\acesso-v2\[condominioId]\page.tsx:1280:            {mensagensConversa.length > 0 && (
+  app\acesso-v2\[condominioId]\page.tsx:1281:              <div className="mt-5 bg-slate-950 border border-slate-700 rounded-2xl p-4">
+  app\acesso-v2\[condominioId]\page.tsx:1282:                <h3 className="text-lg font-black mb-4">💬 Conversa</h3>
+  app\acesso-v2\[condominioId]\page.tsx:1283:
+  app\acesso-v2\[condominioId]\page.tsx:1284:                <div className="space-y-3">
+  app\acesso-v2\[condominioId]\page.tsx:1285:                  {mensagensConversa.map((item) => {
+  app\acesso-v2\[condominioId]\page.tsx:1286:                    const mensagemMorador = item.autor === "morador";
+  app\acesso-v2\[condominioId]\page.tsx:1287:
+  app\acesso-v2\[condominioId]\page.tsx:1288:                    return (
+  app\acesso-v2\[condominioId]\page.tsx:1289:                      <div
+  app\acesso-v2\[condominioId]\page.tsx:1290:                        key={item.id}
+  app\acesso-v2\[condominioId]\page.tsx:1291:                        className={
+  app\acesso-v2\[condominioId]\page.tsx:1292:                          mensagemMorador
+  app\acesso-v2\[condominioId]\page.tsx:1293:                            ? "flex justify-start"
+  app\acesso-v2\[condominioId]\page.tsx:1294:                            : "flex justify-end"
+  app\acesso-v2\[condominioId]\page.tsx:1295:                        }
+  app\acesso-v2\[condominioId]\page.tsx:1296:                      >
+  app\acesso-v2\[condominioId]\page.tsx:1297:                        <div
+  app\acesso-v2\[condominioId]\page.tsx:1298:                          className={
+  app\acesso-v2\[condominioId]\page.tsx:1299:                            mensagemMorador
+  app\acesso-v2\[condominioId]\page.tsx:1300:                              ? "max-w-[88%] bg-blue-600 rounded-2xl rounded-bl-md p-3"
+  app\acesso-v2\[condominioId]\page.tsx:1301:                              : "max-w-[88%] bg-green-600 text-black rounded-2xl rounded-br-md p-3"
+  app\acesso-v2\[condominioId]\page.tsx:1302:                          }
+  app\acesso-v2\[condominioId]\page.tsx:1303:                        >
+  app\acesso-v2\[condominioId]\page.tsx:1304:                          <p className="text-xs font-black mb-2 opacity-80">
+  app\acesso-v2\[condominioId]\page.tsx:1305:                            {mensagemMorador ? "Morador" : "Você"}
+  app\acesso-v2\[condominioId]\page.tsx:1306:                          </p>
+  app\acesso-v2\[condominioId]\page.tsx:1307:
+  app\acesso-v2\[condominioId]\page.tsx:1308:                          {item.tipo === "texto" && item.texto && (
+  app\acesso-v2\[condominioId]\page.tsx:1309:                            <p className="font-bold break-words">{item.texto}</p>
+  app\acesso-v2\[condominioId]\page.tsx:1310:                          )}
+  app\acesso-v2\[condominioId]\page.tsx:1311:
+  app\acesso-v2\[condominioId]\page.tsx:1312:                          {item.tipo === "audio" && item.audioBase64 && (
+  app\acesso-v2\[condominioId]\page.tsx:1313:                            <audio
+  app\acesso-v2\[condominioId]\page.tsx:1314:                              controls
+  app\acesso-v2\[condominioId]\page.tsx:1315:                              className="w-full min-w-[220px]"
+  app\acesso-v2\[condominioId]\page.tsx:1316:                              src={item.audioBase64}
+  app\acesso-v2\[condominioId]\page.tsx:1317:                              onPlay={async () => {
+  app\acesso-v2\[condominioId]\page.tsx:1318:                                if (!unidadeSelecionada || !mensagemMorador) {
+  app\acesso-v2\[condominioId]\page.tsx:1319:                                  return;
+  app\acesso-v2\[condominioId]\page.tsx:1320:                                }
+  app\acesso-v2\[condominioId]\page.tsx:1321:
+> app\acesso-v2\[condominioId]\page.tsx:1322:                                await update(
+  app\acesso-v2\[condominioId]\page.tsx:1323:                                  ref(
+  app\acesso-v2\[condominioId]\page.tsx:1324:                                    db,
+> app\acesso-v2\[condominioId]\page.tsx:1325:                                    `unidades-v2/${unidadeSelecionada.id}/chamada`
+  app\acesso-v2\[condominioId]\page.tsx:1326:                                  ),
+  app\acesso-v2\[condominioId]\page.tsx:1327:                                  {
+  app\acesso-v2\[condominioId]\page.tsx:1328:                                    visualizadoPeloVisitante: true,
+  app\acesso-v2\[condominioId]\page.tsx:1329:                                    audioOuvidoPeloVisitante: true,
+  app\acesso-v2\[condominioId]\page.tsx:1330:                                    audioOuvidoEm: Date.now(),
+  app\acesso-v2\[condominioId]\page.tsx:1331:                                  }
+  app\acesso-v2\[condominioId]\page.tsx:1332:                                );
+  app\acesso-v2\[condominioId]\page.tsx:1333:                              }}
+  app\acesso-v2\[condominioId]\page.tsx:1334:                            />
+  app\acesso-v2\[condominioId]\page.tsx:1335:                          )}
+  app\acesso-v2\[condominioId]\page.tsx:1336:
+  app\acesso-v2\[condominioId]\page.tsx:1337:                          {!mensagemMorador && (
+  app\acesso-v2\[condominioId]\page.tsx:1338:                            <p
+  app\acesso-v2\[condominioId]\page.tsx:1339:                              className={
+  app\acesso-v2\[condominioId]\page.tsx:1340:                                item.tipo === "audio"
+  app\acesso-v2\[condominioId]\page.tsx:1341:                                  ? item.audioOuvidoPeloMorador
+  app\acesso-v2\[condominioId]\page.tsx:1342:                                    ? "text-xs text-green-400 font-bold mt-2 text-right"
+  app\acesso-v2\[condominioId]\page.tsx:1343:                                    : "text-xs text-slate-400 font-bold mt-2 text-right"
+  app\acesso-v2\[condominioId]\page.tsx:1344:                                  : item.visualizadoPeloMorador
+  app\acesso-v2\[condominioId]\page.tsx:1345:                                  ? "text-xs text-green-400 font-bold mt-2 text-right"
+  app\acesso-v2\[condominioId]\page.tsx:1346:                                  : "text-xs text-slate-400 font-bold mt-2 text-right"
+  app\acesso-v2\[condominioId]\page.tsx:1347:                              }
+  app\acesso-v2\[condominioId]\page.tsx:1348:                            >
+  app\acesso-v2\[condominioId]\page.tsx:1349:                              {item.tipo === "audio"
+  app\acesso-v2\[condominioId]\page.tsx:1350:                                ? item.audioOuvidoPeloMorador
+  app\acesso-v2\[condominioId]\page.tsx:1351:                                  ? "✓✓ Ouvido"
+  app\acesso-v2\[condominioId]\page.tsx:1352:                                  : "✓ Enviado"
+  app\acesso-v2\[condominioId]\page.tsx:1353:                                : item.visualizadoPeloMorador
+  app\acesso-v2\[condominioId]\page.tsx:1354:                                ? "✓✓ Lido"
+  app\acesso-v2\[condominioId]\page.tsx:1355:                                : "✓ Enviado"}
+  app\acesso-v2\[condominioId]\page.tsx:1356:                            </p>
+  app\acesso-v2\[condominioId]\page.tsx:1357:                          )}
+  app\acesso-v2\[condominioId]\page.tsx:1358:                        </div>
+  app\acesso-v2\[condominioId]\page.tsx:1359:                      </div>
+  app\acesso-v2\[condominioId]\page.tsx:1360:                    );
+  app\acesso-v2\[condominioId]\page.tsx:1361:                  })}
+  app\acesso-v2\[condominioId]\page.tsx:1362:                </div>
+  app\acesso-v2\[condominioId]\page.tsx:1363:              </div>
+  app\acesso-v2\[condominioId]\page.tsx:1364:            )}
+  app\acesso-v2\[condominioId]\page.tsx:1365:
+
+

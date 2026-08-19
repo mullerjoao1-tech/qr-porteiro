@@ -1,0 +1,901 @@
+﻿=== PRIORIDADE FINAL ===
+
+==============================
+ARQUIVO: app\services\chamadas\MotorEscalonamento.ts
+==============================
+
+  app\services\chamadas\MotorEscalonamento.ts:32:  uid?:
+  app\services\chamadas\MotorEscalonamento.ts:33:    string;
+  app\services\chamadas\MotorEscalonamento.ts:34:
+  app\services\chamadas\MotorEscalonamento.ts:35:  nome:
+  app\services\chamadas\MotorEscalonamento.ts:36:    string;
+  app\services\chamadas\MotorEscalonamento.ts:37:
+  app\services\chamadas\MotorEscalonamento.ts:38:  telefone?:
+  app\services\chamadas\MotorEscalonamento.ts:39:    string;
+  app\services\chamadas\MotorEscalonamento.ts:40:
+  app\services\chamadas\MotorEscalonamento.ts:41:  unidadeId:
+  app\services\chamadas\MotorEscalonamento.ts:42:    string;
+  app\services\chamadas\MotorEscalonamento.ts:43:
+> app\services\chamadas\MotorEscalonamento.ts:44:  prioridade:
+  app\services\chamadas\MotorEscalonamento.ts:45:    number;
+  app\services\chamadas\MotorEscalonamento.ts:46:
+> app\services\chamadas\MotorEscalonamento.ts:47:  ordemAtendimento:
+  app\services\chamadas\MotorEscalonamento.ts:48:    number;
+  app\services\chamadas\MotorEscalonamento.ts:49:
+  app\services\chamadas\MotorEscalonamento.ts:50:  recebeChamadas:
+  app\services\chamadas\MotorEscalonamento.ts:51:    boolean;
+  app\services\chamadas\MotorEscalonamento.ts:52:
+  app\services\chamadas\MotorEscalonamento.ts:53:  disponivel:
+  app\services\chamadas\MotorEscalonamento.ts:54:    boolean;
+  app\services\chamadas\MotorEscalonamento.ts:55:
+  app\services\chamadas\MotorEscalonamento.ts:56:  statusDisponibilidade:
+  app\services\chamadas\MotorEscalonamento.ts:57:    StatusDisponibilidade;
+  app\services\chamadas\MotorEscalonamento.ts:58:
+  app\services\chamadas\MotorEscalonamento.ts:59:  status:
+  app\services\chamadas\MotorEscalonamento.ts:60:    string;
+  app\services\chamadas\MotorEscalonamento.ts:61:};
+  app\services\chamadas\MotorEscalonamento.ts:62:
+  app\services\chamadas\MotorEscalonamento.ts:63:export type ResultadoEncaminhamento = {
+  app\services\chamadas\MotorEscalonamento.ts:64:  sucesso:
+  app\services\chamadas\MotorEscalonamento.ts:65:    boolean;
+  app\services\chamadas\MotorEscalonamento.ts:66:
+  app\services\chamadas\MotorEscalonamento.ts:67:  responsavel:
+  app\services\chamadas\MotorEscalonamento.ts:68:    ResponsavelAtendimento | null;
+  app\services\chamadas\MotorEscalonamento.ts:69:
+  app\services\chamadas\MotorEscalonamento.ts:70:  motivo?:
+  app\services\chamadas\MotorEscalonamento.ts:71:    string;
+  app\services\chamadas\MotorEscalonamento.ts:72:};
+  app\services\chamadas\MotorEscalonamento.ts:78:  uid?:
+  app\services\chamadas\MotorEscalonamento.ts:79:    string;
+  app\services\chamadas\MotorEscalonamento.ts:80:
+  app\services\chamadas\MotorEscalonamento.ts:81:  nome?:
+  app\services\chamadas\MotorEscalonamento.ts:82:    string;
+  app\services\chamadas\MotorEscalonamento.ts:83:
+  app\services\chamadas\MotorEscalonamento.ts:84:  telefone?:
+  app\services\chamadas\MotorEscalonamento.ts:85:    string;
+  app\services\chamadas\MotorEscalonamento.ts:86:
+  app\services\chamadas\MotorEscalonamento.ts:87:  unidadeId?:
+  app\services\chamadas\MotorEscalonamento.ts:88:    string;
+  app\services\chamadas\MotorEscalonamento.ts:89:
+> app\services\chamadas\MotorEscalonamento.ts:90:  prioridade?:
+  app\services\chamadas\MotorEscalonamento.ts:91:    number;
+  app\services\chamadas\MotorEscalonamento.ts:92:
+> app\services\chamadas\MotorEscalonamento.ts:93:  ordemAtendimento?:
+  app\services\chamadas\MotorEscalonamento.ts:94:    number;
+  app\services\chamadas\MotorEscalonamento.ts:95:
+  app\services\chamadas\MotorEscalonamento.ts:96:  recebeChamadas?:
+  app\services\chamadas\MotorEscalonamento.ts:97:    boolean;
+  app\services\chamadas\MotorEscalonamento.ts:98:
+  app\services\chamadas\MotorEscalonamento.ts:99:  disponivel?:
+  app\services\chamadas\MotorEscalonamento.ts:100:    boolean;
+  app\services\chamadas\MotorEscalonamento.ts:101:
+  app\services\chamadas\MotorEscalonamento.ts:102:  statusDisponibilidade?:
+  app\services\chamadas\MotorEscalonamento.ts:103:    StatusDisponibilidade;
+  app\services\chamadas\MotorEscalonamento.ts:104:
+  app\services\chamadas\MotorEscalonamento.ts:105:  status?:
+  app\services\chamadas\MotorEscalonamento.ts:106:    string;
+  app\services\chamadas\MotorEscalonamento.ts:107:};
+  app\services\chamadas\MotorEscalonamento.ts:108:
+  app\services\chamadas\MotorEscalonamento.ts:109:function numeroSeguro(
+  app\services\chamadas\MotorEscalonamento.ts:110:  valor:
+  app\services\chamadas\MotorEscalonamento.ts:111:    unknown,
+  app\services\chamadas\MotorEscalonamento.ts:112:  padrao:
+  app\services\chamadas\MotorEscalonamento.ts:113:    number
+  app\services\chamadas\MotorEscalonamento.ts:114:): number {
+  app\services\chamadas\MotorEscalonamento.ts:115:  const convertido =
+  app\services\chamadas\MotorEscalonamento.ts:116:    Number(
+  app\services\chamadas\MotorEscalonamento.ts:117:      valor
+  app\services\chamadas\MotorEscalonamento.ts:118:    );
+  app\services\chamadas\MotorEscalonamento.ts:121:    convertido
+  app\services\chamadas\MotorEscalonamento.ts:122:  )
+  app\services\chamadas\MotorEscalonamento.ts:123:    ? convertido
+  app\services\chamadas\MotorEscalonamento.ts:124:    : padrao;
+  app\services\chamadas\MotorEscalonamento.ts:125:}
+  app\services\chamadas\MotorEscalonamento.ts:126:
+  app\services\chamadas\MotorEscalonamento.ts:127:function normalizarResponsavelLegado(
+  app\services\chamadas\MotorEscalonamento.ts:128:  id:
+  app\services\chamadas\MotorEscalonamento.ts:129:    string,
+  app\services\chamadas\MotorEscalonamento.ts:130:  dados:
+  app\services\chamadas\MotorEscalonamento.ts:131:    MoradorBanco
+  app\services\chamadas\MotorEscalonamento.ts:132:): ResponsavelAtendimento {
+> app\services\chamadas\MotorEscalonamento.ts:133:  const prioridade =
+  app\services\chamadas\MotorEscalonamento.ts:134:    numeroSeguro(
+> app\services\chamadas\MotorEscalonamento.ts:135:      dados.prioridade,
+  app\services\chamadas\MotorEscalonamento.ts:136:      999
+  app\services\chamadas\MotorEscalonamento.ts:137:    );
+  app\services\chamadas\MotorEscalonamento.ts:138:
+> app\services\chamadas\MotorEscalonamento.ts:139:  const ordemAtendimento =
+  app\services\chamadas\MotorEscalonamento.ts:140:    numeroSeguro(
+> app\services\chamadas\MotorEscalonamento.ts:141:      dados.ordemAtendimento,
+> app\services\chamadas\MotorEscalonamento.ts:142:      prioridade
+  app\services\chamadas\MotorEscalonamento.ts:143:    );
+  app\services\chamadas\MotorEscalonamento.ts:144:
+  app\services\chamadas\MotorEscalonamento.ts:145:  const statusDisponibilidade =
+  app\services\chamadas\MotorEscalonamento.ts:146:    dados.statusDisponibilidade ||
+  app\services\chamadas\MotorEscalonamento.ts:147:    (
+  app\services\chamadas\MotorEscalonamento.ts:148:      dados.disponivel ===
+  app\services\chamadas\MotorEscalonamento.ts:149:        false
+  app\services\chamadas\MotorEscalonamento.ts:150:        ? "ausente"
+  app\services\chamadas\MotorEscalonamento.ts:151:        : "disponivel"
+  app\services\chamadas\MotorEscalonamento.ts:152:    );
+  app\services\chamadas\MotorEscalonamento.ts:153:
+  app\services\chamadas\MotorEscalonamento.ts:154:  return {
+  app\services\chamadas\MotorEscalonamento.ts:155:    id,
+  app\services\chamadas\MotorEscalonamento.ts:156:
+  app\services\chamadas\MotorEscalonamento.ts:157:    codigo:
+  app\services\chamadas\MotorEscalonamento.ts:158:      dados.codigo,
+  app\services\chamadas\MotorEscalonamento.ts:159:
+  app\services\chamadas\MotorEscalonamento.ts:160:    uid:
+  app\services\chamadas\MotorEscalonamento.ts:161:      dados.uid,
+  app\services\chamadas\MotorEscalonamento.ts:162:
+  app\services\chamadas\MotorEscalonamento.ts:163:    nome:
+  app\services\chamadas\MotorEscalonamento.ts:164:      String(
+  app\services\chamadas\MotorEscalonamento.ts:165:        dados.nome ||
+  app\services\chamadas\MotorEscalonamento.ts:166:        "Responsável"
+  app\services\chamadas\MotorEscalonamento.ts:167:      ),
+  app\services\chamadas\MotorEscalonamento.ts:168:
+  app\services\chamadas\MotorEscalonamento.ts:169:    telefone:
+  app\services\chamadas\MotorEscalonamento.ts:170:      dados.telefone,
+  app\services\chamadas\MotorEscalonamento.ts:171:
+  app\services\chamadas\MotorEscalonamento.ts:172:    unidadeId:
+  app\services\chamadas\MotorEscalonamento.ts:173:      String(
+  app\services\chamadas\MotorEscalonamento.ts:174:        dados.unidadeId ||
+  app\services\chamadas\MotorEscalonamento.ts:175:        ""
+  app\services\chamadas\MotorEscalonamento.ts:176:      ),
+  app\services\chamadas\MotorEscalonamento.ts:177:
+> app\services\chamadas\MotorEscalonamento.ts:178:    prioridade,
+  app\services\chamadas\MotorEscalonamento.ts:179:
+> app\services\chamadas\MotorEscalonamento.ts:180:    ordemAtendimento,
+  app\services\chamadas\MotorEscalonamento.ts:181:
+  app\services\chamadas\MotorEscalonamento.ts:182:    recebeChamadas:
+  app\services\chamadas\MotorEscalonamento.ts:183:      dados.recebeChamadas !==
+  app\services\chamadas\MotorEscalonamento.ts:184:      false,
+  app\services\chamadas\MotorEscalonamento.ts:185:
+  app\services\chamadas\MotorEscalonamento.ts:186:    disponivel:
+  app\services\chamadas\MotorEscalonamento.ts:187:      dados.disponivel !==
+  app\services\chamadas\MotorEscalonamento.ts:188:      false,
+  app\services\chamadas\MotorEscalonamento.ts:189:
+  app\services\chamadas\MotorEscalonamento.ts:190:    statusDisponibilidade,
+  app\services\chamadas\MotorEscalonamento.ts:191:
+  app\services\chamadas\MotorEscalonamento.ts:192:    status:
+  app\services\chamadas\MotorEscalonamento.ts:193:      String(
+  app\services\chamadas\MotorEscalonamento.ts:194:        dados.status ||
+  app\services\chamadas\MotorEscalonamento.ts:195:        "ativo"
+  app\services\chamadas\MotorEscalonamento.ts:196:      ),
+  app\services\chamadas\MotorEscalonamento.ts:197:  };
+  app\services\chamadas\MotorEscalonamento.ts:198:}
+  app\services\chamadas\MotorEscalonamento.ts:199:
+  app\services\chamadas\MotorEscalonamento.ts:200:function responsavelElegivel(
+  app\services\chamadas\MotorEscalonamento.ts:201:  responsavel:
+  app\services\chamadas\MotorEscalonamento.ts:202:    ResponsavelAtendimento
+  app\services\chamadas\MotorEscalonamento.ts:203:): boolean {
+  app\services\chamadas\MotorEscalonamento.ts:204:  if (
+  app\services\chamadas\MotorEscalonamento.ts:205:    responsavel.status !==
+  app\services\chamadas\MotorEscalonamento.ts:273:      (
+  app\services\chamadas\MotorEscalonamento.ts:274:        responsavel
+  app\services\chamadas\MotorEscalonamento.ts:275:      ) =>
+  app\services\chamadas\MotorEscalonamento.ts:276:        responsavel.unidadeId ===
+  app\services\chamadas\MotorEscalonamento.ts:277:        unidadeId
+  app\services\chamadas\MotorEscalonamento.ts:278:    )
+  app\services\chamadas\MotorEscalonamento.ts:279:    .sort(
+  app\services\chamadas\MotorEscalonamento.ts:280:      (
+  app\services\chamadas\MotorEscalonamento.ts:281:        a,
+  app\services\chamadas\MotorEscalonamento.ts:282:        b
+  app\services\chamadas\MotorEscalonamento.ts:283:      ) => {
+  app\services\chamadas\MotorEscalonamento.ts:284:        if (
+> app\services\chamadas\MotorEscalonamento.ts:285:          a.ordemAtendimento !==
+> app\services\chamadas\MotorEscalonamento.ts:286:          b.ordemAtendimento
+  app\services\chamadas\MotorEscalonamento.ts:287:        ) {
+  app\services\chamadas\MotorEscalonamento.ts:288:          return (
+> app\services\chamadas\MotorEscalonamento.ts:289:            a.ordemAtendimento -
+> app\services\chamadas\MotorEscalonamento.ts:290:            b.ordemAtendimento
+  app\services\chamadas\MotorEscalonamento.ts:291:          );
+  app\services\chamadas\MotorEscalonamento.ts:292:        }
+  app\services\chamadas\MotorEscalonamento.ts:293:
+  app\services\chamadas\MotorEscalonamento.ts:294:        return a.nome.localeCompare(
+  app\services\chamadas\MotorEscalonamento.ts:295:          b.nome,
+  app\services\chamadas\MotorEscalonamento.ts:296:          "pt-BR"
+  app\services\chamadas\MotorEscalonamento.ts:297:        );
+  app\services\chamadas\MotorEscalonamento.ts:298:      }
+  app\services\chamadas\MotorEscalonamento.ts:299:    );
+  app\services\chamadas\MotorEscalonamento.ts:300:}
+  app\services\chamadas\MotorEscalonamento.ts:301:
+> app\services\chamadas\MotorEscalonamento.ts:302:export async function listarResponsaveisDaUnidade(
+  app\services\chamadas\MotorEscalonamento.ts:303:  unidadeId:
+  app\services\chamadas\MotorEscalonamento.ts:304:    string
+  app\services\chamadas\MotorEscalonamento.ts:305:): Promise<
+  app\services\chamadas\MotorEscalonamento.ts:306:  ResponsavelAtendimento[]
+  app\services\chamadas\MotorEscalonamento.ts:307:> {
+  app\services\chamadas\MotorEscalonamento.ts:308:  const novos =
+  app\services\chamadas\MotorEscalonamento.ts:309:    await listarResponsaveisVinculados(
+  app\services\chamadas\MotorEscalonamento.ts:310:      unidadeId
+  app\services\chamadas\MotorEscalonamento.ts:311:    );
+  app\services\chamadas\MotorEscalonamento.ts:312:
+  app\services\chamadas\MotorEscalonamento.ts:313:  if (
+  app\services\chamadas\MotorEscalonamento.ts:314:    novos.length >
+  app\services\chamadas\MotorEscalonamento.ts:315:    0
+  app\services\chamadas\MotorEscalonamento.ts:316:  ) {
+  app\services\chamadas\MotorEscalonamento.ts:317:    return novos.map(
+  app\services\chamadas\MotorEscalonamento.ts:318:      (
+  app\services\chamadas\MotorEscalonamento.ts:319:        responsavel
+  app\services\chamadas\MotorEscalonamento.ts:320:      ) => ({
+  app\services\chamadas\MotorEscalonamento.ts:321:        id:
+  app\services\chamadas\MotorEscalonamento.ts:322:          responsavel.id,
+  app\services\chamadas\MotorEscalonamento.ts:323:
+  app\services\chamadas\MotorEscalonamento.ts:324:        uid:
+  app\services\chamadas\MotorEscalonamento.ts:325:          responsavel.usuarioId,
+  app\services\chamadas\MotorEscalonamento.ts:326:
+  app\services\chamadas\MotorEscalonamento.ts:327:        nome:
+  app\services\chamadas\MotorEscalonamento.ts:328:          responsavel.nome,
+  app\services\chamadas\MotorEscalonamento.ts:329:
+  app\services\chamadas\MotorEscalonamento.ts:330:        telefone:
+  app\services\chamadas\MotorEscalonamento.ts:331:          responsavel.telefone,
+  app\services\chamadas\MotorEscalonamento.ts:332:
+  app\services\chamadas\MotorEscalonamento.ts:333:        unidadeId:
+  app\services\chamadas\MotorEscalonamento.ts:334:          responsavel.unidadeId,
+  app\services\chamadas\MotorEscalonamento.ts:335:
+> app\services\chamadas\MotorEscalonamento.ts:336:        prioridade:
+> app\services\chamadas\MotorEscalonamento.ts:337:          responsavel.prioridade,
+  app\services\chamadas\MotorEscalonamento.ts:338:
+> app\services\chamadas\MotorEscalonamento.ts:339:        ordemAtendimento:
+> app\services\chamadas\MotorEscalonamento.ts:340:          responsavel.prioridade,
+  app\services\chamadas\MotorEscalonamento.ts:341:
+  app\services\chamadas\MotorEscalonamento.ts:342:        recebeChamadas:
+  app\services\chamadas\MotorEscalonamento.ts:343:          true,
+  app\services\chamadas\MotorEscalonamento.ts:344:
+  app\services\chamadas\MotorEscalonamento.ts:345:        disponivel:
+  app\services\chamadas\MotorEscalonamento.ts:346:          responsavel.status ===
+  app\services\chamadas\MotorEscalonamento.ts:347:          "disponivel",
+  app\services\chamadas\MotorEscalonamento.ts:348:
+  app\services\chamadas\MotorEscalonamento.ts:349:        statusDisponibilidade:
+  app\services\chamadas\MotorEscalonamento.ts:350:          responsavel.status,
+  app\services\chamadas\MotorEscalonamento.ts:351:
+  app\services\chamadas\MotorEscalonamento.ts:352:        status:
+  app\services\chamadas\MotorEscalonamento.ts:353:          responsavel.ativo
+  app\services\chamadas\MotorEscalonamento.ts:354:            ? "ativo"
+  app\services\chamadas\MotorEscalonamento.ts:355:            : "inativo",
+  app\services\chamadas\MotorEscalonamento.ts:356:      })
+  app\services\chamadas\MotorEscalonamento.ts:357:    );
+  app\services\chamadas\MotorEscalonamento.ts:358:  }
+  app\services\chamadas\MotorEscalonamento.ts:359:
+  app\services\chamadas\MotorEscalonamento.ts:360:  /*
+  app\services\chamadas\MotorEscalonamento.ts:361:   * Compatibilidade temporária:
+  app\services\chamadas\MotorEscalonamento.ts:362:   * enquanto uma unidade ainda não possuir responsáveis em
+  app\services\chamadas\MotorEscalonamento.ts:363:   * unidades-v2/{unidadeId}/responsaveis, o sistema continua
+  app\services\chamadas\MotorEscalonamento.ts:364:   * lendo os moradores antigos de qrCentral/moradores.
+  app\services\chamadas\MotorEscalonamento.ts:365:   */
+  app\services\chamadas\MotorEscalonamento.ts:373:    string,
+  app\services\chamadas\MotorEscalonamento.ts:374:  ignorarIds:
+  app\services\chamadas\MotorEscalonamento.ts:375:    string[] = []
+  app\services\chamadas\MotorEscalonamento.ts:376:): Promise<
+  app\services\chamadas\MotorEscalonamento.ts:377:  ResultadoEncaminhamento
+  app\services\chamadas\MotorEscalonamento.ts:378:> {
+  app\services\chamadas\MotorEscalonamento.ts:379:  const ignorados =
+  app\services\chamadas\MotorEscalonamento.ts:380:    new Set(
+  app\services\chamadas\MotorEscalonamento.ts:381:      ignorarIds
+  app\services\chamadas\MotorEscalonamento.ts:382:    );
+  app\services\chamadas\MotorEscalonamento.ts:383:
+  app\services\chamadas\MotorEscalonamento.ts:384:  const responsaveis =
+> app\services\chamadas\MotorEscalonamento.ts:385:    await listarResponsaveisDaUnidade(
+  app\services\chamadas\MotorEscalonamento.ts:386:      unidadeId
+  app\services\chamadas\MotorEscalonamento.ts:387:    );
+  app\services\chamadas\MotorEscalonamento.ts:388:
+  app\services\chamadas\MotorEscalonamento.ts:389:  const proximo =
+  app\services\chamadas\MotorEscalonamento.ts:390:    responsaveis.find(
+  app\services\chamadas\MotorEscalonamento.ts:391:      (
+  app\services\chamadas\MotorEscalonamento.ts:392:        responsavel
+  app\services\chamadas\MotorEscalonamento.ts:393:      ) =>
+  app\services\chamadas\MotorEscalonamento.ts:394:        !ignorados.has(
+  app\services\chamadas\MotorEscalonamento.ts:395:          responsavel.id
+  app\services\chamadas\MotorEscalonamento.ts:396:        ) &&
+  app\services\chamadas\MotorEscalonamento.ts:397:        responsavelElegivel(
+  app\services\chamadas\MotorEscalonamento.ts:398:          responsavel
+  app\services\chamadas\MotorEscalonamento.ts:399:        )
+  app\services\chamadas\MotorEscalonamento.ts:400:    );
+  app\services\chamadas\MotorEscalonamento.ts:401:
+  app\services\chamadas\MotorEscalonamento.ts:402:  if (!proximo) {
+  app\services\chamadas\MotorEscalonamento.ts:403:    return {
+  app\services\chamadas\MotorEscalonamento.ts:404:      sucesso:
+  app\services\chamadas\MotorEscalonamento.ts:405:        false,
+  app\services\chamadas\MotorEscalonamento.ts:406:
+  app\services\chamadas\MotorEscalonamento.ts:407:      responsavel:
+  app\services\chamadas\MotorEscalonamento.ts:408:        null,
+  app\services\chamadas\MotorEscalonamento.ts:409:
+  app\services\chamadas\MotorEscalonamento.ts:410:      motivo:
+  app\services\chamadas\MotorEscalonamento.ts:428:    tipo:
+  app\services\chamadas\MotorEscalonamento.ts:429:      | "encaminhada"
+  app\services\chamadas\MotorEscalonamento.ts:430:      | "recusada"
+  app\services\chamadas\MotorEscalonamento.ts:431:      | "atendida"
+  app\services\chamadas\MotorEscalonamento.ts:432:      | "sem-responsavel";
+  app\services\chamadas\MotorEscalonamento.ts:433:
+  app\services\chamadas\MotorEscalonamento.ts:434:    responsavelId?:
+  app\services\chamadas\MotorEscalonamento.ts:435:      string;
+  app\services\chamadas\MotorEscalonamento.ts:436:
+  app\services\chamadas\MotorEscalonamento.ts:437:    responsavelNome?:
+  app\services\chamadas\MotorEscalonamento.ts:438:      string;
+  app\services\chamadas\MotorEscalonamento.ts:439:
+> app\services\chamadas\MotorEscalonamento.ts:440:    prioridade?:
+  app\services\chamadas\MotorEscalonamento.ts:441:      number;
+  app\services\chamadas\MotorEscalonamento.ts:442:
+  app\services\chamadas\MotorEscalonamento.ts:443:    detalhes?:
+  app\services\chamadas\MotorEscalonamento.ts:444:      string;
+  app\services\chamadas\MotorEscalonamento.ts:445:  }
+  app\services\chamadas\MotorEscalonamento.ts:446:): Promise<void> {
+  app\services\chamadas\MotorEscalonamento.ts:447:  const historicoRef =
+  app\services\chamadas\MotorEscalonamento.ts:448:    push(
+  app\services\chamadas\MotorEscalonamento.ts:449:      ref(
+  app\services\chamadas\MotorEscalonamento.ts:450:        db,
+  app\services\chamadas\MotorEscalonamento.ts:451:        `${caminhoChamada}/historicoEscalonamento`
+  app\services\chamadas\MotorEscalonamento.ts:452:      )
+  app\services\chamadas\MotorEscalonamento.ts:453:    );
+  app\services\chamadas\MotorEscalonamento.ts:454:
+  app\services\chamadas\MotorEscalonamento.ts:455:  await set(
+  app\services\chamadas\MotorEscalonamento.ts:456:    historicoRef,
+  app\services\chamadas\MotorEscalonamento.ts:457:    {
+  app\services\chamadas\MotorEscalonamento.ts:458:      ...dados,
+  app\services\chamadas\MotorEscalonamento.ts:459:
+  app\services\chamadas\MotorEscalonamento.ts:460:      criadoEm:
+  app\services\chamadas\MotorEscalonamento.ts:461:        Date.now(),
+  app\services\chamadas\MotorEscalonamento.ts:462:    }
+  app\services\chamadas\MotorEscalonamento.ts:463:  );
+  app\services\chamadas\MotorEscalonamento.ts:464:}
+  app\services\chamadas\MotorEscalonamento.ts:465:
+  app\services\chamadas\MotorEscalonamento.ts:477:    );
+  app\services\chamadas\MotorEscalonamento.ts:478:
+  app\services\chamadas\MotorEscalonamento.ts:479:  if (
+  app\services\chamadas\MotorEscalonamento.ts:480:    !resultado.sucesso ||
+  app\services\chamadas\MotorEscalonamento.ts:481:    !resultado.responsavel
+  app\services\chamadas\MotorEscalonamento.ts:482:  ) {
+  app\services\chamadas\MotorEscalonamento.ts:483:    await update(
+  app\services\chamadas\MotorEscalonamento.ts:484:      ref(
+  app\services\chamadas\MotorEscalonamento.ts:485:        db,
+  app\services\chamadas\MotorEscalonamento.ts:486:        caminhoChamada
+  app\services\chamadas\MotorEscalonamento.ts:487:      ),
+  app\services\chamadas\MotorEscalonamento.ts:488:      {
+> app\services\chamadas\MotorEscalonamento.ts:489:        responsavelAtualId:
+  app\services\chamadas\MotorEscalonamento.ts:490:          null,
+  app\services\chamadas\MotorEscalonamento.ts:491:
+> app\services\chamadas\MotorEscalonamento.ts:492:        responsavelAtualNome:
+  app\services\chamadas\MotorEscalonamento.ts:493:          null,
+  app\services\chamadas\MotorEscalonamento.ts:494:
+  app\services\chamadas\MotorEscalonamento.ts:495:        aguardandoResponsavel:
+  app\services\chamadas\MotorEscalonamento.ts:496:          true,
+  app\services\chamadas\MotorEscalonamento.ts:497:
+  app\services\chamadas\MotorEscalonamento.ts:498:        motivoSemResponsavel:
+  app\services\chamadas\MotorEscalonamento.ts:499:          resultado.motivo ||
+  app\services\chamadas\MotorEscalonamento.ts:500:          "Nenhum responsável disponível.",
+  app\services\chamadas\MotorEscalonamento.ts:501:
+  app\services\chamadas\MotorEscalonamento.ts:502:        escalonamentoAtualizadoEm:
+  app\services\chamadas\MotorEscalonamento.ts:503:          Date.now(),
+  app\services\chamadas\MotorEscalonamento.ts:504:      }
+  app\services\chamadas\MotorEscalonamento.ts:505:    );
+  app\services\chamadas\MotorEscalonamento.ts:506:
+  app\services\chamadas\MotorEscalonamento.ts:507:    await registrarHistoricoEscalonamento(
+  app\services\chamadas\MotorEscalonamento.ts:508:      caminhoChamada,
+  app\services\chamadas\MotorEscalonamento.ts:509:      {
+  app\services\chamadas\MotorEscalonamento.ts:510:        tipo:
+  app\services\chamadas\MotorEscalonamento.ts:511:          "sem-responsavel",
+  app\services\chamadas\MotorEscalonamento.ts:512:
+  app\services\chamadas\MotorEscalonamento.ts:513:        detalhes:
+  app\services\chamadas\MotorEscalonamento.ts:514:          resultado.motivo,
+  app\services\chamadas\MotorEscalonamento.ts:515:      }
+  app\services\chamadas\MotorEscalonamento.ts:516:    );
+  app\services\chamadas\MotorEscalonamento.ts:517:
+  app\services\chamadas\MotorEscalonamento.ts:518:    return resultado;
+  app\services\chamadas\MotorEscalonamento.ts:519:  }
+  app\services\chamadas\MotorEscalonamento.ts:520:
+  app\services\chamadas\MotorEscalonamento.ts:521:  const responsavel =
+  app\services\chamadas\MotorEscalonamento.ts:522:    resultado.responsavel;
+  app\services\chamadas\MotorEscalonamento.ts:523:
+  app\services\chamadas\MotorEscalonamento.ts:524:  await update(
+  app\services\chamadas\MotorEscalonamento.ts:525:    ref(
+  app\services\chamadas\MotorEscalonamento.ts:526:      db,
+  app\services\chamadas\MotorEscalonamento.ts:527:      caminhoChamada
+  app\services\chamadas\MotorEscalonamento.ts:528:    ),
+  app\services\chamadas\MotorEscalonamento.ts:529:    {
+> app\services\chamadas\MotorEscalonamento.ts:530:      responsavelAtualId:
+  app\services\chamadas\MotorEscalonamento.ts:531:        responsavel.id,
+  app\services\chamadas\MotorEscalonamento.ts:532:
+> app\services\chamadas\MotorEscalonamento.ts:533:      responsavelAtualUid:
+  app\services\chamadas\MotorEscalonamento.ts:534:        responsavel.uid ||
+  app\services\chamadas\MotorEscalonamento.ts:535:        null,
+  app\services\chamadas\MotorEscalonamento.ts:536:
+> app\services\chamadas\MotorEscalonamento.ts:537:      responsavelAtualNome:
+  app\services\chamadas\MotorEscalonamento.ts:538:        responsavel.nome,
+  app\services\chamadas\MotorEscalonamento.ts:539:
+> app\services\chamadas\MotorEscalonamento.ts:540:      responsavelAtualPrioridade:
+> app\services\chamadas\MotorEscalonamento.ts:541:        responsavel.ordemAtendimento,
+  app\services\chamadas\MotorEscalonamento.ts:542:
+  app\services\chamadas\MotorEscalonamento.ts:543:      aguardandoResponsavel:
+  app\services\chamadas\MotorEscalonamento.ts:544:        false,
+  app\services\chamadas\MotorEscalonamento.ts:545:
+  app\services\chamadas\MotorEscalonamento.ts:546:      encaminhamentoAutomatico:
+  app\services\chamadas\MotorEscalonamento.ts:547:        true,
+  app\services\chamadas\MotorEscalonamento.ts:548:
+  app\services\chamadas\MotorEscalonamento.ts:549:      escalonamentoAtualizadoEm:
+  app\services\chamadas\MotorEscalonamento.ts:550:        Date.now(),
+  app\services\chamadas\MotorEscalonamento.ts:551:    }
+  app\services\chamadas\MotorEscalonamento.ts:552:  );
+  app\services\chamadas\MotorEscalonamento.ts:553:
+  app\services\chamadas\MotorEscalonamento.ts:554:  await registrarHistoricoEscalonamento(
+  app\services\chamadas\MotorEscalonamento.ts:555:    caminhoChamada,
+  app\services\chamadas\MotorEscalonamento.ts:556:    {
+  app\services\chamadas\MotorEscalonamento.ts:557:      tipo:
+  app\services\chamadas\MotorEscalonamento.ts:558:        "encaminhada",
+  app\services\chamadas\MotorEscalonamento.ts:559:
+  app\services\chamadas\MotorEscalonamento.ts:560:      responsavelId:
+  app\services\chamadas\MotorEscalonamento.ts:561:        responsavel.id,
+  app\services\chamadas\MotorEscalonamento.ts:562:
+  app\services\chamadas\MotorEscalonamento.ts:563:      responsavelNome:
+  app\services\chamadas\MotorEscalonamento.ts:564:        responsavel.nome,
+  app\services\chamadas\MotorEscalonamento.ts:565:
+> app\services\chamadas\MotorEscalonamento.ts:566:      prioridade:
+  app\services\chamadas\MotorEscalonamento.ts:567:        responsavel
+> app\services\chamadas\MotorEscalonamento.ts:568:          .ordemAtendimento,
+  app\services\chamadas\MotorEscalonamento.ts:569:
+  app\services\chamadas\MotorEscalonamento.ts:570:      detalhes:
+  app\services\chamadas\MotorEscalonamento.ts:571:        "Chamada encaminhada para o próximo responsável disponível.",
+  app\services\chamadas\MotorEscalonamento.ts:572:    }
+  app\services\chamadas\MotorEscalonamento.ts:573:  );
+  app\services\chamadas\MotorEscalonamento.ts:574:
+  app\services\chamadas\MotorEscalonamento.ts:575:  return resultado;
+  app\services\chamadas\MotorEscalonamento.ts:576:}
+  app\services\chamadas\MotorEscalonamento.ts:577:
+> app\services\chamadas\MotorEscalonamento.ts:578:export async function recusarEEncaminhar(
+  app\services\chamadas\MotorEscalonamento.ts:579:  unidadeId:
+  app\services\chamadas\MotorEscalonamento.ts:580:    string,
+  app\services\chamadas\MotorEscalonamento.ts:581:  caminhoChamada:
+  app\services\chamadas\MotorEscalonamento.ts:582:    string,
+> app\services\chamadas\MotorEscalonamento.ts:583:  responsavelAtualId:
+  app\services\chamadas\MotorEscalonamento.ts:584:    string
+  app\services\chamadas\MotorEscalonamento.ts:585:): Promise<
+  app\services\chamadas\MotorEscalonamento.ts:586:  ResultadoEncaminhamento
+  app\services\chamadas\MotorEscalonamento.ts:587:> {
+  app\services\chamadas\MotorEscalonamento.ts:588:  const chamadaSnapshot =
+  app\services\chamadas\MotorEscalonamento.ts:589:    await get(
+  app\services\chamadas\MotorEscalonamento.ts:590:      ref(
+  app\services\chamadas\MotorEscalonamento.ts:591:        db,
+  app\services\chamadas\MotorEscalonamento.ts:592:        caminhoChamada
+  app\services\chamadas\MotorEscalonamento.ts:593:      )
+  app\services\chamadas\MotorEscalonamento.ts:594:    );
+  app\services\chamadas\MotorEscalonamento.ts:595:
+  app\services\chamadas\MotorEscalonamento.ts:596:  const chamada =
+  app\services\chamadas\MotorEscalonamento.ts:597:    chamadaSnapshot.val() ||
+  app\services\chamadas\MotorEscalonamento.ts:598:    {};
+  app\services\chamadas\MotorEscalonamento.ts:599:
+  app\services\chamadas\MotorEscalonamento.ts:600:  const recusadosAnteriores =
+  app\services\chamadas\MotorEscalonamento.ts:601:    Array.isArray(
+> app\services\chamadas\MotorEscalonamento.ts:602:      chamada.responsaveisIgnorados
+  app\services\chamadas\MotorEscalonamento.ts:603:    )
+> app\services\chamadas\MotorEscalonamento.ts:604:      ? chamada.responsaveisIgnorados
+  app\services\chamadas\MotorEscalonamento.ts:605:      : [];
+  app\services\chamadas\MotorEscalonamento.ts:606:
+> app\services\chamadas\MotorEscalonamento.ts:607:  const responsaveisIgnorados =
+  app\services\chamadas\MotorEscalonamento.ts:608:    Array.from(
+  app\services\chamadas\MotorEscalonamento.ts:609:      new Set(
+  app\services\chamadas\MotorEscalonamento.ts:610:        [
+  app\services\chamadas\MotorEscalonamento.ts:611:          ...recusadosAnteriores,
+> app\services\chamadas\MotorEscalonamento.ts:612:          responsavelAtualId,
+  app\services\chamadas\MotorEscalonamento.ts:613:        ]
+  app\services\chamadas\MotorEscalonamento.ts:614:      )
+  app\services\chamadas\MotorEscalonamento.ts:615:    );
+  app\services\chamadas\MotorEscalonamento.ts:616:
+  app\services\chamadas\MotorEscalonamento.ts:617:  const responsaveis =
+> app\services\chamadas\MotorEscalonamento.ts:618:    await listarResponsaveisDaUnidade(
+  app\services\chamadas\MotorEscalonamento.ts:619:      unidadeId
+  app\services\chamadas\MotorEscalonamento.ts:620:    );
+  app\services\chamadas\MotorEscalonamento.ts:621:
+  app\services\chamadas\MotorEscalonamento.ts:622:  const responsavelQueRecusou =
+  app\services\chamadas\MotorEscalonamento.ts:623:    responsaveis.find(
+  app\services\chamadas\MotorEscalonamento.ts:624:      (
+  app\services\chamadas\MotorEscalonamento.ts:625:        responsavel
+  app\services\chamadas\MotorEscalonamento.ts:626:      ) =>
+  app\services\chamadas\MotorEscalonamento.ts:627:        responsavel.id ===
+> app\services\chamadas\MotorEscalonamento.ts:628:        responsavelAtualId
+  app\services\chamadas\MotorEscalonamento.ts:629:    );
+  app\services\chamadas\MotorEscalonamento.ts:630:
+  app\services\chamadas\MotorEscalonamento.ts:631:  await registrarHistoricoEscalonamento(
+  app\services\chamadas\MotorEscalonamento.ts:632:    caminhoChamada,
+  app\services\chamadas\MotorEscalonamento.ts:633:    {
+  app\services\chamadas\MotorEscalonamento.ts:634:      tipo:
+  app\services\chamadas\MotorEscalonamento.ts:635:        "recusada",
+  app\services\chamadas\MotorEscalonamento.ts:636:
+  app\services\chamadas\MotorEscalonamento.ts:637:      responsavelId:
+> app\services\chamadas\MotorEscalonamento.ts:638:        responsavelAtualId,
+  app\services\chamadas\MotorEscalonamento.ts:639:
+  app\services\chamadas\MotorEscalonamento.ts:640:      responsavelNome:
+  app\services\chamadas\MotorEscalonamento.ts:641:        responsavelQueRecusou
+  app\services\chamadas\MotorEscalonamento.ts:642:          ?.nome,
+  app\services\chamadas\MotorEscalonamento.ts:643:
+> app\services\chamadas\MotorEscalonamento.ts:644:      prioridade:
+  app\services\chamadas\MotorEscalonamento.ts:645:        responsavelQueRecusou
+> app\services\chamadas\MotorEscalonamento.ts:646:          ?.ordemAtendimento,
+  app\services\chamadas\MotorEscalonamento.ts:647:
+  app\services\chamadas\MotorEscalonamento.ts:648:      detalhes:
+  app\services\chamadas\MotorEscalonamento.ts:649:        'Responsável selecionou "Não posso atender".',
+  app\services\chamadas\MotorEscalonamento.ts:650:    }
+  app\services\chamadas\MotorEscalonamento.ts:651:  );
+  app\services\chamadas\MotorEscalonamento.ts:652:
+  app\services\chamadas\MotorEscalonamento.ts:653:  const resultado =
+  app\services\chamadas\MotorEscalonamento.ts:654:    await obterProximoResponsavel(
+  app\services\chamadas\MotorEscalonamento.ts:655:      unidadeId,
+> app\services\chamadas\MotorEscalonamento.ts:656:      responsaveisIgnorados
+  app\services\chamadas\MotorEscalonamento.ts:657:    );
+  app\services\chamadas\MotorEscalonamento.ts:658:
+  app\services\chamadas\MotorEscalonamento.ts:659:  if (
+  app\services\chamadas\MotorEscalonamento.ts:660:    !resultado.sucesso ||
+  app\services\chamadas\MotorEscalonamento.ts:661:    !resultado.responsavel
+  app\services\chamadas\MotorEscalonamento.ts:662:  ) {
+  app\services\chamadas\MotorEscalonamento.ts:663:    await update(
+  app\services\chamadas\MotorEscalonamento.ts:664:      ref(
+  app\services\chamadas\MotorEscalonamento.ts:665:        db,
+  app\services\chamadas\MotorEscalonamento.ts:666:        caminhoChamada
+  app\services\chamadas\MotorEscalonamento.ts:667:      ),
+  app\services\chamadas\MotorEscalonamento.ts:668:      {
+> app\services\chamadas\MotorEscalonamento.ts:669:        responsaveisIgnorados,
+  app\services\chamadas\MotorEscalonamento.ts:670:
+> app\services\chamadas\MotorEscalonamento.ts:671:        responsavelAtualId:
+  app\services\chamadas\MotorEscalonamento.ts:672:          null,
+  app\services\chamadas\MotorEscalonamento.ts:673:
+> app\services\chamadas\MotorEscalonamento.ts:674:        responsavelAtualUid:
+  app\services\chamadas\MotorEscalonamento.ts:675:          null,
+  app\services\chamadas\MotorEscalonamento.ts:676:
+> app\services\chamadas\MotorEscalonamento.ts:677:        responsavelAtualNome:
+  app\services\chamadas\MotorEscalonamento.ts:678:          null,
+  app\services\chamadas\MotorEscalonamento.ts:679:
+  app\services\chamadas\MotorEscalonamento.ts:680:        aguardandoResponsavel:
+  app\services\chamadas\MotorEscalonamento.ts:681:          true,
+  app\services\chamadas\MotorEscalonamento.ts:682:
+  app\services\chamadas\MotorEscalonamento.ts:683:        motivoSemResponsavel:
+  app\services\chamadas\MotorEscalonamento.ts:684:          resultado.motivo ||
+  app\services\chamadas\MotorEscalonamento.ts:685:          "Nenhum outro responsável disponível.",
+  app\services\chamadas\MotorEscalonamento.ts:686:
+  app\services\chamadas\MotorEscalonamento.ts:687:        escalonamentoAtualizadoEm:
+  app\services\chamadas\MotorEscalonamento.ts:688:          Date.now(),
+  app\services\chamadas\MotorEscalonamento.ts:689:      }
+  app\services\chamadas\MotorEscalonamento.ts:690:    );
+  app\services\chamadas\MotorEscalonamento.ts:691:
+  app\services\chamadas\MotorEscalonamento.ts:692:    await registrarHistoricoEscalonamento(
+  app\services\chamadas\MotorEscalonamento.ts:693:      caminhoChamada,
+  app\services\chamadas\MotorEscalonamento.ts:694:      {
+  app\services\chamadas\MotorEscalonamento.ts:695:        tipo:
+  app\services\chamadas\MotorEscalonamento.ts:696:          "sem-responsavel",
+  app\services\chamadas\MotorEscalonamento.ts:697:
+  app\services\chamadas\MotorEscalonamento.ts:698:        detalhes:
+  app\services\chamadas\MotorEscalonamento.ts:699:          resultado.motivo,
+  app\services\chamadas\MotorEscalonamento.ts:700:      }
+  app\services\chamadas\MotorEscalonamento.ts:701:    );
+  app\services\chamadas\MotorEscalonamento.ts:702:
+  app\services\chamadas\MotorEscalonamento.ts:703:    return resultado;
+  app\services\chamadas\MotorEscalonamento.ts:704:  }
+  app\services\chamadas\MotorEscalonamento.ts:705:
+  app\services\chamadas\MotorEscalonamento.ts:706:  const proximo =
+  app\services\chamadas\MotorEscalonamento.ts:707:    resultado.responsavel;
+  app\services\chamadas\MotorEscalonamento.ts:708:
+  app\services\chamadas\MotorEscalonamento.ts:709:  await update(
+  app\services\chamadas\MotorEscalonamento.ts:710:    ref(
+  app\services\chamadas\MotorEscalonamento.ts:711:      db,
+  app\services\chamadas\MotorEscalonamento.ts:712:      caminhoChamada
+  app\services\chamadas\MotorEscalonamento.ts:713:    ),
+  app\services\chamadas\MotorEscalonamento.ts:714:    {
+> app\services\chamadas\MotorEscalonamento.ts:715:      responsaveisIgnorados,
+  app\services\chamadas\MotorEscalonamento.ts:716:
+> app\services\chamadas\MotorEscalonamento.ts:717:      responsavelAtualId:
+  app\services\chamadas\MotorEscalonamento.ts:718:        proximo.id,
+  app\services\chamadas\MotorEscalonamento.ts:719:
+> app\services\chamadas\MotorEscalonamento.ts:720:      responsavelAtualUid:
+  app\services\chamadas\MotorEscalonamento.ts:721:        proximo.uid ||
+  app\services\chamadas\MotorEscalonamento.ts:722:        null,
+  app\services\chamadas\MotorEscalonamento.ts:723:
+> app\services\chamadas\MotorEscalonamento.ts:724:      responsavelAtualNome:
+  app\services\chamadas\MotorEscalonamento.ts:725:        proximo.nome,
+  app\services\chamadas\MotorEscalonamento.ts:726:
+> app\services\chamadas\MotorEscalonamento.ts:727:      responsavelAtualPrioridade:
+> app\services\chamadas\MotorEscalonamento.ts:728:        proximo.ordemAtendimento,
+  app\services\chamadas\MotorEscalonamento.ts:729:
+  app\services\chamadas\MotorEscalonamento.ts:730:      aguardandoResponsavel:
+  app\services\chamadas\MotorEscalonamento.ts:731:        false,
+  app\services\chamadas\MotorEscalonamento.ts:732:
+  app\services\chamadas\MotorEscalonamento.ts:733:      escalonamentoAtualizadoEm:
+  app\services\chamadas\MotorEscalonamento.ts:734:        Date.now(),
+  app\services\chamadas\MotorEscalonamento.ts:735:    }
+  app\services\chamadas\MotorEscalonamento.ts:736:  );
+  app\services\chamadas\MotorEscalonamento.ts:737:
+  app\services\chamadas\MotorEscalonamento.ts:738:  await registrarHistoricoEscalonamento(
+  app\services\chamadas\MotorEscalonamento.ts:739:    caminhoChamada,
+  app\services\chamadas\MotorEscalonamento.ts:740:    {
+  app\services\chamadas\MotorEscalonamento.ts:741:      tipo:
+  app\services\chamadas\MotorEscalonamento.ts:742:        "encaminhada",
+  app\services\chamadas\MotorEscalonamento.ts:743:
+  app\services\chamadas\MotorEscalonamento.ts:744:      responsavelId:
+  app\services\chamadas\MotorEscalonamento.ts:745:        proximo.id,
+  app\services\chamadas\MotorEscalonamento.ts:746:
+  app\services\chamadas\MotorEscalonamento.ts:747:      responsavelNome:
+  app\services\chamadas\MotorEscalonamento.ts:748:        proximo.nome,
+  app\services\chamadas\MotorEscalonamento.ts:749:
+> app\services\chamadas\MotorEscalonamento.ts:750:      prioridade:
+  app\services\chamadas\MotorEscalonamento.ts:751:        proximo
+> app\services\chamadas\MotorEscalonamento.ts:752:          .ordemAtendimento,
+  app\services\chamadas\MotorEscalonamento.ts:753:
+  app\services\chamadas\MotorEscalonamento.ts:754:      detalhes:
+  app\services\chamadas\MotorEscalonamento.ts:755:        "Chamada encaminhada após recusa do responsável anterior.",
+  app\services\chamadas\MotorEscalonamento.ts:756:    }
+  app\services\chamadas\MotorEscalonamento.ts:757:  );
+  app\services\chamadas\MotorEscalonamento.ts:758:
+  app\services\chamadas\MotorEscalonamento.ts:759:  return resultado;
+  app\services\chamadas\MotorEscalonamento.ts:760:}
+  app\services\chamadas\MotorEscalonamento.ts:761:
+> app\services\chamadas\MotorEscalonamento.ts:762:export async function registrarAtendimentoDoResponsavel(
+  app\services\chamadas\MotorEscalonamento.ts:763:  caminhoChamada:
+  app\services\chamadas\MotorEscalonamento.ts:764:    string,
+  app\services\chamadas\MotorEscalonamento.ts:765:  responsavel:
+  app\services\chamadas\MotorEscalonamento.ts:766:    ResponsavelAtendimento
+  app\services\chamadas\MotorEscalonamento.ts:767:): Promise<void> {
+  app\services\chamadas\MotorEscalonamento.ts:768:  await update(
+  app\services\chamadas\MotorEscalonamento.ts:769:    ref(
+  app\services\chamadas\MotorEscalonamento.ts:770:      db,
+  app\services\chamadas\MotorEscalonamento.ts:771:      caminhoChamada
+  app\services\chamadas\MotorEscalonamento.ts:772:    ),
+  app\services\chamadas\MotorEscalonamento.ts:773:    {
+  app\services\chamadas\MotorEscalonamento.ts:774:      status:
+  app\services\chamadas\MotorEscalonamento.ts:775:        "Em atendimento",
+  app\services\chamadas\MotorEscalonamento.ts:776:
+  app\services\chamadas\MotorEscalonamento.ts:777:      notificar:
+  app\services\chamadas\MotorEscalonamento.ts:778:        false,
+  app\services\chamadas\MotorEscalonamento.ts:779:
+  app\services\chamadas\MotorEscalonamento.ts:780:      atendidoPorId:
+  app\services\chamadas\MotorEscalonamento.ts:781:        responsavel.id,
+  app\services\chamadas\MotorEscalonamento.ts:782:
+  app\services\chamadas\MotorEscalonamento.ts:783:      atendidoPorUid:
+  app\services\chamadas\MotorEscalonamento.ts:784:        responsavel.uid ||
+  app\services\chamadas\MotorEscalonamento.ts:785:        null,
+  app\services\chamadas\MotorEscalonamento.ts:786:
+  app\services\chamadas\MotorEscalonamento.ts:787:      atendidoPorNome:
+  app\services\chamadas\MotorEscalonamento.ts:799:  await registrarHistoricoEscalonamento(
+  app\services\chamadas\MotorEscalonamento.ts:800:    caminhoChamada,
+  app\services\chamadas\MotorEscalonamento.ts:801:    {
+  app\services\chamadas\MotorEscalonamento.ts:802:      tipo:
+  app\services\chamadas\MotorEscalonamento.ts:803:        "atendida",
+  app\services\chamadas\MotorEscalonamento.ts:804:
+  app\services\chamadas\MotorEscalonamento.ts:805:      responsavelId:
+  app\services\chamadas\MotorEscalonamento.ts:806:        responsavel.id,
+  app\services\chamadas\MotorEscalonamento.ts:807:
+  app\services\chamadas\MotorEscalonamento.ts:808:      responsavelNome:
+  app\services\chamadas\MotorEscalonamento.ts:809:        responsavel.nome,
+  app\services\chamadas\MotorEscalonamento.ts:810:
+> app\services\chamadas\MotorEscalonamento.ts:811:      prioridade:
+  app\services\chamadas\MotorEscalonamento.ts:812:        responsavel
+> app\services\chamadas\MotorEscalonamento.ts:813:          .ordemAtendimento,
+  app\services\chamadas\MotorEscalonamento.ts:814:
+  app\services\chamadas\MotorEscalonamento.ts:815:      detalhes:
+  app\services\chamadas\MotorEscalonamento.ts:816:        "Chamada atendida.",
+  app\services\chamadas\MotorEscalonamento.ts:817:    }
+  app\services\chamadas\MotorEscalonamento.ts:818:  );
+  app\services\chamadas\MotorEscalonamento.ts:819:}
+
+
+
+
+==============================
+ARQUIVO: app\morador-v2\[unidadeId]\page.tsx
+==============================
+
+  app\morador-v2\[unidadeId]\page.tsx:1:"use client";
+  app\morador-v2\[unidadeId]\page.tsx:2:
+  app\morador-v2\[unidadeId]\page.tsx:3:import { useEffect, useRef, useState } from "react";
+  app\morador-v2\[unidadeId]\page.tsx:4:import { useParams, useSearchParams } from "next/navigation";
+  app\morador-v2\[unidadeId]\page.tsx:5:import { getToken } from "firebase/messaging";
+  app\morador-v2\[unidadeId]\page.tsx:6:import { ref, onValue, update, remove, push, set, get } from "firebase/database";
+  app\morador-v2\[unidadeId]\page.tsx:7:import { db, messagingPromise } from "../../services/firebase";
+  app\morador-v2\[unidadeId]\page.tsx:8:import { useLocalAtual } from "@/app/hooks/useLocalAtual";
+  app\morador-v2\[unidadeId]\page.tsx:9:import {
+> app\morador-v2\[unidadeId]\page.tsx:10:  listarResponsaveisDaUnidade,
+> app\morador-v2\[unidadeId]\page.tsx:11:  recusarEEncaminhar,
+> app\morador-v2\[unidadeId]\page.tsx:12:  registrarAtendimentoDoResponsavel,
+  app\morador-v2\[unidadeId]\page.tsx:13:} from "@/app/services/chamadas/MotorEscalonamento";
+  app\morador-v2\[unidadeId]\page.tsx:14:type MensagemConversa = {
+  app\morador-v2\[unidadeId]\page.tsx:15:  id?: string;
+  app\morador-v2\[unidadeId]\page.tsx:16:  autor: "visitante" | "morador";
+  app\morador-v2\[unidadeId]\page.tsx:17:  tipo: "texto" | "audio";
+  app\morador-v2\[unidadeId]\page.tsx:18:  texto?: string;
+  app\morador-v2\[unidadeId]\page.tsx:19:  audioBase64?: string;
+  app\morador-v2\[unidadeId]\page.tsx:20:  criadoEm: number;
+  app\morador-v2\[unidadeId]\page.tsx:21:  visualizadoPeloMorador?: boolean;
+  app\morador-v2\[unidadeId]\page.tsx:22:  visualizadoPeloMoradorEm?: number;
+  app\morador-v2\[unidadeId]\page.tsx:23:  audioOuvidoPeloMorador?: boolean;
+  app\morador-v2\[unidadeId]\page.tsx:24:  audioOuvidoPeloMoradorEm?: number;
+  app\morador-v2\[unidadeId]\page.tsx:25:};
+  app\morador-v2\[unidadeId]\page.tsx:26:
+  app\morador-v2\[unidadeId]\page.tsx:27:type ComunicadoMorador = {
+  app\morador-v2\[unidadeId]\page.tsx:28:  id: string;
+  app\morador-v2\[unidadeId]\page.tsx:29:  condominioId: string;
+  app\morador-v2\[unidadeId]\page.tsx:30:  condominioNome: string;
+  app\morador-v2\[unidadeId]\page.tsx:31:  tipo: "comunicado" | "assembleia" | "manutencao" | "emergencia";
+  app\morador-v2\[unidadeId]\page.tsx:32:  destinatario?:
+  app\morador-v2\[unidadeId]\page.tsx:33:    | "unidade"
+  app\morador-v2\[unidadeId]\page.tsx:34:    | "bloco"
+  app\morador-v2\[unidadeId]\page.tsx:35:    | "moradores"
+  app\morador-v2\[unidadeId]\page.tsx:36:    | "proprietarios"
+  app\morador-v2\[unidadeId]\page.tsx:37:    | "inquilinos"
+  app\morador-v2\[unidadeId]\page.tsx:759:  try {
+  app\morador-v2\[unidadeId]\page.tsx:760:    const chamadaSnapshot =
+  app\morador-v2\[unidadeId]\page.tsx:761:      await get(
+  app\morador-v2\[unidadeId]\page.tsx:762:        ref(
+  app\morador-v2\[unidadeId]\page.tsx:763:          db,
+  app\morador-v2\[unidadeId]\page.tsx:764:          caminhoFirebase
+  app\morador-v2\[unidadeId]\page.tsx:765:        )
+  app\morador-v2\[unidadeId]\page.tsx:766:      );
+  app\morador-v2\[unidadeId]\page.tsx:767:
+  app\morador-v2\[unidadeId]\page.tsx:768:    const chamadaAtual =
+  app\morador-v2\[unidadeId]\page.tsx:769:      chamadaSnapshot.val() || {};
+  app\morador-v2\[unidadeId]\page.tsx:770:
+> app\morador-v2\[unidadeId]\page.tsx:771:    const responsavelAtualId =
+  app\morador-v2\[unidadeId]\page.tsx:772:      String(
+> app\morador-v2\[unidadeId]\page.tsx:773:        chamadaAtual.responsavelAtualId ||
+  app\morador-v2\[unidadeId]\page.tsx:774:        ""
+  app\morador-v2\[unidadeId]\page.tsx:775:      );
+  app\morador-v2\[unidadeId]\page.tsx:776:
+  app\morador-v2\[unidadeId]\page.tsx:777:    /*
+  app\morador-v2\[unidadeId]\page.tsx:778:     * Enquanto ainda não houver responsável individual
+  app\morador-v2\[unidadeId]\page.tsx:779:     * definido na chamada, preserva o funcionamento atual.
+  app\morador-v2\[unidadeId]\page.tsx:780:     */
+> app\morador-v2\[unidadeId]\page.tsx:781:    if (!responsavelAtualId) {
+  app\morador-v2\[unidadeId]\page.tsx:782:      await update(
+  app\morador-v2\[unidadeId]\page.tsx:783:        ref(
+  app\morador-v2\[unidadeId]\page.tsx:784:          db,
+  app\morador-v2\[unidadeId]\page.tsx:785:          caminhoFirebase
+  app\morador-v2\[unidadeId]\page.tsx:786:        ),
+  app\morador-v2\[unidadeId]\page.tsx:787:        {
+  app\morador-v2\[unidadeId]\page.tsx:788:          status:
+  app\morador-v2\[unidadeId]\page.tsx:789:            "Em atendimento",
+  app\morador-v2\[unidadeId]\page.tsx:790:
+  app\morador-v2\[unidadeId]\page.tsx:791:          notificar:
+  app\morador-v2\[unidadeId]\page.tsx:792:            false,
+  app\morador-v2\[unidadeId]\page.tsx:793:
+  app\morador-v2\[unidadeId]\page.tsx:794:          atendidoEm:
+  app\morador-v2\[unidadeId]\page.tsx:795:            new Date().toISOString(),
+  app\morador-v2\[unidadeId]\page.tsx:796:
+  app\morador-v2\[unidadeId]\page.tsx:797:          ultimaAtividade:
+  app\morador-v2\[unidadeId]\page.tsx:798:            Date.now(),
+  app\morador-v2\[unidadeId]\page.tsx:799:        }
+  app\morador-v2\[unidadeId]\page.tsx:800:      );
+  app\morador-v2\[unidadeId]\page.tsx:801:    } else {
+  app\morador-v2\[unidadeId]\page.tsx:802:      const responsaveis =
+> app\morador-v2\[unidadeId]\page.tsx:803:        await listarResponsaveisDaUnidade(
+  app\morador-v2\[unidadeId]\page.tsx:804:          slug
+  app\morador-v2\[unidadeId]\page.tsx:805:        );
+  app\morador-v2\[unidadeId]\page.tsx:806:
+> app\morador-v2\[unidadeId]\page.tsx:807:      const responsavelAtual =
+  app\morador-v2\[unidadeId]\page.tsx:808:        responsaveis.find(
+  app\morador-v2\[unidadeId]\page.tsx:809:          (
+  app\morador-v2\[unidadeId]\page.tsx:810:            responsavel
+  app\morador-v2\[unidadeId]\page.tsx:811:          ) =>
+  app\morador-v2\[unidadeId]\page.tsx:812:            responsavel.id ===
+> app\morador-v2\[unidadeId]\page.tsx:813:            responsavelAtualId
+  app\morador-v2\[unidadeId]\page.tsx:814:        );
+  app\morador-v2\[unidadeId]\page.tsx:815:
+> app\morador-v2\[unidadeId]\page.tsx:816:      if (!responsavelAtual) {
+  app\morador-v2\[unidadeId]\page.tsx:817:        throw new Error(
+  app\morador-v2\[unidadeId]\page.tsx:818:          "O responsável atual da chamada não foi encontrado."
+  app\morador-v2\[unidadeId]\page.tsx:819:        );
+  app\morador-v2\[unidadeId]\page.tsx:820:      }
+  app\morador-v2\[unidadeId]\page.tsx:821:
+> app\morador-v2\[unidadeId]\page.tsx:822:      await registrarAtendimentoDoResponsavel(
+  app\morador-v2\[unidadeId]\page.tsx:823:        caminhoFirebase,
+> app\morador-v2\[unidadeId]\page.tsx:824:        responsavelAtual
+  app\morador-v2\[unidadeId]\page.tsx:825:      );
+  app\morador-v2\[unidadeId]\page.tsx:826:    }
+  app\morador-v2\[unidadeId]\page.tsx:827:
+  app\morador-v2\[unidadeId]\page.tsx:828:    setStatus(
+  app\morador-v2\[unidadeId]\page.tsx:829:      "Em atendimento"
+  app\morador-v2\[unidadeId]\page.tsx:830:    );
+  app\morador-v2\[unidadeId]\page.tsx:831:
+  app\morador-v2\[unidadeId]\page.tsx:832:    setRespostasRapidasAbertas(true);
+  app\morador-v2\[unidadeId]\page.tsx:833:
+  app\morador-v2\[unidadeId]\page.tsx:834:    void Promise.allSettled([
+  app\morador-v2\[unidadeId]\page.tsx:835:      registrarAnalytics(
+  app\morador-v2\[unidadeId]\page.tsx:836:        "atendida"
+  app\morador-v2\[unidadeId]\page.tsx:837:      ),
+  app\morador-v2\[unidadeId]\page.tsx:838:
+  app\morador-v2\[unidadeId]\page.tsx:839:      registrarLog(
+  app\morador-v2\[unidadeId]\page.tsx:840:        "chamada_atendida",
+> app\morador-v2\[unidadeId]\page.tsx:841:        responsavelAtualId
+> app\morador-v2\[unidadeId]\page.tsx:842:          ? `Chamada atendida pelo responsável ${responsavelAtualId}`
+  app\morador-v2\[unidadeId]\page.tsx:843:          : "Chamada atendida pelo painel"
+  app\morador-v2\[unidadeId]\page.tsx:844:      ),
+  app\morador-v2\[unidadeId]\page.tsx:845:    ]);
+  app\morador-v2\[unidadeId]\page.tsx:846:  } catch (erro) {
+  app\morador-v2\[unidadeId]\page.tsx:847:    console.error(
+  app\morador-v2\[unidadeId]\page.tsx:848:      "Erro ao atender chamada:",
+  app\morador-v2\[unidadeId]\page.tsx:849:      erro
+  app\morador-v2\[unidadeId]\page.tsx:850:    );
+  app\morador-v2\[unidadeId]\page.tsx:851:
+  app\morador-v2\[unidadeId]\page.tsx:852:    alert(
+  app\morador-v2\[unidadeId]\page.tsx:853:      erro instanceof Error
+  app\morador-v2\[unidadeId]\page.tsx:854:        ? erro.message
+  app\morador-v2\[unidadeId]\page.tsx:855:        : "Não foi possível confirmar o atendimento."
+  app\morador-v2\[unidadeId]\page.tsx:856:    );
+  app\morador-v2\[unidadeId]\page.tsx:857:  }
+  app\morador-v2\[unidadeId]\page.tsx:858:}
+  app\morador-v2\[unidadeId]\page.tsx:859:async function naoPossoAtender() {
+  app\morador-v2\[unidadeId]\page.tsx:860:  if (
+  app\morador-v2\[unidadeId]\page.tsx:861:    status ===
+  app\morador-v2\[unidadeId]\page.tsx:862:    "Sem chamado ativo"
+  app\morador-v2\[unidadeId]\page.tsx:863:  ) {
+  app\morador-v2\[unidadeId]\page.tsx:864:    alert(
+  app\morador-v2\[unidadeId]\page.tsx:865:      "Não existe chamada ativa."
+  app\morador-v2\[unidadeId]\page.tsx:866:    );
+  app\morador-v2\[unidadeId]\page.tsx:867:
+  app\morador-v2\[unidadeId]\page.tsx:876:  try {
+  app\morador-v2\[unidadeId]\page.tsx:877:    const chamadaSnapshot =
+  app\morador-v2\[unidadeId]\page.tsx:878:      await get(
+  app\morador-v2\[unidadeId]\page.tsx:879:        ref(
+  app\morador-v2\[unidadeId]\page.tsx:880:          db,
+  app\morador-v2\[unidadeId]\page.tsx:881:          caminhoFirebase
+  app\morador-v2\[unidadeId]\page.tsx:882:        )
+  app\morador-v2\[unidadeId]\page.tsx:883:      );
+  app\morador-v2\[unidadeId]\page.tsx:884:
+  app\morador-v2\[unidadeId]\page.tsx:885:    const chamadaAtual =
+  app\morador-v2\[unidadeId]\page.tsx:886:      chamadaSnapshot.val() || {};
+  app\morador-v2\[unidadeId]\page.tsx:887:
+> app\morador-v2\[unidadeId]\page.tsx:888:    const responsavelAtualId =
+  app\morador-v2\[unidadeId]\page.tsx:889:      String(
+> app\morador-v2\[unidadeId]\page.tsx:890:        chamadaAtual.responsavelAtualId ||
+  app\morador-v2\[unidadeId]\page.tsx:891:        ""
+  app\morador-v2\[unidadeId]\page.tsx:892:      );
+  app\morador-v2\[unidadeId]\page.tsx:893:
+> app\morador-v2\[unidadeId]\page.tsx:894:    if (!responsavelAtualId) {
+  app\morador-v2\[unidadeId]\page.tsx:895:      alert(
+  app\morador-v2\[unidadeId]\page.tsx:896:        "A chamada ainda não possui um responsável individual definido."
+  app\morador-v2\[unidadeId]\page.tsx:897:      );
+  app\morador-v2\[unidadeId]\page.tsx:898:
+  app\morador-v2\[unidadeId]\page.tsx:899:      setPopupAtendimentoAberto(
+  app\morador-v2\[unidadeId]\page.tsx:900:        true
+  app\morador-v2\[unidadeId]\page.tsx:901:      );
+  app\morador-v2\[unidadeId]\page.tsx:902:
+  app\morador-v2\[unidadeId]\page.tsx:903:      return;
+  app\morador-v2\[unidadeId]\page.tsx:904:    }
+  app\morador-v2\[unidadeId]\page.tsx:905:
+  app\morador-v2\[unidadeId]\page.tsx:906:    const resultado =
+> app\morador-v2\[unidadeId]\page.tsx:907:      await recusarEEncaminhar(
+  app\morador-v2\[unidadeId]\page.tsx:908:        slug,
+  app\morador-v2\[unidadeId]\page.tsx:909:        caminhoFirebase,
+> app\morador-v2\[unidadeId]\page.tsx:910:        responsavelAtualId
+  app\morador-v2\[unidadeId]\page.tsx:911:      );
+  app\morador-v2\[unidadeId]\page.tsx:912:
+  app\morador-v2\[unidadeId]\page.tsx:913:    await registrarLog(
+  app\morador-v2\[unidadeId]\page.tsx:914:      "chamada_recusada",
+> app\morador-v2\[unidadeId]\page.tsx:915:      `Responsável ${responsavelAtualId} informou que não pode atender.`
+  app\morador-v2\[unidadeId]\page.tsx:916:    );
+  app\morador-v2\[unidadeId]\page.tsx:917:
+  app\morador-v2\[unidadeId]\page.tsx:918:    if (
+  app\morador-v2\[unidadeId]\page.tsx:919:      resultado.sucesso &&
+  app\morador-v2\[unidadeId]\page.tsx:920:      resultado.responsavel
+  app\morador-v2\[unidadeId]\page.tsx:921:    ) {
+  app\morador-v2\[unidadeId]\page.tsx:922:      alert(
+  app\morador-v2\[unidadeId]\page.tsx:923:        `Chamada encaminhada para ${resultado.responsavel.nome}.`
+  app\morador-v2\[unidadeId]\page.tsx:924:      );
+  app\morador-v2\[unidadeId]\page.tsx:925:
+  app\morador-v2\[unidadeId]\page.tsx:926:      return;
+  app\morador-v2\[unidadeId]\page.tsx:927:    }
+  app\morador-v2\[unidadeId]\page.tsx:928:
+  app\morador-v2\[unidadeId]\page.tsx:929:    alert(
+  app\morador-v2\[unidadeId]\page.tsx:930:      resultado.motivo ||
+  app\morador-v2\[unidadeId]\page.tsx:931:      "Não existe outro responsável disponível no momento."
+  app\morador-v2\[unidadeId]\page.tsx:932:    );
+  app\morador-v2\[unidadeId]\page.tsx:933:  } catch (erro) {
+  app\morador-v2\[unidadeId]\page.tsx:934:    console.error(
+  app\morador-v2\[unidadeId]\page.tsx:935:      "Erro ao encaminhar chamada:",
+  app\morador-v2\[unidadeId]\page.tsx:936:      erro
+  app\morador-v2\[unidadeId]\page.tsx:937:    );
+  app\morador-v2\[unidadeId]\page.tsx:938:
+  app\morador-v2\[unidadeId]\page.tsx:939:    setPopupAtendimentoAberto(
+  app\morador-v2\[unidadeId]\page.tsx:940:      true
+
+
+
+
+==============================
+ARQUIVO: app\acesso-v2\[condominioId]\page.tsx
+==============================
+

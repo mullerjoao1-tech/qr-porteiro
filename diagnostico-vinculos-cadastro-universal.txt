@@ -1,0 +1,1484 @@
+﻿===== FONTES OFICIAIS DE LOCAIS =====
+
+  app\acesso\[slug]\page.tsx:35:const [motivoOutro, setMotivoOutro] = useState("");
+  app\acesso\[slug]\page.tsx:36:  const [carregando, setCarregando] = useState(true);
+  app\acesso\[slug]\page.tsx:37:  const [enviando, setEnviando] = useState(false);
+  app\acesso\[slug]\page.tsx:38:
+  app\acesso\[slug]\page.tsx:39:  useEffect(() => {
+> app\acesso\[slug]\page.tsx:40:    const locaisRef = ref(db, "qrCentral/locais");
+  app\acesso\[slug]\page.tsx:41:
+  app\acesso\[slug]\page.tsx:42:    const desligar = onValue(locaisRef, (snapshot) => {
+  app\acesso\[slug]\page.tsx:43:      const dados = snapshot.val();
+  app\acesso\[slug]\page.tsx:44:
+  app\acesso\[slug]\page.tsx:45:      if (!dados) {
+  app\acesso\[slug]\page.tsx:46:        setCarregando(false);
+  app\acesso\[slug]\page.tsx:47:        return;
+  app\acesso\[slug]\page.tsx:48:      }
+  app\acesso\[slug]\page.tsx:49:
+  app\acesso\[slug]\page.tsx:50:      const lista = Object.entries(dados).map(([id, valor]: any) => ({
+  app\acesso\[slug]\page.tsx:51:        id,
+  app\acesso\[slug]\page.tsx:52:        ...valor,
+  app\acesso\[slug]\page.tsx:53:      }));
+  app\acesso\[slug]\page.tsx:54:
+  app\acesso\[slug]\page.tsx:55:      const encontrado = lista.find((item: any) => item.slug === slug);
+  app\acesso-v2\[condominioId]\page.tsx:119:  useEffect(() => {
+  app\acesso-v2\[condominioId]\page.tsx:120:    let cancelado = false;
+  app\acesso-v2\[condominioId]\page.tsx:121:
+  app\acesso-v2\[condominioId]\page.tsx:122:    async function carregarLocal() {
+  app\acesso-v2\[condominioId]\page.tsx:123:      try {
+> app\acesso-v2\[condominioId]\page.tsx:124:        const referenciaDireta = ref(db, `locais-v2/${condominioId}`);
+  app\acesso-v2\[condominioId]\page.tsx:125:        const snapshotDireto = await get(referenciaDireta);
+  app\acesso-v2\[condominioId]\page.tsx:126:
+  app\acesso-v2\[condominioId]\page.tsx:127:        if (snapshotDireto.exists()) {
+  app\acesso-v2\[condominioId]\page.tsx:128:          if (!cancelado) {
+  app\acesso-v2\[condominioId]\page.tsx:129:            setLocalCadastro({
+  app\acesso-v2\[condominioId]\page.tsx:130:              id: condominioId,
+  app\acesso-v2\[condominioId]\page.tsx:131:              ...snapshotDireto.val(),
+  app\acesso-v2\[condominioId]\page.tsx:132:            });
+  app\acesso-v2\[condominioId]\page.tsx:133:          }
+  app\acesso-v2\[condominioId]\page.tsx:134:          return;
+  app\acesso-v2\[condominioId]\page.tsx:135:        }
+  app\acesso-v2\[condominioId]\page.tsx:136:
+> app\acesso-v2\[condominioId]\page.tsx:137:        const snapshotLocais = await get(ref(db, "locais-v2"));
+  app\acesso-v2\[condominioId]\page.tsx:138:
+  app\acesso-v2\[condominioId]\page.tsx:139:        if (!snapshotLocais.exists()) {
+  app\acesso-v2\[condominioId]\page.tsx:140:          if (!cancelado) setLocalCadastro(null);
+  app\acesso-v2\[condominioId]\page.tsx:141:          return;
+  app\acesso-v2\[condominioId]\page.tsx:142:        }
+  app\acesso-v2\[condominioId]\page.tsx:143:
+  app\acesso-v2\[condominioId]\page.tsx:144:        const locais = snapshotLocais.val() as Record<string, Partial<LocalCadastro>>;
+  app\acesso-v2\[condominioId]\page.tsx:145:        const encontrado = Object.entries(locais).find(
+  app\acesso-v2\[condominioId]\page.tsx:146:          ([id, local]) =>
+  app\acesso-v2\[condominioId]\page.tsx:147:            id === condominioId ||
+  app\acesso-v2\[condominioId]\page.tsx:148:            local.slug === condominioId ||
+  app\acesso-v2\[condominioId]\page.tsx:149:            local.id === condominioId
+  app\acesso-v2\[condominioId]\page.tsx:150:        );
+  app\acesso-v2\[condominioId]\page.tsx:151:
+  app\acesso-v2\[condominioId]\page.tsx:152:        if (!cancelado) {
+  app\api\implantacao\criar-responsavel\route.ts:1212:    localCriadoNestaOperacao =
+  app\api\implantacao\criar-responsavel\route.ts:1213:      resultadoCadastroLocal.criado;
+  app\api\implantacao\criar-responsavel\route.ts:1214:
+  app\api\implantacao\criar-responsavel\route.ts:1215:    await database
+  app\api\implantacao\criar-responsavel\route.ts:1216:      .ref(
+> app\api\implantacao\criar-responsavel\route.ts:1217:        `locais-v2/${localId}`
+  app\api\implantacao\criar-responsavel\route.ts:1218:      )
+  app\api\implantacao\criar-responsavel\route.ts:1219:      .update({
+  app\api\implantacao\criar-responsavel\route.ts:1220:        nome:
+  app\api\implantacao\criar-responsavel\route.ts:1221:          localNome,
+  app\api\implantacao\criar-responsavel\route.ts:1222:
+  app\api\implantacao\criar-responsavel\route.ts:1223:        nomeBase:
+  app\api\implantacao\criar-responsavel\route.ts:1224:          localNomeBase,
+  app\api\implantacao\criar-responsavel\route.ts:1225:
+  app\api\implantacao\criar-responsavel\route.ts:1226:        nomeExibicao:
+  app\api\implantacao\criar-responsavel\route.ts:1227:          localNome,
+  app\api\implantacao\criar-responsavel\route.ts:1228:
+  app\api\implantacao\criar-responsavel\route.ts:1229:        urls:
+  app\api\implantacao\criar-responsavel\route.ts:1230:          urlsOficiais,
+  app\api\implantacao\criar-responsavel\route.ts:1231:
+  app\api\implantacao\criar-responsavel\route.ts:1232:        qrcode: {
+  app\api\implantacao\criar-responsavel\route.ts:1440:        agora,
+  app\api\implantacao\criar-responsavel\route.ts:1441:    };
+  app\api\implantacao\criar-responsavel\route.ts:1442:
+  app\api\implantacao\criar-responsavel\route.ts:1443:    await database
+  app\api\implantacao\criar-responsavel\route.ts:1444:      .ref(
+> app\api\implantacao\criar-responsavel\route.ts:1445:        `locais-v2/${localId}/usuarios/${uidResponsavel}`
+  app\api\implantacao\criar-responsavel\route.ts:1446:      )
+  app\api\implantacao\criar-responsavel\route.ts:1447:      .set(
+  app\api\implantacao\criar-responsavel\route.ts:1448:        referenciaUsuarioLocal
+  app\api\implantacao\criar-responsavel\route.ts:1449:      );
+  app\api\implantacao\criar-responsavel\route.ts:1450:
+  app\api\implantacao\criar-responsavel\route.ts:1451:    await database
+  app\api\implantacao\criar-responsavel\route.ts:1452:      .ref(
+> app\api\implantacao\criar-responsavel\route.ts:1453:        `locais-v2/${localId}/responsaveis/${uidResponsavel}`
+  app\api\implantacao\criar-responsavel\route.ts:1454:      )
+  app\api\implantacao\criar-responsavel\route.ts:1455:      .set({
+  app\api\implantacao\criar-responsavel\route.ts:1456:        uid:
+  app\api\implantacao\criar-responsavel\route.ts:1457:          uidResponsavel,
+  app\api\implantacao\criar-responsavel\route.ts:1458:
+  app\api\implantacao\criar-responsavel\route.ts:1459:        nome,
+  app\api\implantacao\criar-responsavel\route.ts:1460:
+  app\api\implantacao\criar-responsavel\route.ts:1461:        email,
+  app\api\implantacao\criar-responsavel\route.ts:1462:
+  app\api\implantacao\criar-responsavel\route.ts:1463:        telefone,
+  app\api\implantacao\criar-responsavel\route.ts:1464:
+  app\api\implantacao\criar-responsavel\route.ts:1465:        cpf:
+  app\api\implantacao\criar-responsavel\route.ts:1466:          cpf ||
+  app\api\implantacao\criar-responsavel\route.ts:1467:          null,
+  app\api\implantacao\criar-responsavel\route.ts:1468:
+  app\api\implantacao\criar-responsavel\route.ts:1478:          agora,
+  app\api\implantacao\criar-responsavel\route.ts:1479:      });
+  app\api\implantacao\criar-responsavel\route.ts:1480:
+  app\api\implantacao\criar-responsavel\route.ts:1481:    await database
+  app\api\implantacao\criar-responsavel\route.ts:1482:      .ref(
+> app\api\implantacao\criar-responsavel\route.ts:1483:        `locais-v2/${localId}/estatisticas`
+  app\api\implantacao\criar-responsavel\route.ts:1484:      )
+  app\api\implantacao\criar-responsavel\route.ts:1485:      .update({
+  app\api\implantacao\criar-responsavel\route.ts:1486:        totalUsuarios:
+  app\api\implantacao\criar-responsavel\route.ts:1487:          1,
+  app\api\implantacao\criar-responsavel\route.ts:1488:
+  app\api\implantacao\criar-responsavel\route.ts:1489:        atualizadoEm:
+  app\api\implantacao\criar-responsavel\route.ts:1490:          agora,
+  app\api\implantacao\criar-responsavel\route.ts:1491:      });
+  app\api\implantacao\criar-responsavel\route.ts:1492:
+  app\api\implantacao\criar-responsavel\route.ts:1493:    resultadoSegmento =
+  app\api\implantacao\criar-responsavel\route.ts:1494:      await executarImplantacao({
+  app\api\implantacao\criar-responsavel\route.ts:1495:        database,
+  app\api\implantacao\criar-responsavel\route.ts:1496:
+  app\api\implantacao\criar-responsavel\route.ts:1497:        criadoEm:
+  app\api\implantacao\criar-responsavel\route.ts:1498:          agora,
+  app\api\implantacao\criar-responsavel\route.ts:1541:      );
+  app\api\implantacao\criar-responsavel\route.ts:1542:    }
+  app\api\implantacao\criar-responsavel\route.ts:1543:
+  app\api\implantacao\criar-responsavel\route.ts:1544:    await database
+  app\api\implantacao\criar-responsavel\route.ts:1545:      .ref(
+> app\api\implantacao\criar-responsavel\route.ts:1546:        `locais-v2/${localId}`
+  app\api\implantacao\criar-responsavel\route.ts:1547:      )
+  app\api\implantacao\criar-responsavel\route.ts:1548:      .update({
+  app\api\implantacao\criar-responsavel\route.ts:1549:        implantacao: {
+  app\api\implantacao\criar-responsavel\route.ts:1550:          status:
+  app\api\implantacao\criar-responsavel\route.ts:1551:            "concluida",
+  app\api\implantacao\criar-responsavel\route.ts:1552:
+  app\api\implantacao\criar-responsavel\route.ts:1553:          estruturasCriadas:
+  app\api\implantacao\criar-responsavel\route.ts:1554:            resultadoSegmento
+  app\api\implantacao\criar-responsavel\route.ts:1555:              .estruturasCriadas,
+  app\api\implantacao\criar-responsavel\route.ts:1556:
+  app\api\implantacao\criar-responsavel\route.ts:1557:          etapas:
+  app\api\implantacao\criar-responsavel\route.ts:1558:            resultadoSegmento
+  app\api\implantacao\criar-responsavel\route.ts:1559:              .etapas,
+  app\api\implantacao\criar-responsavel\route.ts:1560:
+  app\api\implantacao\criar-responsavel\route.ts:1561:          concluidaEm:
+  app\api\implantacao\criar-responsavel\route.ts:1872:            .remove();
+  app\api\implantacao\criar-responsavel\route.ts:1873:        }
+  app\api\implantacao\criar-responsavel\route.ts:1874:
+  app\api\implantacao\criar-responsavel\route.ts:1875:        await database
+  app\api\implantacao\criar-responsavel\route.ts:1876:          .ref(
+> app\api\implantacao\criar-responsavel\route.ts:1877:            `locais-v2/${localIdProcessado}/usuarios/${uidResponsavel}`
+  app\api\implantacao\criar-responsavel\route.ts:1878:          )
+  app\api\implantacao\criar-responsavel\route.ts:1879:          .remove();
+  app\api\implantacao\criar-responsavel\route.ts:1880:
+  app\api\implantacao\criar-responsavel\route.ts:1881:        await database
+  app\api\implantacao\criar-responsavel\route.ts:1882:          .ref(
+> app\api\implantacao\criar-responsavel\route.ts:1883:            `locais-v2/${localIdProcessado}/responsaveis/${uidResponsavel}`
+  app\api\implantacao\criar-responsavel\route.ts:1884:          )
+  app\api\implantacao\criar-responsavel\route.ts:1885:          .remove();
+  app\api\implantacao\criar-responsavel\route.ts:1886:
+  app\api\implantacao\criar-responsavel\route.ts:1887:        if (
+  app\api\implantacao\criar-responsavel\route.ts:1888:          usuarioCriadoNoAuthentication &&
+  app\api\implantacao\criar-responsavel\route.ts:1889:          !usuarioBancoExistiaAntes
+  app\api\implantacao\criar-responsavel\route.ts:1890:        ) {
+  app\api\implantacao\criar-responsavel\route.ts:1891:          await database
+  app\api\implantacao\criar-responsavel\route.ts:1892:            .ref(
+  app\api\implantacao\criar-responsavel\route.ts:1893:              `usuarios-v2/${uidResponsavel}`
+  app\api\implantacao\criar-responsavel\route.ts:1894:            )
+  app\api\implantacao\criar-responsavel\route.ts:1895:            .remove();
+  app\api\implantacao\criar-responsavel\route.ts:1896:        }
+  app\api\implantacao\criar-responsavel\route.ts:1897:      } catch (
+  app\api\implantacao\criar-responsavel\route.ts:1898:        erroBanco
+  app\api\implantacao\criar-responsavel\route.ts:1927:      localIdProcessado
+  app\api\implantacao\criar-responsavel\route.ts:1928:    ) {
+  app\api\implantacao\criar-responsavel\route.ts:1929:      try {
+  app\api\implantacao\criar-responsavel\route.ts:1930:        await database
+  app\api\implantacao\criar-responsavel\route.ts:1931:          .ref(
+> app\api\implantacao\criar-responsavel\route.ts:1932:            `locais-v2/${localIdProcessado}`
+  app\api\implantacao\criar-responsavel\route.ts:1933:          )
+  app\api\implantacao\criar-responsavel\route.ts:1934:          .remove();
+  app\api\implantacao\criar-responsavel\route.ts:1935:      } catch (
+  app\api\implantacao\criar-responsavel\route.ts:1936:        erroLocal
+  app\api\implantacao\criar-responsavel\route.ts:1937:      ) {
+  app\api\implantacao\criar-responsavel\route.ts:1938:        console.error(
+  app\api\implantacao\criar-responsavel\route.ts:1939:          "Erro ao remover local durante rollback:",
+  app\api\implantacao\criar-responsavel\route.ts:1940:          erroLocal
+  app\api\implantacao\criar-responsavel\route.ts:1941:        );
+  app\api\implantacao\criar-responsavel\route.ts:1942:      }
+  app\api\implantacao\criar-responsavel\route.ts:1943:    }
+  app\api\implantacao\criar-responsavel\route.ts:1944:
+  app\api\implantacao\criar-responsavel\route.ts:1945:    const mensagem =
+  app\api\implantacao\criar-responsavel\route.ts:1946:      erro instanceof Error
+  app\api\implantacao\criar-responsavel\route.ts:1947:        ? erro.message
+  app\api\materiais\qrcode\[localId]\route.ts:231:  } = obterFirebaseAdminQr();
+  app\api\materiais\qrcode\[localId]\route.ts:232:
+  app\api\materiais\qrcode\[localId]\route.ts:233:  const snapshotDireto =
+  app\api\materiais\qrcode\[localId]\route.ts:234:    await database
+  app\api\materiais\qrcode\[localId]\route.ts:235:      .ref(
+> app\api\materiais\qrcode\[localId]\route.ts:236:        `locais-v2/${identificador}`
+  app\api\materiais\qrcode\[localId]\route.ts:237:      )
+  app\api\materiais\qrcode\[localId]\route.ts:238:      .get();
+  app\api\materiais\qrcode\[localId]\route.ts:239:
+  app\api\materiais\qrcode\[localId]\route.ts:240:  if (
+  app\api\materiais\qrcode\[localId]\route.ts:241:    snapshotDireto.exists()
+  app\api\materiais\qrcode\[localId]\route.ts:242:  ) {
+  app\api\materiais\qrcode\[localId]\route.ts:243:    return {
+  app\api\materiais\qrcode\[localId]\route.ts:244:      localId:
+  app\api\materiais\qrcode\[localId]\route.ts:245:        identificador,
+  app\api\materiais\qrcode\[localId]\route.ts:246:
+  app\api\materiais\qrcode\[localId]\route.ts:247:      dados:
+  app\api\materiais\qrcode\[localId]\route.ts:248:        snapshotDireto.val() as
+  app\api\materiais\qrcode\[localId]\route.ts:249:          LocalBanco,
+  app\api\materiais\qrcode\[localId]\route.ts:250:    };
+  app\api\materiais\qrcode\[localId]\route.ts:251:  }
+  app\api\materiais\qrcode\[localId]\route.ts:252:
+  app\api\materiais\qrcode\[localId]\route.ts:253:  const snapshotLocais =
+  app\api\materiais\qrcode\[localId]\route.ts:254:    await database
+  app\api\materiais\qrcode\[localId]\route.ts:255:      .ref(
+> app\api\materiais\qrcode\[localId]\route.ts:256:        "locais-v2"
+  app\api\materiais\qrcode\[localId]\route.ts:257:      )
+  app\api\materiais\qrcode\[localId]\route.ts:258:      .get();
+  app\api\materiais\qrcode\[localId]\route.ts:259:
+  app\api\materiais\qrcode\[localId]\route.ts:260:  if (
+  app\api\materiais\qrcode\[localId]\route.ts:261:    !snapshotLocais.exists()
+  app\api\materiais\qrcode\[localId]\route.ts:262:  ) {
+  app\api\materiais\qrcode\[localId]\route.ts:263:    return null;
+  app\api\materiais\qrcode\[localId]\route.ts:264:  }
+  app\api\materiais\qrcode\[localId]\route.ts:265:
+  app\api\materiais\qrcode\[localId]\route.ts:266:  const locais =
+  app\api\materiais\qrcode\[localId]\route.ts:267:    snapshotLocais.val() as
+  app\api\materiais\qrcode\[localId]\route.ts:268:      Record<string, LocalBanco>;
+  app\api\materiais\qrcode\[localId]\route.ts:269:
+  app\api\materiais\qrcode\[localId]\route.ts:270:  for (
+  app\api\materiais\qrcode\[localId]\route.ts:271:    const [
+  app\api\materiais\qrcode\[localId]\route.ts:349:        {
+  app\api\materiais\qrcode\[localId]\route.ts:350:          sucesso:
+  app\api\materiais\qrcode\[localId]\route.ts:351:            false,
+  app\api\materiais\qrcode\[localId]\route.ts:352:
+  app\api\materiais\qrcode\[localId]\route.ts:353:          mensagem:
+> app\api\materiais\qrcode\[localId]\route.ts:354:            "Local não encontrado em locais-v2 pelo ID ou slug.",
+  app\api\materiais\qrcode\[localId]\route.ts:355:        },
+  app\api\materiais\qrcode\[localId]\route.ts:356:        {
+  app\api\materiais\qrcode\[localId]\route.ts:357:          status:
+  app\api\materiais\qrcode\[localId]\route.ts:358:            404,
+  app\api\materiais\qrcode\[localId]\route.ts:359:        }
+  app\api\materiais\qrcode\[localId]\route.ts:360:      );
+  app\api\materiais\qrcode\[localId]\route.ts:361:    }
+  app\api\materiais\qrcode\[localId]\route.ts:362:
+  app\api\materiais\qrcode\[localId]\route.ts:363:    const local =
+  app\api\materiais\qrcode\[localId]\route.ts:364:      encontrado.dados;
+  app\api\materiais\qrcode\[localId]\route.ts:365:
+  app\api\materiais\qrcode\[localId]\route.ts:366:    if (
+  app\api\materiais\qrcode\[localId]\route.ts:367:      local.status ===
+  app\api\materiais\qrcode\[localId]\route.ts:368:        "inativo" ||
+  app\api\materiais\qrcode\[localId]\route.ts:369:      local.ativo ===
+  app\api\migracao\residencial-costa\route.ts:30:    const agora =
+  app\api\migracao\residencial-costa\route.ts:31:      Date.now();
+  app\api\migracao\residencial-costa\route.ts:32:
+  app\api\migracao\residencial-costa\route.ts:33:    const localRef =
+  app\api\migracao\residencial-costa\route.ts:34:      database.ref(
+> app\api\migracao\residencial-costa\route.ts:35:        `locais-v2/${LOCAL_ID}`
+  app\api\migracao\residencial-costa\route.ts:36:      );
+  app\api\migracao\residencial-costa\route.ts:37:
+  app\api\migracao\residencial-costa\route.ts:38:    const localExistente =
+  app\api\migracao\residencial-costa\route.ts:39:      await localRef.get();
+  app\api\migracao\residencial-costa\route.ts:40:
+  app\api\migracao\residencial-costa\route.ts:41:    if (
+  app\api\migracao\residencial-costa\route.ts:42:      localExistente.exists()
+  app\api\migracao\residencial-costa\route.ts:43:    ) {
+  app\api\migracao\residencial-costa\route.ts:44:      return NextResponse.json(
+  app\api\migracao\residencial-costa\route.ts:45:        {
+  app\api\migracao\residencial-costa\route.ts:46:          sucesso: false,
+  app\api\migracao\residencial-costa\route.ts:47:
+  app\api\migracao\residencial-costa\route.ts:48:          mensagem:
+> app\api\migracao\residencial-costa\route.ts:49:            "A Residência Costa já está cadastrada em locais-v2.",
+  app\api\migracao\residencial-costa\route.ts:50:
+  app\api\migracao\residencial-costa\route.ts:51:          localId:
+  app\api\migracao\residencial-costa\route.ts:52:            LOCAL_ID,
+  app\api\migracao\residencial-costa\route.ts:53:        },
+  app\api\migracao\residencial-costa\route.ts:54:        {
+  app\api\migracao\residencial-costa\route.ts:55:          status: 409,
+  app\api\migracao\residencial-costa\route.ts:56:        }
+  app\api\migracao\residencial-costa\route.ts:57:      );
+  app\api\migracao\residencial-costa\route.ts:58:    }
+  app\api\migracao\residencial-costa\route.ts:59:
+  app\api\migracao\residencial-costa\route.ts:60:    const atualizacoes = {
+> app\api\migracao\residencial-costa\route.ts:61:      [`locais-v2/${LOCAL_ID}`]: {
+  app\api\migracao\residencial-costa\route.ts:62:        id:
+  app\api\migracao\residencial-costa\route.ts:63:          LOCAL_ID,
+  app\api\migracao\residencial-costa\route.ts:64:
+  app\api\migracao\residencial-costa\route.ts:65:        nome:
+  app\api\migracao\residencial-costa\route.ts:66:          "Residencial Costa",
+  app\api\migracao\residencial-costa\route.ts:67:
+  app\api\migracao\residencial-costa\route.ts:68:        slug:
+  app\api\migracao\residencial-costa\route.ts:69:          LOCAL_ID,
+  app\api\migracao\residencial-costa\route.ts:70:
+  app\api\migracao\residencial-costa\route.ts:71:        tipo:
+  app\api\migracao\residencial-costa\route.ts:72:          "residencia",
+  app\api\migracao\residencial-costa\route.ts:73:
+  app\api\migracao\residencial-costa\route.ts:74:        tipoLocal:
+  app\api\migracao\residencial-costa\route.ts:75:          "residencia",
+  app\api\migracao\residencial-costa\route.ts:76:
+  app\api\qrcode\[localId]\route.ts:137:  } = obterFirebaseAdmin();
+  app\api\qrcode\[localId]\route.ts:138:
+  app\api\qrcode\[localId]\route.ts:139:  const snapshotDireto =
+  app\api\qrcode\[localId]\route.ts:140:    await database
+  app\api\qrcode\[localId]\route.ts:141:      .ref(
+> app\api\qrcode\[localId]\route.ts:142:        `locais-v2/${identificador}`
+  app\api\qrcode\[localId]\route.ts:143:      )
+  app\api\qrcode\[localId]\route.ts:144:      .get();
+  app\api\qrcode\[localId]\route.ts:145:
+  app\api\qrcode\[localId]\route.ts:146:  if (
+  app\api\qrcode\[localId]\route.ts:147:    snapshotDireto.exists()
+  app\api\qrcode\[localId]\route.ts:148:  ) {
+  app\api\qrcode\[localId]\route.ts:149:    return {
+  app\api\qrcode\[localId]\route.ts:150:      localId:
+  app\api\qrcode\[localId]\route.ts:151:        identificador,
+  app\api\qrcode\[localId]\route.ts:152:
+  app\api\qrcode\[localId]\route.ts:153:      local:
+  app\api\qrcode\[localId]\route.ts:154:        snapshotDireto.val() as
+  app\api\qrcode\[localId]\route.ts:155:          LocalBanco,
+  app\api\qrcode\[localId]\route.ts:156:    };
+  app\api\qrcode\[localId]\route.ts:157:  }
+  app\api\qrcode\[localId]\route.ts:158:
+  app\api\qrcode\[localId]\route.ts:159:  const snapshotLocais =
+  app\api\qrcode\[localId]\route.ts:160:    await database
+  app\api\qrcode\[localId]\route.ts:161:      .ref(
+> app\api\qrcode\[localId]\route.ts:162:        "locais-v2"
+  app\api\qrcode\[localId]\route.ts:163:      )
+  app\api\qrcode\[localId]\route.ts:164:      .get();
+  app\api\qrcode\[localId]\route.ts:165:
+  app\api\qrcode\[localId]\route.ts:166:  if (
+  app\api\qrcode\[localId]\route.ts:167:    !snapshotLocais.exists()
+  app\api\qrcode\[localId]\route.ts:168:  ) {
+  app\api\qrcode\[localId]\route.ts:169:    return null;
+  app\api\qrcode\[localId]\route.ts:170:  }
+  app\api\qrcode\[localId]\route.ts:171:
+  app\api\qrcode\[localId]\route.ts:172:  const locais =
+  app\api\qrcode\[localId]\route.ts:173:    snapshotLocais.val() as
+  app\api\qrcode\[localId]\route.ts:174:      Record<
+  app\api\qrcode\[localId]\route.ts:175:        string,
+  app\api\qrcode\[localId]\route.ts:176:        LocalBanco
+  app\api\qrcode\[localId]\route.ts:177:      >;
+  app\api\qrcode\[localId]\route.ts:244:  }
+  app\api\qrcode\[localId]\route.ts:245:
+  app\api\qrcode\[localId]\route.ts:246:  const snapshotQrLocal =
+  app\api\qrcode\[localId]\route.ts:247:    await database
+  app\api\qrcode\[localId]\route.ts:248:      .ref(
+> app\api\qrcode\[localId]\route.ts:249:        `locais-v2/${localId}/qrcode`
+  app\api\qrcode\[localId]\route.ts:250:      )
+  app\api\qrcode\[localId]\route.ts:251:      .get();
+  app\api\qrcode\[localId]\route.ts:252:
+  app\api\qrcode\[localId]\route.ts:253:  if (
+  app\api\qrcode\[localId]\route.ts:254:    snapshotQrLocal.exists()
+  app\api\qrcode\[localId]\route.ts:255:  ) {
+  app\api\qrcode\[localId]\route.ts:256:    const qrLocal =
+  app\api\qrcode\[localId]\route.ts:257:      snapshotQrLocal.val() as
+  app\api\qrcode\[localId]\route.ts:258:        QrPrincipalBanco;
+  app\api\qrcode\[localId]\route.ts:259:
+  app\api\qrcode\[localId]\route.ts:260:    if (
+  app\api\qrcode\[localId]\route.ts:261:      qrLocal.url?.trim()
+  app\api\qrcode\[localId]\route.ts:262:    ) {
+  app\api\qrcode\[localId]\route.ts:263:      return qrLocal;
+  app\api\qrcode\[localId]\route.ts:264:    }
+  app\api\residencia\familia\route.ts:525:      resultadoPessoa.uid;
+  app\api\residencia\familia\route.ts:526:
+  app\api\residencia\familia\route.ts:527:    const snapshotLocal =
+  app\api\residencia\familia\route.ts:528:      await database
+  app\api\residencia\familia\route.ts:529:        .ref(
+> app\api\residencia\familia\route.ts:530:          `locais-v2/${localId}`
+  app\api\residencia\familia\route.ts:531:        )
+  app\api\residencia\familia\route.ts:532:        .get();
+  app\api\residencia\familia\route.ts:533:
+  app\api\residencia\familia\route.ts:534:    const dadosLocal =
+  app\api\residencia\familia\route.ts:535:      snapshotLocal.exists()
+  app\api\residencia\familia\route.ts:536:        ? snapshotLocal.val() as {
+  app\api\residencia\familia\route.ts:537:            nome?: string;
+  app\api\residencia\familia\route.ts:538:            slug?: string;
+  app\api\residencia\familia\route.ts:539:            tipo?: string;
+  app\api\residencia\familia\route.ts:540:            tipoLocal?: string;
+  app\api\residencia\familia\route.ts:541:          }
+  app\api\residencia\familia\route.ts:542:        : {};
+  app\api\residencia\familia\route.ts:543:
+  app\api\residencia\familia\route.ts:544:    const snapshotVinculo =
+  app\api\residencia\familia\route.ts:545:      await database
+  app\atualizacao\[condominio]\page.tsx:143:
+  app\atualizacao\[condominio]\page.tsx:144:  useEffect(() => {
+  app\atualizacao\[condominio]\page.tsx:145:    setCarregando(true);
+  app\atualizacao\[condominio]\page.tsx:146:    setErroCarregamento("");
+  app\atualizacao\[condominio]\page.tsx:147:
+> app\atualizacao\[condominio]\page.tsx:148:    const locaisRef = ref(db, "qrCentral/locais");
+  app\atualizacao\[condominio]\page.tsx:149:    const unidadesRef = ref(db, "qrCentral/unidades");
+  app\atualizacao\[condominio]\page.tsx:150:
+  app\atualizacao\[condominio]\page.tsx:151:    let locaisCarregados = false;
+  app\atualizacao\[condominio]\page.tsx:152:    let unidadesCarregadas = false;
+  app\atualizacao\[condominio]\page.tsx:153:
+  app\atualizacao\[condominio]\page.tsx:154:    function finalizarCarregamento() {
+  app\atualizacao\[condominio]\page.tsx:155:      if (locaisCarregados && unidadesCarregadas) {
+  app\atualizacao\[condominio]\page.tsx:156:        setCarregando(false);
+  app\atualizacao\[condominio]\page.tsx:157:      }
+  app\atualizacao\[condominio]\page.tsx:158:    }
+  app\atualizacao\[condominio]\page.tsx:159:
+  app\atualizacao\[condominio]\page.tsx:160:    const desligarLocais = onValue(
+  app\atualizacao\[condominio]\page.tsx:161:      locaisRef,
+  app\atualizacao\[condominio]\page.tsx:162:      (snapshot) => {
+  app\atualizacao\[condominio]\page.tsx:163:        const dados = snapshot.val();
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:244:        }
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:245:      );
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:246:
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:247:    const desligarLocais =
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:248:      onValue(
+> app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:249:        ref(db, "locais-v2"),
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:250:        (snapshot) => {
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:251:          const dados =
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:252:            snapshot.val();
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:253:
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:254:          const lista: Local[] =
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:255:            dados
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:256:              ? Object.entries(dados)
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:257:                  .map(
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:258:                    ([id, valor]) => ({
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:259:                      id,
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:260:                      ...(valor as Omit<
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:261:                        Local,
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:262:                        "id"
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:263:                      >),
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:264:                    })
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:729:            dadosVinculo,
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:730:
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:731:          [`usuarios-v2/${pessoaSelecionada.id}/atualizadoEm`]:
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:732:            agora,
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:733:
+> app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:734:          
+[`vinculos-locais-v2/${localSelecionado.id}/${pessoaSelecionada.id}`]:
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:735:            {
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:736:              uid:
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:737:                pessoaSelecionada.id,
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:738:
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:739:              nome:
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:740:                pessoaSelecionada.nome ||
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:741:                "",
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:742:
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:743:              email:
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:744:                pessoaSelecionada.email ||
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:745:                "",
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:746:
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:747:              ...dadosVinculo,
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:748:            },
+  app\components\dashboard\cadastro-universal\NovoVinculoModal.tsx:749:        }
+  app\components\dashboard\cadastro-universal\PainelLocais.tsx:10:      <h3 className="mt-2 text-2xl font-black text-white">
+  app\components\dashboard\cadastro-universal\PainelLocais.tsx:11:        Migração preparada
+  app\components\dashboard\cadastro-universal\PainelLocais.tsx:12:      </h3>
+  app\components\dashboard\cadastro-universal\PainelLocais.tsx:13:
+  app\components\dashboard\cadastro-universal\PainelLocais.tsx:14:      <p className="mt-2 text-sm leading-relaxed text-slate-400">
+> app\components\dashboard\cadastro-universal\PainelLocais.tsx:15:        Na próxima etapa, o conteúdo atual de LocaisUniversais será movido para 
+este painel sem alterar seu funcionamento.
+  app\components\dashboard\cadastro-universal\PainelLocais.tsx:16:      </p>
+  app\components\dashboard\cadastro-universal\PainelLocais.tsx:17:    </section>
+  app\components\dashboard\cadastro-universal\PainelLocais.tsx:18:  );
+  app\components\dashboard\cadastro-universal\PainelLocais.tsx:19:}
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:397:
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:398:    const desligarLocais =
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:399:      onValue(
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:400:        ref(
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:401:          db,
+> app\components\dashboard\cadastro-universal\PainelVinculos.tsx:402:          "locais-v2"
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:403:        ),
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:404:        (
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:405:          snapshot
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:406:        ) => {
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:407:          const dados =
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:408:            snapshot.val();
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:409:
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:410:          setLocais(
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:411:            dados
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:412:              ? Object.entries(
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:413:                  dados
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:414:                ).map(
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:415:                  ([
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:416:                    id,
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:417:                    valor,
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:968:          atualizacoes[
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:969:            `usuarios-v2/${vinculo.pessoaId}/condominios/${chave}`
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:970:          ] = null;
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:971:
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:972:          atualizacoes[
+> app\components\dashboard\cadastro-universal\PainelVinculos.tsx:973:            `vinculos-locais-v2/${chave}/${vinculo.pessoaId}`
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:974:          ] = null;
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:975:        }
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:976:      );
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:977:
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:978:      atualizacoes[
+> app\components\dashboard\cadastro-universal\PainelVinculos.tsx:979:        `vinculos-locais-v2/${vinculo.localId}/${vinculo.pessoaId}`
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:980:      ] = null;
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:981:
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:982:      atualizacoes[
+> app\components\dashboard\cadastro-universal\PainelVinculos.tsx:983:        `locais-v2/${vinculo.localId}/usuarios/${vinculo.pessoaId}`
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:984:      ] = null;
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:985:
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:986:      atualizacoes[
+> app\components\dashboard\cadastro-universal\PainelVinculos.tsx:987:        `locais-v2/${vinculo.localId}/responsaveis/${vinculo.pessoaId}`
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:988:      ] = null;
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:989:
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:990:      atualizacoes[
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:991:        `usuarios-v2/${vinculo.pessoaId}/atualizadoEm`
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:992:      ] = Date.now();
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:993:
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:994:      await update(
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:995:        ref(db),
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:996:        atualizacoes
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:997:      );
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:998:    } catch (erro) {
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:999:      console.error(
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1000:        "Erro ao excluir vínculo:",
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1001:        erro
+  app\components\dashboard\cadastro-universal\PainelVinculos.tsx:1002:      );
+  app\components\dashboard\LocaisUniversais.tsx:1:"use client";
+  app\components\dashboard\LocaisUniversais.tsx:2:
+  app\components\dashboard\LocaisUniversais.tsx:3:import CadastroUniversal from "./cadastro-universal/CadastroUniversal";
+  app\components\dashboard\LocaisUniversais.tsx:4:
+> app\components\dashboard\LocaisUniversais.tsx:5:export default function LocaisUniversais() {
+  app\components\dashboard\LocaisUniversais.tsx:6:  return <CadastroUniversal />;
+  app\components\dashboard\LocaisUniversais.tsx:7:}
+  app\dashboard\condominio\page.tsx:411:    }
+  app\dashboard\condominio\page.tsx:412:
+  app\dashboard\condominio\page.tsx:413:    const locaisRef =
+  app\dashboard\condominio\page.tsx:414:      ref(
+  app\dashboard\condominio\page.tsx:415:        db,
+> app\dashboard\condominio\page.tsx:416:        "qrCentral/locais"
+  app\dashboard\condominio\page.tsx:417:      );
+  app\dashboard\condominio\page.tsx:418:
+  app\dashboard\condominio\page.tsx:419:    const parar =
+  app\dashboard\condominio\page.tsx:420:      onValue(
+  app\dashboard\condominio\page.tsx:421:        locaisRef,
+  app\dashboard\condominio\page.tsx:422:        (snapshot) => {
+  app\dashboard\condominio\page.tsx:423:          const dados =
+  app\dashboard\condominio\page.tsx:424:            snapshot.val();
+  app\dashboard\condominio\page.tsx:425:
+  app\dashboard\condominio\page.tsx:426:          if (!dados) {
+  app\dashboard\condominio\page.tsx:427:            setLocais([]);
+  app\dashboard\condominio\page.tsx:428:            return;
+  app\dashboard\condominio\page.tsx:429:          }
+  app\dashboard\condominio\page.tsx:430:
+  app\dashboard\condominio\page.tsx:431:          const lista =
+  app\dashboard\condominio\page.tsx:462:    }
+  app\dashboard\condominio\page.tsx:463:
+  app\dashboard\condominio\page.tsx:464:    const unidadesRef =
+  app\dashboard\condominio\page.tsx:465:      ref(
+  app\dashboard\condominio\page.tsx:466:        db,
+> app\dashboard\condominio\page.tsx:467:        `locais-v2/${localIdAtual}/unidades`
+  app\dashboard\condominio\page.tsx:468:      );
+  app\dashboard\condominio\page.tsx:469:
+  app\dashboard\condominio\page.tsx:470:    const parar =
+  app\dashboard\condominio\page.tsx:471:      onValue(
+  app\dashboard\condominio\page.tsx:472:        unidadesRef,
+  app\dashboard\condominio\page.tsx:473:        (snapshot) => {
+  app\dashboard\condominio\page.tsx:474:          const dados =
+  app\dashboard\condominio\page.tsx:475:            snapshot.val();
+  app\dashboard\condominio\page.tsx:476:
+  app\dashboard\condominio\page.tsx:477:          if (!dados) {
+  app\dashboard\condominio\page.tsx:478:            setUnidades([]);
+  app\dashboard\condominio\page.tsx:479:            return;
+  app\dashboard\condominio\page.tsx:480:          }
+  app\dashboard\condominio\page.tsx:481:
+  app\dashboard\condominio\page.tsx:482:          const lista =
+  app\dashboard\implantacao\components\PassoResumo.tsx:140:        <p className="font-black text-green-300">
+  app\dashboard\implantacao\components\PassoResumo.tsx:141:          Automação que será executada
+  app\dashboard\implantacao\components\PassoResumo.tsx:142:        </p>
+  app\dashboard\implantacao\components\PassoResumo.tsx:143:
+  app\dashboard\implantacao\components\PassoResumo.tsx:144:        <div className="mt-3 grid gap-2 text-sm text-slate-300 sm:grid-cols-2">
+> app\dashboard\implantacao\components\PassoResumo.tsx:145:          <p>✅ Criar registro em locais-v2</p>
+  app\dashboard\implantacao\components\PassoResumo.tsx:146:          <p>✅ Criar Firebase Authentication</p>
+  app\dashboard\implantacao\components\PassoResumo.tsx:147:          <p>✅ Criar usuário em usuarios-v2</p>
+  app\dashboard\implantacao\components\PassoResumo.tsx:148:          <p>✅ Criar vínculo universal</p>
+  app\dashboard\implantacao\components\PassoResumo.tsx:149:          <p>✅ Manter vínculo compatível</p>
+  app\dashboard\implantacao\components\PassoResumo.tsx:150:          <p>✅ Aplicar permissões iniciais</p>
+  app\dashboard\implantacao\components\PassoResumo.tsx:151:          <p>✅ Registrar o responsável</p>
+  app\dashboard\implantacao\components\PassoResumo.tsx:152:          <p>✅ Registrar o histórico</p>
+  app\dashboard\implantacao\components\PassoResumo.tsx:153:        </div>
+  app\dashboard\implantacao\components\PassoResumo.tsx:154:      </div>
+  app\dashboard\implantacao\components\PassoResumo.tsx:155:    </section>
+  app\dashboard\implantacao\components\PassoResumo.tsx:156:  );
+  app\dashboard\implantacao\components\PassoResumo.tsx:157:}
+  app\dashboard\page.tsx:6:import Unidades from "../components/dashboard/Unidades";
+  app\dashboard\page.tsx:7:import Moradores from "../components/dashboard/Moradores";
+  app\dashboard\page.tsx:8:import AtualizacaoPendenteModal from "./AtualizacaoPendenteModal";
+  app\dashboard\page.tsx:9:import UnidadeImplantacaoModal from "./UnidadeImplantacaoModal";
+  app\dashboard\page.tsx:10:import CentralSindico from "./sindico/CentralSindico";
+> app\dashboard\page.tsx:11:import LocaisUniversais from "../components/dashboard/LocaisUniversais";
+  app\dashboard\page.tsx:12:
+  app\dashboard\page.tsx:13:type Tela =
+  app\dashboard\page.tsx:14:  | "dashboard"
+  app\dashboard\page.tsx:15:  | "sindico"
+  app\dashboard\page.tsx:16:  | "locais"
+  app\dashboard\page.tsx:17:  | "locais-universais"
+  app\dashboard\page.tsx:18:  | "unidades"
+  app\dashboard\page.tsx:19:  | "moradores"
+  app\dashboard\page.tsx:20:  | "planos"
+  app\dashboard\page.tsx:21:  | "pendentes"
+  app\dashboard\page.tsx:22:  | "implantacao"
+  app\dashboard\page.tsx:23:  | "contingencia";
+  app\dashboard\page.tsx:24:
+  app\dashboard\page.tsx:25:type LocalCadastrado = {
+  app\dashboard\page.tsx:26:  id: string;
+  app\dashboard\page.tsx:156:  const [filtroImplantacao, setFiltroImplantacao] = useState<
+  app\dashboard\page.tsx:157:    "todos" | "acao" | "implantadas" | "sem-cadastro"
+  app\dashboard\page.tsx:158:  >("acao");
+  app\dashboard\page.tsx:159:
+  app\dashboard\page.tsx:160:  useEffect(() => {
+> app\dashboard\page.tsx:161:    const locaisRef = ref(db, "qrCentral/locais");
+  app\dashboard\page.tsx:162:
+  app\dashboard\page.tsx:163:    const desligar = onValue(locaisRef, (snapshot) => {
+  app\dashboard\page.tsx:164:      
+  app\dashboard\page.tsx:165:      const dados = snapshot.val();
+  app\dashboard\page.tsx:166:
+  app\dashboard\page.tsx:167:      if (!dados) {
+  app\dashboard\page.tsx:168:        setLocais([]);
+  app\dashboard\page.tsx:169:        return;
+  app\dashboard\page.tsx:170:      }
+  app\dashboard\page.tsx:171:
+  app\dashboard\page.tsx:172:      const lista = Object.entries(dados).map(([id, valor]: any) => ({
+  app\dashboard\page.tsx:173:        id,
+  app\dashboard\page.tsx:174:        ...valor,
+  app\dashboard\page.tsx:175:      }));
+  app\dashboard\page.tsx:176:
+  app\dashboard\page.tsx:311:    }
+  app\dashboard\page.tsx:312:
+  app\dashboard\page.tsx:313:    setSalvando(true);
+  app\dashboard\page.tsx:314:
+  app\dashboard\page.tsx:315:    try {
+> app\dashboard\page.tsx:316:      const locaisRef = ref(db, "qrCentral/locais");
+  app\dashboard\page.tsx:317:      const novoLocalRef = push(locaisRef);
+  app\dashboard\page.tsx:318:
+  app\dashboard\page.tsx:319:      const nomeFormatado = formatarNome(nomeLocal);
+  app\dashboard\page.tsx:320:      const cidadeFormatada = formatarNome(cidade);
+  app\dashboard\page.tsx:321:      const estadoFormatado = estado.trim().toUpperCase();
+  app\dashboard\page.tsx:322:      const slug = gerarSlug(nomeFormatado);
+  app\dashboard\page.tsx:323:      const codigo = `LOC-${String(locais.length + 1).padStart(4, "0")}`;
+  app\dashboard\page.tsx:324:
+  app\dashboard\page.tsx:325:      await set(novoLocalRef, {
+  app\dashboard\page.tsx:326:        codigo,
+  app\dashboard\page.tsx:327:        nome: nomeFormatado,
+  app\dashboard\page.tsx:328:        tipo: tipoLocal,
+  app\dashboard\page.tsx:329:        cidade: cidadeFormatada,
+  app\dashboard\page.tsx:330:        estado: estadoFormatado,
+  app\dashboard\page.tsx:331:        slug,
+  app\dashboard\page.tsx:609:        ) {
+  app\dashboard\page.tsx:610:          alteracoes[`qrCentral/atualizacoesCadastrais/${id}`] = null;
+  app\dashboard\page.tsx:611:        }
+  app\dashboard\page.tsx:612:      });
+  app\dashboard\page.tsx:613:
+> app\dashboard\page.tsx:614:      alteracoes[`qrCentral/locais/${local.id}`] = null;
+  app\dashboard\page.tsx:615:
+  app\dashboard\page.tsx:616:      await update(ref(db), alteracoes);
+  app\dashboard\page.tsx:617:
+  app\dashboard\page.tsx:618:      alert(`O local "${local.nome}" e todos os dados de teste foram excluídos.`);
+  app\dashboard\page.tsx:619:
+  app\dashboard\page.tsx:620:      setLocalSelecionadoId("");
+  app\dashboard\page.tsx:621:      setLocalAberto(null);
+  app\dashboard\page.tsx:622:      setTelaAtiva("locais");
+  app\dashboard\page.tsx:623:    } catch (erro) {
+  app\dashboard\page.tsx:624:      console.error("Erro ao excluir local de teste:", erro);
+  app\dashboard\page.tsx:625:      alert(
+  app\dashboard\page.tsx:626:        "Não foi possível excluir o local. Verifique o terminal antes de tentar novamente."
+  app\dashboard\page.tsx:627:      );
+  app\dashboard\page.tsx:628:    } finally {
+  app\dashboard\page.tsx:629:      setExcluindoLocal(false);
+  app\dashboard\page.tsx:1396:          )}
+  app\dashboard\page.tsx:1397:{telaAtiva === "sindico" && (
+  app\dashboard\page.tsx:1398:  <CentralSindico />
+  app\dashboard\page.tsx:1399:)}
+  app\dashboard\page.tsx:1400:          {telaAtiva === "locais-universais" && (
+> app\dashboard\page.tsx:1401:            <LocaisUniversais />
+  app\dashboard\page.tsx:1402:          )}
+  app\dashboard\page.tsx:1403:
+  app\dashboard\page.tsx:1404:          {telaAtiva === "locais" && (
+  app\dashboard\page.tsx:1405:            <div className="space-y-5">
+  app\dashboard\page.tsx:1406:              {/* Cabeçalho */}
+  app\dashboard\page.tsx:1407:
+  app\dashboard\page.tsx:1408:              <section className="rounded-3xl bg-gradient-to-r from-blue-700 to-cyan-600 p-5 text-white md:p-7">
+  app\dashboard\page.tsx:1409:                <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
+  app\dashboard\page.tsx:1410:                  <div>
+  app\dashboard\page.tsx:1411:                    <p className="text-sm font-bold text-blue-100">
+  app\dashboard\page.tsx:1412:                      🏢 MÓDULO DE LOCAIS
+  app\dashboard\page.tsx:1413:                    </p>
+  app\dashboard\page.tsx:1414:
+  app\dashboard\page.tsx:1415:                    <h2 className="mt-1 text-3xl font-black md:text-4xl">
+  app\dashboard\page.tsx:1416:                      Locais
+  app\hooks\useLocalAtual.ts:307:    DadosLocalAtual;
+  app\hooks\useLocalAtual.ts:308:} | null> {
+  app\hooks\useLocalAtual.ts:309:  const referenciaDireta =
+  app\hooks\useLocalAtual.ts:310:    ref(
+  app\hooks\useLocalAtual.ts:311:      db,
+> app\hooks\useLocalAtual.ts:312:      `locais-v2/${identificador}`
+  app\hooks\useLocalAtual.ts:313:    );
+  app\hooks\useLocalAtual.ts:314:
+  app\hooks\useLocalAtual.ts:315:  const snapshotDireto =
+  app\hooks\useLocalAtual.ts:316:    await get(
+  app\hooks\useLocalAtual.ts:317:      referenciaDireta
+  app\hooks\useLocalAtual.ts:318:    );
+  app\hooks\useLocalAtual.ts:319:
+  app\hooks\useLocalAtual.ts:320:  if (
+  app\hooks\useLocalAtual.ts:321:    snapshotDireto.exists()
+  app\hooks\useLocalAtual.ts:322:  ) {
+  app\hooks\useLocalAtual.ts:323:    return {
+  app\hooks\useLocalAtual.ts:324:      localId:
+  app\hooks\useLocalAtual.ts:325:        identificador,
+  app\hooks\useLocalAtual.ts:326:
+  app\hooks\useLocalAtual.ts:327:      local:
+  app\hooks\useLocalAtual.ts:335:
+  app\hooks\useLocalAtual.ts:336:  const snapshotLocais =
+  app\hooks\useLocalAtual.ts:337:    await get(
+  app\hooks\useLocalAtual.ts:338:      ref(
+  app\hooks\useLocalAtual.ts:339:        db,
+> app\hooks\useLocalAtual.ts:340:        "locais-v2"
+  app\hooks\useLocalAtual.ts:341:      )
+  app\hooks\useLocalAtual.ts:342:    );
+  app\hooks\useLocalAtual.ts:343:
+  app\hooks\useLocalAtual.ts:344:  if (
+  app\hooks\useLocalAtual.ts:345:    !snapshotLocais.exists()
+  app\hooks\useLocalAtual.ts:346:  ) {
+  app\hooks\useLocalAtual.ts:347:    return null;
+  app\hooks\useLocalAtual.ts:348:  }
+  app\hooks\useLocalAtual.ts:349:
+  app\hooks\useLocalAtual.ts:350:  const locais =
+  app\hooks\useLocalAtual.ts:351:    snapshotLocais.val() as
+  app\hooks\useLocalAtual.ts:352:      Record<
+  app\hooks\useLocalAtual.ts:353:        string,
+  app\hooks\useLocalAtual.ts:354:        LocalBanco
+  app\hooks\useLocalAtual.ts:355:      >;
+  app\services\implantacao\motor\GeradorFirebase.ts:161:  for (
+  app\services\implantacao\motor\GeradorFirebase.ts:162:    const estruturaPai of
+  app\services\implantacao\motor\GeradorFirebase.ts:163:      estrutura.estruturasPai
+  app\services\implantacao\motor\GeradorFirebase.ts:164:  ) {
+  app\services\implantacao\motor\GeradorFirebase.ts:165:    const caminho =
+> app\services\implantacao\motor\GeradorFirebase.ts:166:      `locais-v2/${local.id}/estruturas/${estruturaPai.id}`;
+  app\services\implantacao\motor\GeradorFirebase.ts:167:
+  app\services\implantacao\motor\GeradorFirebase.ts:168:    adicionarAtualizacao(
+  app\services\implantacao\motor\GeradorFirebase.ts:169:      atualizacoes,
+  app\services\implantacao\motor\GeradorFirebase.ts:170:      caminhosCriados,
+  app\services\implantacao\motor\GeradorFirebase.ts:171:      caminho,
+  app\services\implantacao\motor\GeradorFirebase.ts:172:      estruturaPai
+  app\services\implantacao\motor\GeradorFirebase.ts:173:    );
+  app\services\implantacao\motor\GeradorFirebase.ts:174:  }
+  app\services\implantacao\motor\GeradorFirebase.ts:175:
+  app\services\implantacao\motor\GeradorFirebase.ts:176:  for (
+  app\services\implantacao\motor\GeradorFirebase.ts:177:    const unidade of
+  app\services\implantacao\motor\GeradorFirebase.ts:178:      estrutura.unidades
+  app\services\implantacao\motor\GeradorFirebase.ts:179:  ) {
+  app\services\implantacao\motor\GeradorFirebase.ts:180:    const caminhoUnidade =
+  app\services\implantacao\motor\GeradorFirebase.ts:181:      `unidades-v2/${unidade.id}`;
+  app\services\implantacao\motor\GeradorFirebase.ts:182:
+  app\services\implantacao\motor\GeradorFirebase.ts:183:    const caminhoReferenciaLocal =
+> app\services\implantacao\motor\GeradorFirebase.ts:184:      `locais-v2/${local.id}/unidades/${unidade.id}`;
+  app\services\implantacao\motor\GeradorFirebase.ts:185:
+  app\services\implantacao\motor\GeradorFirebase.ts:186:    const links =
+  app\services\implantacao\motor\GeradorFirebase.ts:187:      mapaLinks.get(
+  app\services\implantacao\motor\GeradorFirebase.ts:188:        unidade.id
+  app\services\implantacao\motor\GeradorFirebase.ts:189:      );
+  app\services\implantacao\motor\GeradorFirebase.ts:190:
+  app\services\implantacao\motor\GeradorFirebase.ts:191:    adicionarAtualizacao(
+  app\services\implantacao\motor\GeradorFirebase.ts:192:      atualizacoes,
+  app\services\implantacao\motor\GeradorFirebase.ts:193:      caminhosCriados,
+  app\services\implantacao\motor\GeradorFirebase.ts:194:      caminhoUnidade,
+  app\services\implantacao\motor\GeradorFirebase.ts:195:      {
+  app\services\implantacao\motor\GeradorFirebase.ts:196:        ...unidade,
+  app\services\implantacao\motor\GeradorFirebase.ts:197:
+  app\services\implantacao\motor\GeradorFirebase.ts:198:        links:
+  app\services\implantacao\motor\GeradorFirebase.ts:199:          links ?? {},
+  app\services\implantacao\motor\GeradorFirebase.ts:306:    );
+  app\services\implantacao\motor\GeradorFirebase.ts:307:
+  app\services\implantacao\motor\GeradorFirebase.ts:308:    adicionarAtualizacao(
+  app\services\implantacao\motor\GeradorFirebase.ts:309:      atualizacoes,
+  app\services\implantacao\motor\GeradorFirebase.ts:310:      caminhosCriados,
+> app\services\implantacao\motor\GeradorFirebase.ts:311:      `locais-v2/${local.id}/qrcode`,
+  app\services\implantacao\motor\GeradorFirebase.ts:312:      {
+  app\services\implantacao\motor\GeradorFirebase.ts:313:        id:
+  app\services\implantacao\motor\GeradorFirebase.ts:314:          qrPrincipal.id,
+  app\services\implantacao\motor\GeradorFirebase.ts:315:
+  app\services\implantacao\motor\GeradorFirebase.ts:316:        tipo:
+  app\services\implantacao\motor\GeradorFirebase.ts:317:          qrPrincipal.tipo,
+  app\services\implantacao\motor\GeradorFirebase.ts:318:
+  app\services\implantacao\motor\GeradorFirebase.ts:319:        url:
+  app\services\implantacao\motor\GeradorFirebase.ts:320:          qrPrincipal.url,
+  app\services\implantacao\motor\GeradorFirebase.ts:321:
+  app\services\implantacao\motor\GeradorFirebase.ts:322:        ativo:
+  app\services\implantacao\motor\GeradorFirebase.ts:323:          qrPrincipal.ativo,
+  app\services\implantacao\motor\GeradorFirebase.ts:324:
+  app\services\implantacao\motor\GeradorFirebase.ts:325:        versao:
+  app\services\implantacao\motor\GeradorFirebase.ts:326:          qrPrincipal.versao,
+  app\services\implantacao\motor\GeradorFirebase.ts:398:      dispositivo
+  app\services\implantacao\motor\GeradorFirebase.ts:399:    );
+  app\services\implantacao\motor\GeradorFirebase.ts:400:  }
+  app\services\implantacao\motor\GeradorFirebase.ts:401:
+  app\services\implantacao\motor\GeradorFirebase.ts:402:  const caminhoEstatisticas =
+> app\services\implantacao\motor\GeradorFirebase.ts:403:    `locais-v2/${local.id}/estatisticas`;
+  app\services\implantacao\motor\GeradorFirebase.ts:404:
+  app\services\implantacao\motor\GeradorFirebase.ts:405:  adicionarAtualizacao(
+  app\services\implantacao\motor\GeradorFirebase.ts:406:    atualizacoes,
+  app\services\implantacao\motor\GeradorFirebase.ts:407:    caminhosCriados,
+  app\services\implantacao\motor\GeradorFirebase.ts:408:    `${caminhoEstatisticas}/totalEstruturas`,
+  app\services\implantacao\motor\GeradorFirebase.ts:409:    estrutura.totalEstruturasPai
+  app\services\implantacao\motor\GeradorFirebase.ts:410:  );
+  app\services\implantacao\motor\GeradorFirebase.ts:411:
+  app\services\implantacao\motor\GeradorFirebase.ts:412:  adicionarAtualizacao(
+  app\services\implantacao\motor\GeradorFirebase.ts:413:    atualizacoes,
+  app\services\implantacao\motor\GeradorFirebase.ts:414:    caminhosCriados,
+  app\services\implantacao\motor\GeradorFirebase.ts:415:    `${caminhoEstatisticas}/totalUnidades`,
+  app\services\implantacao\motor\GeradorFirebase.ts:416:    estrutura.totalUnidades
+  app\services\implantacao\motor\GeradorFirebase.ts:417:  );
+  app\services\implantacao\motor\GeradorFirebase.ts:418:
+  app\services\implantacao\ImplantadorCondominio.ts:58:    resultadoPipeline.sucesso &&
+  app\services\implantacao\ImplantadorCondominio.ts:59:    resultadoPipeline.contexto
+  app\services\implantacao\ImplantadorCondominio.ts:60:      .estrutura
+  app\services\implantacao\ImplantadorCondominio.ts:61:  ) {
+  app\services\implantacao\ImplantadorCondominio.ts:62:    const caminhoEstatisticas =
+> app\services\implantacao\ImplantadorCondominio.ts:63:      `locais-v2/${contexto.local.localId}/estatisticas`;
+  app\services\implantacao\ImplantadorCondominio.ts:64:
+  app\services\implantacao\ImplantadorCondominio.ts:65:    const caminhosCriados =
+  app\services\implantacao\ImplantadorCondominio.ts:66:      resultadoPipeline.contexto
+  app\services\implantacao\ImplantadorCondominio.ts:67:        .firebase.caminhos.filter(
+  app\services\implantacao\ImplantadorCondominio.ts:68:          (caminho) =>
+  app\services\implantacao\ImplantadorCondominio.ts:69:            caminho !==
+  app\services\implantacao\ImplantadorCondominio.ts:70:            caminhoEstatisticas
+  app\services\implantacao\ImplantadorCondominio.ts:71:        );
+  app\services\implantacao\ImplantadorCondominio.ts:72:
+  app\services\implantacao\ImplantadorCondominio.ts:73:    return {
+  app\services\implantacao\ImplantadorCondominio.ts:74:      estrutura:
+  app\services\implantacao\ImplantadorCondominio.ts:75:        resultadoPipeline.contexto
+  app\services\implantacao\ImplantadorCondominio.ts:76:          .estrutura,
+  app\services\implantacao\ImplantadorCondominio.ts:77:
+  app\services\implantacao\ImplantadorCondominio.ts:78:      caminhosCriados,
+  app\services\implantacao\ImplantadorCondominio.ts:194:  for (
+  app\services\implantacao\ImplantadorCondominio.ts:195:    const estruturaPai of
+  app\services\implantacao\ImplantadorCondominio.ts:196:      estrutura.estruturasPai
+  app\services\implantacao\ImplantadorCondominio.ts:197:  ) {
+  app\services\implantacao\ImplantadorCondominio.ts:198:    const caminhoEstrutura =
+> app\services\implantacao\ImplantadorCondominio.ts:199:      `locais-v2/${contexto.local.localId}/estruturas/${estruturaPai.id}`;
+  app\services\implantacao\ImplantadorCondominio.ts:200:
+  app\services\implantacao\ImplantadorCondominio.ts:201:    atualizacoes[
+  app\services\implantacao\ImplantadorCondominio.ts:202:      caminhoEstrutura
+  app\services\implantacao\ImplantadorCondominio.ts:203:    ] = estruturaPai;
+  app\services\implantacao\ImplantadorCondominio.ts:204:
+  app\services\implantacao\ImplantadorCondominio.ts:205:    caminhosCriados.push(
+  app\services\implantacao\ImplantadorCondominio.ts:206:      caminhoEstrutura
+  app\services\implantacao\ImplantadorCondominio.ts:207:    );
+  app\services\implantacao\ImplantadorCondominio.ts:208:  }
+  app\services\implantacao\ImplantadorCondominio.ts:209:
+  app\services\implantacao\ImplantadorCondominio.ts:210:  for (
+  app\services\implantacao\ImplantadorCondominio.ts:211:    const unidade of
+  app\services\implantacao\ImplantadorCondominio.ts:212:      estrutura.unidades
+  app\services\implantacao\ImplantadorCondominio.ts:213:  ) {
+  app\services\implantacao\ImplantadorCondominio.ts:214:    const caminhoUnidade =
+  app\services\implantacao\ImplantadorCondominio.ts:215:      `unidades-v2/${unidade.id}`;
+  app\services\implantacao\ImplantadorCondominio.ts:216:
+  app\services\implantacao\ImplantadorCondominio.ts:217:    const caminhoReferencia =
+> app\services\implantacao\ImplantadorCondominio.ts:218:      `locais-v2/${contexto.local.localId}/unidades/${unidade.id}`;
+  app\services\implantacao\ImplantadorCondominio.ts:219:
+  app\services\implantacao\ImplantadorCondominio.ts:220:    atualizacoes[
+  app\services\implantacao\ImplantadorCondominio.ts:221:      caminhoUnidade
+  app\services\implantacao\ImplantadorCondominio.ts:222:    ] = unidade;
+  app\services\implantacao\ImplantadorCondominio.ts:223:
+  app\services\implantacao\ImplantadorCondominio.ts:224:    atualizacoes[
+  app\services\implantacao\ImplantadorCondominio.ts:225:      caminhoReferencia
+  app\services\implantacao\ImplantadorCondominio.ts:226:    ] = {
+  app\services\implantacao\ImplantadorCondominio.ts:227:      unidadeId:
+  app\services\implantacao\ImplantadorCondominio.ts:228:        unidade.id,
+  app\services\implantacao\ImplantadorCondominio.ts:229:
+  app\services\implantacao\ImplantadorCondominio.ts:230:      nome:
+  app\services\implantacao\ImplantadorCondominio.ts:231:        unidade.nome,
+  app\services\implantacao\ImplantadorCondominio.ts:232:
+  app\services\implantacao\ImplantadorCondominio.ts:233:      slug:
+  app\services\implantacao\ImplantadorCondominio.ts:277:      atualizacoes
+  app\services\implantacao\ImplantadorCondominio.ts:278:    );
+  app\services\implantacao\ImplantadorCondominio.ts:279:
+  app\services\implantacao\ImplantadorCondominio.ts:280:  await contexto.database
+  app\services\implantacao\ImplantadorCondominio.ts:281:    .ref(
+> app\services\implantacao\ImplantadorCondominio.ts:282:      `locais-v2/${contexto.local.localId}/estatisticas`
+  app\services\implantacao\ImplantadorCondominio.ts:283:    )
+  app\services\implantacao\ImplantadorCondominio.ts:284:    .update({
+  app\services\implantacao\ImplantadorCondominio.ts:285:      totalEstruturas:
+  app\services\implantacao\ImplantadorCondominio.ts:286:        estrutura.totalEstruturasPai,
+  app\services\implantacao\ImplantadorCondominio.ts:287:
+  app\services\implantacao\ImplantadorCondominio.ts:288:      totalUnidades:
+  app\services\implantacao\ImplantadorCondominio.ts:289:        estrutura.totalUnidades,
+  app\services\implantacao\ImplantadorCondominio.ts:290:
+  app\services\implantacao\ImplantadorCondominio.ts:291:      atualizadoEm:
+  app\services\implantacao\ImplantadorCondominio.ts:292:        contexto.criadoEm,
+  app\services\implantacao\ImplantadorCondominio.ts:293:    });
+  app\services\implantacao\ImplantadorCondominio.ts:294:
+  app\services\implantacao\ImplantadorCondominio.ts:295:  return {
+  app\services\implantacao\ImplantadorCondominio.ts:296:    estrutura,
+  app\services\implantacao\ImplantadorCondominio.ts:297:
+  app\services\implantacao\ImplantadorCondominio.ts:550:        );
+  app\services\implantacao\ImplantadorCondominio.ts:551:      }
+  app\services\implantacao\ImplantadorCondominio.ts:552:    }
+  app\services\implantacao\ImplantadorCondominio.ts:553:
+  app\services\implantacao\ImplantadorCondominio.ts:554:    const caminhoPipeline =
+> app\services\implantacao\ImplantadorCondominio.ts:555:      `locais-v2/${contexto.local.localId}/pipeline`;
+  app\services\implantacao\ImplantadorCondominio.ts:556:
+  app\services\implantacao\ImplantadorCondominio.ts:557:    await contexto.database
+  app\services\implantacao\ImplantadorCondominio.ts:558:      .ref(caminhoPipeline)
+  app\services\implantacao\ImplantadorCondominio.ts:559:      .set({
+  app\services\implantacao\ImplantadorCondominio.ts:560:        status:
+  app\services\implantacao\ImplantadorCondominio.ts:561:          "concluido",
+  app\services\implantacao\ImplantadorCondominio.ts:562:
+  app\services\implantacao\ImplantadorCondominio.ts:563:        modo:
+  app\services\implantacao\ImplantadorCondominio.ts:564:          resultadoGeracao.usouPipeline
+  app\services\implantacao\ImplantadorCondominio.ts:565:            ? "pipeline"
+  app\services\implantacao\ImplantadorCondominio.ts:566:            : "fallback-seguro",
+  app\services\implantacao\ImplantadorCondominio.ts:567:
+  app\services\implantacao\ImplantadorCondominio.ts:568:        mensagens:
+  app\services\implantacao\ImplantadorCondominio.ts:569:          resultadoGeracao
+  app\services\implantacao\ImplantadorCondominio.ts:570:            .mensagensPipeline,
+  app\services\implantacao\ImplantadorCondominio.ts:691:      caminhoIndices
+  app\services\implantacao\ImplantadorCondominio.ts:692:    );
+  app\services\implantacao\ImplantadorCondominio.ts:693:
+  app\services\implantacao\ImplantadorCondominio.ts:694:    await contexto.database
+  app\services\implantacao\ImplantadorCondominio.ts:695:      .ref(
+> app\services\implantacao\ImplantadorCondominio.ts:696:        `locais-v2/${contexto.local.localId}/estatisticas`
+  app\services\implantacao\ImplantadorCondominio.ts:697:      )
+  app\services\implantacao\ImplantadorCondominio.ts:698:      .update({
+  app\services\implantacao\ImplantadorCondominio.ts:699:        totalEstruturas:
+  app\services\implantacao\ImplantadorCondominio.ts:700:          estrutura.totalEstruturasPai,
+  app\services\implantacao\ImplantadorCondominio.ts:701:
+  app\services\implantacao\ImplantadorCondominio.ts:702:        totalUnidades:
+  app\services\implantacao\ImplantadorCondominio.ts:703:          estrutura.totalUnidades,
+  app\services\implantacao\ImplantadorCondominio.ts:704:
+  app\services\implantacao\ImplantadorCondominio.ts:705:        totalApartamentos,
+  app\services\implantacao\ImplantadorCondominio.ts:706:
+  app\services\implantacao\ImplantadorCondominio.ts:707:        totalCasas,
+  app\services\implantacao\ImplantadorCondominio.ts:708:
+  app\services\implantacao\ImplantadorCondominio.ts:709:        totalLinks:
+  app\services\implantacao\ImplantadorCondominio.ts:710:          resultadoGeracao.totalLinks,
+  app\services\implantacao\ImplantadorCondominio.ts:711:
+  app\services\implantacao\ImplantadorResidencia.ts:175:      etapas[1],
+  app\services\implantacao\ImplantadorResidencia.ts:176:      "Preparando o cadastro global do local."
+  app\services\implantacao\ImplantadorResidencia.ts:177:    );
+  app\services\implantacao\ImplantadorResidencia.ts:178:
+  app\services\implantacao\ImplantadorResidencia.ts:179:    atualizacoes[
+> app\services\implantacao\ImplantadorResidencia.ts:180:      `locais-v2/${local.localId}`
+  app\services\implantacao\ImplantadorResidencia.ts:181:    ] = {
+  app\services\implantacao\ImplantadorResidencia.ts:182:      id: local.localId,
+  app\services\implantacao\ImplantadorResidencia.ts:183:      nome: local.localNome,
+  app\services\implantacao\ImplantadorResidencia.ts:184:      slug: local.localSlug,
+  app\services\implantacao\ImplantadorResidencia.ts:185:      tipoLocal: "residencia",
+  app\services\implantacao\ImplantadorResidencia.ts:186:      status: "ativo",
+  app\services\implantacao\ImplantadorResidencia.ts:187:      ativo: true,
+  app\services\implantacao\ImplantadorResidencia.ts:188:      ...enderecoCompleto,
+  app\services\implantacao\ImplantadorResidencia.ts:189:      criadoEm,
+  app\services\implantacao\ImplantadorResidencia.ts:190:      criadoPorUid,
+  app\services\implantacao\ImplantadorResidencia.ts:191:      atualizadoEm: criadoEm,
+  app\services\implantacao\ImplantadorResidencia.ts:192:
+  app\services\implantacao\ImplantadorResidencia.ts:193:      responsaveis: {
+  app\services\implantacao\ImplantadorResidencia.ts:194:        [responsavel.uid]: {
+  app\services\implantacao\ImplantadorResidencia.ts:195:          uid: responsavel.uid,
+  app\services\implantacao\ImplantadorResidencia.ts:212:          criadoPorUid,
+  app\services\implantacao\ImplantadorResidencia.ts:213:      },
+  app\services\implantacao\ImplantadorResidencia.ts:214:    };
+  app\services\implantacao\ImplantadorResidencia.ts:215:
+  app\services\implantacao\ImplantadorResidencia.ts:216:    estruturasCriadas.push(
+> app\services\implantacao\ImplantadorResidencia.ts:217:      `locais-v2/${local.localId}`
+  app\services\implantacao\ImplantadorResidencia.ts:218:    );
+  app\services\implantacao\ImplantadorResidencia.ts:219:
+  app\services\implantacao\ImplantadorResidencia.ts:220:    estruturasCriadas.push(
+> app\services\implantacao\ImplantadorResidencia.ts:221:      `locais-v2/${local.localId}/responsaveis/${responsavel.uid}`
+  app\services\implantacao\ImplantadorResidencia.ts:222:    );
+  app\services\implantacao\ImplantadorResidencia.ts:223:
+  app\services\implantacao\ImplantadorResidencia.ts:224:    etapas[1] = concluirEtapa(
+  app\services\implantacao\ImplantadorResidencia.ts:225:      etapas[1],
+  app\services\implantacao\ImplantadorResidencia.ts:226:      "Cadastro principal do local preparado."
+  app\services\implantacao\ImplantadorResidencia.ts:227:    );
+  app\services\implantacao\ImplantadorResidencia.ts:228:
+  app\services\implantacao\ImplantadorResidencia.ts:229:    etapas[2] = iniciarEtapa(
+  app\services\implantacao\ImplantadorResidencia.ts:230:      etapas[2],
+  app\services\implantacao\ImplantadorResidencia.ts:231:      "Preparando a estrutura específica da residência."
+  app\services\implantacao\ImplantadorResidencia.ts:232:    );
+  app\services\implantacao\ImplantadorResidencia.ts:233:
+  app\services\implantacao\ImplantadorResidencia.ts:234:    atualizacoes[
+  app\services\implantacao\ImplantadorResidencia.ts:235:      `residencias-v2/${local.localId}`
+  app\services\implantacao\ImplantadorResidencia.ts:236:    ] = {
+  app\services\implantacao\ImplantadorResidencia.ts:348:      criadoPorUid,
+  app\services\implantacao\ImplantadorResidencia.ts:349:      atualizadoEm: criadoEm,
+  app\services\implantacao\ImplantadorResidencia.ts:350:    };
+  app\services\implantacao\ImplantadorResidencia.ts:351:
+  app\services\implantacao\ImplantadorResidencia.ts:352:    atualizacoes[
+> app\services\implantacao\ImplantadorResidencia.ts:353:      `vinculos-locais-v2/${local.localId}/${responsavel.uid}`
+  app\services\implantacao\ImplantadorResidencia.ts:354:    ] = {
+  app\services\implantacao\ImplantadorResidencia.ts:355:      uid: responsavel.uid,
+  app\services\implantacao\ImplantadorResidencia.ts:356:      nome: responsavel.nome,
+  app\services\implantacao\ImplantadorResidencia.ts:357:      email: responsavel.email,
+  app\services\implantacao\ImplantadorResidencia.ts:358:      telefone:
+  app\services\implantacao\ImplantadorResidencia.ts:359:        responsavel.telefone ?? "",
+  app\services\implantacao\ImplantadorResidencia.ts:360:      perfil:
+  app\services\implantacao\ImplantadorResidencia.ts:361:        perfilResponsavel,
+  app\services\implantacao\ImplantadorResidencia.ts:362:      ativo: true,
+  app\services\implantacao\ImplantadorResidencia.ts:363:      status: "ativo",
+  app\services\implantacao\ImplantadorResidencia.ts:364:      unidadeId:
+  app\services\implantacao\ImplantadorResidencia.ts:365:        `${local.localId}-principal`,
+  app\services\implantacao\ImplantadorResidencia.ts:366:      permissoes:
+  app\services\implantacao\ImplantadorResidencia.ts:367:        permissoesResponsavel,
+  app\services\implantacao\ImplantadorResidencia.ts:368:      criadoEm,
+  app\services\implantacao\ImplantadorResidencia.ts:373:    estruturasCriadas.push(
+  app\services\implantacao\ImplantadorResidencia.ts:374:      `usuarios-v2/${responsavel.uid}/vinculos/${local.localId}`
+  app\services\implantacao\ImplantadorResidencia.ts:375:    );
+  app\services\implantacao\ImplantadorResidencia.ts:376:
+  app\services\implantacao\ImplantadorResidencia.ts:377:    estruturasCriadas.push(
+> app\services\implantacao\ImplantadorResidencia.ts:378:      `vinculos-locais-v2/${local.localId}/${responsavel.uid}`
+  app\services\implantacao\ImplantadorResidencia.ts:379:    );
+  app\services\implantacao\ImplantadorResidencia.ts:380:
+  app\services\implantacao\ImplantadorResidencia.ts:381:    etapas[4] = concluirEtapa(
+  app\services\implantacao\ImplantadorResidencia.ts:382:      etapas[4],
+  app\services\implantacao\ImplantadorResidencia.ts:383:      "Responsável vinculado à residência."
+  app\services\implantacao\ImplantadorResidencia.ts:384:    );
+  app\services\implantacao\ImplantadorResidencia.ts:385:
+  app\services\implantacao\ImplantadorResidencia.ts:386:    etapas[5] = iniciarEtapa(
+  app\services\implantacao\ImplantadorResidencia.ts:387:      etapas[5],
+  app\services\implantacao\ImplantadorResidencia.ts:388:      "Preparando configurações e módulos iniciais."
+  app\services\implantacao\ImplantadorResidencia.ts:389:    );
+  app\services\implantacao\ImplantadorResidencia.ts:390:
+  app\services\implantacao\ImplantadorResidencia.ts:391:    atualizacoes[
+  app\services\implantacao\ImplantadorResidencia.ts:392:      `configuracoes-chamadas-v2/${local.localId}`
+  app\services\implantacao\ImplantadorResidencia.ts:393:    ] = {
+  app\services\implantacao\ImplantadorResidencia.ts:535:    estruturasCriadas.push(
+  app\services\implantacao\ImplantadorResidencia.ts:536:      `configuracoes-chamadas-v2/${local.localId}`
+  app\services\implantacao\ImplantadorResidencia.ts:537:    );
+  app\services\implantacao\ImplantadorResidencia.ts:538:
+  app\services\implantacao\ImplantadorResidencia.ts:539:    atualizacoes[
+> app\services\implantacao\ImplantadorResidencia.ts:540:      `configuracoes-locais-v2/${local.localId}`
+  app\services\implantacao\ImplantadorResidencia.ts:541:    ] = {
+  app\services\implantacao\ImplantadorResidencia.ts:542:      localId: local.localId,
+  app\services\implantacao\ImplantadorResidencia.ts:543:      tipoLocal: "residencia",
+  app\services\implantacao\ImplantadorResidencia.ts:544:      configuracaoSegmento:
+  app\services\implantacao\ImplantadorResidencia.ts:545:        configuracao,
+  app\services\implantacao\ImplantadorResidencia.ts:546:
+  app\services\implantacao\ImplantadorResidencia.ts:547:      modulos: {
+  app\services\implantacao\ImplantadorResidencia.ts:548:        dashboard: true,
+  app\services\implantacao\ImplantadorResidencia.ts:549:        moradores: true,
+  app\services\implantacao\ImplantadorResidencia.ts:550:        visitantes:
+  app\services\implantacao\ImplantadorResidencia.ts:551:          configuracao.possuiVisitantes ===
+  app\services\implantacao\ImplantadorResidencia.ts:552:          true,
+  app\services\implantacao\ImplantadorResidencia.ts:553:        entregas:
+  app\services\implantacao\ImplantadorResidencia.ts:554:          configuracao.possuiEntregas ===
+  app\services\implantacao\ImplantadorResidencia.ts:555:          true,
+  app\services\implantacao\ImplantadorResidencia.ts:597:      criadoPorUid,
+  app\services\implantacao\ImplantadorResidencia.ts:598:      atualizadoEm: criadoEm,
+  app\services\implantacao\ImplantadorResidencia.ts:599:    };
+  app\services\implantacao\ImplantadorResidencia.ts:600:
+  app\services\implantacao\ImplantadorResidencia.ts:601:    estruturasCriadas.push(
+> app\services\implantacao\ImplantadorResidencia.ts:602:      `configuracoes-locais-v2/${local.localId}`
+  app\services\implantacao\ImplantadorResidencia.ts:603:    );
+  app\services\implantacao\ImplantadorResidencia.ts:604:
+  app\services\implantacao\ImplantadorResidencia.ts:605:    etapas[5] = concluirEtapa(
+  app\services\implantacao\ImplantadorResidencia.ts:606:      etapas[5],
+  app\services\implantacao\ImplantadorResidencia.ts:607:      "Configurações iniciais preparadas."
+  app\services\implantacao\ImplantadorResidencia.ts:608:    );
+  app\services\implantacao\ImplantadorResidencia.ts:609:
+  app\services\implantacao\ImplantadorResidencia.ts:610:    etapas[6] = iniciarEtapa(
+  app\services\implantacao\ImplantadorResidencia.ts:611:      etapas[6],
+  app\services\implantacao\ImplantadorResidencia.ts:612:      "Gravando todas as estruturas no Firebase."
+  app\services\implantacao\ImplantadorResidencia.ts:613:    );
+  app\services\implantacao\ImplantadorResidencia.ts:614:
+  app\services\implantacao\ImplantadorResidencia.ts:615:    await database
+  app\services\implantacao\ImplantadorResidencia.ts:616:      .ref()
+  app\services\implantacao\ImplantadorResidencia.ts:617:      .update(atualizacoes);
+  app\services\implantacao\ImplantadorUniversal.ts:332:    contexto.local.tipoLocal;
+  app\services\implantacao\ImplantadorUniversal.ts:333:
+  app\services\implantacao\ImplantadorUniversal.ts:334:  const snapshot =
+  app\services\implantacao\ImplantadorUniversal.ts:335:    await contexto.database
+  app\services\implantacao\ImplantadorUniversal.ts:336:      .ref(
+> app\services\implantacao\ImplantadorUniversal.ts:337:        `locais-v2/${localId}`
+  app\services\implantacao\ImplantadorUniversal.ts:338:      )
+  app\services\implantacao\ImplantadorUniversal.ts:339:      .get();
+  app\services\implantacao\ImplantadorUniversal.ts:340:
+  app\services\implantacao\ImplantadorUniversal.ts:341:  if (!snapshot.exists()) {
+  app\services\implantacao\ImplantadorUniversal.ts:342:    throw new Error(
+> app\services\implantacao\ImplantadorUniversal.ts:343:      `O local "${localId}" ainda não foi criado em locais-v2.`
+  app\services\implantacao\ImplantadorUniversal.ts:344:    );
+  app\services\implantacao\ImplantadorUniversal.ts:345:  }
+  app\services\implantacao\ImplantadorUniversal.ts:346:
+  app\services\implantacao\ImplantadorUniversal.ts:347:  const local =
+  app\services\implantacao\ImplantadorUniversal.ts:348:    snapshot.val() as LocalPrincipalBanco;
+  app\services\implantacao\ImplantadorUniversal.ts:349:
+  app\services\implantacao\ImplantadorUniversal.ts:350:  const idBanco =
+  app\services\implantacao\ImplantadorUniversal.ts:351:    texto(
+  app\services\implantacao\ImplantadorUniversal.ts:352:      local.id ||
+  app\services\implantacao\ImplantadorUniversal.ts:353:      local.localId
+  app\services\implantacao\ImplantadorUniversal.ts:354:    );
+  app\services\implantacao\ImplantadorUniversal.ts:355:
+  app\services\implantacao\ImplantadorUniversal.ts:356:  const slugBanco =
+  app\services\implantacao\ImplantadorUniversal.ts:357:    texto(local.slug);
+  app\services\implantacao\ImplantadorUniversal.ts:358:
+  app\services\implantacao\ImplantadorUniversal.ts:369:  if (
+  app\services\implantacao\ImplantadorUniversal.ts:370:    idBanco &&
+  app\services\implantacao\ImplantadorUniversal.ts:371:    idBanco !== localId
+  app\services\implantacao\ImplantadorUniversal.ts:372:  ) {
+  app\services\implantacao\ImplantadorUniversal.ts:373:    throw new Error(
+> app\services\implantacao\ImplantadorUniversal.ts:374:      `O local "${localId}" possui ID divergente em locais-v2.`
+  app\services\implantacao\ImplantadorUniversal.ts:375:    );
+  app\services\implantacao\ImplantadorUniversal.ts:376:  }
+  app\services\implantacao\ImplantadorUniversal.ts:377:
+  app\services\implantacao\ImplantadorUniversal.ts:378:  if (
+  app\services\implantacao\ImplantadorUniversal.ts:379:    slugBanco &&
+  app\services\implantacao\ImplantadorUniversal.ts:380:    slugBanco !== localSlug
+  app\services\implantacao\ImplantadorUniversal.ts:381:  ) {
+  app\services\implantacao\ImplantadorUniversal.ts:382:    throw new Error(
+> app\services\implantacao\ImplantadorUniversal.ts:383:      `O local "${localId}" possui slug diferente em locais-v2.`
+  app\services\implantacao\ImplantadorUniversal.ts:384:    );
+  app\services\implantacao\ImplantadorUniversal.ts:385:  }
+  app\services\implantacao\ImplantadorUniversal.ts:386:
+  app\services\implantacao\ImplantadorUniversal.ts:387:  if (
+  app\services\implantacao\ImplantadorUniversal.ts:388:    nomeBanco &&
+  app\services\implantacao\ImplantadorUniversal.ts:389:    nomeBanco !== localNome
+  app\services\implantacao\ImplantadorUniversal.ts:390:  ) {
+  app\services\implantacao\ImplantadorUniversal.ts:391:    throw new Error(
+> app\services\implantacao\ImplantadorUniversal.ts:392:      `O local "${localId}" possui nome diferente em locais-v2.`
+  app\services\implantacao\ImplantadorUniversal.ts:393:    );
+  app\services\implantacao\ImplantadorUniversal.ts:394:  }
+  app\services\implantacao\ImplantadorUniversal.ts:395:
+  app\services\implantacao\ImplantadorUniversal.ts:396:  if (
+  app\services\implantacao\ImplantadorUniversal.ts:397:    tipoBanco &&
+  app\services\implantacao\ImplantadorUniversal.ts:398:    tipoBanco !== tipoLocal
+  app\services\implantacao\ImplantadorUniversal.ts:399:  ) {
+  app\services\implantacao\ImplantadorUniversal.ts:400:    throw new Error(
+> app\services\implantacao\ImplantadorUniversal.ts:401:      `O local "${localId}" possui tipo diferente em locais-v2.`
+  app\services\implantacao\ImplantadorUniversal.ts:402:    );
+  app\services\implantacao\ImplantadorUniversal.ts:403:  }
+  app\services\implantacao\ImplantadorUniversal.ts:404:
+  app\services\implantacao\ImplantadorUniversal.ts:405:  if (local.status === "inativo") {
+  app\services\implantacao\ImplantadorUniversal.ts:406:    throw new Error(
+  app\services\implantacao\ImplantadorUniversal.ts:407:      `O local "${localId}" está inativo.`
+  app\services\implantacao\ImplantadorUniversal.ts:408:    );
+  app\services\implantacao\ImplantadorUniversal.ts:409:  }
+  app\services\implantacao\ImplantadorUniversal.ts:410:}
+  app\services\implantacao\ImplantadorUniversal.ts:411:
+  app\services\implantacao\ImplantadorUniversal.ts:412:export async function executarImplantacao(
+  app\services\implantacao\ImplantadorUniversal.ts:413:  contexto: ContextoImplantacao
+  app\services\implantacao\ImplantadorUniversal.ts:414:): Promise<ResultadoImplantadorSegmento> {
+  app\services\implantacao\ImplantadorUniversal.ts:415:  validarContexto(contexto);
+  app\services\implantacao\ImplantadorUniversal.ts:416:
+  app\services\locais\CadastroUniversal.ts:461:    string
+  app\services\locais\CadastroUniversal.ts:462:): Promise<void> {
+  app\services\locais\CadastroUniversal.ts:463:  const snapshot =
+  app\services\locais\CadastroUniversal.ts:464:    await database
+  app\services\locais\CadastroUniversal.ts:465:      .ref(
+> app\services\locais\CadastroUniversal.ts:466:        "locais-v2"
+  app\services\locais\CadastroUniversal.ts:467:      )
+  app\services\locais\CadastroUniversal.ts:468:      .get();
+  app\services\locais\CadastroUniversal.ts:469:
+  app\services\locais\CadastroUniversal.ts:470:  if (
+  app\services\locais\CadastroUniversal.ts:471:    !snapshot.exists()
+  app\services\locais\CadastroUniversal.ts:472:  ) {
+  app\services\locais\CadastroUniversal.ts:473:    return;
+  app\services\locais\CadastroUniversal.ts:474:  }
+  app\services\locais\CadastroUniversal.ts:475:
+  app\services\locais\CadastroUniversal.ts:476:  const locais =
+  app\services\locais\CadastroUniversal.ts:477:    snapshot.val() as
+  app\services\locais\CadastroUniversal.ts:478:      Record<
+  app\services\locais\CadastroUniversal.ts:479:        string,
+  app\services\locais\CadastroUniversal.ts:480:        LocalExistenteBanco
+  app\services\locais\CadastroUniversal.ts:481:      >;
+  app\services\locais\CadastroUniversal.ts:503:    if (
+  app\services\locais\CadastroUniversal.ts:504:      slugExistente ===
+  app\services\locais\CadastroUniversal.ts:505:      slug
+  app\services\locais\CadastroUniversal.ts:506:    ) {
+  app\services\locais\CadastroUniversal.ts:507:      throw new Error(
+> app\services\locais\CadastroUniversal.ts:508:        `O slug "${slug}" já está sendo usado por locais-v2/${chave}.`
+  app\services\locais\CadastroUniversal.ts:509:      );
+  app\services\locais\CadastroUniversal.ts:510:    }
+  app\services\locais\CadastroUniversal.ts:511:  }
+  app\services\locais\CadastroUniversal.ts:512:}
+  app\services\locais\CadastroUniversal.ts:513:
+  app\services\locais\CadastroUniversal.ts:514:function mesclarModulos(
+  app\services\locais\CadastroUniversal.ts:515:  atuais:
+  app\services\locais\CadastroUniversal.ts:516:    ModulosLocal | undefined,
+  app\services\locais\CadastroUniversal.ts:517:  recebidos:
+  app\services\locais\CadastroUniversal.ts:518:    ModulosLocal
+  app\services\locais\CadastroUniversal.ts:519:): ModulosLocal {
+  app\services\locais\CadastroUniversal.ts:520:  return {
+  app\services\locais\CadastroUniversal.ts:521:    ...(atuais ?? {}),
+  app\services\locais\CadastroUniversal.ts:522:    ...recebidos,
+  app\services\locais\CadastroUniversal.ts:523:  };
+  app\services\locais\CadastroUniversal.ts:643:    normalizados.slug
+  app\services\locais\CadastroUniversal.ts:644:  );
+  app\services\locais\CadastroUniversal.ts:645:
+  app\services\locais\CadastroUniversal.ts:646:  const referencia =
+  app\services\locais\CadastroUniversal.ts:647:    database.ref(
+> app\services\locais\CadastroUniversal.ts:648:      `locais-v2/${normalizados.localId}`
+  app\services\locais\CadastroUniversal.ts:649:    );
+  app\services\locais\CadastroUniversal.ts:650:
+  app\services\locais\CadastroUniversal.ts:651:  const snapshot =
+  app\services\locais\CadastroUniversal.ts:652:    await referencia.get();
+  app\services\locais\CadastroUniversal.ts:653:
+  app\services\locais\CadastroUniversal.ts:654:  const identidadeRecebida =
+  app\services\locais\CadastroUniversal.ts:655:    normalizarIdentidadeVisual(
+  app\services\locais\CadastroUniversal.ts:656:      dados.identidadeVisual
+  app\services\locais\CadastroUniversal.ts:657:    );
+  app\services\locais\CadastroUniversal.ts:658:
+  app\services\locais\CadastroUniversal.ts:659:  if (
+  app\services\locais\CadastroUniversal.ts:660:    !snapshot.exists()
+  app\services\locais\CadastroUniversal.ts:661:  ) {
+  app\services\locais\CadastroUniversal.ts:662:    await referencia.set(
+  app\services\locais\CadastroUniversal.ts:663:      criarRegistroLocal(
+  app\services\locais\CadastroUniversal.ts:707:    idAtual &&
+  app\services\locais\CadastroUniversal.ts:708:    idAtual !==
+  app\services\locais\CadastroUniversal.ts:709:      normalizados.localId
+  app\services\locais\CadastroUniversal.ts:710:  ) {
+  app\services\locais\CadastroUniversal.ts:711:    throw new Error(
+> app\services\locais\CadastroUniversal.ts:712:      "O campo id do local existente é diferente da chave usada em locais-v2."
+  app\services\locais\CadastroUniversal.ts:713:    );
+  app\services\locais\CadastroUniversal.ts:714:  }
+  app\services\locais\CadastroUniversal.ts:715:
+  app\services\locais\CadastroUniversal.ts:716:  if (
+  app\services\locais\CadastroUniversal.ts:717:    slugAtual &&
+  app\services\locais\CadastroUniversal.ts:718:    slugAtual !==
+  app\services\locais\CadastroUniversal.ts:719:      normalizados.slug
+  app\services\locais\CadastroUniversal.ts:720:  ) {
+  app\services\locais\CadastroUniversal.ts:721:    throw new Error(
+  app\services\locais\CadastroUniversal.ts:722:      "Já existe um local com este ID, mas com slug diferente."
+  app\services\locais\CadastroUniversal.ts:723:    );
+  app\services\locais\CadastroUniversal.ts:724:  }
+  app\services\locais\CadastroUniversal.ts:725:
+  app\services\locais\CadastroUniversal.ts:726:  if (
+  app\services\locais\CadastroUniversal.ts:727:    tipoAtual &&
+  app\services\locais\CadastroUniversal.ts:843:    );
+  app\services\locais\CadastroUniversal.ts:844:  }
+  app\services\locais\CadastroUniversal.ts:845:
+  app\services\locais\CadastroUniversal.ts:846:  const referencia =
+  app\services\locais\CadastroUniversal.ts:847:    database.ref(
+> app\services\locais\CadastroUniversal.ts:848:      `locais-v2/${localIdNormalizado}`
+  app\services\locais\CadastroUniversal.ts:849:    );
+  app\services\locais\CadastroUniversal.ts:850:
+  app\services\locais\CadastroUniversal.ts:851:  const snapshot =
+  app\services\locais\CadastroUniversal.ts:852:    await referencia.get();
+  app\services\locais\CadastroUniversal.ts:853:
+  app\services\locais\CadastroUniversal.ts:854:  if (
+  app\services\locais\CadastroUniversal.ts:855:    !snapshot.exists()
+  app\services\locais\CadastroUniversal.ts:856:  ) {
+  app\services\locais\CadastroUniversal.ts:857:    throw new Error(
+> app\services\locais\CadastroUniversal.ts:858:      `O local "${localIdNormalizado}" não existe em locais-v2.`
+  app\services\locais\CadastroUniversal.ts:859:    );
+  app\services\locais\CadastroUniversal.ts:860:  }
+  app\services\locais\CadastroUniversal.ts:861:
+  app\services\locais\CadastroUniversal.ts:862:  const identidadeVisual =
+  app\services\locais\CadastroUniversal.ts:863:    normalizarIdentidadeVisual(
+  app\services\locais\CadastroUniversal.ts:864:      identidade
+  app\services\locais\CadastroUniversal.ts:865:    );
+  app\services\locais\CadastroUniversal.ts:866:
+  app\services\locais\CadastroUniversal.ts:867:  await referencia.update({
+  app\services\locais\CadastroUniversal.ts:868:    identidadeVisual,
+  app\services\locais\CadastroUniversal.ts:869:
+  app\services\locais\CadastroUniversal.ts:870:    "configuracao/identidadeVisual":
+  app\services\locais\CadastroUniversal.ts:871:      identidadeVisual,
+  app\services\locais\CadastroUniversal.ts:872:
+  app\services\locais\CadastroUniversal.ts:873:    atualizadoEm:
+  app\services\locais\CadastroUniversal.ts:900:  }
+  app\services\locais\CadastroUniversal.ts:901:
+  app\services\locais\CadastroUniversal.ts:902:  const snapshot =
+  app\services\locais\CadastroUniversal.ts:903:    await database
+  app\services\locais\CadastroUniversal.ts:904:      .ref(
+> app\services\locais\CadastroUniversal.ts:905:        `locais-v2/${localIdNormalizado}`
+  app\services\locais\CadastroUniversal.ts:906:      )
+  app\services\locais\CadastroUniversal.ts:907:      .get();
+  app\services\locais\CadastroUniversal.ts:908:
+  app\services\locais\CadastroUniversal.ts:909:  if (
+  app\services\locais\CadastroUniversal.ts:910:    !snapshot.exists()
+  app\services\locais\CadastroUniversal.ts:911:  ) {
+  app\services\locais\CadastroUniversal.ts:912:    return null;
+  app\services\locais\CadastroUniversal.ts:913:  }
+  app\services\locais\CadastroUniversal.ts:914:
+  app\services\locais\CadastroUniversal.ts:915:  return snapshot.val() as
+  app\services\locais\CadastroUniversal.ts:916:    Record<
+  app\services\locais\CadastroUniversal.ts:917:      string,
+  app\services\locais\CadastroUniversal.ts:918:      unknown
+  app\services\locais\CadastroUniversal.ts:919:    >;
+  app\services\locais\CadastroUniversal.ts:920:}
+
+
+
+===== TIPO DO VINCULO =====
+
+  app\types\Usuario.ts:2:  | "ativo"
+  app\types\Usuario.ts:3:  | "inativo"
+  app\types\Usuario.ts:4:  | "pendente"
+  app\types\Usuario.ts:5:  | "bloqueado";
+  app\types\Usuario.ts:6:
+> app\types\Usuario.ts:7:export type TipoPerfil =
+  app\types\Usuario.ts:8:  | "morador"
+  app\types\Usuario.ts:9:  | "sindico"
+  app\types\Usuario.ts:10:  | "administradora"
+  app\types\Usuario.ts:11:  | "gestor_local"
+  app\types\Usuario.ts:12:  | "porteiro"
+  app\types\Usuario.ts:13:  | "central"
+  app\types\Usuario.ts:14:  | "funcionario"
+  app\types\Usuario.ts:15:  | "financeiro"
+  app\types\Usuario.ts:16:  | "prestador"
+  app\types\Usuario.ts:17:  | "conselheiro"
+  app\types\Usuario.ts:18:  | "administrador_master"
+  app\types\Usuario.ts:19:  | "outro";
+  app\types\Usuario.ts:20:
+  app\types\Usuario.ts:21:/**
+  app\types\Usuario.ts:22: * Mantemos string no índice para permitir leitura temporária
+  app\types\Usuario.ts:23: * de valores legados, como "administrador-master".
+  app\types\Usuario.ts:24: */
+  app\types\Usuario.ts:25:export type PerfisUsuario =
+  app\types\Usuario.ts:26:  Record<
+  app\types\Usuario.ts:27:    string,
+  app\types\Usuario.ts:28:    boolean | undefined
+  app\types\Usuario.ts:29:  >;
+  app\types\Usuario.ts:30:
+  app\types\Usuario.ts:31:export type PermissoesUsuario = {
+  app\types\Usuario.ts:32:  receberChamadas?: boolean;
+  app\types\Usuario.ts:33:  atenderChamadas?: boolean;
+  app\types\Usuario.ts:34:  abrirPortao?: boolean;
+  app\types\Usuario.ts:35:
+  app\types\Usuario.ts:36:  visualizarComunicados?: boolean;
+  app\types\Usuario.ts:37:  enviarComunicados?: boolean;
+  app\types\Usuario.ts:38:
+  app\types\Usuario.ts:39:  gerenciarMoradores?: boolean;
+  app\types\Usuario.ts:40:  gerenciarUnidades?: boolean;
+  app\types\Usuario.ts:41:  gerenciarUsuarios?: boolean;
+  app\types\Usuario.ts:42:
+  app\types\Usuario.ts:57:
+  app\types\Usuario.ts:58:  [permissao: string]:
+  app\types\Usuario.ts:59:    boolean | undefined;
+  app\types\Usuario.ts:60:};
+  app\types\Usuario.ts:61:
+> app\types\Usuario.ts:62:export type VinculoLocalUsuario = {
+  app\types\Usuario.ts:63:  localId:
+  app\types\Usuario.ts:64:    string;
+  app\types\Usuario.ts:65:
+  app\types\Usuario.ts:66:  localNome?:
+  app\types\Usuario.ts:67:    string;
+  app\types\Usuario.ts:68:
+  app\types\Usuario.ts:69:  localSlug?:
+  app\types\Usuario.ts:70:    string;
+  app\types\Usuario.ts:71:
+  app\types\Usuario.ts:72:  tipoLocal?:
+  app\types\Usuario.ts:73:    string;
+  app\types\Usuario.ts:74:
+  app\types\Usuario.ts:75:  perfilPrincipal?:
+> app\types\Usuario.ts:76:    TipoPerfil | string;
+  app\types\Usuario.ts:77:
+  app\types\Usuario.ts:78:  perfis:
+  app\types\Usuario.ts:79:    PerfisUsuario;
+  app\types\Usuario.ts:80:
+  app\types\Usuario.ts:81:  unidades?:
+  app\types\Usuario.ts:82:    Record<
+  app\types\Usuario.ts:83:      string,
+  app\types\Usuario.ts:84:      boolean
+  app\types\Usuario.ts:85:    >;
+  app\types\Usuario.ts:86:
+  app\types\Usuario.ts:87:  permissoes?:
+  app\types\Usuario.ts:88:    PermissoesUsuario;
+  app\types\Usuario.ts:89:
+  app\types\Usuario.ts:90:  ativo:
+  app\types\Usuario.ts:91:    boolean;
+  app\types\Usuario.ts:92:
+  app\types\Usuario.ts:93:  criadoEm?:
+  app\types\Usuario.ts:94:    number;
+  app\types\Usuario.ts:95:
+  app\types\Usuario.ts:96:  atualizadoEm?:
+  app\types\Usuario.ts:97:    number;
+  app\types\Usuario.ts:98:};
+  app\types\Usuario.ts:99:
+  app\types\Usuario.ts:100:/**
+  app\types\Usuario.ts:101: * Compatibilidade temporária com a estrutura antiga.
+> app\types\Usuario.ts:102: * Novos fluxos devem usar VinculoLocalUsuario.
+  app\types\Usuario.ts:103: */
+  app\types\Usuario.ts:104:export type VinculoCondominioUsuario =
+> app\types\Usuario.ts:105:  VinculoLocalUsuario & {
+  app\types\Usuario.ts:106:    condominioId:
+  app\types\Usuario.ts:107:      string;
+  app\types\Usuario.ts:108:
+  app\types\Usuario.ts:109:    condominioNome?:
+  app\types\Usuario.ts:110:      string;
+  app\types\Usuario.ts:111:
+  app\types\Usuario.ts:112:    condominioSlug?:
+  app\types\Usuario.ts:113:      string;
+  app\types\Usuario.ts:114:  };
+  app\types\Usuario.ts:115:
+  app\types\Usuario.ts:116:export type Usuario = {
+  app\types\Usuario.ts:117:  uid:
+  app\types\Usuario.ts:118:    string;
+  app\types\Usuario.ts:119:
+  app\types\Usuario.ts:120:  nome:
+  app\types\Usuario.ts:121:    string;
+  app\types\Usuario.ts:122:
+  app\types\Usuario.ts:123:  email:
+  app\types\Usuario.ts:124:    string;
+  app\types\Usuario.ts:125:
+  app\types\Usuario.ts:126:  telefone?:
+  app\types\Usuario.ts:127:    string;
+  app\types\Usuario.ts:128:
+  app\types\Usuario.ts:129:  fotoUrl?:
+  app\types\Usuario.ts:130:    string;
+  app\types\Usuario.ts:131:
+  app\types\Usuario.ts:132:  status:
+  app\types\Usuario.ts:133:    StatusUsuario;
+  app\types\Usuario.ts:134:
+  app\types\Usuario.ts:135:  /**
+  app\types\Usuario.ts:136:   * Estrutura universal oficial.
+  app\types\Usuario.ts:137:   */
+  app\types\Usuario.ts:138:  locais?:
+  app\types\Usuario.ts:139:    Record<
+  app\types\Usuario.ts:140:      string,
+> app\types\Usuario.ts:141:      VinculoLocalUsuario
+  app\types\Usuario.ts:142:    >;
+  app\types\Usuario.ts:143:
+  app\types\Usuario.ts:144:  /**
+  app\types\Usuario.ts:145:   * Compatibilidade temporária com fluxos antigos.
+  app\types\Usuario.ts:146:   */
+  app\types\Usuario.ts:147:  condominios?:
+  app\types\Usuario.ts:148:    Record<
+  app\types\Usuario.ts:149:      string,
+  app\types\Usuario.ts:150:      VinculoCondominioUsuario
+  app\types\Usuario.ts:151:    >;
+  app\types\Usuario.ts:152:
+  app\types\Usuario.ts:153:  criadoEm:
+  app\types\Usuario.ts:154:    number;
+  app\types\Usuario.ts:155:
+  app\types\Usuario.ts:156:  atualizadoEm?:
+  app\types\Usuario.ts:157:    number;
+  app\types\Usuario.ts:158:
+  app\types\Usuario.ts:159:  ultimoLogin?:
+  app\types\Usuario.ts:160:    number;
+  app\types\Usuario.ts:161:
+  app\types\Usuario.ts:162:  primeiroAcesso?:
+  app\types\Usuario.ts:163:    boolean;
+  app\types\Usuario.ts:164:
+  app\types\Usuario.ts:165:  precisaTrocarSenha?:
+  app\types\Usuario.ts:166:    boolean;
+  app\types\Usuario.ts:167:
+  app\types\Usuario.ts:168:  origem?:
+  app\types\Usuario.ts:169:    string;
+  app\types\Usuario.ts:170:
+  app\types\Usuario.ts:171:  observacoes?:
+  app\types\Usuario.ts:172:    string;
+  app\types\Usuario.ts:173:};
+  app\types\Usuario.ts:174:
+  app\types\Usuario.ts:175:export type NovoUsuario =
+  app\types\Usuario.ts:176:  Omit<
+  app\types\Usuario.ts:188:      | "uid"
+  app\types\Usuario.ts:189:      | "criadoEm"
+  app\types\Usuario.ts:190:    >
+  app\types\Usuario.ts:191:  >;
+  app\types\Usuario.ts:192:
+> app\types\Usuario.ts:193:export type DadosVincularUsuarioLocal = {
+  app\types\Usuario.ts:194:  localId:
+  app\types\Usuario.ts:195:    string;
+  app\types\Usuario.ts:196:
+  app\types\Usuario.ts:197:  localNome?:
+  app\types\Usuario.ts:198:    string;
+  app\types\Usuario.ts:199:
+  app\types\Usuario.ts:200:  localSlug?:
+  app\types\Usuario.ts:201:    string;
+  app\types\Usuario.ts:202:
+  app\types\Usuario.ts:203:  tipoLocal?:
+  app\types\Usuario.ts:204:    string;
+  app\types\Usuario.ts:205:
+  app\types\Usuario.ts:206:  perfilPrincipal:
+> app\types\Usuario.ts:207:    TipoPerfil;
+  app\types\Usuario.ts:208:
+  app\types\Usuario.ts:209:  perfis?:
+  app\types\Usuario.ts:210:    PerfisUsuario;
+  app\types\Usuario.ts:211:
+  app\types\Usuario.ts:212:  unidades?:
+  app\types\Usuario.ts:213:    Record<
+  app\types\Usuario.ts:214:      string,
+  app\types\Usuario.ts:215:      boolean
+  app\types\Usuario.ts:216:    >;
+  app\types\Usuario.ts:217:
+  app\types\Usuario.ts:218:  permissoes?:
+  app\types\Usuario.ts:219:    PermissoesUsuario;
+  app\types\Usuario.ts:220:
+  app\types\Usuario.ts:221:  ativo?:
+  app\types\Usuario.ts:222:    boolean;
+  app\types\Usuario.ts:223:};
+
+
