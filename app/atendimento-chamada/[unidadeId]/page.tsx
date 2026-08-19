@@ -329,7 +329,58 @@ export default function AtendimentoChamada() {
 
             <button
               type="button"
-              className="w-full mt-5 bg-red-600 rounded-2xl py-4 text-xl font-black"
+              onClick={async () => {
+                try {
+                  const resposta =
+                    await fetch(
+                      "/api/qrcall/finalizar",
+                      {
+                        method: "POST",
+
+                        headers: {
+                          "Content-Type":
+                            "application/json",
+                        },
+
+                        body:
+                          JSON.stringify({
+                            unidadeId,
+                          }),
+                      }
+                    );
+
+                  const dados =
+                    await resposta
+                      .json()
+                      .catch(() => null);
+
+                  if (
+                    !resposta.ok ||
+                    !dados?.sucesso
+                  ) {
+                    throw new Error(
+                      dados?.erro ||
+                      "Não foi possível finalizar o atendimento."
+                    );
+                  }
+
+                  window.location.href =
+                    "/dashboard/morador";
+
+                } catch (erro) {
+                  console.error(
+                    "QRCALL_FINALIZAR:",
+                    erro
+                  );
+
+                  alert(
+                    erro instanceof Error
+                      ? erro.message
+                      : "Erro ao finalizar atendimento."
+                  );
+                }
+              }}
+              className="w-full mt-5 bg-red-600 hover:bg-red-500 rounded-2xl py-4 text-xl font-black"
             >
               ❌ FINALIZAR ATENDIMENTO
             </button>
