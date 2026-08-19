@@ -232,11 +232,71 @@ export default function AtendimentoChamada() {
               </div>
 
               <div className="mt-5 space-y-3">
-                {respostasRapidas.map((texto) => (
+                {respostasRapidas.map((texto, index) => (
                   <button
                     key={texto}
                     type="button"
-                    className="w-full bg-blue-600 rounded-2xl py-4 px-4 text-lg font-black"
+                    onClick={
+                      index === 0
+                        ? async () => {
+                            try {
+                              const resposta =
+                                await fetch(
+                                  "/api/qrcall/resposta-rapida",
+                                  {
+                                    method: "POST",
+                                    headers: {
+                                      "Content-Type":
+                                        "application/json",
+                                    },
+                                    body:
+                                      JSON.stringify({
+                                        unidadeId,
+                                        mensagem:
+                                          "Aguarde um momento",
+                                      }),
+                                  }
+                                );
+
+                              const dados =
+                                await resposta
+                                  .json()
+                                  .catch(() => null);
+
+                              if (
+                                !resposta.ok ||
+                                !dados?.sucesso
+                              ) {
+                                throw new Error(
+                                  dados?.erro ||
+                                  "Não foi possível enviar a resposta."
+                                );
+                              }
+
+                              alert(
+                                "Resposta enviada."
+                              );
+                            } catch (erro) {
+                              console.error(
+                                "QRCALL_RESPOSTA_RAPIDA:",
+                                erro
+                              );
+
+                              alert(
+                                erro instanceof Error
+                                  ? erro.message
+                                  : "Erro ao enviar resposta."
+                              );
+                            }
+                          }
+                        : undefined
+                    }
+                    disabled={index !== 0}
+                    className={
+                      index === 0
+                        ? "w-full bg-blue-600 rounded-2xl py-4 px-4 text-lg font-black"
+                        : "w-full bg-blue-900/40 rounded-2xl py-4 px-4 text-lg font-black opacity-50"
+                    }
                   >
                     {texto}
                   </button>
