@@ -8,6 +8,12 @@ import com.getcapacitor.BridgeActivity;
 
 public class MainActivity extends BridgeActivity {
 
+    private static volatile boolean activityVisivel = false;
+
+    public static boolean isActivityVisivel() {
+        return activityVisivel;
+    }
+
     private String rotaPendente = null;
     private String acaoChamadaPendente = null;
     private final android.os.Handler chamadaHandler =
@@ -15,6 +21,7 @@ public class MainActivity extends BridgeActivity {
     private android.widget.TextView coberturaChamada = null;
     private boolean aguardandoInterfaceChamada = false;
     private int tentativasInterfaceChamada = 0;
+    private int confirmacoesInterfaceChamada = 0;
 
     private final Runnable verificarInterfaceChamada =
         new Runnable() {
@@ -32,8 +39,14 @@ public class MainActivity extends BridgeActivity {
                     "Boolean(document.body && document.body.innerText.includes('CHAMADA RECEBIDA'))",
                     resultado -> {
                         if ("true".equals(resultado)) {
-                            revelarInterfaceChamada();
-                            return;
+                            confirmacoesInterfaceChamada++;
+
+                            if (confirmacoesInterfaceChamada >= 5) {
+                                revelarInterfaceChamada();
+                                return;
+                            }
+                        } else {
+                            confirmacoesInterfaceChamada = 0;
                         }
 
                         tentativasInterfaceChamada++;
@@ -59,6 +72,7 @@ public class MainActivity extends BridgeActivity {
     private void ocultarWebViewParaChamada() {
         aguardandoInterfaceChamada = true;
         tentativasInterfaceChamada = 0;
+        confirmacoesInterfaceChamada = 0;
         chamadaHandler.removeCallbacks(verificarInterfaceChamada);
 
         if (
@@ -72,9 +86,7 @@ public class MainActivity extends BridgeActivity {
 
         if (coberturaChamada == null) {
             coberturaChamada = new android.widget.TextView(this);
-            coberturaChamada.setText(
-                "CHAMADA RECEBIDA\n\nConectando à chamada..."
-            );
+            coberturaChamada.setText("");
             coberturaChamada.setTextColor(android.graphics.Color.WHITE);
             coberturaChamada.setTextSize(26);
             coberturaChamada.setGravity(android.view.Gravity.CENTER);
@@ -172,7 +184,14 @@ public class MainActivity extends BridgeActivity {
     @Override
     public void onResume() {
         super.onResume();
+        activityVisivel = true;
         abrirRotaPendente();
+    }
+
+    @Override
+    public void onPause() {
+        activityVisivel = false;
+        super.onPause();
     }
 
     private void handleIntent(Intent intent) {
