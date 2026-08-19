@@ -1,361 +1,89 @@
 package com.qracesso.studio;
 
-import android.app.KeyguardManager;
-import android.app.Notification;
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
-import android.app.PendingIntent;
 import android.app.Service;
-import android.content.Context;
 import android.content.Intent;
-import android.media.AudioAttributes;
-import android.media.Ringtone;
-import android.media.RingtoneManager;
-import android.net.Uri;
-import android.os.Build;
-import android.os.Handler;
 import android.os.IBinder;
-import android.os.Looper;
-import android.os.VibrationEffect;
-import android.os.Vibrator;
-import android.provider.Settings;
 import android.util.Log;
-import androidx.core.app.NotificationCompat;
 
 public class IncomingCallService extends Service {
-    public static final String ACTION_START = "ACTION_START";
-    public static final String ACTION_STOP = "ACTION_STOP";
-    public static final String EXTRA_UNIDADE_ID = "unidadeId";
-    public static final String EXTRA_NOME = "nome";
-    public static final String EXTRA_MOTIVO = "motivo";
-    public static final String EXTRA_DIAGNOSTIC_TOKEN = "diagnosticToken";
-    public static final String DIAGNOSTIC_PREFS = "call_control_diagnostic";
-    private static final String CHANNEL_ID = "qr_acesso_chamadas_v3";
-    private static final String CHANNEL_ID_DISCRETO = "qr_acesso_chamadas_discreto_v1";
-    private static final int NOTIFICATION_ID = 1001;
-    
-    private Ringtone ringtone;
-    private Vibrator vibrator;
-    private final Handler handler = new Handler(Looper.getMainLooper());
-    private static boolean isRunning = false;
-    private static String activeUnidadeId = null;
 
-    private final Runnable timeoutRunnable = this::stopSelf;
+    public static final String ACTION_START =
+            "com.qracesso.studio.ACTION_START_CALL";
 
-    private void registrarEtapaDiagnostico(
-            String token,
-            String etapa
+    public static final String ACTION_STOP =
+            "com.qracesso.studio.ACTION_STOP_CALL";
+
+    public static final String EXTRA_UNIDADE_ID =
+            "unidadeId";
+
+    public static final String EXTRA_NOME =
+            "nome";
+
+    public static final String EXTRA_MOTIVO =
+            "motivo";
+
+    @Override
+    public int onStartCommand(
+            Intent intent,
+            int flags,
+            int startId
     ) {
-        if (token == null || token.isEmpty()) {
-            return;
+        if (intent == null) {
+            stopSelf();
+            return START_NOT_STICKY;
         }
 
-        getSharedPreferences(DIAGNOSTIC_PREFS, MODE_PRIVATE)
-                .edit()
-                .putString("token", token)
-                .putBoolean(etapa, true)
-                .commit();
-    }
-
-    @Override
-    public void onCreate() {
-        super.onCreate();
-        vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
-    }
-
-    @Override
-    public int onStartCommand(Intent intent, int flags, int startId) {
-        String action = intent != null ? intent.getAction() : null;
-        String unidadeId = intent != null ? intent.getStringExtra(EXTRA_UNIDADE_ID) : null;
-        String nome = intent != null ? intent.getStringExtra(EXTRA_NOME) : null;
-        String motivo = intent != null ? intent.getStringExtra(EXTRA_MOTIVO) : null;
-
-        android.util.Log.d("QR_OVERLAY_DIAG", "1. unidadeId recebido: " + unidadeId);
+        String action = intent.getAction();
 
         if (ACTION_START.equals(action)) {
-            if (isRunning) {
-                if (unidadeId != null && unidadeId.equals(activeUnidadeId)) return START_NOT_STICKY;
-                stopAlert();
-            }
-            
-            isRunning = true;
-            activeUnidadeId = unidadeId;
 
-            KeyguardManager keyguardManager =
-                    (KeyguardManager) getSystemService(Context.KEYGUARD_SERVICE);
-            boolean telaBloqueada =
-                    keyguardManager != null && keyguardManager.isKeyguardLocked();
+            String unidadeId =
+                    intent.getStringExtra(EXTRA_UNIDADE_ID);
 
-            boolean qrAcessoVisivel =
-                    MainActivity.isActivityVisivel();
+            String nome =
+                    intent.getStringExtra(EXTRA_NOME);
 
-            boolean usarChamadaFullscreen =
-                    telaBloqueada && !qrAcessoVisivel;
+            String motivo =
+                    intent.getStringExtra(EXTRA_MOTIVO);
 
             Log.d(
-                    "QR_FULLSCREEN",
-                    "telaBloqueada=" + telaBloqueada +
-                    " qrAcessoVisivel=" + qrAcessoVisivel +
-                    " usarFullscreen=" + usarChamadaFullscreen
+                    "QR_CALL_ZERO",
+                    "CHAMADA RECEBIDA NO TERRENO ZERO" +
+                    " unidadeId=" + unidadeId +
+                    " nome=" + nome +
+                    " motivo=" + motivo
             );
 
-            startForegroundServiceNotification(
-                    unidadeId,
-                    nome,
-                    motivo,
-                    usarChamadaFullscreen
-            );
-            startAlert();
+            /*
+             * TERRENO ZERO.
+             *
+             * Nenhuma chamada e exibida.
+             * Nenhum ringtone e iniciado.
+             * Nenhuma vibracao e iniciada.
+             * Nenhuma Activity e aberta.
+             * Nenhum overlay e aberto.
+             * Nenhuma WebView e manipulada.
+             *
+             * A nova arquitetura nasce daqui.
+             */
 
-            boolean temPermissaoSobreposicao =
-                    Build.VERSION.SDK_INT < Build.VERSION_CODES.M ||
-                    Settings.canDrawOverlays(this);
-
-            android.util.Log.d("QR_OVERLAY_DIAG", "2. telaBloqueada: " + telaBloqueada);
-            android.util.Log.d("QR_OVERLAY_DIAG", "3. temPermissaoSobreposicao: " + temPermissaoSobreposicao);
-
-            if (telaBloqueada) {
-                String route = "/morador-v2/" + unidadeId;
-
-                Intent chamadaBloqueadaIntent =
-                        new Intent(this, IncomingCallActivity.class);
-
-                chamadaBloqueadaIntent.addFlags(
-                        Intent.FLAG_ACTIVITY_NEW_TASK |
-                        Intent.FLAG_ACTIVITY_SINGLE_TOP |
-                        Intent.FLAG_ACTIVITY_CLEAR_TOP
-                );
-
-                chamadaBloqueadaIntent.putExtra("nome", nome);
-                chamadaBloqueadaIntent.putExtra("unidadeId", unidadeId);
-                chamadaBloqueadaIntent.putExtra("motivo", motivo);
-                chamadaBloqueadaIntent.putExtra("route", route);
-                chamadaBloqueadaIntent.putExtra("chamadaFullscreen", true);
-
-                try {
-                    startActivity(chamadaBloqueadaIntent);
-                    Log.d(
-                            "QR_TELA_PADRAO",
-                            "IncomingCallActivity solicitada diretamente com tela bloqueada"
-                    );
-                } catch (Exception e) {
-                    Log.e(
-                            "QR_TELA_PADRAO",
-                            "Erro ao abrir IncomingCallActivity com tela bloqueada",
-                            e
-                    );
-                }
-            } else {
-                String route = "/morador-v2/" + unidadeId;
-
-                Intent chamadaIntent = new Intent(this, MainActivity.class);
-                chamadaIntent.addFlags(
-                        Intent.FLAG_ACTIVITY_NEW_TASK |
-                        Intent.FLAG_ACTIVITY_SINGLE_TOP |
-                        Intent.FLAG_ACTIVITY_CLEAR_TOP
-                );
-
-                chamadaIntent.putExtra("route", route);
-                chamadaIntent.putExtra("chamadaFullscreen", true);
-
-                try {
-                    startActivity(chamadaIntent);
-                    Log.d("QR_TELA_PADRAO", "MainActivity solicitada diretamente");
-                } catch (Exception e) {
-                    Log.e("QR_TELA_PADRAO", "Erro ao abrir tela padrao diretamente", e);
-                }
-            }
-            
-            handler.removeCallbacks(timeoutRunnable);
-            handler.postDelayed(timeoutRunnable, 60000); 
-        } else if (ACTION_STOP.equals(action)) {
-            CallOverlayManager.dismiss();
-            String diagnosticToken = intent != null
-                    ? intent.getStringExtra(EXTRA_DIAGNOSTIC_TOKEN)
-                    : null;
-            registrarEtapaDiagnostico(
-                    diagnosticToken,
-                    "actionStopRecebido"
-            );
-
-            stopAlert();
-            registrarEtapaDiagnostico(
-                    diagnosticToken,
-                    "stopAlertExecutado"
-            );
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                stopForeground(STOP_FOREGROUND_REMOVE);
-            } else {
-                stopForeground(true);
-            }
-            registrarEtapaDiagnostico(
-                    diagnosticToken,
-                    "stopForegroundExecutado"
-            );
-            NotificationManager manager =
-                    (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-            manager.cancel(NOTIFICATION_ID);
-            registrarEtapaDiagnostico(
-                    diagnosticToken,
-                    "notificationCancelExecutado"
-            );
             stopSelf();
-            registrarEtapaDiagnostico(
-                    diagnosticToken,
-                    "stopSelfExecutado"
+
+        } else if (ACTION_STOP.equals(action)) {
+
+            Log.d(
+                    "QR_CALL_ZERO",
+                    "STOP recebido no terreno zero"
             );
+
+            stopSelf();
         }
 
         return START_NOT_STICKY;
     }
 
-    private void startForegroundServiceNotification(
-            String unidadeId,
-            String nome,
-            String motivo,
-            boolean usarFullscreen
-    ) {
-        NotificationManager manager =
-                (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel canalChamada = new NotificationChannel(
-                    CHANNEL_ID,
-                    "Chamadas QR Acesso",
-                    NotificationManager.IMPORTANCE_HIGH
-            );
-            canalChamada.setSound(null, null);
-            canalChamada.enableVibration(false);
-            manager.createNotificationChannel(canalChamada);
-        }
-
-        String nomeVisitante =
-                nome != null && !nome.trim().isEmpty()
-                        ? nome.trim()
-                        : "Visitante";
-
-        String motivoChamada =
-                motivo != null ? motivo.trim() : "";
-
-        String route = "/morador-v2/" + unidadeId;
-
-        Intent fullScreenIntent =
-                new Intent(this, IncomingCallActivity.class);
-
-        fullScreenIntent.addFlags(
-                Intent.FLAG_ACTIVITY_NEW_TASK |
-                Intent.FLAG_ACTIVITY_SINGLE_TOP |
-                Intent.FLAG_ACTIVITY_CLEAR_TOP
-        );
-
-        fullScreenIntent.putExtra("nome", nomeVisitante);
-        fullScreenIntent.putExtra("unidadeId", unidadeId);
-        fullScreenIntent.putExtra("motivo", motivoChamada);
-        fullScreenIntent.putExtra("route", route);
-        fullScreenIntent.putExtra("chamadaFullscreen", true);
-
-        int requestCodeBase =
-                unidadeId != null ? unidadeId.hashCode() : 0;
-
-        PendingIntent fullScreenPendingIntent =
-                PendingIntent.getActivity(
-                        this,
-                        requestCodeBase * 31 + 3,
-                        fullScreenIntent,
-                        PendingIntent.FLAG_UPDATE_CURRENT |
-                        PendingIntent.FLAG_IMMUTABLE
-                );
-
-        NotificationCompat.Builder builder =
-                new NotificationCompat.Builder(
-                        this,
-                        CHANNEL_ID
-                )
-                        .setContentTitle("QR Acesso")
-                        .setContentText(
-                                "Chamada recebida [FSI=" +
-                                ((Build.VERSION.SDK_INT >= 34 && manager.canUseFullScreenIntent())
-                                        ? "TRUE"
-                                        : (Build.VERSION.SDK_INT >= 34 ? "FALSE" : "NA")) +
-                                "]"
-                        )
-                        .setSmallIcon(android.R.drawable.ic_menu_call)
-                        .setPriority(NotificationCompat.PRIORITY_MAX)
-                        .setVisibility(NotificationCompat.VISIBILITY_SECRET)
-                        .setOngoing(true)
-                        .setSilent(true);
-
-        if (usarFullscreen) {
-            builder.setFullScreenIntent(
-                    fullScreenPendingIntent,
-                    true
-            );
-        }
-
-        startForeground(
-                NOTIFICATION_ID,
-                builder.build()
-        );
-    }
-
-    private void startAlert() {
-        Uri ringtoneUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE);
-        if (ringtoneUri != null) {
-            ringtone = RingtoneManager.getRingtone(this, ringtoneUri);
-        }
-        
-        if (ringtone != null) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                ringtone.setLooping(true);
-            }
-            
-            AudioAttributes audioAttributes = new AudioAttributes.Builder()
-                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                    .setUsage(AudioAttributes.USAGE_NOTIFICATION_RINGTONE)
-                    .build();
-            ringtone.setAudioAttributes(audioAttributes);
-            ringtone.play();
-        }
-
-        if (vibrator != null) {
-            long[] pattern = {0, 500, 200, 500};
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                vibrator.vibrate(VibrationEffect.createWaveform(pattern, 0));
-            } else {
-                vibrator.vibrate(pattern, 0);
-            }
-        }
-    }
-
-    private void stopAlert() {
-        CallOverlayManager.dismiss();
-        if (ringtone != null && ringtone.isPlaying()) {
-            ringtone.stop();
-        }
-        if (vibrator != null) {
-            vibrator.cancel();
-        }
-    }
-
     @Override
-    public void onDestroy() {
-        handler.removeCallbacks(timeoutRunnable);
-        stopAlert();
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            stopForeground(STOP_FOREGROUND_REMOVE);
-        } else {
-            stopForeground(true);
-        }
-        NotificationManager manager =
-                (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-        manager.cancel(NOTIFICATION_ID);
-        isRunning = false;
-        activeUnidadeId = null;
-        super.onDestroy();
+    public IBinder onBind(Intent intent) {
+        return null;
     }
-
-    @Override
-    public IBinder onBind(Intent intent) { return null; }
 }
-
-

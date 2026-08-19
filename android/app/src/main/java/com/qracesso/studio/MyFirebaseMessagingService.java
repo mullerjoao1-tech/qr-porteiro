@@ -21,15 +21,15 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
 
             if (unidadeId != null) {
                 // Iniciar serviço de toque contínuo
-                Intent serviceIntent = new Intent(this, IncomingCallService.class);
-                serviceIntent.setAction(IncomingCallService.ACTION_START);
-                serviceIntent.putExtra(IncomingCallService.EXTRA_UNIDADE_ID, unidadeId);
-                serviceIntent.putExtra(IncomingCallService.EXTRA_NOME, nome != null ? nome : "Visitante");
-                serviceIntent.putExtra(IncomingCallService.EXTRA_MOTIVO, motivo != null ? motivo : "");
+                Intent serviceIntent = new Intent(this, QrCallService.class);
+                serviceIntent.setAction(QrCallService.ACTION_START);
+                serviceIntent.putExtra(QrCallService.EXTRA_UNIDADE_ID, unidadeId);
+                serviceIntent.putExtra(QrCallService.EXTRA_NOME, nome != null ? nome : "Visitante");
+                serviceIntent.putExtra(QrCallService.EXTRA_MOTIVO, motivo != null ? motivo : "");
                 try {
                     androidx.core.content.ContextCompat.startForegroundService(this, serviceIntent);
                 } catch (Exception e) {
-                    android.util.Log.e(TAG, "Erro ao iniciar IncomingCallService", e);
+                    android.util.Log.e(TAG, "Erro ao iniciar QrCallService", e);
                 }
             }
         }

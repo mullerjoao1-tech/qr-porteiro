@@ -58,7 +58,22 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths"></meta-data>
         </provider>
-    </application>
+    
+        <!-- NOVA ARQUITETURA DE CHAMADAS QR -->
+        <service
+            android:name=".QrCallService"
+            android:exported="false" />
+
+        <activity
+            android:name=".QrCallActivity"
+            android:theme="@style/Theme.AppCompat.NoActionBar"
+            android:showWhenLocked="true"
+            android:turnScreenOn="true"
+            android:launchMode="singleTop"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:configChanges="orientation|screenSize" />
+</application>
 
     <!-- Permissions -->
     <uses-permission android:name="android.permission.INTERNET" />
