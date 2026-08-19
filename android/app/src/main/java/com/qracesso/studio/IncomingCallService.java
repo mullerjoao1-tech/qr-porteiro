@@ -87,7 +87,25 @@ public class IncomingCallService extends Service {
             boolean telaBloqueada =
                     keyguardManager != null && keyguardManager.isKeyguardLocked();
 
-            startForegroundServiceNotification(unidadeId, nome, motivo, telaBloqueada);
+            boolean qrAcessoVisivel =
+                    MainActivity.isActivityVisivel();
+
+            boolean usarChamadaFullscreen =
+                    telaBloqueada && !qrAcessoVisivel;
+
+            Log.d(
+                    "QR_FULLSCREEN",
+                    "telaBloqueada=" + telaBloqueada +
+                    " qrAcessoVisivel=" + qrAcessoVisivel +
+                    " usarFullscreen=" + usarChamadaFullscreen
+            );
+
+            startForegroundServiceNotification(
+                    unidadeId,
+                    nome,
+                    motivo,
+                    usarChamadaFullscreen
+            );
             startAlert();
 
             boolean temPermissaoSobreposicao =
@@ -257,7 +275,7 @@ public class IncomingCallService extends Service {
 
         String descricao = motivoChamada.isEmpty()
                 ? "Unidade " + unidadeId
-                : motivoChamada + " ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¢ Unidade " + unidadeId;
+                : motivoChamada + " ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ Unidade " + unidadeId;
 
         Notification notification;
 
@@ -291,6 +309,45 @@ public class IncomingCallService extends Service {
         }
 
         startForeground(NOTIFICATION_ID, notification);
+
+        /*
+         * O CallStyle e usado apenas para disparar/acordar a chamada.
+         * Depois que o Android inicia esse fluxo, ele e substituido
+         * pela notificacao discreta para nao ficar concorrendo com
+         * a tela CHAMADA RECEBIDA.
+         */
+        if (telaBloqueada) {
+            handler.postDelayed(() -> {
+                if (!isRunning) {
+                    return;
+                }
+
+                Notification notificacaoDiscreta =
+                        new NotificationCompat.Builder(this, CHANNEL_ID_DISCRETO)
+                                .setContentTitle("QR Acesso")
+                                .setContentText("Chamada em andamento")
+                                .setSmallIcon(android.R.drawable.ic_menu_call)
+                                .setPriority(NotificationCompat.PRIORITY_LOW)
+                                .setOngoing(true)
+                                .setSilent(true)
+                                .build();
+
+                NotificationManager notificationManager =
+                        (NotificationManager) getSystemService(
+                                Context.NOTIFICATION_SERVICE
+                        );
+
+                notificationManager.notify(
+                        NOTIFICATION_ID,
+                        notificacaoDiscreta
+                );
+
+                Log.d(
+                        "QR_FULLSCREEN",
+                        "CallStyle substituido por notificacao discreta"
+                );
+            }, 800);
+        }
     }
 
     private void startAlert() {
