@@ -44,6 +44,25 @@ export default function AtendimentoChamada() {
   const [avisoResposta, setAvisoResposta] =
     useState("");
 
+  /*
+   * Audio QrCall novo.
+   * Independente de qualquer logica antiga do Morador V2.
+   */
+  const mediaRecorderRef =
+    useRef<MediaRecorder | null>(null);
+
+  const audioChunksRef =
+    useRef<Blob[]>([]);
+
+  const [gravandoAudio, setGravandoAudio] =
+    useState(false);
+
+  const [audioBlob, setAudioBlob] =
+    useState<Blob | null>(null);
+
+  const [avisoAudio, setAvisoAudio] =
+    useState("");
+
   useEffect(() => {
     if (!iniciar) {
       setIniciando(false);
@@ -327,10 +346,118 @@ export default function AtendimentoChamada() {
 
             <button
               type="button"
-              className="w-full mt-5 bg-cyan-600 rounded-2xl py-4 text-xl font-black"
+              onClick={async () => {
+                /*
+                 * Se ja estiver gravando,
+                 * o mesmo botao apenas PARA.
+                 */
+                if (
+                  mediaRecorderRef.current &&
+                  mediaRecorderRef.current.state ===
+                    "recording"
+                ) {
+                  mediaRecorderRef.current.stop();
+                  return;
+                }
+
+                try {
+                  setAvisoAudio("");
+                  setAudioBlob(null);
+
+                  const stream =
+                    await navigator.mediaDevices.getUserMedia({
+                      audio: true,
+                    });
+
+                  const recorder =
+                    new MediaRecorder(stream);
+
+                  audioChunksRef.current = [];
+
+                  recorder.ondataavailable =
+                    (evento) => {
+                      if (
+                        evento.data &&
+                        evento.data.size > 0
+                      ) {
+                        audioChunksRef.current.push(
+                          evento.data
+                        );
+                      }
+                    };
+
+                  recorder.onstop = () => {
+                    const blob =
+                      new Blob(
+                        audioChunksRef.current,
+                        {
+                          type:
+                            recorder.mimeType ||
+                            "audio/webm",
+                        }
+                      );
+
+                    setAudioBlob(blob);
+                    setGravandoAudio(false);
+
+                    stream
+                      .getTracks()
+                      .forEach(
+                        (track) =>
+                          track.stop()
+                      );
+
+                    setAvisoAudio(
+                      "Áudio gravado. Ainda não enviado."
+                    );
+                  };
+
+                  mediaRecorderRef.current =
+                    recorder;
+
+                  recorder.start();
+
+                  setGravandoAudio(true);
+
+                  setAvisoAudio(
+                    "Gravando áudio..."
+                  );
+
+                } catch (erro) {
+                  console.error(
+                    "QRCALL_GRAVAR_AUDIO:",
+                    erro
+                  );
+
+                  setGravandoAudio(false);
+
+                  setAvisoAudio(
+                    "Não foi possível acessar o microfone."
+                  );
+                }
+              }}
+              className={
+                gravandoAudio
+                  ? "w-full mt-5 bg-red-600 hover:bg-red-500 rounded-2xl py-4 text-xl font-black"
+                  : "w-full mt-5 bg-cyan-600 hover:bg-cyan-500 rounded-2xl py-4 text-xl font-black"
+              }
             >
-              🎙️ GRAVAR ÁUDIO
+              {gravandoAudio
+                ? "⏹️ PARAR GRAVAÇÃO"
+                : "🎙️ GRAVAR ÁUDIO"}
             </button>
+
+            {avisoAudio && (
+              <p className="text-center text-cyan-300 font-bold mt-3">
+                {avisoAudio}
+              </p>
+            )}
+
+            {audioBlob && (
+              <p className="text-center text-green-400 font-bold mt-2">
+                ✓ Gravação pronta
+              </p>
+            )}
 
             <button
               type="button"
