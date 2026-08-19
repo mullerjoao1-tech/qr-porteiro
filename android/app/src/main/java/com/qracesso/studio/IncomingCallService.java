@@ -310,44 +310,6 @@ public class IncomingCallService extends Service {
 
         startForeground(NOTIFICATION_ID, notification);
 
-        /*
-         * O CallStyle e usado apenas para disparar/acordar a chamada.
-         * Depois que o Android inicia esse fluxo, ele e substituido
-         * pela notificacao discreta para nao ficar concorrendo com
-         * a tela CHAMADA RECEBIDA.
-         */
-        if (telaBloqueada) {
-            handler.postDelayed(() -> {
-                if (!isRunning) {
-                    return;
-                }
-
-                Notification notificacaoDiscreta =
-                        new NotificationCompat.Builder(this, CHANNEL_ID_DISCRETO)
-                                .setContentTitle("QR Acesso")
-                                .setContentText("Chamada em andamento")
-                                .setSmallIcon(android.R.drawable.ic_menu_call)
-                                .setPriority(NotificationCompat.PRIORITY_LOW)
-                                .setOngoing(true)
-                                .setSilent(true)
-                                .build();
-
-                NotificationManager notificationManager =
-                        (NotificationManager) getSystemService(
-                                Context.NOTIFICATION_SERVICE
-                        );
-
-                notificationManager.notify(
-                        NOTIFICATION_ID,
-                        notificacaoDiscreta
-                );
-
-                Log.d(
-                        "QR_FULLSCREEN",
-                        "CallStyle substituido por notificacao discreta"
-                );
-            }, 800);
-        }
     }
 
     private void startAlert() {
