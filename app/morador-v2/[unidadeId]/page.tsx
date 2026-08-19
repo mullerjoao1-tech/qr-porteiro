@@ -129,6 +129,11 @@ export default function MoradorV2() {
 
   const comunicadoIdPeloLink = searchParams.get("comunicado") || "";
 
+  const acaoChamadaPeloLink =
+    searchParams.get("acaoChamada") || "";
+
+  const acaoChamadaExecutadaRef = useRef("");
+
   const slug = String(
     params?.unidadeId ||
       params?.slug ||
@@ -665,8 +670,12 @@ const nomeLocal =
         dados.status === "Aguardando atendimento" &&
         !toqueSilenciadoPorAudioRef.current;
 
-      if (deveTocar) {
-        // Bip web desativado: o Android ja possui toque nativo da chamada.
+      if (
+        deveTocar &&
+        !acaoChamadaPeloLink
+      ) {
+        // Fluxo normal da tela aberta continua igual.
+        // Quando a acao veio da tela nativa, nao reabre CHAMADA RECEBIDA.
         setPopupAtendimentoAberto(true);
 
         const idChamada = dados.criadoEm || dados.nome || "";
@@ -1300,6 +1309,93 @@ async function naoPossoAtender() {
     );
   }
 }
+
+  /*
+   * Ponte da tela nativa para o fluxo Morador V2 existente.
+   *
+   * Nenhuma regra de atendimento e duplicada aqui.
+   * A Activity apenas informa qual acao foi escolhida.
+   */
+  useEffect(() => {
+    if (!acaoChamadaPeloLink) return;
+
+    if (
+      acaoChamadaExecutadaRef.current ===
+      acaoChamadaPeloLink
+    ) {
+      return;
+    }
+
+    /*
+     * A MainActivity pode abrir a pagina antes de o Firebase
+     * terminar de entregar a chamada ativa.
+     *
+     * Esperamos o mesmo estado usado pelo fluxo normal.
+     */
+    if (status !== "Aguardando atendimento") {
+      return;
+    }
+
+    if (
+      acaoChamadaPeloLink !== "atender" &&
+      acaoChamadaPeloLink !== "nao-posso-atender"
+    ) {
+      return;
+    }
+
+    acaoChamadaExecutadaRef.current =
+      acaoChamadaPeloLink;
+
+    /*
+     * Remove a acao da URL antes de executar.
+     * O ref acima impede repeticao durante o mesmo ciclo.
+     */
+    if (typeof window !== "undefined") {
+      const urlAtual = new URL(window.location.href);
+
+      urlAtual.searchParams.delete("acaoChamada");
+
+      window.history.replaceState(
+        {},
+        "",
+        urlAtual.pathname +
+          urlAtual.search +
+          urlAtual.hash
+      );
+    }
+
+    if (acaoChamadaPeloLink === "atender") {
+      void atenderSolicitacao();
+      return;
+    }
+
+    void naoPossoAtender();
+  }, [
+    acaoChamadaPeloLink,
+    status,
+  ]);
+
+  /*
+   * Quando o ATENDER veio da tela nativa bloqueada,
+   * o atendimento real continua sendo feito por atenderSolicitacao().
+   *
+   * Aqui apenas garantimos o mesmo estado visual final
+   * que ja funciona quando o atendimento acontece com a tela aberta.
+   */
+  useEffect(() => {
+    if (
+      acaoChamadaExecutadaRef.current !== "atender" ||
+      status !== "Em atendimento"
+    ) {
+      return;
+    }
+
+    setPopupAtendimentoAberto(false);
+    setRespostasRapidasAbertas(true);
+
+    acaoChamadaExecutadaRef.current = "";
+  }, [status]);
+
   useEffect(() => {
     if (status !== "Em atendimento") return;
 
