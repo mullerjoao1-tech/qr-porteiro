@@ -8,6 +8,7 @@ import {
 
 import {
   useParams,
+  useRouter,
   useSearchParams,
 } from "next/navigation";
 
@@ -22,6 +23,7 @@ const respostasRapidas = [
 export default function AtendimentoChamada() {
   const params = useParams();
   const searchParams = useSearchParams();
+  const router = useRouter();
 
   const unidadeId = String(
     params?.unidadeId || ""
@@ -367,8 +369,9 @@ export default function AtendimentoChamada() {
                     );
                   }
 
-                  window.location.href =
-                    "/dashboard/morador";
+                  router.replace(
+                    "/dashboard/morador"
+                  );
 
                 } catch (erro) {
                   console.error(
