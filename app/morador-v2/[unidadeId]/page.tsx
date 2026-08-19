@@ -145,6 +145,10 @@ export default function MoradorV2() {
   const [nome, setNome] = useState("Nenhuma solicitação");
   const [motivo, setMotivo] = useState("Aguardando visitante");
   const [status, setStatus] = useState("Sem chamado ativo");
+
+  const atendimentoNativoEmTransicao =
+    acaoChamadaPeloLink === "atender" &&
+    status !== "Em atendimento";
   const [horaChamada, setHoraChamada] = useState("");
   const [modo, setModo] = useState("");
   const [mensagemResponsavel, setMensagemResponsavel] = useState("");
@@ -369,7 +373,23 @@ const nomeLocal =
             if (comunicado.destinatario === "moradores") return true;
 
             if (comunicado.destinatario === "unidade") {
-              return (
+              if (atendimentoNativoEmTransicao) {
+    return (
+      <div className="fixed inset-0 z-[5000] bg-slate-950 flex items-center justify-center">
+        <div className="text-center px-6">
+          <p className="text-green-400 text-xl font-black">
+            ATENDENDO CHAMADA
+          </p>
+
+          <p className="text-slate-300 mt-3">
+            Abrindo atendimento...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
                 comunicado.unidadeId === slug ||
                 comunicado.unidadesDestinatarias?.includes(slug) === true
               );
