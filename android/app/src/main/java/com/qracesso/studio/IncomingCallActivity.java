@@ -35,7 +35,7 @@ public class IncomingCallActivity extends AppCompatActivity {
         // Tratar valores ausentes de forma segura
         String nomeDisplay = (nome != null && !nome.trim().isEmpty()) ? nome.trim() : "Visitante";
         String unidadeDisplay = (unidadeId != null && !unidadeId.trim().isEmpty()) ? unidadeId.trim() : "";
-        String motivoDisplay = (motivo != null && !motivo.trim().isEmpty()) ? motivo.trim() : "Chamada";
+        String motivoDisplay = (motivo != null && !motivo.trim().isEmpty()) ? motivo.trim() : "Não informado";
 
         TextView txtNome = findViewById(R.id.txt_nome_visitante);
         TextView txtMotivo = findViewById(R.id.txt_motivo_unidade);
@@ -44,13 +44,20 @@ public class IncomingCallActivity extends AppCompatActivity {
 
         txtNome.setText(nomeDisplay);
         
-        String infoCompleta = motivoDisplay;
+        // Evitar duplicidade visual (Nome vs Motivo)
+        String motivoFinal = "Motivo: " + motivoDisplay;
         if (!unidadeDisplay.isEmpty()) {
-            infoCompleta += " • Unidade " + unidadeDisplay;
+            motivoFinal += " • Unidade " + unidadeDisplay;
         }
-        txtMotivo.setText(infoCompleta);
+        
+        // Se o motivo for idêntico ao nome, omitimos o prefixo redundante
+        if (motivoDisplay.equalsIgnoreCase(nomeDisplay)) {
+            txtMotivo.setText("Unidade " + unidadeDisplay);
+        } else {
+            txtMotivo.setText(motivoFinal);
+        }
 
-        // Bloco 1: Ações apenas fecham a tela para teste isolado
+        // Bloco 2B: Ações ainda apenas fecham a tela
         btnAtender.setOnClickListener(v -> finish());
         btnNaoPossoAtender.setOnClickListener(v -> finish());
     }

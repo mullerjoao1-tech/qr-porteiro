@@ -21,7 +21,6 @@ import android.os.Vibrator;
 import android.provider.Settings;
 import android.util.Log;
 import androidx.core.app.NotificationCompat;
-import androidx.core.app.Person;
 
 public class IncomingCallService extends Service {
     public static final String ACTION_START = "ACTION_START";
@@ -115,7 +114,38 @@ public class IncomingCallService extends Service {
             android.util.Log.d("QR_OVERLAY_DIAG", "2. telaBloqueada: " + telaBloqueada);
             android.util.Log.d("QR_OVERLAY_DIAG", "3. temPermissaoSobreposicao: " + temPermissaoSobreposicao);
 
-            if (!telaBloqueada) {
+            if (telaBloqueada) {
+                String route = "/morador-v2/" + unidadeId;
+
+                Intent chamadaBloqueadaIntent =
+                        new Intent(this, IncomingCallActivity.class);
+
+                chamadaBloqueadaIntent.addFlags(
+                        Intent.FLAG_ACTIVITY_NEW_TASK |
+                        Intent.FLAG_ACTIVITY_SINGLE_TOP |
+                        Intent.FLAG_ACTIVITY_CLEAR_TOP
+                );
+
+                chamadaBloqueadaIntent.putExtra("nome", nome);
+                chamadaBloqueadaIntent.putExtra("unidadeId", unidadeId);
+                chamadaBloqueadaIntent.putExtra("motivo", motivo);
+                chamadaBloqueadaIntent.putExtra("route", route);
+                chamadaBloqueadaIntent.putExtra("chamadaFullscreen", true);
+
+                try {
+                    startActivity(chamadaBloqueadaIntent);
+                    Log.d(
+                            "QR_TELA_PADRAO",
+                            "IncomingCallActivity solicitada diretamente com tela bloqueada"
+                    );
+                } catch (Exception e) {
+                    Log.e(
+                            "QR_TELA_PADRAO",
+                            "Erro ao abrir IncomingCallActivity com tela bloqueada",
+                            e
+                    );
+                }
+            } else {
                 String route = "/morador-v2/" + unidadeId;
 
                 Intent chamadaIntent = new Intent(this, MainActivity.class);
@@ -179,140 +209,93 @@ public class IncomingCallService extends Service {
         return START_NOT_STICKY;
     }
 
-    private void startForegroundServiceNotification(String unidadeId, String nome, String motivo, boolean telaBloqueada) {
-        NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-
-        // DIAGNOSTICO FULLSCREEN - remover depois dos testes
-        if (Build.VERSION.SDK_INT >= 34) {
-            Log.d("QR_FULLSCREEN", "canUseFullScreenIntent=" + manager.canUseFullScreenIntent());
-        } else {
-            Log.d("QR_FULLSCREEN", "canUseFullScreenIntent=NAO_APLICAVEL_API_MENOR_34");
-        }
+    private void startForegroundServiceNotification(
+            String unidadeId,
+            String nome,
+            String motivo,
+            boolean usarFullscreen
+    ) {
+        NotificationManager manager =
+                (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel channel = new NotificationChannel(
+            NotificationChannel canalChamada = new NotificationChannel(
                     CHANNEL_ID,
                     "Chamadas QR Acesso",
                     NotificationManager.IMPORTANCE_HIGH
             );
-            channel.setSound(null, null);
-            channel.enableVibration(true);
-            manager.createNotificationChannel(channel);
-
-            NotificationChannel canalDiscreto = new NotificationChannel(
-                    CHANNEL_ID_DISCRETO,
-                    "Chamada em andamento",
-                    NotificationManager.IMPORTANCE_LOW
-            );
-            canalDiscreto.setSound(null, null);
-            canalDiscreto.enableVibration(false);
-            manager.createNotificationChannel(canalDiscreto);
-
-            NotificationChannel canalReal = manager.getNotificationChannel(CHANNEL_ID);
-
-            if (canalReal != null) {
-                Log.d(
-                    "QR_FULLSCREEN",
-                    "channelId=" + canalReal.getId() +
-                    " importance=" + canalReal.getImportance() +
-                    " expectedHigh=" + NotificationManager.IMPORTANCE_HIGH
-                );
-            } else {
-                Log.d("QR_FULLSCREEN", "CANAL_NAO_ENCONTRADO");
-            }
+            canalChamada.setSound(null, null);
+            canalChamada.enableVibration(false);
+            manager.createNotificationChannel(canalChamada);
         }
 
-        String nomeVisitante = nome != null && !nome.trim().isEmpty() ? nome.trim() : "Visitante";
-        String motivoChamada = motivo != null ? motivo.trim() : "";
+        String nomeVisitante =
+                nome != null && !nome.trim().isEmpty()
+                        ? nome.trim()
+                        : "Visitante";
+
+        String motivoChamada =
+                motivo != null ? motivo.trim() : "";
+
         String route = "/morador-v2/" + unidadeId;
 
-        Intent answerIntent = new Intent(this, MainActivity.class);
-        answerIntent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        answerIntent.putExtra("route", route);
-        answerIntent.putExtra("pararToqueChamada", true);
+        Intent fullScreenIntent =
+                new Intent(this, IncomingCallActivity.class);
 
-        Intent declineIntent = new Intent(this, MainActivity.class);
-        declineIntent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        declineIntent.putExtra("route", route);
-        declineIntent.putExtra("pararToqueChamada", true);
-        declineIntent.putExtra("acaoChamada", "nao-posso-atender");
-
-        int requestCodeBase = unidadeId != null ? unidadeId.hashCode() : 0;
-
-        Intent fullScreenIntent = new Intent(this, IncomingCallActivity.class);
         fullScreenIntent.addFlags(
                 Intent.FLAG_ACTIVITY_NEW_TASK |
                 Intent.FLAG_ACTIVITY_SINGLE_TOP |
                 Intent.FLAG_ACTIVITY_CLEAR_TOP
         );
+
         fullScreenIntent.putExtra("nome", nomeVisitante);
         fullScreenIntent.putExtra("unidadeId", unidadeId);
         fullScreenIntent.putExtra("motivo", motivoChamada);
         fullScreenIntent.putExtra("route", route);
         fullScreenIntent.putExtra("chamadaFullscreen", true);
 
-        PendingIntent fullScreenPendingIntent = PendingIntent.getActivity(
-                this,
-                requestCodeBase * 31 + 3,
-                fullScreenIntent,
-                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
-        );
+        int requestCodeBase =
+                unidadeId != null ? unidadeId.hashCode() : 0;
 
-        PendingIntent answerPendingIntent = PendingIntent.getActivity(
-                this,
-                requestCodeBase * 31 + 1,
-                answerIntent,
-                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
-        );
-        PendingIntent declinePendingIntent = PendingIntent.getActivity(
-                this,
-                requestCodeBase * 31 + 2,
-                declineIntent,
-                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
-        );
+        PendingIntent fullScreenPendingIntent =
+                PendingIntent.getActivity(
+                        this,
+                        requestCodeBase * 31 + 3,
+                        fullScreenIntent,
+                        PendingIntent.FLAG_UPDATE_CURRENT |
+                        PendingIntent.FLAG_IMMUTABLE
+                );
 
-        Person visitante = new Person.Builder()
-                .setName(nomeVisitante)
-                .setImportant(true)
-                .build();
+        NotificationCompat.Builder builder =
+                new NotificationCompat.Builder(
+                        this,
+                        CHANNEL_ID
+                )
+                        .setContentTitle("QR Acesso")
+                        .setContentText(
+                                "Chamada recebida [FSI=" +
+                                ((Build.VERSION.SDK_INT >= 34 && manager.canUseFullScreenIntent())
+                                        ? "TRUE"
+                                        : (Build.VERSION.SDK_INT >= 34 ? "FALSE" : "NA")) +
+                                "]"
+                        )
+                        .setSmallIcon(android.R.drawable.ic_menu_call)
+                        .setPriority(NotificationCompat.PRIORITY_MAX)
+                        .setVisibility(NotificationCompat.VISIBILITY_SECRET)
+                        .setOngoing(true)
+                        .setSilent(true);
 
-        String descricao = motivoChamada.isEmpty()
-                ? "Unidade " + unidadeId
-                : motivoChamada + " ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ Unidade " + unidadeId;
-
-        Notification notification;
-
-        if (telaBloqueada) {
-            notification = new NotificationCompat.Builder(this, CHANNEL_ID)
-                    .setContentTitle(nomeVisitante)
-                    .setContentText(descricao)
-                    .setSmallIcon(android.R.drawable.ic_menu_call)
-                    .setCategory(NotificationCompat.CATEGORY_CALL)
-                    .setPriority(NotificationCompat.PRIORITY_MAX)
-                    .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-                    .setOngoing(true)
-                    .setFullScreenIntent(fullScreenPendingIntent, true)
-                    .setContentIntent(answerPendingIntent)
-                    .setStyle(NotificationCompat.CallStyle.forIncomingCall(
-                            visitante,
-                            declinePendingIntent,
-                            answerPendingIntent
-                    ))
-                    .addPerson(visitante)
-                    .build();
-        } else {
-            notification = new NotificationCompat.Builder(this, CHANNEL_ID_DISCRETO)
-                    .setContentTitle("QR Acesso")
-                    .setContentText("Chamada em andamento")
-                    .setSmallIcon(android.R.drawable.ic_menu_call)
-                    .setPriority(NotificationCompat.PRIORITY_LOW)
-                    .setOngoing(true)
-                    .setSilent(true)
-                    .build();
+        if (usarFullscreen) {
+            builder.setFullScreenIntent(
+                    fullScreenPendingIntent,
+                    true
+            );
         }
 
-        startForeground(NOTIFICATION_ID, notification);
-
+        startForeground(
+                NOTIFICATION_ID,
+                builder.build()
+        );
     }
 
     private void startAlert() {
