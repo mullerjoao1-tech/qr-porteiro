@@ -39,6 +39,9 @@ export default function AtendimentoChamada() {
   const [erroInicio, setErroInicio] =
     useState("");
 
+  const [avisoResposta, setAvisoResposta] =
+    useState("");
+
   useEffect(() => {
     if (!iniciar) {
       setIniciando(false);
@@ -232,75 +235,88 @@ export default function AtendimentoChamada() {
               </div>
 
               <div className="mt-5 space-y-3">
-                {respostasRapidas.map((texto, index) => (
+                {respostasRapidas.map((texto) => (
                   <button
                     key={texto}
                     type="button"
-                    onClick={
-                      index === 0
-                        ? async () => {
-                            try {
-                              const resposta =
-                                await fetch(
-                                  "/api/qrcall/resposta-rapida",
-                                  {
-                                    method: "POST",
-                                    headers: {
-                                      "Content-Type":
-                                        "application/json",
-                                    },
-                                    body:
-                                      JSON.stringify({
-                                        unidadeId,
-                                        mensagem:
-                                          "Aguarde um momento",
-                                      }),
-                                  }
-                                );
+                    onClick={async () => {
+                      try {
+                        const mensagem =
+                          texto.replace(
+                            /^[^\p{L}\p{N}]+/u,
+                            ""
+                          );
 
-                              const dados =
-                                await resposta
-                                  .json()
-                                  .catch(() => null);
+                        const resposta =
+                          await fetch(
+                            "/api/qrcall/resposta-rapida",
+                            {
+                              method: "POST",
 
-                              if (
-                                !resposta.ok ||
-                                !dados?.sucesso
-                              ) {
-                                throw new Error(
-                                  dados?.erro ||
-                                  "Não foi possível enviar a resposta."
-                                );
-                              }
+                              headers: {
+                                "Content-Type":
+                                  "application/json",
+                              },
 
-                              alert(
-                                "Resposta enviada."
-                              );
-                            } catch (erro) {
-                              console.error(
-                                "QRCALL_RESPOSTA_RAPIDA:",
-                                erro
-                              );
-
-                              alert(
-                                erro instanceof Error
-                                  ? erro.message
-                                  : "Erro ao enviar resposta."
-                              );
+                              body:
+                                JSON.stringify({
+                                  unidadeId,
+                                  mensagem,
+                                }),
                             }
-                          }
-                        : undefined
-                    }
-                    disabled={index !== 0}
-                    className={
-                      index === 0
-                        ? "w-full bg-blue-600 rounded-2xl py-4 px-4 text-lg font-black"
-                        : "w-full bg-blue-900/40 rounded-2xl py-4 px-4 text-lg font-black opacity-50"
-                    }
+                          );
+
+                        const dados =
+                          await resposta
+                            .json()
+                            .catch(() => null);
+
+                        if (
+                          !resposta.ok ||
+                          !dados?.sucesso
+                        ) {
+                          throw new Error(
+                            dados?.erro ||
+                            "Não foi possível enviar a resposta."
+                          );
+                        }
+
+                        setAvisoResposta(
+                          "✓ Resposta enviada"
+                        );
+
+                        setTimeout(() => {
+                          setAvisoResposta("");
+                        }, 1800);
+
+                      } catch (erro) {
+                        console.error(
+                          "QRCALL_RESPOSTA_RAPIDA:",
+                          erro
+                        );
+
+                        setAvisoResposta(
+                          erro instanceof Error
+                            ? erro.message
+                            : "Erro ao enviar resposta."
+                        );
+
+                        setTimeout(() => {
+                          setAvisoResposta("");
+                        }, 2500);
+                      }
+                    }}
+                    className="w-full bg-blue-600 hover:bg-blue-500 rounded-2xl py-4 px-4 text-lg font-black"
                   >
                     {texto}
                   </button>
                 ))}
+
+                {avisoResposta && (
+                  <p className="text-center text-green-400 font-bold mt-3">
+                    {avisoResposta}
+                  </p>
+                )}
               </div>
             </div>
 
