@@ -182,7 +182,10 @@ export default function AtendimentoChamada() {
   }
 
   return (
-    <main className="min-h-screen bg-[#020617] text-white px-4 py-6">
+    <main
+      id="qrcall-atendimento-pronto"
+      className="min-h-screen bg-[#020617] text-white px-4 py-6"
+    >
       <section className="w-full max-w-xl mx-auto">
         <div className="bg-[#0F172A] border border-slate-700 rounded-[32px] p-5">
 
