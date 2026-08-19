@@ -63,6 +63,9 @@ export default function AtendimentoChamada() {
   const [avisoAudio, setAvisoAudio] =
     useState("");
 
+  const [enviandoAudio, setEnviandoAudio] =
+    useState(false);
+
   useEffect(() => {
     if (!iniciar) {
       setIniciando(false);
@@ -454,9 +457,133 @@ export default function AtendimentoChamada() {
             )}
 
             {audioBlob && (
-              <p className="text-center text-green-400 font-bold mt-2">
-                ✓ Gravação pronta
-              </p>
+              <div className="mt-3">
+                <p className="text-center text-green-400 font-bold mb-3">
+                  ✓ Gravação pronta
+                </p>
+
+                <button
+                  type="button"
+                  disabled={enviandoAudio}
+                  onClick={async () => {
+                    if (!audioBlob) {
+                      return;
+                    }
+
+                    try {
+                      setEnviandoAudio(true);
+                      setAvisoAudio(
+                        "Enviando áudio..."
+                      );
+
+                      const audioBase64 =
+                        await new Promise<string>(
+                          (resolve, reject) => {
+                            const reader =
+                              new FileReader();
+
+                            reader.onloadend =
+                              () => {
+                                const resultado =
+                                  reader.result;
+
+                                if (
+                                  typeof resultado ===
+                                  "string"
+                                ) {
+                                  resolve(resultado);
+                                  return;
+                                }
+
+                                reject(
+                                  new Error(
+                                    "Não foi possível converter o áudio."
+                                  )
+                                );
+                              };
+
+                            reader.onerror =
+                              () => {
+                                reject(
+                                  new Error(
+                                    "Erro ao ler o áudio gravado."
+                                  )
+                                );
+                              };
+
+                            reader.readAsDataURL(
+                              audioBlob
+                            );
+                          }
+                        );
+
+                      const resposta =
+                        await fetch(
+                          "/api/qrcall/audio",
+                          {
+                            method: "POST",
+
+                            headers: {
+                              "Content-Type":
+                                "application/json",
+                            },
+
+                            body:
+                              JSON.stringify({
+                                unidadeId,
+                                audioBase64,
+                              }),
+                          }
+                        );
+
+                      const dados =
+                        await resposta
+                          .json()
+                          .catch(() => null);
+
+                      if (
+                        !resposta.ok ||
+                        !dados?.sucesso
+                      ) {
+                        throw new Error(
+                          dados?.erro ||
+                          "Não foi possível enviar o áudio."
+                        );
+                      }
+
+                      setAudioBlob(null);
+
+                      setAvisoAudio(
+                        "✓ Áudio enviado"
+                      );
+
+                      setTimeout(() => {
+                        setAvisoAudio("");
+                      }, 2000);
+
+                    } catch (erro) {
+                      console.error(
+                        "QRCALL_ENVIAR_AUDIO:",
+                        erro
+                      );
+
+                      setAvisoAudio(
+                        erro instanceof Error
+                          ? erro.message
+                          : "Erro ao enviar áudio."
+                      );
+
+                    } finally {
+                      setEnviandoAudio(false);
+                    }
+                  }}
+                  className="w-full bg-green-600 hover:bg-green-500 disabled:bg-slate-600 rounded-2xl py-4 text-xl font-black"
+                >
+                  {enviandoAudio
+                    ? "ENVIANDO ÁUDIO..."
+                    : "📤 ENVIAR ÁUDIO"}
+                </button>
+              </div>
             )}
 
             <button
