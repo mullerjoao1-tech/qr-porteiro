@@ -1,5 +1,7 @@
 package com.qracesso.studio;
 
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.app.Service;
 import android.content.Intent;
 import android.media.Ringtone;
@@ -10,6 +12,8 @@ import android.os.IBinder;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
 import android.util.Log;
+
+import androidx.core.app.NotificationCompat;
 
 public class QrCallService extends Service {
 
@@ -23,9 +27,33 @@ public class QrCallService extends Service {
     public static final String EXTRA_NOME = "nome";
     public static final String EXTRA_MOTIVO = "motivo";
 
+    private static final String CHANNEL_ID =
+            "qr_call_service_v1";
+
+    private static final int NOTIFICATION_ID =
+            9102;
+
     private Ringtone ringtone;
     private Vibrator vibrator;
 
+
+    private final android.os.Handler timeoutHandler =
+            new android.os.Handler(android.os.Looper.getMainLooper());
+
+    private final Runnable timeoutChamada =
+            new Runnable() {
+                @Override
+                public void run() {
+                    Log.d(
+                            "QR_CALL_NEW",
+                            "Timeout nativo de 3 minutos atingido"
+                    );
+
+                    pararAlerta();
+                    encerrarForeground();
+                    stopSelf();
+                }
+            };
     @Override
     public int onStartCommand(
             Intent intent,
@@ -33,6 +61,7 @@ public class QrCallService extends Service {
             int startId
     ) {
         if (intent == null) {
+            encerrarForeground();
             stopSelf();
             return START_NOT_STICKY;
         }
@@ -40,12 +69,15 @@ public class QrCallService extends Service {
         String action = intent.getAction();
 
         if (ACTION_STOP.equals(action)) {
+            timeoutHandler.removeCallbacks(timeoutChamada);
             pararAlerta();
+            encerrarForeground();
             stopSelf();
             return START_NOT_STICKY;
         }
 
         if (!ACTION_START.equals(action)) {
+            encerrarForeground();
             stopSelf();
             return START_NOT_STICKY;
         }
@@ -64,7 +96,17 @@ public class QrCallService extends Service {
                 "Nova chamada recebida. unidadeId=" + unidadeId
         );
 
+        iniciarForeground(
+                nome != null ? nome : "Visitante"
+        );
+
         iniciarAlerta();
+
+        timeoutHandler.removeCallbacks(timeoutChamada);
+        timeoutHandler.postDelayed(
+                timeoutChamada,
+                3 * 60 * 1000L
+        );
 
         Intent tela =
                 new Intent(this, QrCallActivity.class);
@@ -97,6 +139,82 @@ public class QrCallService extends Service {
         }
 
         return START_NOT_STICKY;
+    }
+
+    private void iniciarForeground(
+            String nome
+    ) {
+        NotificationManager manager =
+                (NotificationManager)
+                        getSystemService(
+                                NOTIFICATION_SERVICE
+                        );
+
+        if (
+                Build.VERSION.SDK_INT >=
+                        Build.VERSION_CODES.O
+        ) {
+            NotificationChannel channel =
+                    new NotificationChannel(
+                            CHANNEL_ID,
+                            "Chamada QR Acesso",
+                            NotificationManager.IMPORTANCE_LOW
+                    );
+
+            channel.setDescription(
+                    "Mantém ativa a chamada recebida."
+            );
+
+            channel.setSound(null, null);
+
+            manager.createNotificationChannel(
+                    channel
+            );
+        }
+
+        NotificationCompat.Builder builder =
+                new NotificationCompat.Builder(
+                        this,
+                        CHANNEL_ID
+                )
+                        .setSmallIcon(
+                                getApplicationInfo().icon
+                        )
+                        .setContentTitle(
+                                "QR Acesso"
+                        )
+                        .setContentText(
+                                "Chamada de " + nome
+                        )
+                        .setCategory(
+                                NotificationCompat.CATEGORY_SERVICE
+                        )
+                        .setOngoing(true)
+                        .setSilent(true)
+                        .setPriority(
+                                NotificationCompat.PRIORITY_LOW
+                        );
+
+        startForeground(
+                NOTIFICATION_ID,
+                builder.build()
+        );
+    }
+
+    private void encerrarForeground() {
+        try {
+            if (
+                    Build.VERSION.SDK_INT >=
+                            Build.VERSION_CODES.N
+            ) {
+                stopForeground(
+                        STOP_FOREGROUND_REMOVE
+                );
+            } else {
+                stopForeground(true);
+            }
+        } catch (Exception ignored) {
+        }
     }
 
     private void iniciarAlerta() {
@@ -143,7 +261,10 @@ public class QrCallService extends Service {
                         500
                 };
 
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                if (
+                        Build.VERSION.SDK_INT >=
+                                Build.VERSION_CODES.O
+                ) {
                     vibrator.vibrate(
                             VibrationEffect.createWaveform(
                                     padrao,
@@ -192,7 +313,9 @@ public class QrCallService extends Service {
 
     @Override
     public void onDestroy() {
+        timeoutHandler.removeCallbacks(timeoutChamada);
         pararAlerta();
+        encerrarForeground();
         super.onDestroy();
     }
 

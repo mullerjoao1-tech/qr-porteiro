@@ -62,7 +62,8 @@
         <!-- NOVA ARQUITETURA DE CHAMADAS QR -->
         <service
             android:name=".QrCallService"
-            android:exported="false" />
+            android:exported="false"
+            android:foregroundServiceType="mediaPlayback" />
 
         <activity
             android:name=".QrCallActivity"

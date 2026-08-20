@@ -11,9 +11,26 @@ import androidx.appcompat.app.AppCompatActivity;
 
 public class QrCallActivity extends AppCompatActivity {
 
+    private final android.os.Handler timeoutHandler =
+            new android.os.Handler(android.os.Looper.getMainLooper());
+
+    private final Runnable timeoutTela =
+            new Runnable() {
+                @Override
+                public void run() {
+                    finish();
+                }
+            };
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        timeoutHandler.removeCallbacks(timeoutTela);
+        timeoutHandler.postDelayed(
+                timeoutTela,
+                3 * 60 * 1000L
+        );
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
             setShowWhenLocked(true);
@@ -122,5 +139,11 @@ public class QrCallActivity extends AppCompatActivity {
 
             finish();
         });
+    }
+
+    @Override
+    protected void onDestroy() {
+        timeoutHandler.removeCallbacks(timeoutTela);
+        super.onDestroy();
     }
 }
