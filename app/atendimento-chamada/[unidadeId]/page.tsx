@@ -130,6 +130,15 @@ export default function AtendimentoChamada() {
   const [audioVisitanteRecebido, setAudioVisitanteRecebido] =
     useState("");
 
+  const [popupAudioRecebidoAberto, setPopupAudioRecebidoAberto] =
+    useState(false);
+
+  const [audioPopupRecebido, setAudioPopupRecebido] =
+    useState("");
+
+  const ultimoAudioPopupRef =
+    useRef("");
+
   async function iniciarGravacaoAudio() {
     try {
       setAvisoAudio("");
@@ -259,6 +268,21 @@ export default function AtendimentoChamada() {
           setAudioVisitanteRecebido(
             ultimoAudio?.audioBase64 || ""
           );
+
+          if (
+            ultimoAudio?.id &&
+            ultimoAudio.audioBase64 &&
+            ultimoAudio.id !== ultimoAudioPopupRef.current
+          ) {
+            ultimoAudioPopupRef.current =
+              ultimoAudio.id;
+
+            setAudioPopupRecebido(
+              ultimoAudio.audioBase64
+            );
+
+            setPopupAudioRecebidoAberto(true);
+          }
         }
       );
 
@@ -430,6 +454,44 @@ export default function AtendimentoChamada() {
       id="qrcall-atendimento-pronto"
       className="min-h-screen bg-[#020617] text-white px-4 py-6"
     >
+      {popupAudioRecebidoAberto && audioPopupRecebido && (
+        <div className="fixed inset-0 z-[1300] bg-black/90 flex items-center justify-center p-4">
+          <div className="w-full max-w-md bg-slate-900 border-2 border-blue-500 rounded-3xl p-5 shadow-2xl">
+            <div className="text-center">
+              <div className="text-5xl mb-3">
+                🎧
+              </div>
+
+              <h2 className="text-2xl font-black text-blue-300">
+                Áudio do visitante
+              </h2>
+
+              <p className="text-slate-400 mt-2">
+                Você recebeu uma nova mensagem de áudio.
+              </p>
+            </div>
+
+            <audio
+              controls
+              autoPlay
+              className="w-full mt-5"
+              src={audioPopupRecebido}
+            />
+
+            <button
+              type="button"
+              onClick={() => {
+                setPopupAudioRecebidoAberto(false);
+                setAudioPopupRecebido("");
+              }}
+              className="w-full mt-5 bg-green-600 hover:bg-green-500 text-white text-lg font-black py-4 rounded-2xl"
+            >
+              ENTENDI
+            </button>
+          </div>
+        </div>
+      )}
+
       {popupAudioAberto && (
         <div className="fixed inset-0 z-[1200] bg-black/90 flex items-center justify-center p-4">
           <div className="relative w-full max-w-md bg-slate-900 border-2 border-cyan-500 rounded-3xl p-5 shadow-2xl">
