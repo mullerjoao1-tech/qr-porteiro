@@ -1,4 +1,4 @@
-﻿import { NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 
 import {
   obterFirebaseAdmin,
@@ -25,7 +25,7 @@ export async function POST(
       return NextResponse.json(
         {
           sucesso: false,
-          erro: "unidadeId Ã© obrigatÃ³rio",
+          erro: "unidadeId é obrigatório",
         },
         {
           status: 400,
@@ -37,7 +37,7 @@ export async function POST(
       return NextResponse.json(
         {
           sucesso: false,
-          erro: "audioBase64 Ã© obrigatÃ³rio",
+          erro: "audioBase64 é obrigatório",
         },
         {
           status: 400,
@@ -65,29 +65,6 @@ export async function POST(
         `unidades-v2/${unidadeId}/chamada`
       );
 
-    const snapshotChamada =
-      await referenciaChamada.get();
-
-    const chamadaAtual =
-      snapshotChamada.val() || {};
-
-    const chamadaId =
-      String(
-        chamadaAtual?.chamadaId || ""
-      ).trim();
-
-    if (!chamadaId) {
-      return NextResponse.json(
-        {
-          sucesso: false,
-          erro: "A chamada atual não possui chamadaId.",
-        },
-        {
-          status: 409,
-        }
-      );
-    }
-
     await referenciaMensagem.set({
       autor:
         "morador",
@@ -98,8 +75,6 @@ export async function POST(
       audioBase64,
 
       criadoEm,
-
-      chamadaId,
     });
 
     await referenciaChamada.update({
@@ -130,7 +105,7 @@ export async function POST(
         erro:
           erro instanceof Error
             ? erro.message
-            : "Erro interno ao enviar Ã¡udio.",
+            : "Erro interno ao enviar áudio.",
       },
       {
         status: 500,

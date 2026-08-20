@@ -172,41 +172,20 @@ export default function AtendimentoChamada() {
   useEffect(() => {
     if (!unidadeId) return;
 
-    const referenciaChamada =
+    const referenciaMensagens =
       ref(
         db,
-        `unidades-v2/${unidadeId}/chamada`
+        `unidades-v2/${unidadeId}/chamada/mensagens`
       );
 
     const pararDeOuvir =
       onValue(
-        referenciaChamada,
+        referenciaMensagens,
         (snapshot) => {
-          const chamadaAtual =
-            snapshot.val();
+          const dados = snapshot.val();
 
-          if (!chamadaAtual) {
+          if (!dados) {
             setAudioVisitanteRecebido("");
-            setAudioVisitanteMensagemId("");
-            setPopupAudioVisitanteAberto(false);
-            return;
-          }
-
-          const chamadaIdAtual =
-            String(
-              chamadaAtual.chamadaId || ""
-            ).trim();
-
-          const dados =
-            chamadaAtual.mensagens;
-
-          if (
-            !chamadaIdAtual ||
-            !dados
-          ) {
-            setAudioVisitanteRecebido("");
-            setAudioVisitanteMensagemId("");
-            setPopupAudioVisitanteAberto(false);
             return;
           }
 
@@ -219,15 +198,11 @@ export default function AtendimentoChamada() {
                   tipo?: string;
                   audioBase64?: string;
                   criadoEm?: number;
-                  chamadaId?: string;
                   audioOuvidoPeloMorador?: boolean;
                 }),
               }))
               .filter(
                 (item) =>
-                  String(
-                    item.chamadaId || ""
-                  ).trim() === chamadaIdAtual &&
                   item.autor === "visitante" &&
                   item.tipo === "audio" &&
                   !!item.audioBase64 &&
@@ -259,13 +234,7 @@ export default function AtendimentoChamada() {
             setPopupAudioVisitanteAberto(
               true
             );
-
-            return;
           }
-
-          setAudioVisitanteRecebido("");
-          setAudioVisitanteMensagemId("");
-          setPopupAudioVisitanteAberto(false);
         }
       );
 
