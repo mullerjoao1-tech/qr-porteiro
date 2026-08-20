@@ -324,6 +324,24 @@ export default function AtendimentoChamada() {
           );
         }
 
+        const atendidoEmConfirmado =
+          String(dados?.atendidoEm || "");
+
+        if (atendidoEmConfirmado) {
+          setTimeout(() => {
+            void fetch("/api/qrcall/timeout-atendimento", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                unidadeId,
+                atendidoEmEsperado: atendidoEmConfirmado,
+              }),
+            });
+          }, 2 * 60 * 1000);
+        }
+
         /*
          * Remove ?iniciar=1 depois da confirmação.
          * Assim refresh não tenta atender novamente.
