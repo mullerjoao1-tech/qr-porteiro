@@ -79,6 +79,23 @@ export async function POST(
     const agoraIso =
       new Date().toISOString();
 
+    await database
+      .ref(
+        `historico-v2/${unidadeId}/${agora}`
+      )
+      .set({
+        ...chamada,
+
+        statusFinal:
+          "Encerrado",
+
+        tipoFinalizacao:
+          "Manual QrCall",
+
+        encerradoEm:
+          agoraIso,
+      });
+
     await referencia.update({
       status:
         "Encerrado",
