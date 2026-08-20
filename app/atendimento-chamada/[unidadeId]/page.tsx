@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import {
   useEffect,
@@ -22,11 +22,11 @@ import {
 } from "@/app/services/firebase";
 
 const respostasRapidas = [
-  "ðŸ’¬ Aguarde um momento",
-  "ðŸš¶ JÃ¡ estou descendo",
-  "ðŸ“¦ Pode deixar na portaria",
-  "ðŸ  NÃ£o estou em casa",
-  "ðŸš¶ Estou indo retirar",
+  "💬 Aguarde um momento",
+  "🚶 Já estou descendo",
+  "📦 Pode deixar na portaria",
+  "🏠 Não estou em casa",
+  "🚶 Estou indo retirar",
 ];
 
 export default function AtendimentoChamada() {
@@ -101,7 +101,6 @@ export default function AtendimentoChamada() {
       pararDeOuvir();
     };
   }, [unidadeId, router]);
-
 
   /*
    * Audio QrCall novo.
@@ -180,7 +179,7 @@ export default function AtendimentoChamada() {
           );
 
         setAvisoAudio(
-          "Ãudio gravado. Confira antes de enviar."
+          "Áudio gravado. Confira antes de enviar."
         );
       };
 
@@ -192,7 +191,7 @@ export default function AtendimentoChamada() {
       setGravandoAudio(true);
 
       setAvisoAudio(
-        "Gravando Ã¡udio..."
+        "Gravando áudio..."
       );
 
     } catch (erro) {
@@ -204,7 +203,7 @@ export default function AtendimentoChamada() {
       setGravandoAudio(false);
 
       setAvisoAudio(
-        "NÃ£o foi possÃ­vel acessar o microfone."
+        "Não foi possível acessar o microfone."
       );
     }
   }
@@ -281,7 +280,7 @@ export default function AtendimentoChamada() {
 
     if (!unidadeId) {
       setErroInicio(
-        "Unidade nÃ£o identificada."
+        "Unidade não identificada."
       );
 
       setIniciando(false);
@@ -321,13 +320,13 @@ export default function AtendimentoChamada() {
         ) {
           throw new Error(
             dados?.erro ||
-            "NÃ£o foi possÃ­vel iniciar o atendimento."
+            "Não foi possível iniciar o atendimento."
           );
         }
 
         /*
-         * Remove ?iniciar=1 depois da confirmaÃ§Ã£o.
-         * Assim refresh nÃ£o tenta atender novamente.
+         * Remove ?iniciar=1 depois da confirmação.
+         * Assim refresh não tenta atender novamente.
          */
         if (
           typeof window !==
@@ -397,7 +396,7 @@ export default function AtendimentoChamada() {
       <main className="min-h-screen bg-[#020617] text-white flex items-center justify-center px-6">
         <div className="w-full max-w-md bg-slate-900 border border-red-500/40 rounded-3xl p-6 text-center">
           <p className="text-red-400 text-xl font-black">
-            NÃ£o foi possÃ­vel atender
+            Não foi possível atender
           </p>
 
           <p className="text-slate-300 mt-4">
@@ -427,26 +426,26 @@ export default function AtendimentoChamada() {
                 }}
                 className="absolute top-3 right-4 text-slate-400 hover:text-white text-3xl font-black"
               >
-                Ã—
+                ×
               </button>
             )}
 
             <div className="text-center mb-5">
               <div className="text-5xl mb-3">
-                {gravandoAudio ? "ðŸŽ™ï¸" : "ðŸŽ§"}
+                {gravandoAudio ? "🎙️" : "🎧"}
               </div>
 
               <h2 className="text-2xl font-black">
                 {gravandoAudio
-                  ? "GRAVANDO ÃUDIO"
-                  : "ÃUDIO GRAVADO"}
+                  ? "GRAVANDO ÁUDIO"
+                  : "ÁUDIO GRAVADO"}
               </h2>
 
               <p className="text-slate-400 text-sm mt-2">
                 {gravandoAudio
                   ? "Fale normalmente e toque em parar quando terminar."
                   : audioBlob
-                  ? "Confira o Ã¡udio antes de enviar ao visitante."
+                  ? "Confira o áudio antes de enviar ao visitante."
                   : avisoAudio || "Preparando microfone..."}
               </p>
             </div>
@@ -455,7 +454,7 @@ export default function AtendimentoChamada() {
               <div className="space-y-4">
                 <div className="bg-red-500/10 border border-red-500/40 rounded-2xl p-4 text-center">
                   <p className="text-red-400 font-black animate-pulse">
-                    GRAVAÃ‡ÃƒO EM ANDAMENTO
+                    GRAVAÇÃO EM ANDAMENTO
                   </p>
                 </div>
 
@@ -471,7 +470,7 @@ export default function AtendimentoChamada() {
                   }}
                   className="w-full bg-red-600 hover:bg-red-500 text-white text-xl font-black py-4 rounded-2xl"
                 >
-                  â¹ï¸ PARAR GRAVAÃ‡ÃƒO
+                  ⏹️ PARAR GRAVAÇÃO
                 </button>
               </div>
             )}
@@ -492,7 +491,7 @@ export default function AtendimentoChamada() {
                   onClick={async () => {
                     try {
                       setEnviandoAudio(true);
-                      setAvisoAudio("Enviando Ã¡udio...");
+                      setAvisoAudio("Enviando áudio...");
 
                       const audioBase64 =
                         await new Promise<string>(
@@ -509,7 +508,7 @@ export default function AtendimentoChamada() {
 
                               reject(
                                 new Error(
-                                  "NÃ£o foi possÃ­vel converter o Ã¡udio."
+                                  "Não foi possível converter o áudio."
                                 )
                               );
                             };
@@ -517,7 +516,7 @@ export default function AtendimentoChamada() {
                             reader.onerror = () => {
                               reject(
                                 new Error(
-                                  "Erro ao ler o Ã¡udio gravado."
+                                  "Erro ao ler o áudio gravado."
                                 )
                               );
                             };
@@ -553,13 +552,13 @@ export default function AtendimentoChamada() {
                       ) {
                         throw new Error(
                           dados?.erro ||
-                          "NÃ£o foi possÃ­vel enviar o Ã¡udio."
+                          "Não foi possível enviar o áudio."
                         );
                       }
 
                       setAudioBlob(null);
                       setPopupAudioAberto(false);
-                      setAvisoAudio("âœ“ Ãudio enviado");
+                      setAvisoAudio("✓ Áudio enviado");
 
                       setTimeout(() => {
                         setAvisoAudio("");
@@ -574,7 +573,7 @@ export default function AtendimentoChamada() {
                       setAvisoAudio(
                         erro instanceof Error
                           ? erro.message
-                          : "Erro ao enviar Ã¡udio."
+                          : "Erro ao enviar áudio."
                       );
 
                     } finally {
@@ -585,7 +584,7 @@ export default function AtendimentoChamada() {
                 >
                   {enviandoAudio
                     ? "Enviando..."
-                    : "ðŸ“¤ ENVIAR ÃUDIO"}
+                    : "📤 ENVIAR ÁUDIO"}
                 </button>
 
                 {!enviandoAudio && (
@@ -597,7 +596,7 @@ export default function AtendimentoChamada() {
                     }}
                     className="w-full bg-slate-800 hover:bg-slate-700 border border-slate-600 text-white font-bold py-3 rounded-2xl"
                   >
-                    ðŸ”„ GRAVAR NOVAMENTE
+                    🔄 GRAVAR NOVAMENTE
                   </button>
                 )}
 
@@ -622,7 +621,7 @@ export default function AtendimentoChamada() {
                   }}
                   className="w-full mt-4 bg-cyan-600 hover:bg-cyan-500 py-3 rounded-xl font-black"
                 >
-                  ðŸŽ™ï¸ TENTAR NOVAMENTE
+                  🎙️ TENTAR NOVAMENTE
                 </button>
               </div>
             )}
@@ -637,7 +636,7 @@ export default function AtendimentoChamada() {
           <div className="flex items-start justify-between gap-4">
             <div>
               <h1 className="text-3xl font-black">
-                ðŸ  MÃ¼ller
+                🏠 Müller
               </h1>
 
               <p className="text-slate-400 text-lg mt-1">
@@ -646,7 +645,7 @@ export default function AtendimentoChamada() {
             </div>
 
             <div className="border border-green-500/50 rounded-2xl px-4 py-3 text-green-400 font-black">
-              ðŸŸ¢ DisponÃ­vel
+              🟢 Disponível
             </div>
           </div>
 
@@ -655,27 +654,27 @@ export default function AtendimentoChamada() {
               type="button"
               className="bg-slate-800 border border-slate-600 rounded-2xl py-4 font-black text-slate-300"
             >
-              ðŸ”’ CÃ¢mera
+              🔒 Câmera
             </button>
 
             <button
               type="button"
               className="bg-slate-800 border border-slate-600 rounded-2xl py-4 font-black text-slate-300"
             >
-              ðŸ”’ Abrir portÃ£o
+              🔒 Abrir portão
             </button>
           </div>
 
           <div className="mt-8 bg-slate-800 border border-green-500/20 rounded-3xl p-5">
             <h2 className="text-green-400 text-2xl font-black">
-              ðŸ”” Entrega de comida
+              🔔 Entrega de comida
             </h2>
 
             {respostasRapidasAbertas ? (
               <div className="mt-5 bg-[#111827] border border-slate-700 rounded-3xl p-5">
                 <div className="flex items-center justify-between">
                   <h3 className="text-blue-300 text-xl font-black">
-                    ðŸ’¬ Respostas rÃ¡pidas
+                    💬 Respostas rápidas
                   </h3>
 
                   <button
@@ -730,12 +729,12 @@ export default function AtendimentoChamada() {
                         ) {
                           throw new Error(
                             dados?.erro ||
-                            "NÃ£o foi possÃ­vel enviar a resposta."
+                            "Não foi possível enviar a resposta."
                           );
                         }
 
                         setAvisoResposta(
-                          "âœ“ Resposta enviada"
+                          "✓ Resposta enviada"
                         );
 
                         setRespostasRapidasAbertas(false);
@@ -780,14 +779,14 @@ export default function AtendimentoChamada() {
                 onClick={() => setRespostasRapidasAbertas(true)}
                 className="w-full mt-5 bg-slate-900 hover:bg-slate-800 border border-blue-500/40 text-blue-300 font-black py-3 rounded-2xl"
               >
-                ðŸ’¬ RESPOSTAS RÃPIDAS
+                💬 RESPOSTAS RÁPIDAS
               </button>
             )}
 
             {audioVisitanteRecebido && (
               <div className="mt-5 bg-slate-900 border border-blue-500/40 rounded-2xl p-4">
                 <p className="text-blue-300 font-black mb-3">
-                  ðŸŽ§ Ãudio do visitante
+                  🎧 Áudio do visitante
                 </p>
 
                 <audio
@@ -806,7 +805,7 @@ export default function AtendimentoChamada() {
               }}
               className="w-full mt-5 bg-cyan-600 hover:bg-cyan-500 rounded-2xl py-3 text-lg font-black"
             >
-              ðŸŽ™ï¸ GRAVAR ÃUDIO
+              🎙️ GRAVAR ÁUDIO
             </button>
             <button
               type="button"
@@ -841,7 +840,7 @@ export default function AtendimentoChamada() {
                   ) {
                     throw new Error(
                       dados?.erro ||
-                      "NÃ£o foi possÃ­vel finalizar o atendimento."
+                      "Não foi possível finalizar o atendimento."
                     );
                   }
 
@@ -864,7 +863,7 @@ export default function AtendimentoChamada() {
               }}
               className="w-full mt-5 bg-red-600 hover:bg-red-500 rounded-2xl py-4 text-xl font-black"
             >
-              âŒ FINALIZAR ATENDIMENTO
+              ❌ FINALIZAR ATENDIMENTO
             </button>
           </div>
 
