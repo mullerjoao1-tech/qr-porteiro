@@ -15,6 +15,7 @@ import {
 import {
   onValue,
   ref,
+  update,
 } from "firebase/database";
 
 import {
@@ -83,6 +84,12 @@ export default function AtendimentoChamada() {
 
   const [audioVisitanteRecebido, setAudioVisitanteRecebido] =
     useState("");
+
+  const [audioVisitanteMensagemId, setAudioVisitanteMensagemId] =
+    useState("");
+
+  const [popupAudioVisitanteAberto, setPopupAudioVisitanteAberto] =
+    useState(false);
 
   async function iniciarGravacaoAudio() {
     try {
@@ -191,13 +198,15 @@ export default function AtendimentoChamada() {
                   tipo?: string;
                   audioBase64?: string;
                   criadoEm?: number;
+                  audioOuvidoPeloMorador?: boolean;
                 }),
               }))
               .filter(
                 (item) =>
                   item.autor === "visitante" &&
                   item.tipo === "audio" &&
-                  !!item.audioBase64
+                  !!item.audioBase64 &&
+                  item.audioOuvidoPeloMorador !== true
               )
               .sort(
                 (a, b) =>
@@ -210,9 +219,22 @@ export default function AtendimentoChamada() {
               ? mensagens[mensagens.length - 1]
               : null;
 
-          setAudioVisitanteRecebido(
-            ultimoAudio?.audioBase64 || ""
-          );
+          if (
+            ultimoAudio?.audioBase64 &&
+            ultimoAudio?.id
+          ) {
+            setAudioVisitanteRecebido(
+              ultimoAudio.audioBase64
+            );
+
+            setAudioVisitanteMensagemId(
+              ultimoAudio.id
+            );
+
+            setPopupAudioVisitanteAberto(
+              true
+            );
+          }
         }
       );
 
@@ -366,6 +388,70 @@ export default function AtendimentoChamada() {
       id="qrcall-atendimento-pronto"
       className="min-h-screen bg-[#020617] text-white px-4 py-6"
     >
+      {popupAudioVisitanteAberto &&
+        audioVisitanteRecebido &&
+        audioVisitanteMensagemId && (
+        <div className="fixed inset-0 z-[1300] bg-black/95 flex items-center justify-center p-4">
+          <div className="w-full max-w-md bg-slate-900 border-4 border-blue-400 rounded-3xl p-5 text-center shadow-2xl">
+
+            <p className="text-6xl mb-3">
+              🎧
+            </p>
+
+            <h2 className="text-2xl font-black text-blue-300 mb-3">
+              NOVO ÁUDIO
+            </h2>
+
+            <p className="text-slate-300 mb-5">
+              Você recebeu um áudio do visitante.
+            </p>
+
+            <div className="bg-white/10 border border-white/20 rounded-2xl p-4">
+              <audio
+                controls
+                autoPlay={false}
+                className="w-full"
+                src={audioVisitanteRecebido}
+                onEnded={async () => {
+                  const agora =
+                    Date.now();
+
+                  try {
+                    await update(
+                      ref(
+                        db,
+                        `unidades-v2/${unidadeId}/chamada/mensagens/${audioVisitanteMensagemId}`
+                      ),
+                      {
+                        visualizadoPeloMorador: true,
+                        visualizadoPeloMoradorEm: agora,
+                        audioOuvidoPeloMorador: true,
+                        audioOuvidoPeloMoradorEm: agora,
+                      }
+                    );
+
+                    setPopupAudioVisitanteAberto(false);
+                    setAudioVisitanteRecebido("");
+                    setAudioVisitanteMensagemId("");
+
+                  } catch (erro) {
+                    console.error(
+                      "QRCALL_AUDIO_VISITANTE_OUVIDO:",
+                      erro
+                    );
+                  }
+                }}
+              />
+            </div>
+
+            <p className="text-yellow-300 text-sm font-bold mt-4">
+              Ouça o áudio até o final para continuar.
+            </p>
+
+          </div>
+        </div>
+      )}
+
       {popupAudioAberto && (
         <div className="fixed inset-0 z-[1200] bg-black/90 flex items-center justify-center p-4">
           <div className="relative w-full max-w-md bg-slate-900 border-2 border-cyan-500 rounded-3xl p-5 shadow-2xl">
@@ -737,19 +823,6 @@ export default function AtendimentoChamada() {
               </button>
             )}
 
-            {audioVisitanteRecebido && (
-              <div className="mt-5 bg-slate-900 border border-blue-500/40 rounded-2xl p-4">
-                <p className="text-blue-300 font-black mb-3">
-                  🎧 Áudio do visitante
-                </p>
-
-                <audio
-                  controls
-                  className="w-full"
-                  src={audioVisitanteRecebido}
-                />
-              </div>
-            )}
 
             <button
               type="button"
