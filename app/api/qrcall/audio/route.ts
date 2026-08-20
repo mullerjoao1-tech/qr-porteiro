@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+﻿import { NextResponse } from "next/server";
 
 import {
   obterFirebaseAdmin,
@@ -25,7 +25,7 @@ export async function POST(
       return NextResponse.json(
         {
           sucesso: false,
-          erro: "unidadeId é obrigatório",
+          erro: "unidadeId Ã© obrigatÃ³rio",
         },
         {
           status: 400,
@@ -37,7 +37,7 @@ export async function POST(
       return NextResponse.json(
         {
           sucesso: false,
-          erro: "audioBase64 é obrigatório",
+          erro: "audioBase64 Ã© obrigatÃ³rio",
         },
         {
           status: 400,
@@ -83,8 +83,6 @@ export async function POST(
       ultimaAtividade:
         criadoEm,
 
-      enviadoEm:
-        criadoEm,
     });
 
     return NextResponse.json({
@@ -105,7 +103,7 @@ export async function POST(
         erro:
           erro instanceof Error
             ? erro.message
-            : "Erro interno ao enviar áudio.",
+            : "Erro interno ao enviar Ã¡udio.",
       },
       {
         status: 500,
