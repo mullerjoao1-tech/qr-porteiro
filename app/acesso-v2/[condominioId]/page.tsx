@@ -381,6 +381,7 @@ export default function AcessoV2Condominio() {
       const idMensagemAntiga = `${textoResposta}-${chamada.enviadoEm || ""}`;
 
       if (
+        !ultimaMensagemMorador &&
         textoResposta &&
         idMensagemAntiga !== ultimoPopupRef.current &&
         textoResposta !== "ATENDIMENTO_ENCERRADO"
