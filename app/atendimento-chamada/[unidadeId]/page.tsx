@@ -78,8 +78,89 @@ export default function AtendimentoChamada() {
   const [enviandoAudio, setEnviandoAudio] =
     useState(false);
 
+  const [popupAudioAberto, setPopupAudioAberto] =
+    useState(false);
+
   const [audioVisitanteRecebido, setAudioVisitanteRecebido] =
     useState("");
+
+  async function iniciarGravacaoAudio() {
+    try {
+      setAvisoAudio("");
+      setAudioBlob(null);
+
+      const stream =
+        await navigator.mediaDevices.getUserMedia({
+          audio: true,
+        });
+
+      const recorder =
+        new MediaRecorder(stream);
+
+      audioChunksRef.current = [];
+
+      recorder.ondataavailable =
+        (evento) => {
+          if (
+            evento.data &&
+            evento.data.size > 0
+          ) {
+            audioChunksRef.current.push(
+              evento.data
+            );
+          }
+        };
+
+      recorder.onstop = () => {
+        const blob =
+          new Blob(
+            audioChunksRef.current,
+            {
+              type:
+                recorder.mimeType ||
+                "audio/webm",
+            }
+          );
+
+        setAudioBlob(blob);
+        setGravandoAudio(false);
+
+        stream
+          .getTracks()
+          .forEach(
+            (track) =>
+              track.stop()
+          );
+
+        setAvisoAudio(
+          "Áudio gravado. Confira antes de enviar."
+        );
+      };
+
+      mediaRecorderRef.current =
+        recorder;
+
+      recorder.start();
+
+      setGravandoAudio(true);
+
+      setAvisoAudio(
+        "Gravando áudio..."
+      );
+
+    } catch (erro) {
+      console.error(
+        "QRCALL_GRAVAR_AUDIO:",
+        erro
+      );
+
+      setGravandoAudio(false);
+
+      setAvisoAudio(
+        "Não foi possível acessar o microfone."
+      );
+    }
+  }
 
   useEffect(() => {
     if (!unidadeId) return;
@@ -285,6 +366,224 @@ export default function AtendimentoChamada() {
       id="qrcall-atendimento-pronto"
       className="min-h-screen bg-[#020617] text-white px-4 py-6"
     >
+      {popupAudioAberto && (
+        <div className="fixed inset-0 z-[1200] bg-black/90 flex items-center justify-center p-4">
+          <div className="relative w-full max-w-md bg-slate-900 border-2 border-cyan-500 rounded-3xl p-5 shadow-2xl">
+
+            {!gravandoAudio && !enviandoAudio && (
+              <button
+                type="button"
+                onClick={() => {
+                  setAudioBlob(null);
+                  setAvisoAudio("");
+                  setPopupAudioAberto(false);
+                }}
+                className="absolute top-3 right-4 text-slate-400 hover:text-white text-3xl font-black"
+              >
+                ×
+              </button>
+            )}
+
+            <div className="text-center mb-5">
+              <div className="text-5xl mb-3">
+                {gravandoAudio ? "🎙️" : "🎧"}
+              </div>
+
+              <h2 className="text-2xl font-black">
+                {gravandoAudio
+                  ? "GRAVANDO ÁUDIO"
+                  : "ÁUDIO GRAVADO"}
+              </h2>
+
+              <p className="text-slate-400 text-sm mt-2">
+                {gravandoAudio
+                  ? "Fale normalmente e toque em parar quando terminar."
+                  : audioBlob
+                  ? "Confira o áudio antes de enviar ao visitante."
+                  : avisoAudio || "Preparando microfone..."}
+              </p>
+            </div>
+
+            {gravandoAudio && (
+              <div className="space-y-4">
+                <div className="bg-red-500/10 border border-red-500/40 rounded-2xl p-4 text-center">
+                  <p className="text-red-400 font-black animate-pulse">
+                    GRAVAÇÃO EM ANDAMENTO
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (
+                      mediaRecorderRef.current &&
+                      mediaRecorderRef.current.state === "recording"
+                    ) {
+                      mediaRecorderRef.current.stop();
+                    }
+                  }}
+                  className="w-full bg-red-600 hover:bg-red-500 text-white text-xl font-black py-4 rounded-2xl"
+                >
+                  ⏹️ PARAR GRAVAÇÃO
+                </button>
+              </div>
+            )}
+
+            {!gravandoAudio && audioBlob && (
+              <div className="space-y-4">
+                <div className="bg-slate-800 border border-slate-700 rounded-2xl p-3">
+                  <audio
+                    controls
+                    className="w-full"
+                    src={URL.createObjectURL(audioBlob)}
+                  />
+                </div>
+
+                <button
+                  type="button"
+                  disabled={enviandoAudio}
+                  onClick={async () => {
+                    try {
+                      setEnviandoAudio(true);
+                      setAvisoAudio("Enviando áudio...");
+
+                      const audioBase64 =
+                        await new Promise<string>(
+                          (resolve, reject) => {
+                            const reader = new FileReader();
+
+                            reader.onloadend = () => {
+                              if (
+                                typeof reader.result === "string"
+                              ) {
+                                resolve(reader.result);
+                                return;
+                              }
+
+                              reject(
+                                new Error(
+                                  "Não foi possível converter o áudio."
+                                )
+                              );
+                            };
+
+                            reader.onerror = () => {
+                              reject(
+                                new Error(
+                                  "Erro ao ler o áudio gravado."
+                                )
+                              );
+                            };
+
+                            reader.readAsDataURL(audioBlob);
+                          }
+                        );
+
+                      const resposta =
+                        await fetch(
+                          "/api/qrcall/audio",
+                          {
+                            method: "POST",
+                            headers: {
+                              "Content-Type":
+                                "application/json",
+                            },
+                            body: JSON.stringify({
+                              unidadeId,
+                              audioBase64,
+                            }),
+                          }
+                        );
+
+                      const dados =
+                        await resposta
+                          .json()
+                          .catch(() => null);
+
+                      if (
+                        !resposta.ok ||
+                        !dados?.sucesso
+                      ) {
+                        throw new Error(
+                          dados?.erro ||
+                          "Não foi possível enviar o áudio."
+                        );
+                      }
+
+                      setAudioBlob(null);
+                      setPopupAudioAberto(false);
+                      setAvisoAudio("✓ Áudio enviado");
+
+                      setTimeout(() => {
+                        setAvisoAudio("");
+                      }, 1800);
+
+                    } catch (erro) {
+                      console.error(
+                        "QRCALL_ENVIAR_AUDIO:",
+                        erro
+                      );
+
+                      setAvisoAudio(
+                        erro instanceof Error
+                          ? erro.message
+                          : "Erro ao enviar áudio."
+                      );
+
+                    } finally {
+                      setEnviandoAudio(false);
+                    }
+                  }}
+                  className="w-full bg-blue-600 hover:bg-blue-500 disabled:bg-slate-700 text-white text-xl font-black py-4 rounded-2xl"
+                >
+                  {enviandoAudio
+                    ? "Enviando..."
+                    : "📤 ENVIAR ÁUDIO"}
+                </button>
+
+                {!enviandoAudio && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAudioBlob(null);
+                      void iniciarGravacaoAudio();
+                    }}
+                    className="w-full bg-slate-800 hover:bg-slate-700 border border-slate-600 text-white font-bold py-3 rounded-2xl"
+                  >
+                    🔄 GRAVAR NOVAMENTE
+                  </button>
+                )}
+
+                {avisoAudio && (
+                  <p className="text-center text-cyan-300 font-bold">
+                    {avisoAudio}
+                  </p>
+                )}
+              </div>
+            )}
+
+            {!gravandoAudio && !audioBlob && avisoAudio && (
+              <div className="bg-slate-800 border border-slate-700 rounded-2xl p-4 text-center">
+                <p className="text-slate-300 font-bold">
+                  {avisoAudio}
+                </p>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    void iniciarGravacaoAudio();
+                  }}
+                  className="w-full mt-4 bg-cyan-600 hover:bg-cyan-500 py-3 rounded-xl font-black"
+                >
+                  🎙️ TENTAR NOVAMENTE
+                </button>
+              </div>
+            )}
+
+          </div>
+        </div>
+      )}
+
       <section className="w-full max-w-xl mx-auto">
         <div className="bg-[#0F172A] border border-slate-700 rounded-[32px] p-5">
 
@@ -454,243 +753,14 @@ export default function AtendimentoChamada() {
 
             <button
               type="button"
-              onClick={async () => {
-                /*
-                 * Se ja estiver gravando,
-                 * o mesmo botao apenas PARA.
-                 */
-                if (
-                  mediaRecorderRef.current &&
-                  mediaRecorderRef.current.state ===
-                    "recording"
-                ) {
-                  mediaRecorderRef.current.stop();
-                  return;
-                }
-
-                try {
-                  setAvisoAudio("");
-                  setAudioBlob(null);
-
-                  const stream =
-                    await navigator.mediaDevices.getUserMedia({
-                      audio: true,
-                    });
-
-                  const recorder =
-                    new MediaRecorder(stream);
-
-                  audioChunksRef.current = [];
-
-                  recorder.ondataavailable =
-                    (evento) => {
-                      if (
-                        evento.data &&
-                        evento.data.size > 0
-                      ) {
-                        audioChunksRef.current.push(
-                          evento.data
-                        );
-                      }
-                    };
-
-                  recorder.onstop = () => {
-                    const blob =
-                      new Blob(
-                        audioChunksRef.current,
-                        {
-                          type:
-                            recorder.mimeType ||
-                            "audio/webm",
-                        }
-                      );
-
-                    setAudioBlob(blob);
-                    setGravandoAudio(false);
-
-                    stream
-                      .getTracks()
-                      .forEach(
-                        (track) =>
-                          track.stop()
-                      );
-
-                    setAvisoAudio(
-                      "Áudio gravado. Ainda não enviado."
-                    );
-                  };
-
-                  mediaRecorderRef.current =
-                    recorder;
-
-                  recorder.start();
-
-                  setGravandoAudio(true);
-
-                  setAvisoAudio(
-                    "Gravando áudio..."
-                  );
-
-                } catch (erro) {
-                  console.error(
-                    "QRCALL_GRAVAR_AUDIO:",
-                    erro
-                  );
-
-                  setGravandoAudio(false);
-
-                  setAvisoAudio(
-                    "Não foi possível acessar o microfone."
-                  );
-                }
+              onClick={() => {
+                setPopupAudioAberto(true);
+                void iniciarGravacaoAudio();
               }}
-              className={
-                gravandoAudio
-                  ? "w-full mt-5 bg-red-600 hover:bg-red-500 rounded-2xl py-4 text-xl font-black"
-                  : "w-full mt-5 bg-cyan-600 hover:bg-cyan-500 rounded-2xl py-4 text-xl font-black"
-              }
+              className="w-full mt-5 bg-cyan-600 hover:bg-cyan-500 rounded-2xl py-3 text-lg font-black"
             >
-              {gravandoAudio
-                ? "⏹️ PARAR GRAVAÇÃO"
-                : "🎙️ GRAVAR ÁUDIO"}
+              🎙️ GRAVAR ÁUDIO
             </button>
-
-            {avisoAudio && (
-              <p className="text-center text-cyan-300 font-bold mt-3">
-                {avisoAudio}
-              </p>
-            )}
-
-            {audioBlob && (
-              <div className="mt-3">
-                <p className="text-center text-green-400 font-bold mb-3">
-                  ✓ Gravação pronta
-                </p>
-
-                <button
-                  type="button"
-                  disabled={enviandoAudio}
-                  onClick={async () => {
-                    if (!audioBlob) {
-                      return;
-                    }
-
-                    try {
-                      setEnviandoAudio(true);
-                      setAvisoAudio(
-                        "Enviando áudio..."
-                      );
-
-                      const audioBase64 =
-                        await new Promise<string>(
-                          (resolve, reject) => {
-                            const reader =
-                              new FileReader();
-
-                            reader.onloadend =
-                              () => {
-                                const resultado =
-                                  reader.result;
-
-                                if (
-                                  typeof resultado ===
-                                  "string"
-                                ) {
-                                  resolve(resultado);
-                                  return;
-                                }
-
-                                reject(
-                                  new Error(
-                                    "Não foi possível converter o áudio."
-                                  )
-                                );
-                              };
-
-                            reader.onerror =
-                              () => {
-                                reject(
-                                  new Error(
-                                    "Erro ao ler o áudio gravado."
-                                  )
-                                );
-                              };
-
-                            reader.readAsDataURL(
-                              audioBlob
-                            );
-                          }
-                        );
-
-                      const resposta =
-                        await fetch(
-                          "/api/qrcall/audio",
-                          {
-                            method: "POST",
-
-                            headers: {
-                              "Content-Type":
-                                "application/json",
-                            },
-
-                            body:
-                              JSON.stringify({
-                                unidadeId,
-                                audioBase64,
-                              }),
-                          }
-                        );
-
-                      const dados =
-                        await resposta
-                          .json()
-                          .catch(() => null);
-
-                      if (
-                        !resposta.ok ||
-                        !dados?.sucesso
-                      ) {
-                        throw new Error(
-                          dados?.erro ||
-                          "Não foi possível enviar o áudio."
-                        );
-                      }
-
-                      setAudioBlob(null);
-
-                      setAvisoAudio(
-                        "✓ Áudio enviado"
-                      );
-
-                      setTimeout(() => {
-                        setAvisoAudio("");
-                      }, 2000);
-
-                    } catch (erro) {
-                      console.error(
-                        "QRCALL_ENVIAR_AUDIO:",
-                        erro
-                      );
-
-                      setAvisoAudio(
-                        erro instanceof Error
-                          ? erro.message
-                          : "Erro ao enviar áudio."
-                      );
-
-                    } finally {
-                      setEnviandoAudio(false);
-                    }
-                  }}
-                  className="w-full bg-green-600 hover:bg-green-500 disabled:bg-slate-600 rounded-2xl py-4 text-xl font-black"
-                >
-                  {enviandoAudio
-                    ? "ENVIANDO ÁUDIO..."
-                    : "📤 ENVIAR ÁUDIO"}
-                </button>
-              </div>
-            )}
-
             <button
               type="button"
               onClick={async () => {
