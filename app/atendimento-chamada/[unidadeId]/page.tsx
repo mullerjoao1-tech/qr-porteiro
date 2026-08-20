@@ -53,6 +53,9 @@ export default function AtendimentoChamada() {
   const [avisoResposta, setAvisoResposta] =
     useState("");
 
+  const [respostasRapidasAbertas, setRespostasRapidasAbertas] =
+    useState(true);
+
   /*
    * Audio QrCall novo.
    * Independente de qualquer logica antiga do Morador V2.
@@ -322,18 +325,23 @@ export default function AtendimentoChamada() {
               🔔 Entrega de comida
             </h2>
 
-            <div className="mt-5 bg-[#111827] border border-slate-700 rounded-3xl p-5">
-              <div className="flex items-center justify-between">
-                <h3 className="text-blue-300 text-xl font-black">
-                  💬 Respostas rápidas
-                </h3>
+            {respostasRapidasAbertas ? (
+              <div className="mt-5 bg-[#111827] border border-slate-700 rounded-3xl p-5">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-blue-300 text-xl font-black">
+                    💬 Respostas rápidas
+                  </h3>
 
-                <span className="text-slate-400 text-sm font-black">
-                  RECOLHER
-                </span>
-              </div>
+                  <button
+                    type="button"
+                    onClick={() => setRespostasRapidasAbertas(false)}
+                    className="text-slate-400 text-sm font-black hover:text-white"
+                  >
+                    RECOLHER
+                  </button>
+                </div>
 
-              <div className="mt-5 space-y-3">
+                <div className="mt-5 space-y-3">
                 {respostasRapidas.map((texto) => (
                   <button
                     key={texto}
@@ -384,6 +392,8 @@ export default function AtendimentoChamada() {
                           "✓ Resposta enviada"
                         );
 
+                        setRespostasRapidasAbertas(false);
+
                         setTimeout(() => {
                           setAvisoResposta("");
                         }, 1800);
@@ -411,13 +421,22 @@ export default function AtendimentoChamada() {
                   </button>
                 ))}
 
-                {avisoResposta && (
-                  <p className="text-center text-green-400 font-bold mt-3">
-                    {avisoResposta}
-                  </p>
-                )}
+                  {avisoResposta && (
+                    <p className="text-center text-green-400 font-bold mt-3">
+                      {avisoResposta}
+                    </p>
+                  )}
+                </div>
               </div>
-            </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setRespostasRapidasAbertas(true)}
+                className="w-full mt-5 bg-slate-900 hover:bg-slate-800 border border-blue-500/40 text-blue-300 font-black py-3 rounded-2xl"
+              >
+                💬 RESPOSTAS RÁPIDAS
+              </button>
+            )}
 
             {audioVisitanteRecebido && (
               <div className="mt-5 bg-slate-900 border border-blue-500/40 rounded-2xl p-4">
