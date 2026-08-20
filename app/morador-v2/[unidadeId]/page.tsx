@@ -692,7 +692,8 @@ const nomeLocal =
 
       if (
         deveTocar &&
-        !acaoChamadaPeloLink
+        !acaoChamadaPeloLink &&
+        acaoChamadaExecutadaRef.current !== "atender"
       ) {
         // Fluxo normal da tela aberta continua igual.
         // Quando a acao veio da tela nativa, nao reabre CHAMADA RECEBIDA.
