@@ -472,11 +472,28 @@ export default function AtendimentoChamada() {
             </div>
 
             <audio
+              id="audio-popup-visitante"
               controls
-              autoPlay
               className="w-full mt-5"
               src={audioPopupRecebido}
             />
+
+            <button
+              type="button"
+              onClick={() => {
+                const player =
+                  document.getElementById(
+                    "audio-popup-visitante"
+                  ) as HTMLAudioElement | null;
+
+                if (player) {
+                  void player.play();
+                }
+              }}
+              className="w-full mt-4 bg-blue-600 hover:bg-blue-500 text-white text-lg font-black py-4 rounded-2xl"
+            >
+              ▶ OUVIR ÁUDIO
+            </button>
 
             <button
               type="button"
