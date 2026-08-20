@@ -419,7 +419,14 @@ export default function AtendimentoChamada() {
 
   if (iniciando) {
     return (
-      <main className="min-h-screen bg-[#020617] text-white flex items-center justify-center px-6">
+      <main
+        id={
+          audioVisitanteRecebido
+            ? "qrcall-atendimento-pronto"
+            : undefined
+        }
+        className="min-h-screen bg-[#020617] text-white flex items-center justify-center px-6"
+      >
         <div className="text-center">
           <p className="text-green-400 text-2xl font-black">
             QR ACESSO
@@ -435,7 +442,14 @@ export default function AtendimentoChamada() {
 
   if (erroInicio) {
     return (
-      <main className="min-h-screen bg-[#020617] text-white flex items-center justify-center px-6">
+      <main
+        id={
+          audioVisitanteRecebido
+            ? "qrcall-atendimento-pronto"
+            : undefined
+        }
+        className="min-h-screen bg-[#020617] text-white flex items-center justify-center px-6"
+      >
         <div className="w-full max-w-md bg-slate-900 border border-red-500/40 rounded-3xl p-6 text-center">
           <p className="text-red-400 text-xl font-black">
             Não foi possível atender
