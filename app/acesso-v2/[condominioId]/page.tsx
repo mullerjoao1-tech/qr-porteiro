@@ -15,6 +15,7 @@ type MensagemConversa = {
   texto?: string;
   audioBase64?: string;
   criadoEm: number;
+  chamadaId?: string;
   visualizadoPeloMorador?: boolean;
   visualizadoPeloMoradorEm?: number;
   audioOuvidoPeloMorador?: boolean;
@@ -42,6 +43,7 @@ type Unidade = {
     motivo?: string;
     status?: string;
     criadoEm?: string;
+    chamadaId?: string;
     mensagemRapida?: string;
     respostaRapida?: string;
     resposta?: string;
@@ -309,23 +311,23 @@ export default function AcessoV2Condominio() {
 
       chamadaAtivaRef.current = true;
 
-      const criadoEmChamadaMs =
-        chamada.criadoEm
-          ? new Date(chamada.criadoEm).getTime()
-          : 0;
+      const chamadaIdAtual =
+        String(
+          chamada.chamadaId || ""
+        ).trim();
 
       const todasAsMensagens: MensagemConversaComId[] = chamada.mensagens
         ? (Object.entries(chamada.mensagens) as Array<[string, MensagemConversa]>)
             .map(([id, item]) => ({ id, ...item }))
             .filter((item) => {
-              const criadoEmMensagem =
-                Number(item.criadoEm || item.id);
-
-              if (!criadoEmChamadaMs) {
-                return true;
+              if (!chamadaIdAtual) {
+                return false;
               }
 
-              return criadoEmMensagem >= criadoEmChamadaMs;
+              return (
+                String(item.chamadaId || "").trim() ===
+                chamadaIdAtual
+              );
             })
             .sort(
               (mensagemA, mensagemB) =>
@@ -478,12 +480,16 @@ export default function AcessoV2Condominio() {
       chamadaAtivaRef.current = true;
       setDiagnostico("Gravando chamada...");
 
+      const chamadaIdNova =
+        `${Date.now()}-${crypto.randomUUID()}`;
+
       await update(
         ref(db, `unidades-v2/${unidadeIdAtual}/chamada`),
         {
           nome: nomeFinal,
           motivo: motivoFinal,
           status: "Aguardando atendimento",
+          chamadaId: chamadaIdNova,
           criadoEm: new Date().toISOString(),
           notificar: true,
           condominioId,
@@ -662,6 +668,11 @@ export default function AcessoV2Condominio() {
       const criadoEmMensagem = Date.now();
       const idMensagem = String(criadoEmMensagem);
 
+      let chamadaIdMensagem =
+        String(
+          chamadaAtual?.chamadaId || ""
+        ).trim();
+
       if (!chamadaJaAtiva) {
         const motivoFinal = motivo === "Outros" ? outroMotivo.trim() : motivo;
         let nomeFinal = nome.trim();
@@ -674,10 +685,17 @@ export default function AcessoV2Condominio() {
         chamadaAtivaRef.current = true;
         ultimoPopupRef.current = "";
 
+        const chamadaIdNova =
+          `${Date.now()}-${crypto.randomUUID()}`;
+
+        chamadaIdMensagem =
+          chamadaIdNova;
+
         await update(referenciaChamada, {
           nome: nomeFinal,
           motivo: motivoFinal,
           status: "Aguardando atendimento",
+          chamadaId: chamadaIdNova,
           criadoEm: new Date().toISOString(),
           notificar: true,
           condominioId,
@@ -706,6 +724,7 @@ export default function AcessoV2Condominio() {
           tipo: "audio",
           audioBase64,
           criadoEm: criadoEmMensagem,
+          chamadaId: chamadaIdMensagem,
         }
       );
 
