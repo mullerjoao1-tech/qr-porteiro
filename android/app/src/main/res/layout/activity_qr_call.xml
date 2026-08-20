@@ -106,13 +106,49 @@
                         android:background="#0F172A"
                         android:layout_margin="4dp">
 
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Capturando imagem..."
-                            android:textColor="#94A3B8"
-                            android:textSize="14sp"
-                            android:layout_gravity="center" />
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:orientation="vertical"
+                            android:gravity="center"
+                            android:padding="18dp">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="📷"
+                                android:textSize="34sp"
+                                android:layout_marginBottom="8dp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Câmera do portão"
+                                android:textColor="#FFFFFF"
+                                android:textSize="17sp"
+                                android:textStyle="bold"
+                                android:gravity="center" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Recurso disponível com o pacote Câmera"
+                                android:textColor="#4ADE80"
+                                android:textSize="14sp"
+                                android:textStyle="bold"
+                                android:gravity="center"
+                                android:layout_marginTop="6dp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Veja quem está no portão antes de atender."
+                                android:textColor="#94A3B8"
+                                android:textSize="13sp"
+                                android:gravity="center"
+                                android:layout_marginTop="6dp" />
+
+                        </LinearLayout>
 
                     </FrameLayout>
 
