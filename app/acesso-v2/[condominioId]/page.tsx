@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import {
   iniciarEscalonamento,
@@ -309,9 +309,24 @@ export default function AcessoV2Condominio() {
 
       chamadaAtivaRef.current = true;
 
+      const criadoEmChamadaMs =
+        chamada.criadoEm
+          ? new Date(chamada.criadoEm).getTime()
+          : 0;
+
       const todasAsMensagens: MensagemConversaComId[] = chamada.mensagens
         ? (Object.entries(chamada.mensagens) as Array<[string, MensagemConversa]>)
             .map(([id, item]) => ({ id, ...item }))
+            .filter((item) => {
+              const criadoEmMensagem =
+                Number(item.criadoEm || item.id);
+
+              if (!criadoEmChamadaMs) {
+                return true;
+              }
+
+              return criadoEmMensagem >= criadoEmChamadaMs;
+            })
             .sort(
               (mensagemA, mensagemB) =>
                 Number(mensagemA.criadoEm || mensagemA.id) -
