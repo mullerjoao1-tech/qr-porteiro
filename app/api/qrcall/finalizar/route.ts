@@ -113,6 +113,25 @@ export async function POST(
         null,
     });
 
+    const criadoEmEncerrado =
+      chamada?.criadoEm || null;
+
+    const snapshotAtual =
+      await referencia.get();
+
+    const chamadaAtual =
+      snapshotAtual.val();
+
+    if (
+      chamadaAtual &&
+      chamadaAtual.status ===
+        "Encerrado" &&
+      chamadaAtual.criadoEm ===
+        criadoEmEncerrado
+    ) {
+      await referencia.remove();
+    }
+
     return NextResponse.json({
       sucesso: true,
       unidadeId,
