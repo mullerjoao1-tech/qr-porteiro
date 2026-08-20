@@ -12,6 +12,15 @@ import {
   useSearchParams,
 } from "next/navigation";
 
+import {
+  onValue,
+  ref,
+} from "firebase/database";
+
+import {
+  db,
+} from "@/app/services/firebase";
+
 const respostasRapidas = [
   "💬 Aguarde um momento",
   "🚶 Já estou descendo",
@@ -65,6 +74,69 @@ export default function AtendimentoChamada() {
 
   const [enviandoAudio, setEnviandoAudio] =
     useState(false);
+
+  const [audioVisitanteRecebido, setAudioVisitanteRecebido] =
+    useState("");
+
+  useEffect(() => {
+    if (!unidadeId) return;
+
+    const referenciaMensagens =
+      ref(
+        db,
+        `unidades-v2/${unidadeId}/chamada/mensagens`
+      );
+
+    const pararDeOuvir =
+      onValue(
+        referenciaMensagens,
+        (snapshot) => {
+          const dados = snapshot.val();
+
+          if (!dados) {
+            setAudioVisitanteRecebido("");
+            return;
+          }
+
+          const mensagens =
+            Object.entries(dados)
+              .map(([id, valor]) => ({
+                id,
+                ...(valor as {
+                  autor?: string;
+                  tipo?: string;
+                  audioBase64?: string;
+                  criadoEm?: number;
+                }),
+              }))
+              .filter(
+                (item) =>
+                  item.autor === "visitante" &&
+                  item.tipo === "audio" &&
+                  !!item.audioBase64
+              )
+              .sort(
+                (a, b) =>
+                  Number(a.criadoEm || 0) -
+                  Number(b.criadoEm || 0)
+              );
+
+          const ultimoAudio =
+            mensagens.length > 0
+              ? mensagens[mensagens.length - 1]
+              : null;
+
+          setAudioVisitanteRecebido(
+            ultimoAudio?.audioBase64 || ""
+          );
+        }
+      );
+
+    return () => {
+      pararDeOuvir();
+    };
+
+  }, [unidadeId]);
 
   useEffect(() => {
     if (!iniciar) {
@@ -346,6 +418,20 @@ export default function AtendimentoChamada() {
                 )}
               </div>
             </div>
+
+            {audioVisitanteRecebido && (
+              <div className="mt-5 bg-slate-900 border border-blue-500/40 rounded-2xl p-4">
+                <p className="text-blue-300 font-black mb-3">
+                  🎧 Áudio do visitante
+                </p>
+
+                <audio
+                  controls
+                  className="w-full"
+                  src={audioVisitanteRecebido}
+                />
+              </div>
+            )}
 
             <button
               type="button"
