@@ -479,13 +479,16 @@ export default function AcessoV2Condominio() {
       chamadaAtivaRef.current = true;
       setDiagnostico("Gravando chamada...");
 
+      const criadoEmChamada =
+        new Date().toISOString();
+
       await update(
         ref(db, `unidades-v2/${unidadeIdAtual}/chamada`),
         {
           nome: nomeFinal,
           motivo: motivoFinal,
           status: "Aguardando atendimento",
-          criadoEm: new Date().toISOString(),
+          criadoEm: criadoEmChamada,
           notificar: true,
           condominioId,
           origem: "acesso-v2",
@@ -503,6 +506,19 @@ export default function AcessoV2Condominio() {
         `unidades-v2/${unidadeIdAtual}/chamada`
       );
 
+
+      setTimeout(() => {
+        void fetch("/api/qrcall/timeout-aguardando", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            unidadeId: unidadeIdAtual,
+            criadoEmEsperado: criadoEmChamada,
+          }),
+        });
+      }, 3 * 60 * 1000);
       setEnviando(false);
       setDiagnostico("✅ Chamada enviada.");
       setMensagem(
