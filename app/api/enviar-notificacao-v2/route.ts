@@ -1,4 +1,4 @@
-﻿import { NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import {
   cert,
   getApp,
@@ -546,6 +546,7 @@ export async function POST(request: Request) {
             string,
             {
               token?: string;
+              usuarioUid?: string | null;
             }
           > | null;
 
@@ -560,7 +561,16 @@ export async function POST(request: Request) {
               ""
             ).trim();
 
-          if (token) {
+          const usuarioUid =
+            String(
+              dispositivo?.usuarioUid ||
+              ""
+            ).trim();
+
+          if (
+            token &&
+            usuarioUid === responsavelAtualUid
+          ) {
             tokens.add(
               token
             );

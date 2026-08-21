@@ -331,6 +331,7 @@ const nomeLocal =
           ref(db, `configuracoes-v2/tokensNativos/${slug}/${deviceId}`),
           {
             token: token.value,
+            usuarioUid: usuario?.uid || null,
             atualizadoEm: Date.now(),
           }
         );
