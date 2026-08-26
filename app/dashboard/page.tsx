@@ -927,7 +927,8 @@ async function atualizarMorador(
   key={item.id}
   onClick={() => {
     if (item.id === "inicio") {
-  window.location.href = "/";
+  setTelaAtiva("sindico");
+  setMenuMobileAberto(false);
   return;
 }
 
@@ -970,7 +971,8 @@ setMenuMobileAberto(false);
                 key={item.id}
                 onClick={() => {
   if (item.id === "inicio") {
-  window.location.href = "/";
+  setTelaAtiva("sindico");
+  setMenuMobileAberto(false);
   return;
 }
 

@@ -97,13 +97,13 @@ export function gerarLinks(
         const acessoVisitante =
           criarLink(
             baseUrlNormalizada,
-            `/acesso-v2/${contexto.local.slug}/${unidade.slug}`
+            `/acesso-v2/${contexto.local.slug}`
           );
 
         const painelMorador =
           criarLink(
             baseUrlNormalizada,
-            `/morador-v2/${contexto.local.slug}/${unidade.slug}`
+            `/morador-v2/${unidade.id}`
           );
 
         adicionarLink(

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import {
   Suspense,
@@ -342,9 +342,12 @@ if (modoResidencia) {
       }
 
       const unidadeResidencia =
-        slugResidencia === "muller"
-          ? "muller-principal"
-          : `${slugResidencia}-principal`;
+        unidadeId ||
+        (
+          slugResidencia === "muller"
+            ? "muller-principal"
+            : `${slugResidencia}-principal`
+        );
 
       router.push(
         `/morador-v2/${encodeURIComponent(
@@ -811,9 +814,12 @@ if (modoResidencia) {
             localId={identificadorLocalAtual}
             visitante={`/acesso-v2/${identificadorLocalAtual}`}
             morador={`/morador-v2/${
-              identificadorLocalAtual === "muller"
-                ? "muller-principal"
-                : `${identificadorLocalAtual}-principal`
+              unidadeId ||
+              (
+                identificadorLocalAtual === "muller"
+                  ? "muller-principal"
+                  : `${identificadorLocalAtual}-principal`
+              )
             }`}
             painel="/dashboard/morador"
             titulo="QR, placa e links da residência"
