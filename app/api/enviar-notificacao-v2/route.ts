@@ -13,8 +13,9 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 type CorpoChamada = {
-  tipo?: "chamada-v2";
+  tipo?: "chamada-v2" | "cancelar-chamada-v2";
   unidadeId?: string;
+  criadoEm?: string;
 };
 
 type CorpoComunicado = {
@@ -474,6 +475,61 @@ export async function POST(request: Request) {
     const chamada =
       chamadaSnapshot.val() || {};
 
+    const criadoEm =
+      String(
+        chamada?.criadoEm ||
+        ""
+      ).trim();
+
+    const cancelamentoQrCall =
+      corpo.tipo ===
+      "cancelar-chamada-v2";
+
+    if (cancelamentoQrCall) {
+      const criadoEmEsperado =
+        String(
+          corpo.criadoEm ||
+          ""
+        ).trim();
+
+      if (!criadoEmEsperado) {
+        return NextResponse.json(
+          {
+            ok: false,
+            erro:
+              "criadoEm nao informado para cancelamento.",
+          },
+          { status: 400 }
+        );
+      }
+
+      if (
+        chamada?.status !==
+        "Aguardando atendimento"
+      ) {
+        return NextResponse.json(
+          {
+            ok: false,
+            erro:
+              "Chamada nao esta mais aguardando atendimento.",
+          },
+          { status: 409 }
+        );
+      }
+
+      if (criadoEm !== criadoEmEsperado) {
+        return NextResponse.json(
+          {
+            ok: false,
+            erro:
+              "Cancelamento pertence a outra chamada.",
+          },
+          { status: 409 }
+        );
+      }
+    }
+
+
     const responsavelAtualUid =
       String(
         chamada.responsavelAtualUid ||
@@ -493,6 +549,7 @@ export async function POST(request: Request) {
       new Set<string>();
 
     if (responsavelAtualUid) {
+      if (!cancelamentoQrCall) {
       const dispositivosSnapshot =
         await db
           .ref(
@@ -532,6 +589,7 @@ export async function POST(request: Request) {
         }
       }
       
+      }
       // ADICIONADO: Buscar tokens nativos
       const dispositivosNativosSnapshot =
         await db
@@ -582,7 +640,7 @@ export async function POST(request: Request) {
     let usouFallbackLegado =
       false;
 
-    if (tokens.size === 0) {
+    if (tokens.size === 0 && !cancelamentoQrCall) {
       const tokenSnapshot =
         await db
           .ref(
@@ -653,6 +711,11 @@ export async function POST(request: Request) {
                   responsavelAtualUid
                 ),
 
+              criadoEm:
+                String(
+                  criadoEm
+                ),
+
               nome:
                 String(nome),
 
@@ -660,7 +723,9 @@ export async function POST(request: Request) {
                 String(motivo),
 
               tipo:
-                "chamada-v2",
+                cancelamentoQrCall
+                  ? "cancelar-chamada-v2"
+                  : "chamada-v2",
 
               titulo:
                 `🔔 ${nome} está chamando`,
