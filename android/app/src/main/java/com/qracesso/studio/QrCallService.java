@@ -2,6 +2,7 @@ package com.qracesso.studio;
 
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
 import android.media.Ringtone;
@@ -28,7 +29,7 @@ public class QrCallService extends Service {
     public static final String EXTRA_MOTIVO = "motivo";
 
     private static final String CHANNEL_ID =
-            "qr_call_service_v1";
+            "qr_call_incoming_v2";
 
     private static final int NOTIFICATION_ID =
             9102;
@@ -158,7 +159,7 @@ public class QrCallService extends Service {
                     new NotificationChannel(
                             CHANNEL_ID,
                             "Chamada QR Acesso",
-                            NotificationManager.IMPORTANCE_LOW
+                            NotificationManager.IMPORTANCE_HIGH
                     );
 
             channel.setDescription(
@@ -171,6 +172,27 @@ public class QrCallService extends Service {
                     channel
             );
         }
+
+        Intent chamadaIntent =
+                new Intent(
+                        this,
+                        QrCallActivity.class
+                );
+
+        chamadaIntent.addFlags(
+                Intent.FLAG_ACTIVITY_NEW_TASK |
+                Intent.FLAG_ACTIVITY_SINGLE_TOP |
+                Intent.FLAG_ACTIVITY_CLEAR_TOP
+        );
+
+        PendingIntent chamadaPendingIntent =
+                PendingIntent.getActivity(
+                        this,
+                        9103,
+                        chamadaIntent,
+                        PendingIntent.FLAG_UPDATE_CURRENT |
+                        PendingIntent.FLAG_IMMUTABLE
+                );
 
         NotificationCompat.Builder builder =
                 new NotificationCompat.Builder(
@@ -187,12 +209,18 @@ public class QrCallService extends Service {
                                 "Chamada de " + nome
                         )
                         .setCategory(
-                                NotificationCompat.CATEGORY_SERVICE
+                                NotificationCompat.CATEGORY_CALL
                         )
                         .setOngoing(true)
-                        .setSilent(true)
                         .setPriority(
-                                NotificationCompat.PRIORITY_LOW
+                                NotificationCompat.PRIORITY_MAX
+                        )
+                        .setContentIntent(
+                                chamadaPendingIntent
+                        )
+                        .setFullScreenIntent(
+                                chamadaPendingIntent,
+                                true
                         );
 
         startForeground(
