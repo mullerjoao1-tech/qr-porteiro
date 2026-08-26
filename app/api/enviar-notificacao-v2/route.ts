@@ -627,7 +627,10 @@ export async function POST(request: Request) {
 
           if (
             token &&
-            usuarioUid === responsavelAtualUid
+            (
+              cancelamentoQrCall ||
+              usuarioUid === responsavelAtualUid
+            )
           ) {
             tokens.add(
               token
