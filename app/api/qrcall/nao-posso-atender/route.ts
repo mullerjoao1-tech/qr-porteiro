@@ -301,11 +301,23 @@ export async function POST(
     const agora =
       Date.now();
 
+    let primeiraExecucaoTransaction = true;
+
     const transacao =
       await chamadaRef.transaction(
         (
           atual
         ) => {
+          if (
+            atual === null &&
+            primeiraExecucaoTransaction
+          ) {
+            primeiraExecucaoTransaction = false;
+            atual = chamada;
+          } else {
+            primeiraExecucaoTransaction = false;
+          }
+
           if (!atual) {
             return;
           }
