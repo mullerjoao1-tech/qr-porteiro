@@ -165,63 +165,124 @@ public class QrCallActivity extends AppCompatActivity {
                             QrCallService.EXTRA_UNIDADE_ID
                     );
 
+            final String criadoEmNaoPosso =
+                    getIntent().getStringExtra("criadoEm");
+
+            final String responsavelUidNaoPosso =
+                    getIntent().getStringExtra(
+                            QrCallService.EXTRA_RESPONSAVEL_UID
+                    );
+
             if (
                     unidadeIdNaoPosso == null ||
-                    unidadeIdNaoPosso.trim().isEmpty()
+                    criadoEmNaoPosso == null ||
+                    responsavelUidNaoPosso == null ||
+                    unidadeIdNaoPosso.trim().isEmpty() ||
+                    criadoEmNaoPosso.trim().isEmpty() ||
+                    responsavelUidNaoPosso.trim().isEmpty()
             ) {
+                android.util.Log.e(
+                        "QR_CALL_NEW",
+                        "NAO POSSO sem identidade completa"
+                );
+
                 btnNaoPosso.setEnabled(true);
                 return;
             }
 
-            com.google.firebase.database.DatabaseReference chamadaRef =
-                    com.google.firebase.database.FirebaseDatabase
-                            .getInstance(
-                                    "https://qr-acesso-studio-default-rtdb.firebaseio.com"
-                            )
-                            .getReference("unidades-v2")
-                            .child(unidadeIdNaoPosso.trim())
-                            .child("chamada");
+            new Thread(() -> {
+                HttpURLConnection conexao = null;
 
-            java.util.Map<String, Object> atualizacao =
-                    new java.util.HashMap<>();
+                try {
+                    URL url = new URL(
+                            "https://qr-acesso-studio.vercel.app/api/qrcall/nao-posso-atender"
+                    );
 
-            atualizacao.put(
-                    "status",
-                    "Encerrado"
-            );
+                    conexao =
+                            (HttpURLConnection) url.openConnection();
 
-            atualizacao.put(
-                    "mensagemResponsavel",
-                    "NAO_POSSO_ATENDER"
-            );
+                    conexao.setRequestMethod("POST");
+                    conexao.setConnectTimeout(10000);
+                    conexao.setReadTimeout(15000);
+                    conexao.setDoOutput(true);
 
-            atualizacao.put(
-                    "notificar",
-                    false
-            );
+                    conexao.setRequestProperty(
+                            "Content-Type",
+                            "application/json; charset=UTF-8"
+                    );
 
-            atualizacao.put(
-                    "encerradoEm",
-                    com.google.firebase.database.ServerValue.TIMESTAMP
-            );
+                    JSONObject corpo = new JSONObject();
 
-            chamadaRef.updateChildren(atualizacao)
-                    .addOnSuccessListener(ignorado -> {
-                        /*
-                         * NAO damos finish() aqui.
-                         * O QrCallService observa o mesmo Firebase.
-                         * Ao enxergar status Encerrado ele para
-                         * ringtone, foreground e fecha a Activity.
-                         */
-                    })
-                    .addOnFailureListener(erro -> {
-                        btnNaoPosso.setEnabled(true);
-                        android.util.Log.e(
-                                "QR_CALL_NEW",
-                                "Falha ao encerrar pelo NAO POSSO",
-                                erro
+                    corpo.put(
+                            "unidadeId",
+                            unidadeIdNaoPosso.trim()
+                    );
+
+                    corpo.put(
+                            "criadoEmEsperado",
+                            criadoEmNaoPosso.trim()
+                    );
+
+                    corpo.put(
+                            "responsavelUidEsperado",
+                            responsavelUidNaoPosso.trim()
+                    );
+
+                    byte[] bytes =
+                            corpo.toString().getBytes(
+                                    StandardCharsets.UTF_8
+                            );
+
+                    try (OutputStream output =
+                                 conexao.getOutputStream()) {
+                        output.write(bytes);
+                    }
+
+                    int codigo =
+                            conexao.getResponseCode();
+
+                    android.util.Log.d(
+                            "QR_CALL_NEW",
+                            "NAO POSSO HTTP=" + codigo
+                    );
+
+                    if (
+                            codigo < 200 ||
+                            codigo >= 300
+                    ) {
+                        runOnUiThread(() ->
+                                btnNaoPosso.setEnabled(true)
                         );
-                    });
+                    }
+
+                    /*
+                     * Em sucesso nao fazemos finish()
+                     * nem ACTION_STOP.
+                     *
+                     * Se houver R2, a API muda o responsavel
+                     * e o listener Firebase encerra o R1.
+                     *
+                     * Se nao houver R2, a API muda o status
+                     * para Encerrado e o mesmo listener fecha.
+                     */
+
+                } catch (Exception erro) {
+                    android.util.Log.e(
+                            "QR_CALL_NEW",
+                            "Erro no NAO POSSO",
+                            erro
+                    );
+
+                    runOnUiThread(() ->
+                            btnNaoPosso.setEnabled(true)
+                    );
+
+                } finally {
+                    if (conexao != null) {
+                        conexao.disconnect();
+                    }
+                }
+            }).start();
         });
 
         btnAtender.setOnClickListener(v -> {
