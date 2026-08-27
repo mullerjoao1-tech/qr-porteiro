@@ -226,7 +226,11 @@ public class QrCallService extends Service {
         );
 
         iniciarForeground(
-                nome != null ? nome : "Visitante"
+                nome != null ? nome : "Visitante",
+                unidadeId,
+                motivo,
+                criadoEm,
+                responsavelAtualUid
         );
 
         iniciarAlerta();
@@ -477,7 +481,11 @@ public class QrCallService extends Service {
     }
 
     private void iniciarForeground(
-            String nome
+            String nome,
+            String unidadeId,
+            String motivo,
+            String criadoEm,
+            String responsavelAtualUid
     ) {
         NotificationManager manager =
                 (NotificationManager)
@@ -518,6 +526,12 @@ public class QrCallService extends Service {
                 Intent.FLAG_ACTIVITY_SINGLE_TOP |
                 Intent.FLAG_ACTIVITY_CLEAR_TOP
         );
+
+        chamadaIntent.putExtra(EXTRA_UNIDADE_ID, unidadeId);
+        chamadaIntent.putExtra(EXTRA_NOME, nome);
+        chamadaIntent.putExtra(EXTRA_MOTIVO, motivo);
+        chamadaIntent.putExtra("criadoEm", criadoEm);
+        chamadaIntent.putExtra(EXTRA_RESPONSAVEL_UID, responsavelAtualUid);
 
         PendingIntent chamadaPendingIntent =
                 PendingIntent.getActivity(
