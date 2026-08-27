@@ -311,12 +311,6 @@ const nomeLocal =
 
   useEffect(() => {
     if (Capacitor.isNativePlatform()) {
-      PushNotifications.requestPermissions().then((result) => {
-        if (result.receive === "granted") {
-          PushNotifications.register();
-        }
-      });
-
       PushNotifications.addListener("registration", async (token) => {
         const condominioId = identificarCondominioPeloSlug(slug);
         const chaveDeviceId = "qr-core:device-id-nativo";
@@ -335,6 +329,12 @@ const nomeLocal =
             atualizadoEm: Date.now(),
           }
         );
+      });
+
+      PushNotifications.requestPermissions().then((result) => {
+        if (result.receive === "granted") {
+          PushNotifications.register();
+        }
       });
     }
   }, [slug]);
