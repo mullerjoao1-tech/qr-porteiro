@@ -16,6 +16,12 @@ import android.util.Log;
 
 import androidx.core.app.NotificationCompat;
 
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
+
 public class QrCallService extends Service {
 
     public static final String ACTION_START =
@@ -24,9 +30,13 @@ public class QrCallService extends Service {
     public static final String ACTION_STOP =
             "com.qracesso.studio.QR_CALL_STOP";
 
+    public static final String ACTION_CANCEL_REMOTE =
+            "com.qracesso.studio.QR_CALL_CANCEL_REMOTE";
+
     public static final String EXTRA_UNIDADE_ID = "unidadeId";
     public static final String EXTRA_NOME = "nome";
     public static final String EXTRA_MOTIVO = "motivo";
+    public static final String EXTRA_RESPONSAVEL_UID = "responsavelAtualUid";
 
     private static final String CHANNEL_ID =
             "qr_call_incoming_v2";
@@ -36,6 +46,77 @@ public class QrCallService extends Service {
 
     private Ringtone ringtone;
     private Vibrator vibrator;
+
+    private String chamadaAtivaUnidadeId = "";
+    private String chamadaAtivaCriadoEm = "";
+    private String chamadaAtivaResponsavelUid = "";
+
+    private DatabaseReference referenciaChamadaFirebase;
+    private ValueEventListener listenerChamadaFirebase;
+
+    private final android.content.BroadcastReceiver receiverCancelarQrCall =
+            new android.content.BroadcastReceiver() {
+                @Override
+                public void onReceive(
+                        android.content.Context context,
+                        Intent intent
+                ) {
+                    if (
+                            intent == null ||
+                            !ACTION_CANCEL_REMOTE.equals(
+                                    intent.getAction()
+                            )
+                    ) {
+                        return;
+                    }
+
+                    String unidadeId =
+                            intent.getStringExtra(
+                                    EXTRA_UNIDADE_ID
+                            );
+
+                    String criadoEm =
+                            intent.getStringExtra(
+                                    "criadoEm"
+                            );
+
+                    boolean mesmaChamada =
+                            unidadeId != null &&
+                            criadoEm != null &&
+                            unidadeId.equals(
+                                    chamadaAtivaUnidadeId
+                            ) &&
+                            criadoEm.equals(
+                                    chamadaAtivaCriadoEm
+                            );
+
+                    if (!mesmaChamada) {
+                        Log.d(
+                                "QR_CALL_NEW",
+                                "Cancelamento remoto ignorado: outra chamada"
+                        );
+
+                        return;
+                    }
+
+                    Log.d(
+                            "QR_CALL_NEW",
+                            "Cancelamento remoto confirmado"
+                    );
+
+                    timeoutHandler.removeCallbacks(
+                            timeoutChamada
+                    );
+
+                    pararAlerta();
+                    encerrarForeground();
+
+                    chamadaAtivaUnidadeId = "";
+                    chamadaAtivaCriadoEm = "";
+
+                    stopSelf();
+                }
+            };
 
 
     private final android.os.Handler timeoutHandler =
@@ -56,6 +137,30 @@ public class QrCallService extends Service {
                 }
             };
     @Override
+    public void onCreate() {
+        super.onCreate();
+
+        android.content.IntentFilter filtroCancelar =
+                new android.content.IntentFilter(
+                        ACTION_CANCEL_REMOTE
+                );
+
+        if (Build.VERSION.SDK_INT >= 33) {
+            registerReceiver(
+                    receiverCancelarQrCall,
+                    filtroCancelar,
+                    android.content.Context.RECEIVER_NOT_EXPORTED
+            );
+        } else {
+            registerReceiver(
+                    receiverCancelarQrCall,
+                    filtroCancelar
+            );
+        }
+    }
+
+
+    @Override
     public int onStartCommand(
             Intent intent,
             int flags,
@@ -71,8 +176,12 @@ public class QrCallService extends Service {
 
         if (ACTION_STOP.equals(action)) {
             timeoutHandler.removeCallbacks(timeoutChamada);
+            pararObservacaoFirebase();
             pararAlerta();
             encerrarForeground();
+            chamadaAtivaUnidadeId = "";
+            chamadaAtivaCriadoEm = "";
+            chamadaAtivaResponsavelUid = "";
             stopSelf();
             return START_NOT_STICKY;
         }
@@ -92,6 +201,25 @@ public class QrCallService extends Service {
         String motivo =
                 intent.getStringExtra(EXTRA_MOTIVO);
 
+        String criadoEm =
+                intent.getStringExtra("criadoEm");
+
+        String responsavelAtualUid =
+                intent.getStringExtra(
+                        EXTRA_RESPONSAVEL_UID
+                );
+
+        chamadaAtivaUnidadeId =
+                unidadeId != null ? unidadeId : "";
+
+        chamadaAtivaCriadoEm =
+                criadoEm != null ? criadoEm : "";
+
+        chamadaAtivaResponsavelUid =
+                responsavelAtualUid != null
+                        ? responsavelAtualUid
+                        : "";
+
         Log.d(
                 "QR_CALL_NEW",
                 "Nova chamada recebida. unidadeId=" + unidadeId
@@ -102,6 +230,12 @@ public class QrCallService extends Service {
         );
 
         iniciarAlerta();
+
+        iniciarObservacaoFirebase(
+                chamadaAtivaUnidadeId,
+                chamadaAtivaCriadoEm,
+                chamadaAtivaResponsavelUid
+        );
 
         timeoutHandler.removeCallbacks(timeoutChamada);
         timeoutHandler.postDelayed(
@@ -121,6 +255,8 @@ public class QrCallService extends Service {
         tela.putExtra(EXTRA_UNIDADE_ID, unidadeId);
         tela.putExtra(EXTRA_NOME, nome);
         tela.putExtra(EXTRA_MOTIVO, motivo);
+        tela.putExtra("criadoEm", criadoEm);
+        tela.putExtra(EXTRA_RESPONSAVEL_UID, responsavelAtualUid);
 
         try {
             startActivity(tela);
@@ -140,6 +276,204 @@ public class QrCallService extends Service {
         }
 
         return START_NOT_STICKY;
+    }
+
+    private void pararObservacaoFirebase() {
+        if (
+                referenciaChamadaFirebase != null &&
+                listenerChamadaFirebase != null
+        ) {
+            try {
+                referenciaChamadaFirebase.removeEventListener(
+                        listenerChamadaFirebase
+                );
+            } catch (Exception ignored) {
+            }
+        }
+
+        referenciaChamadaFirebase = null;
+        listenerChamadaFirebase = null;
+    }
+
+    private void encerrarPorEstadoFirebase(
+            String motivo
+    ) {
+        if (
+                chamadaAtivaUnidadeId.isEmpty() ||
+                chamadaAtivaCriadoEm.isEmpty()
+        ) {
+            return;
+        }
+
+        Log.d(
+                "QR_CALL_NEW",
+                "Encerrando por estado Firebase: " + motivo
+        );
+
+        String unidadeIdEncerrada =
+                chamadaAtivaUnidadeId;
+
+        String criadoEmEncerrado =
+                chamadaAtivaCriadoEm;
+
+        pararObservacaoFirebase();
+        timeoutHandler.removeCallbacks(timeoutChamada);
+        pararAlerta();
+        encerrarForeground();
+
+        chamadaAtivaUnidadeId = "";
+        chamadaAtivaCriadoEm = "";
+        chamadaAtivaResponsavelUid = "";
+
+        Intent fecharTela =
+                new Intent(ACTION_CANCEL_REMOTE);
+
+        fecharTela.setPackage(
+                getPackageName()
+        );
+
+        fecharTela.putExtra(
+                EXTRA_UNIDADE_ID,
+                unidadeIdEncerrada
+        );
+
+        fecharTela.putExtra(
+                "criadoEm",
+                criadoEmEncerrado
+        );
+
+        sendBroadcast(fecharTela);
+        stopSelf();
+    }
+
+    private void iniciarObservacaoFirebase(
+            final String unidadeId,
+            final String criadoEm,
+            final String responsavelUid
+    ) {
+        pararObservacaoFirebase();
+
+        if (
+                unidadeId == null ||
+                unidadeId.trim().isEmpty() ||
+                criadoEm == null ||
+                criadoEm.trim().isEmpty()
+        ) {
+            Log.d(
+                    "QR_CALL_NEW",
+                    "Observacao Firebase nao iniciada: identidade incompleta"
+            );
+            return;
+        }
+
+        referenciaChamadaFirebase =
+                FirebaseDatabase
+                        .getInstance(
+                                "https://qr-acesso-studio-default-rtdb.firebaseio.com"
+                        )
+                        .getReference("unidades-v2")
+                        .child(unidadeId.trim())
+                        .child("chamada");
+
+        listenerChamadaFirebase =
+                new ValueEventListener() {
+                    @Override
+                    public void onDataChange(
+                            DataSnapshot snapshot
+                    ) {
+                        if (
+                                !unidadeId.equals(
+                                        chamadaAtivaUnidadeId
+                                ) ||
+                                !criadoEm.equals(
+                                        chamadaAtivaCriadoEm
+                                )
+                        ) {
+                            return;
+                        }
+
+                        if (!snapshot.exists()) {
+                            encerrarPorEstadoFirebase(
+                                    "chamada removida"
+                            );
+                            return;
+                        }
+
+                        String criadoEmBanco =
+                                snapshot.child("criadoEm")
+                                        .getValue(String.class);
+
+                        if (
+                                criadoEmBanco == null ||
+                                !criadoEm.equals(
+                                        criadoEmBanco.trim()
+                                )
+                        ) {
+                            encerrarPorEstadoFirebase(
+                                    "identidade da chamada mudou"
+                            );
+                            return;
+                        }
+
+                        String status =
+                                snapshot.child("status")
+                                        .getValue(String.class);
+
+                        if (
+                                !"Aguardando atendimento".equals(
+                                        status
+                                )
+                        ) {
+                            encerrarPorEstadoFirebase(
+                                    "status=" + status
+                            );
+                            return;
+                        }
+
+                        if (
+                                responsavelUid != null &&
+                                !responsavelUid.trim().isEmpty()
+                        ) {
+                            String uidBanco =
+                                    snapshot
+                                            .child("responsavelAtualUid")
+                                            .getValue(String.class);
+
+                            if (
+                                    uidBanco == null ||
+                                    !responsavelUid.trim().equals(
+                                            uidBanco.trim()
+                                    )
+                            ) {
+                                encerrarPorEstadoFirebase(
+                                        "responsavel alterado"
+                                );
+                            }
+                        }
+                    }
+
+                    @Override
+                    public void onCancelled(
+                            DatabaseError error
+                    ) {
+                        Log.e(
+                                "QR_CALL_NEW",
+                                "Firebase listener cancelado: " +
+                                        error.getMessage()
+                        );
+                    }
+                };
+
+        referenciaChamadaFirebase
+                .addValueEventListener(
+                        listenerChamadaFirebase
+                );
+
+        Log.d(
+                "QR_CALL_NEW",
+                "Observacao Firebase iniciada. unidadeId=" +
+                        unidadeId
+        );
     }
 
     private void iniciarForeground(
@@ -341,7 +675,15 @@ public class QrCallService extends Service {
 
     @Override
     public void onDestroy() {
+        try {
+            unregisterReceiver(
+                    receiverCancelarQrCall
+            );
+        } catch (Exception ignored) {
+        }
+
         timeoutHandler.removeCallbacks(timeoutChamada);
+        pararObservacaoFirebase();
         pararAlerta();
         encerrarForeground();
         super.onDestroy();
