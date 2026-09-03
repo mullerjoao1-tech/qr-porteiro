@@ -27,6 +27,16 @@ import {
   type VinculoComPermissoes,
 } from "@/app/services/permissoes";
 
+import {
+  get,
+  ref,
+  remove,
+} from "firebase/database";
+
+import {
+  db,
+} from "@/app/services/firebase";
+
 import type {
   Usuario,
 } from "@/app/types/Usuario";
@@ -515,6 +525,51 @@ export function AuthProvider({
     try {
       const uidAtual =
         usuario?.uid;
+
+      const chaveDeviceId =
+        "qr-core:device-id-nativo";
+
+      const deviceId =
+        typeof window !== "undefined"
+          ? window.localStorage.getItem(
+              chaveDeviceId
+            )
+          : null;
+
+      if (deviceId) {
+        const snapshotTokens =
+          await get(
+            ref(
+              db,
+              "configuracoes-v2/tokensNativos"
+            )
+          );
+
+        if (snapshotTokens.exists()) {
+          const unidadesTokens =
+            snapshotTokens.val() || {};
+
+          for (
+            const unidadeTokenId
+            of Object.keys(unidadesTokens)
+          ) {
+            if (
+              unidadesTokens[unidadeTokenId]?.[deviceId]
+            ) {
+              await remove(
+                ref(
+                  db,
+                  `configuracoes-v2/tokensNativos/${unidadeTokenId}/${deviceId}`
+                )
+              );
+            }
+          }
+        }
+
+        window.localStorage.removeItem(
+          chaveDeviceId
+        );
+      }
 
       const resultado =
         await sairDaConta();

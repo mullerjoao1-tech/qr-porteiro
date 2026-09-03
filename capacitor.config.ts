@@ -1,11 +1,11 @@
 ﻿import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.qracesso.studio',
-  appName: 'qr-acesso-studio',
+  appId: 'com.qracesso.app',
+  appName: 'QR Acesso',
   webDir: 'www',
   server: {
-    url: 'https://qr-acesso-studio.vercel.app',
+    url: 'https://qracesso.vercel.app',
     cleartext: false
   }
 };

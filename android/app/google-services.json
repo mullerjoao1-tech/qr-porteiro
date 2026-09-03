@@ -1,22 +1,22 @@
 {
   "project_info": {
-    "project_number": "173365953626",
-    "firebase_url": "https://qr-acesso-studio-default-rtdb.firebaseio.com",
-    "project_id": "qr-acesso-studio",
-    "storage_bucket": "qr-acesso-studio.firebasestorage.app"
+    "project_number": "778497713586",
+    "firebase_url": "https://qr-porteiro-app-default-rtdb.firebaseio.com",
+    "project_id": "qr-porteiro-app",
+    "storage_bucket": "qr-porteiro-app.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:173365953626:android:a0926c63c48afaf98e0463",
+        "mobilesdk_app_id": "1:778497713586:android:65a6914731bfc73b1930ab",
         "android_client_info": {
-          "package_name": "com.qracesso.studio"
+          "package_name": "com.qracesso.app"
         }
       },
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyBneG7Eaxwd_isbmsZrEQK33h-_oPT7OB0"
+          "current_key": "AIzaSyBCpcv_3mQGzGYCibF_qhUaz8DU8RwfFBo"
         }
       ],
       "services": {

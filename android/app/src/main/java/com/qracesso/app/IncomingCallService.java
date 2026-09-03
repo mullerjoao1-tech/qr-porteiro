@@ -1,4 +1,4 @@
-package com.qracesso.studio;
+package com.qracesso.app;
 
 import android.app.Service;
 import android.content.Intent;
@@ -8,10 +8,10 @@ import android.util.Log;
 public class IncomingCallService extends Service {
 
     public static final String ACTION_START =
-            "com.qracesso.studio.ACTION_START_CALL";
+            "com.qracesso.app.ACTION_START_CALL";
 
     public static final String ACTION_STOP =
-            "com.qracesso.studio.ACTION_STOP_CALL";
+            "com.qracesso.app.ACTION_STOP_CALL";
 
     public static final String EXTRA_UNIDADE_ID =
             "unidadeId";

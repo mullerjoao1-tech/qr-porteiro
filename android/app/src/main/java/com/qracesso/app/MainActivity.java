@@ -1,4 +1,4 @@
-package com.qracesso.studio;
+package com.qracesso.app;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -257,43 +257,7 @@ public class MainActivity extends BridgeActivity {
         }
 
         if (intent.getBooleanExtra("qrcallAtendimento", false)) {
-            aguardandoQrCallAtendimento = true;
-
-            if (
-                getBridge() != null &&
-                getBridge().getWebView() != null
-            ) {
-                getBridge()
-                    .getWebView()
-                    .setVisibility(
-                        android.view.View.INVISIBLE
-                    );
-            }
-
-            if (coberturaQrCallAtendimento == null) {
-                coberturaQrCallAtendimento =
-                    new android.widget.TextView(this);
-
-                coberturaQrCallAtendimento.setText("");
-
-                coberturaQrCallAtendimento.setBackgroundColor(
-                    android.graphics.Color.rgb(2, 6, 23)
-                );
-
-                coberturaQrCallAtendimento.setElevation(200f);
-
-                addContentView(
-                    coberturaQrCallAtendimento,
-                    new android.view.ViewGroup.LayoutParams(
-                        android.view.ViewGroup.LayoutParams.MATCH_PARENT,
-                        android.view.ViewGroup.LayoutParams.MATCH_PARENT
-                    )
-                );
-            }
-
-            coberturaQrCallAtendimento.setVisibility(
-                android.view.View.VISIBLE
-            );
+            revelarQrCallAtendimento();
         }
 
         if (intent.getBooleanExtra("chamadaFullscreen", false)) {
@@ -370,6 +334,10 @@ public class MainActivity extends BridgeActivity {
             rotaPendente == null ||
             rotaPendente.isEmpty()
         ) {
+            return;
+        }
+
+        if (!activityVisivel) {
             return;
         }
 

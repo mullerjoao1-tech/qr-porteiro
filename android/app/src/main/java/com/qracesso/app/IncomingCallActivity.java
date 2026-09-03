@@ -1,4 +1,4 @@
-package com.qracesso.studio;
+package com.qracesso.app;
 
 import android.content.Intent;
 import android.os.Build;

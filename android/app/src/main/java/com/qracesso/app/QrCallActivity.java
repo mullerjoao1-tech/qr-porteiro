@@ -1,4 +1,4 @@
-package com.qracesso.studio;
+package com.qracesso.app;
 
 import org.json.JSONObject;
 import java.io.OutputStream;
@@ -195,7 +195,7 @@ public class QrCallActivity extends AppCompatActivity {
 
                 try {
                     URL url = new URL(
-                            "https://qr-acesso-studio.vercel.app/api/qrcall/nao-posso-atender"
+                            "https://qracesso.vercel.app/api/qrcall/nao-posso-atender"
                     );
 
                     conexao =
@@ -298,6 +298,22 @@ public class QrCallActivity extends AppCompatActivity {
 
             parar.setAction(
                     QrCallService.ACTION_STOP
+            );
+
+            /*
+             * Identidade exata da chamada que originou este STOP.
+             * Um STOP antigo nao pode encerrar uma chamada nova.
+             */
+            parar.putExtra(
+                    QrCallService.EXTRA_UNIDADE_ID,
+                    getIntent().getStringExtra(
+                            QrCallService.EXTRA_UNIDADE_ID
+                    )
+            );
+
+            parar.putExtra(
+                    "criadoEm",
+                    getIntent().getStringExtra("criadoEm")
             );
 
             try {

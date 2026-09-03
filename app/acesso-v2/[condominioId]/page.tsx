@@ -567,7 +567,7 @@ export default function AcessoV2Condominio() {
           ? erro.message
           : String(erro) || "Erro desconhecido";
 
-      setDiagnostico(`❌ ERRO: ${detalhe}`);
+      setDiagnostico("AUDIO");
       setMensagem("");
       chamadaAtivaRef.current = false;
       chamadaFoiEnviadaRef.current = false;
@@ -751,7 +751,7 @@ export default function AcessoV2Condominio() {
           });
 
           const dadosPush = await respostaPush.json();
-          console.log("RESPOSTA PUSH V2 - ÁUDIO:", dadosPush);
+          console.log("RESPOSTA PUSH V2 - ÃUDIO:", dadosPush);
         } catch (erroPush) {
           console.error("Erro ao enviar push da chamada por áudio:", erroPush);
         }
@@ -1233,7 +1233,7 @@ export default function AcessoV2Condominio() {
               onClick={limparSelecao}
               className={chamadaVisualAtiva ? "hidden" : "mb-3 text-sm text-slate-300 underline"}
             >
-              ← Trocar unidade
+              → {unidadeSelecionada.nome}
             </button>
 
             {chamadaVisualAtiva ? (
@@ -1276,7 +1276,7 @@ export default function AcessoV2Condominio() {
                     {item === "Visitante" && "👤 Visitante"}
                     {item === "Entrega" && "📦 Entrega / encomenda"}
                     {item === "Entrega de comida" && "🍔 Entrega de comida"}
-                    {item === "Outros" && "✍️ Outros"}
+                    {item === "Outros" && "✏️ Outros"}
                   </button>
                 )
               )}

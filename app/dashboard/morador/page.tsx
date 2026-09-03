@@ -13,8 +13,11 @@ import {
 } from "next/navigation";
 
 import {
+  get,
   onValue,
   ref,
+  remove,
+  set,
 } from "firebase/database";
 
 import {
@@ -26,6 +29,8 @@ import MateriaisDoLocal from "@/app/components/core/dashboard/MateriaisDoLocal";
 import FamiliaResidencia from "@/app/dashboard/condominio/FamiliaResidencia";
 import AcessosTemporariosResidencia from "@/app/dashboard/condominio/AcessosTemporariosResidencia";
 import { useAuth } from "@/app/context/AuthContext";
+import { Capacitor } from "@capacitor/core";
+import { PushNotifications } from "@capacitor/push-notifications";
 
 
 function formatarNomeUnidadePainel(
@@ -85,6 +90,16 @@ function ConteudoPaginaMorador() {
     setResponsavelChamadasAtivo,
   ] =
     useState(false);
+
+  const [
+    popupChamadaAberto,
+    setPopupChamadaAberto,
+  ] = useState(false);
+
+  const [
+    chamadaRecebida,
+    setChamadaRecebida,
+  ] = useState<any>(null);
 
   const [
     abrindoPortao,
@@ -150,6 +165,88 @@ function ConteudoPaginaMorador() {
       vinculoSelecionado,
     ]);
 
+  useEffect(() => {
+    if (
+      !Capacitor.isNativePlatform() ||
+      !usuario?.uid ||
+      !unidadeId
+    ) {
+      return;
+    }
+
+    PushNotifications.addListener(
+      "registration",
+      async (token) => {
+        const chaveDeviceId =
+          "qr-core:device-id-nativo";
+
+        let deviceId =
+          window.localStorage.getItem(chaveDeviceId) || "";
+
+        if (!deviceId) {
+          deviceId = crypto.randomUUID();
+
+          window.localStorage.setItem(
+            chaveDeviceId,
+            deviceId
+          );
+        }
+
+        const tokensNativosRef = ref(
+          db,
+          "configuracoes-v2/tokensNativos"
+        );
+
+        const snapshotTokensNativos =
+          await get(tokensNativosRef);
+
+        if (snapshotTokensNativos.exists()) {
+          const unidadesTokens =
+            snapshotTokensNativos.val() || {};
+
+          for (const unidadeAnteriorId of Object.keys(
+            unidadesTokens
+          )) {
+            if (unidadeAnteriorId === unidadeId) {
+              continue;
+            }
+
+            if (
+              unidadesTokens[unidadeAnteriorId]?.[deviceId]
+            ) {
+              await remove(
+                ref(
+                  db,
+                  `configuracoes-v2/tokensNativos/${unidadeAnteriorId}/${deviceId}`
+                )
+              );
+            }
+          }
+        }
+
+        await set(
+          ref(
+            db,
+            `configuracoes-v2/tokensNativos/${unidadeId}/${deviceId}`
+          ),
+          {
+            token: token.value,
+            usuarioUid: usuario.uid,
+            atualizadoEm: Date.now(),
+          }
+        );
+      }
+    );
+
+    PushNotifications.requestPermissions().then(
+      (result) => {
+        if (result.receive === "granted") {
+          PushNotifications.register();
+        }
+      }
+    );
+  }, [unidadeId, usuario?.uid]);
+
   useEffect(
     () => {
       if (
@@ -197,6 +294,73 @@ function ConteudoPaginaMorador() {
     ]
   );
 
+  useEffect(() => {
+    if (
+      Capacitor.isNativePlatform() ||
+      !usuario?.uid ||
+      !unidadeId
+    ) {
+      return;
+    }
+
+    const referenciaChamada = ref(
+      db,
+      `unidades-v2/${unidadeId}/chamada`
+    );
+
+    const pararDeOuvir = onValue(
+      referenciaChamada,
+      (snapshot) => {
+        const dados = snapshot.val();
+
+        if (!dados) {
+          return;
+        }
+
+        const responsavelAtualUid = String(
+          dados.responsavelAtualUid ||
+          dados.responsavelAtualId ||
+          ""
+        );
+
+        const chamadaDestinadaAoUsuario =
+          !responsavelAtualUid ||
+          responsavelAtualUid === usuario.uid;
+
+        const deveAbrirAtendimento =
+          chamadaDestinadaAoUsuario &&
+          dados.notificar === true &&
+          dados.status === "Aguardando atendimento";
+
+        if (!deveAbrirAtendimento) {
+          setPopupChamadaAberto(false);
+          setChamadaRecebida(null);
+          return;
+        }
+
+        setChamadaRecebida({
+          nome:
+            String(dados.nome || "Visitante"),
+          motivo:
+            String(dados.motivo || ""),
+          criadoEm:
+            String(dados.criadoEm || ""),
+          responsavelAtualUid:
+            responsavelAtualUid,
+        });
+
+        setPopupChamadaAberto(true);
+      }
+    );
+
+    return () => {
+      pararDeOuvir();
+    };
+  }, [
+    router,
+    unidadeId,
+    usuario?.uid,
+  ]);
   const tipoLocal =
     normalizarTexto(
       vinculoSelecionado
@@ -370,6 +534,207 @@ if (modoResidencia) {
       `/morador-v2/${encodeURIComponent(
         unidadeId
       )}`
+    );
+  }
+
+  async function atenderChamadaRecebida() {
+    if (
+      !unidadeId ||
+      !chamadaRecebida?.criadoEm ||
+      !chamadaRecebida?.responsavelAtualUid
+    ) {
+      return;
+    }
+
+    try {
+      const resposta = await fetch(
+        "/api/qrcall/atender",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            unidadeId,
+            criadoEmEsperado:
+              chamadaRecebida.criadoEm,
+            responsavelUidEsperado:
+              chamadaRecebida.responsavelAtualUid,
+          }),
+        }
+      );
+
+      const dados = await resposta
+        .json()
+        .catch(() => null);
+
+      if (
+        !resposta.ok ||
+        !dados?.sucesso
+      ) {
+        throw new Error(
+          dados?.erro ||
+          "Nao foi possivel atender a chamada."
+        );
+      }
+
+      setPopupChamadaAberto(false);
+
+      router.push(
+        `/atendimento-chamada/${encodeURIComponent(unidadeId)}`
+      );
+    } catch (erro) {
+      console.error(
+        "QRCALL_DASHBOARD_ATENDER:",
+        erro
+      );
+
+      alert(
+        erro instanceof Error
+          ? erro.message
+          : "Erro ao atender chamada."
+      );
+    }
+  }
+
+  async function naoPossoAtenderChamadaRecebida() {
+    if (
+      !unidadeId ||
+      !chamadaRecebida?.criadoEm ||
+      !chamadaRecebida?.responsavelAtualUid
+    ) {
+      return;
+    }
+
+    try {
+      const resposta = await fetch(
+        "/api/qrcall/nao-posso-atender",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            unidadeId,
+            criadoEmEsperado:
+              chamadaRecebida.criadoEm,
+            responsavelUidEsperado:
+              chamadaRecebida.responsavelAtualUid,
+          }),
+        }
+      );
+
+      const dados = await resposta
+        .json()
+        .catch(() => null);
+
+      if (
+        !resposta.ok ||
+        !dados?.sucesso
+      ) {
+        throw new Error(
+          dados?.erro ||
+          "Nao foi possivel encaminhar a chamada."
+        );
+      }
+
+      setPopupChamadaAberto(false);
+      setChamadaRecebida(null);
+    } catch (erro) {
+      console.error(
+        "QRCALL_DASHBOARD_NAO_POSSO:",
+        erro
+      );
+
+      alert(
+        erro instanceof Error
+          ? erro.message
+          : "Erro ao encaminhar chamada."
+      );
+    }
+  }
+
+  function renderizarPopupChamada() {
+    if (
+      !popupChamadaAberto ||
+      !chamadaRecebida
+    ) {
+      return null;
+    }
+
+    return (
+      <div className="fixed inset-0 z-[9999] flex items-center justify-center overflow-y-auto bg-black/95 p-4">
+        <div className="my-4 w-full max-w-md rounded-3xl border-4 border-green-400 bg-slate-900 p-5 text-center shadow-2xl">
+          <p className="mb-3 text-6xl">
+            {"\uD83D\uDEA8"}
+          </p>
+
+          <h2 className="mb-2 text-3xl font-black text-green-400">
+            CHAMADA RECEBIDA
+          </h2>
+
+          <div className="mt-4 rounded-2xl border border-green-500/30 bg-slate-800 p-4">
+            <p className="text-2xl font-black text-white">
+              {chamadaRecebida.nome || "Visitante"}
+            </p>
+
+
+            <p className="mt-2 font-bold text-yellow-400">
+              Status: Aguardando atendimento
+            </p>
+          </div>
+
+          <div className="mt-4 rounded-2xl bg-slate-800 p-4">
+            <p className="mb-3 text-center text-sm font-bold text-green-400">
+              {"\uD83D\uDCF7 C\u00e2mera do port\u00e3o"}
+            </p>
+
+            <div className="flex min-h-[190px] flex-col items-center justify-center bg-slate-950 px-5 py-6 text-center">
+              <p className="text-5xl">
+                {"\uD83D\uDCF7"}
+              </p>
+
+              <p className="mt-3 text-xl font-black text-white">
+                {"C\u00e2mera do port\u00e3o"}
+              </p>
+
+              <p className="mt-2 text-base font-black text-green-400">
+                {"Recurso dispon\u00edvel com o pacote C\u00e2mera"}
+              </p>
+
+              <p className="mt-2 text-sm font-bold text-slate-400">
+                {"Veja quem est\u00e1 no port\u00e3o antes de atender."}
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => {
+              void atenderChamadaRecebida();
+            }}
+            className="mt-5 w-full rounded-2xl bg-green-500 py-4 text-xl font-black text-black hover:bg-green-400"
+          >
+            {"\u2705 ATENDER AGORA"}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              void naoPossoAtenderChamadaRecebida();
+            }}
+            className="mt-3 w-full rounded-2xl bg-blue-600 py-4 text-lg font-black text-white transition-all hover:bg-blue-500 active:scale-95"
+          >
+            {"\uD83D\uDD35 N\u00c3O POSSO ATENDER"}
+          </button>
+
+          <div className="mt-4 rounded-2xl border border-yellow-500/40 bg-slate-800 p-3">
+            <p className="text-sm font-bold text-yellow-300">
+              {"Ou\u00e7a o \u00e1udio e veja a c\u00e2mera. Para responder, clique em ATENDER AGORA."}
+            </p>
+          </div>
+        </div>
+      </div>
     );
   }
 
@@ -707,7 +1072,7 @@ if (modoResidencia) {
 
           <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
 
-            {podeReceberChamadas && (
+            {false && podeReceberChamadas && (
               <button
                 type="button"
                 onClick={
@@ -829,6 +1194,7 @@ if (modoResidencia) {
             )}
           </div>
         </div>
+        {renderizarPopupChamada()}
       </DashboardBase>
     );
   }
@@ -987,7 +1353,7 @@ if (modoResidencia) {
 
             <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
 
-              {podeReceberChamadas && (
+              {false && podeReceberChamadas && (
                 <button
                   type="button"
                   onClick={abrirAtendimentoVisitantes}
@@ -1085,6 +1451,7 @@ if (modoResidencia) {
 
         </div>
       </div>
+      {renderizarPopupChamada()}
     </DashboardBase>
   );
 }

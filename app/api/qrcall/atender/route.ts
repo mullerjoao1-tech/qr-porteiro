@@ -16,11 +16,26 @@ export async function POST(
         body?.unidadeId || ""
       ).trim();
 
-    if (!unidadeId) {
+    const criadoEmEsperado =
+      String(
+        body?.criadoEmEsperado || ""
+      ).trim();
+
+    const responsavelUidEsperado =
+      String(
+        body?.responsavelUidEsperado || ""
+      ).trim();
+
+    if (
+      !unidadeId ||
+      !criadoEmEsperado ||
+      !responsavelUidEsperado
+    ) {
       return NextResponse.json(
         {
           sucesso: false,
-          erro: "unidadeId obrigatório",
+          erro:
+            "unidadeId, criadoEmEsperado e responsavelUidEsperado sao obrigatorios.",
         },
         {
           status: 400,
@@ -44,7 +59,8 @@ export async function POST(
       return NextResponse.json(
         {
           sucesso: false,
-          erro: "Nenhuma chamada ativa encontrada.",
+          erro:
+            "Nenhuma chamada ativa encontrada.",
         },
         {
           status: 404,
@@ -63,9 +79,45 @@ export async function POST(
         {
           sucesso: false,
           erro:
-            "A chamada não está aguardando atendimento.",
+            "A chamada nao esta aguardando atendimento.",
           statusAtual:
             chamadaAtual.status || null,
+        },
+        {
+          status: 409,
+        }
+      );
+    }
+
+    if (
+      String(
+        chamadaAtual.criadoEm || ""
+      ).trim() !==
+      criadoEmEsperado
+    ) {
+      return NextResponse.json(
+        {
+          sucesso: false,
+          erro:
+            "Esta operacao pertence a outra chamada.",
+        },
+        {
+          status: 409,
+        }
+      );
+    }
+
+    if (
+      String(
+        chamadaAtual.responsavelAtualUid || ""
+      ).trim() !==
+      responsavelUidEsperado
+    ) {
+      return NextResponse.json(
+        {
+          sucesso: false,
+          erro:
+            "A chamada ja pertence a outro responsavel.",
         },
         {
           status: 409,
@@ -79,19 +131,85 @@ export async function POST(
     const agoraMs =
       Date.now();
 
-    await referencia.update({
-      status:
-        "Em atendimento",
+    let primeiraExecucaoTransaction =
+      true;
 
-      notificar:
-        false,
+    const transacao =
+      await referencia.transaction(
+        (atual) => {
+          if (
+            atual === null &&
+            primeiraExecucaoTransaction
+          ) {
+            primeiraExecucaoTransaction =
+              false;
 
-      atendidoEm:
-        agoraIso,
+            atual =
+              chamadaAtual;
+          } else {
+            primeiraExecucaoTransaction =
+              false;
+          }
 
-      ultimaAtividade:
-        agoraMs,
-    });
+          if (!atual) {
+            return;
+          }
+
+          if (
+            atual.status !==
+            "Aguardando atendimento"
+          ) {
+            return;
+          }
+
+          if (
+            String(
+              atual.criadoEm || ""
+            ).trim() !==
+            criadoEmEsperado
+          ) {
+            return;
+          }
+
+          if (
+            String(
+              atual.responsavelAtualUid || ""
+            ).trim() !==
+            responsavelUidEsperado
+          ) {
+            return;
+          }
+
+          return {
+            ...atual,
+
+            status:
+              "Em atendimento",
+
+            notificar:
+              false,
+
+            atendidoEm:
+              agoraIso,
+
+            ultimaAtividade:
+              agoraMs,
+          };
+        }
+      );
+
+    if (!transacao.committed) {
+      return NextResponse.json(
+        {
+          sucesso: false,
+          erro:
+            "A chamada mudou durante a operacao e foi preservada.",
+        },
+        {
+          status: 409,
+        }
+      );
+    }
 
     return NextResponse.json({
       sucesso: true,

@@ -1,4 +1,4 @@
-package com.qracesso.studio;
+package com.qracesso.app;
 
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;

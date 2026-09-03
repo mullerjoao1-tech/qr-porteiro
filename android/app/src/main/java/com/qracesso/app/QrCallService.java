@@ -1,4 +1,4 @@
-package com.qracesso.studio;
+package com.qracesso.app;
 
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -25,13 +25,13 @@ import com.google.firebase.database.ValueEventListener;
 public class QrCallService extends Service {
 
     public static final String ACTION_START =
-            "com.qracesso.studio.QR_CALL_START";
+            "com.qracesso.app.QR_CALL_START";
 
     public static final String ACTION_STOP =
-            "com.qracesso.studio.QR_CALL_STOP";
+            "com.qracesso.app.QR_CALL_STOP";
 
     public static final String ACTION_CANCEL_REMOTE =
-            "com.qracesso.studio.QR_CALL_CANCEL_REMOTE";
+            "com.qracesso.app.QR_CALL_CANCEL_REMOTE";
 
     public static final String EXTRA_UNIDADE_ID = "unidadeId";
     public static final String EXTRA_NOME = "nome";
@@ -175,14 +175,54 @@ public class QrCallService extends Service {
         String action = intent.getAction();
 
         if (ACTION_STOP.equals(action)) {
+
+            String unidadeIdStop =
+                    intent.getStringExtra(
+                            EXTRA_UNIDADE_ID
+                    );
+
+            String criadoEmStop =
+                    intent.getStringExtra(
+                            "criadoEm"
+                    );
+
+            boolean stopDaChamadaAtiva =
+                    unidadeIdStop != null &&
+                    criadoEmStop != null &&
+                    !unidadeIdStop.trim().isEmpty() &&
+                    !criadoEmStop.trim().isEmpty() &&
+                    unidadeIdStop.trim().equals(
+                            chamadaAtivaUnidadeId
+                    ) &&
+                    criadoEmStop.trim().equals(
+                            chamadaAtivaCriadoEm
+                    );
+
+            if (!stopDaChamadaAtiva) {
+                Log.d(
+                        "QR_CALL_NEW",
+                        "STOP ignorado: outra chamada"
+                );
+
+                return START_NOT_STICKY;
+            }
+
+            Log.d(
+                    "QR_CALL_NEW",
+                    "STOP confirmado para chamada ativa"
+            );
+
             timeoutHandler.removeCallbacks(timeoutChamada);
             pararObservacaoFirebase();
             pararAlerta();
             encerrarForeground();
+
             chamadaAtivaUnidadeId = "";
             chamadaAtivaCriadoEm = "";
             chamadaAtivaResponsavelUid = "";
+
             stopSelf();
+
             return START_NOT_STICKY;
         }
 
@@ -373,7 +413,7 @@ public class QrCallService extends Service {
         referenciaChamadaFirebase =
                 FirebaseDatabase
                         .getInstance(
-                                "https://qr-acesso-studio-default-rtdb.firebaseio.com"
+                                "https://qr-porteiro-app-default-rtdb.firebaseio.com"
                         )
                         .getReference("unidades-v2")
                         .child(unidadeId.trim())

@@ -1,5 +1,5 @@
 /**
- * PROJETO: qr-acesso-studio
+ * PROJETO: QR Acesso
  * TIPO: arquivo
  * CAMINHO: app/scripts/preparar-migracao-locais-v2.js
  *

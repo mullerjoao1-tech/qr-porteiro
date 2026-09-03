@@ -1,4 +1,4 @@
-﻿import "server-only";
+import "server-only";
 
 import {
   cert,
@@ -154,7 +154,7 @@ function obterChaveServico() {
 function obterStorageBucket(): string {
   const bucket =
     process.env.FIREBASE_STORAGE_BUCKET ||
-    "qr-acesso-studio.firebasestorage.app";
+    "QR Acesso.firebasestorage.app";
 
   if (!bucket.trim()) {
     throw new Error(
@@ -180,7 +180,7 @@ export function obterFirebaseAdmin():
           ),
 
           databaseURL:
-            "https://qr-acesso-studio-default-rtdb.firebaseio.com",
+            "https://qr-porteiro-app-default-rtdb.firebaseio.com",
 
           storageBucket:
             obterStorageBucket(),

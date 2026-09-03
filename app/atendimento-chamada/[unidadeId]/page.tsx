@@ -50,6 +50,16 @@ export default function AtendimentoChamada() {
   const [erroInicio, setErroInicio] =
     useState("");
 
+  const [
+    criadoEmChamada,
+    setCriadoEmChamada,
+  ] = useState("");
+
+  const [
+    responsavelUidChamada,
+    setResponsavelUidChamada,
+  ] = useState("");
+
   const [avisoResposta, setAvisoResposta] =
     useState("");
 
@@ -80,6 +90,18 @@ export default function AtendimentoChamada() {
 
           const chamadaAtual =
             snapshot.val() || {};
+
+          setCriadoEmChamada(
+            String(
+              chamadaAtual.criadoEm || ""
+            )
+          );
+
+          setResponsavelUidChamada(
+            String(
+              chamadaAtual.responsavelAtualUid || ""
+            )
+          );
 
           const statusAtual =
             String(
@@ -311,6 +333,13 @@ export default function AtendimentoChamada() {
       return;
     }
 
+    if (
+      !criadoEmChamada ||
+      !responsavelUidChamada
+    ) {
+      return;
+    }
+
     inicioExecutadoRef.current = true;
 
     async function iniciarAtendimento() {
@@ -329,6 +358,10 @@ export default function AtendimentoChamada() {
               body:
                 JSON.stringify({
                   unidadeId,
+                  criadoEmEsperado:
+                    criadoEmChamada,
+                  responsavelUidEsperado:
+                    responsavelUidChamada,
                 }),
             }
           );
@@ -415,28 +448,13 @@ export default function AtendimentoChamada() {
   }, [
     iniciar,
     unidadeId,
+    criadoEmChamada,
+    responsavelUidChamada,
   ]);
 
   if (iniciando) {
     return (
-      <main
-        id={
-          audioVisitanteRecebido
-            ? "qrcall-atendimento-pronto"
-            : undefined
-        }
-        className="min-h-screen bg-[#020617] text-white flex items-center justify-center px-6"
-      >
-        <div className="text-center">
-          <p className="text-green-400 text-2xl font-black">
-            QR ACESSO
-          </p>
-
-          <p className="text-slate-300 mt-4 font-bold">
-            Iniciando atendimento...
-          </p>
-        </div>
-      </main>
+      <main className="min-h-screen bg-[#020617]" />
     );
   }
 

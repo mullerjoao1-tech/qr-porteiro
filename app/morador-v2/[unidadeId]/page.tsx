@@ -481,17 +481,26 @@ const nomeLocal =
   }
 
   useEffect(() => {
-    const referenciaStatus = ref(db, caminhoStatus);
+    if (!usuario?.uid) {
+      return;
+    }
 
-    const pararDeOuvirStatus = onValue(referenciaStatus, (snapshot) => {
-      const dados = snapshot.val();
-      if (dados && typeof dados.online === "boolean") {
-        setOnline(dados.online);
+    const referenciaStatus = ref(
+      db,
+      `unidades-v2/${slug}/responsaveis/${usuario.uid}/status`
+    );
+
+    const pararDeOuvirStatus = onValue(
+      referenciaStatus,
+      (snapshot) => {
+        const statusResponsavel = snapshot.val();
+
+        setOnline(statusResponsavel !== "ausente");
       }
-    });
+    );
 
     return () => pararDeOuvirStatus();
-  }, [caminhoStatus]);
+  }, [slug, usuario?.uid]);
 
   useEffect(() => {
     const referenciaHistorico = ref(db, caminhoHistorico);
@@ -1795,14 +1804,27 @@ async function naoPossoAtender() {
   }
 
   async function alterarStatusOnline() {
+    if (!usuario?.uid) {
+      alert("Nao foi possivel identificar o responsavel.");
+      return;
+    }
+
     const novoStatus = !online;
 
-    setOnline(novoStatus);
+    await update(
+      ref(
+        db,
+        `unidades-v2/${slug}/responsaveis/${usuario.uid}`
+      ),
+      {
+        status: novoStatus
+          ? "disponivel"
+          : "ausente",
+        atualizadoEm: Date.now(),
+      }
+    );
 
-    await set(ref(db, caminhoStatus), {
-      online: novoStatus,
-      atualizadoEm: new Date().toISOString(),
-    });
+    setOnline(novoStatus);
   }
 
   async function acionarPortao() {

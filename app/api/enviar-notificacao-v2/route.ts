@@ -110,7 +110,7 @@ function iniciarFirebaseAdmin() {
     credential: cert(serviceAccount),
     databaseURL:
   process.env.FIREBASE_DATABASE_URL?.trim() ||
-  "https://qr-acesso-studio-default-rtdb.firebaseio.com",
+  "https://qr-porteiro-app-default-rtdb.firebaseio.com",
   });
 }
 

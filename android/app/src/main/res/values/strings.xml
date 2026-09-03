@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">qr-acesso-studio</string>
-    <string name="title_activity_main">qr-acesso-studio</string>
-    <string name="package_name">com.qracesso.studio</string>
-    <string name="custom_url_scheme">com.qracesso.studio</string>
+    <string name="app_name">QR Acesso</string>
+    <string name="title_activity_main">QR Acesso</string>
+    <string name="package_name">com.qracesso.app</string>
+    <string name="custom_url_scheme">com.qracesso.app</string>
 </resources>

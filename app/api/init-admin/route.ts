@@ -31,7 +31,7 @@ function obterFirebaseAdmin() {
   return initializeApp({
     credential: cert(serviceAccount),
     databaseURL:
-      "https://qr-acesso-studio-default-rtdb.firebaseio.com",
+      "https://qr-porteiro-app-default-rtdb.firebaseio.com",
   });
 }
 

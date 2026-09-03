@@ -36,6 +36,6 @@ The easiest way to deploy your Next.js app is to use the [Vercel Platform](https
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
 =======
-# qr-acesso-studio
+# QR Acesso
 Laboratório oficial do QR Acesso para desenvolvimento, testes e protótipos.
 >>>>>>> fc8253a2d796b3f193ee35edf4d45dd4748051a8
