@@ -315,68 +315,87 @@ function ConteudoPaginaMorador() {
   useEffect(() => {
     if (
       Capacitor.isNativePlatform() ||
-      !usuario?.uid ||
-      !unidadeId
+      !usuario?.uid
     ) {
       return;
     }
 
-    const referenciaChamada = ref(
-      db,
-      `unidades-v2/${unidadeId}/chamada`
-    );
+    const unidadesPermitidas = new Set<string>();
 
-    const pararDeOuvir = onValue(
-      referenciaChamada,
-      (snapshot) => {
-        const dados = snapshot.val();
-
-        if (!dados) {
-          return;
+    for (const [, vinculo] of vinculosAtivos) {
+      for (const [unidadeVinculadaId, ativo] of Object.entries(
+        vinculo.unidades ?? {}
+      )) {
+        if (ativo === true) {
+          unidadesPermitidas.add(unidadeVinculadaId);
         }
-
-        const responsavelAtualUid = String(
-          dados.responsavelAtualUid ||
-          dados.responsavelAtualId ||
-          ""
-        );
-
-        const chamadaDestinadaAoUsuario =
-          !responsavelAtualUid ||
-          responsavelAtualUid === usuario.uid;
-
-        const deveAbrirAtendimento =
-          chamadaDestinadaAoUsuario &&
-          dados.notificar === true &&
-          dados.status === "Aguardando atendimento";
-
-        if (!deveAbrirAtendimento) {
-          setPopupChamadaAberto(false);
-          setChamadaRecebida(null);
-          return;
-        }
-
-        setChamadaRecebida({
-          nome:
-            String(dados.nome || "Visitante"),
-          motivo:
-            String(dados.motivo || ""),
-          criadoEm:
-            String(dados.criadoEm || ""),
-          responsavelAtualUid:
-            responsavelAtualUid,
-        });
-
-        setPopupChamadaAberto(true);
       }
-    );
+    }
+
+    if (unidadesPermitidas.size === 0) {
+      return;
+    }
+
+    const desligarListeners = Array.from(
+      unidadesPermitidas
+    ).map((unidadeChamadaId) => {
+      const referenciaChamada = ref(
+        db,
+        `unidades-v2/${unidadeChamadaId}/chamada`
+      );
+
+      return onValue(
+        referenciaChamada,
+        (snapshot) => {
+          const dados = snapshot.val();
+
+          if (!dados) {
+            return;
+          }
+
+          const responsavelAtualUid = String(
+            dados.responsavelAtualUid ||
+            dados.responsavelAtualId ||
+            ""
+          );
+
+          const chamadaDestinadaAoUsuario =
+            !responsavelAtualUid ||
+            responsavelAtualUid === usuario.uid;
+
+          const deveAbrirAtendimento =
+            chamadaDestinadaAoUsuario &&
+            dados.notificar === true &&
+            dados.status === "Aguardando atendimento";
+
+          if (!deveAbrirAtendimento) {
+            return;
+          }
+
+          setChamadaRecebida({
+            unidadeId: unidadeChamadaId,
+            nome:
+              String(dados.nome || "Visitante"),
+            motivo:
+              String(dados.motivo || ""),
+            criadoEm:
+              String(dados.criadoEm || ""),
+            responsavelAtualUid:
+              responsavelAtualUid,
+          });
+
+          setPopupChamadaAberto(true);
+        }
+      );
+    });
 
     return () => {
-      pararDeOuvir();
+      for (const desligar of desligarListeners) {
+        desligar();
+      }
     };
   }, [
-    router,
-    unidadeId,
+    vinculosAtivos,
     usuario?.uid,
   ]);
   const tipoLocal =
@@ -556,8 +575,11 @@ if (modoResidencia) {
   }
 
   async function atenderChamadaRecebida() {
+    const unidadeChamadaId =
+      String(chamadaRecebida?.unidadeId || "");
+
     if (
-      !unidadeId ||
+      !unidadeChamadaId ||
       !chamadaRecebida?.criadoEm ||
       !chamadaRecebida?.responsavelAtualUid
     ) {
@@ -573,7 +595,7 @@ if (modoResidencia) {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            unidadeId,
+            unidadeId: unidadeChamadaId,
             criadoEmEsperado:
               chamadaRecebida.criadoEm,
             responsavelUidEsperado:
@@ -599,7 +621,7 @@ if (modoResidencia) {
       setPopupChamadaAberto(false);
 
       router.push(
-        `/atendimento-chamada/${encodeURIComponent(unidadeId)}`
+        `/atendimento-chamada/${encodeURIComponent(unidadeChamadaId)}`
       );
     } catch (erro) {
       console.error(
@@ -616,8 +638,11 @@ if (modoResidencia) {
   }
 
   async function naoPossoAtenderChamadaRecebida() {
+    const unidadeChamadaId =
+      String(chamadaRecebida?.unidadeId || "");
+
     if (
-      !unidadeId ||
+      !unidadeChamadaId ||
       !chamadaRecebida?.criadoEm ||
       !chamadaRecebida?.responsavelAtualUid
     ) {
@@ -633,7 +658,7 @@ if (modoResidencia) {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            unidadeId,
+            unidadeId: unidadeChamadaId,
             criadoEmEsperado:
               chamadaRecebida.criadoEm,
             responsavelUidEsperado:

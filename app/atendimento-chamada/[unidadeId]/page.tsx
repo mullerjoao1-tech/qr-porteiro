@@ -21,6 +21,10 @@ import {
   db,
 } from "@/app/services/firebase";
 
+import {
+  useLocalAtual,
+} from "@/app/hooks/useLocalAtual";
+
 const respostasRapidas = [
   "💬 Aguarde um momento",
   "🚶 Já estou descendo",
@@ -37,6 +41,11 @@ export default function AtendimentoChamada() {
   const unidadeId = String(
     params?.unidadeId || ""
   );
+
+  const {
+    localNome,
+    unidade,
+  } = useLocalAtual(unidadeId);
 
   const iniciar =
     searchParams.get("iniciar") === "1";
@@ -765,11 +774,11 @@ export default function AtendimentoChamada() {
           <div className="flex items-start justify-between gap-4">
             <div>
               <h1 className="text-3xl font-black">
-                🏠 Müller
+                &#127968; {localNome}
               </h1>
 
               <p className="text-slate-400 text-lg mt-1">
-                Casa Principal
+                {unidade?.nome || unidadeId}
               </p>
             </div>
 
