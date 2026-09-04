@@ -74,6 +74,7 @@ function ConteudoPaginaMorador() {
   const {
     usuario,
     carregando,
+    vinculosAtivos,
     vinculoSelecionadoId,
     vinculoSelecionado,
     logout,
@@ -168,9 +169,24 @@ function ConteudoPaginaMorador() {
   useEffect(() => {
     if (
       !Capacitor.isNativePlatform() ||
-      !usuario?.uid ||
-      !unidadeId
+      !usuario?.uid
     ) {
+      return;
+    }
+
+    const unidadesPermitidas = new Set<string>();
+
+    for (const [, vinculo] of vinculosAtivos) {
+      for (const [unidadeVinculadaId, ativo] of Object.entries(
+        vinculo.unidades ?? {}
+      )) {
+        if (ativo === true) {
+          unidadesPermitidas.add(unidadeVinculadaId);
+        }
+      }
+    }
+
+    if (unidadesPermitidas.size === 0) {
       return;
     }
 
@@ -207,7 +223,7 @@ function ConteudoPaginaMorador() {
           for (const unidadeAnteriorId of Object.keys(
             unidadesTokens
           )) {
-            if (unidadeAnteriorId === unidadeId) {
+            if (unidadesPermitidas.has(unidadeAnteriorId)) {
               continue;
             }
 
@@ -224,17 +240,19 @@ function ConteudoPaginaMorador() {
           }
         }
 
-        await set(
-          ref(
-            db,
-            `configuracoes-v2/tokensNativos/${unidadeId}/${deviceId}`
-          ),
-          {
-            token: token.value,
-            usuarioUid: usuario.uid,
-            atualizadoEm: Date.now(),
-          }
-        );
+        for (const unidadePermitidaId of unidadesPermitidas) {
+          await set(
+            ref(
+              db,
+              `configuracoes-v2/tokensNativos/${unidadePermitidaId}/${deviceId}`
+            ),
+            {
+              token: token.value,
+              usuarioUid: usuario.uid,
+              atualizadoEm: Date.now(),
+            }
+          );
+        }
       }
     );
 
@@ -245,7 +263,7 @@ function ConteudoPaginaMorador() {
         }
       }
     );
-  }, [unidadeId, usuario?.uid]);
+  }, [usuario?.uid, vinculosAtivos]);
 
   useEffect(
     () => {
