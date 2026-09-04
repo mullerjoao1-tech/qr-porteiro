@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import {
@@ -9,7 +9,7 @@ import {
   update,
 } from "firebase/database";
 
-import { db } from "../services/firebase";
+import { auth, db } from "../services/firebase";
 import { atualizarStatusImplantacao } from "../services/implantacaoService";
 type AtualizacaoCadastral = {
   id: string;
@@ -64,36 +64,36 @@ type MoradorExistente = {
 
 function textoPerfil(perfil?: string) {
   const perfis: Record<string, string> = {
-    proprietario: "Proprietário",
+    proprietario: "ProprietÃ¡rio",
     inquilino: "Inquilino",
     familiar: "Familiar",
     morador: "Morador",
-    funcionario: "Funcionário",
+    funcionario: "FuncionÃ¡rio",
     outro: "Outro",
   };
 
-  return perfis[perfil || ""] || perfil || "Não informado";
+  return perfis[perfil || ""] || perfil || "NÃ£o informado";
 }
 
 function textoStatus(status?: string) {
   if (status === "aprovada") {
-    return "🟢 Aprovada";
+    return "ðŸŸ¢ Aprovada";
   }
 
   if (status === "recusada") {
-    return "🔴 Recusada";
+    return "ðŸ”´ Recusada";
   }
 
   if (status === "correcao-solicitada") {
-    return "🔵 Correção solicitada";
+    return "ðŸ”µ CorreÃ§Ã£o solicitada";
   }
 
-  return "🟡 Pendente";
+  return "ðŸŸ¡ Pendente";
 }
 
 function formatarData(data?: string) {
   if (!data) {
-    return "Data não informada";
+    return "Data nÃ£o informada";
   }
 
   const dataConvertida = new Date(data);
@@ -159,7 +159,7 @@ const [nomeEditado, setNomeEditado] =
 
   function acaoAindaNaoImplementada(acao: string) {
     alert(
-      `${acao}\n\nEsta ação será conectada na próxima etapa.`
+      `${acao}\n\nEsta aÃ§Ã£o serÃ¡ conectada na prÃ³xima etapa.`
     );
   }
 
@@ -208,18 +208,18 @@ const [nomeEditado, setNomeEditado] =
 
 async function aprovarCadastro() {
     if (atualizacao.status !== "pendente") {
-      alert("Esta solicitação já foi analisada.");
+      alert("Esta solicitaÃ§Ã£o jÃ¡ foi analisada.");
       return;
     }
 
     const confirmar = confirm(
       [
-        "Aprovar esta atualização cadastral?",
+        "Aprovar esta atualizaÃ§Ã£o cadastral?",
         "",
         `Morador: ${nomeEditado}`,
         `Unidade: ${atualizacao.unidadeNome}`,
         "",
-        "O sistema criará o morador ou atualizará um cadastro existente com o mesmo telefone nesta unidade.",
+        "O sistema criarÃ¡ o morador ou atualizarÃ¡ um cadastro existente com o mesmo telefone nesta unidade.",
       ].join("\n")
     );
 
@@ -239,17 +239,52 @@ async function aprovarCadastro() {
       const solicitacaoAtual = solicitacaoSnapshot.val();
 
       if (!solicitacaoAtual) {
-        alert("Esta solicitação não foi localizada.");
+        alert("Esta solicitaÃ§Ã£o nÃ£o foi localizada.");
         onClose();
         return;
       }
 
       if (solicitacaoAtual.status !== "pendente") {
-        alert("Esta solicitação já foi analisada por outra pessoa.");
+        alert("Esta solicitaÃ§Ã£o jÃ¡ foi analisada por outra pessoa.");
         onClose();
         return;
       }
 
+      const administradorAtual = auth.currentUser;
+
+      if (!administradorAtual) {
+        throw new Error("Administrador nao autenticado.");
+      }
+
+      const tokenAdministrador =
+        await administradorAtual.getIdToken();
+
+      const respostaPreparacao = await fetch(
+        "/api/usuarios/aprovar-atualizacao-cadastral",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${tokenAdministrador}`,
+          },
+          body: JSON.stringify({
+            atualizacaoId: atualizacao.id,
+          }),
+        }
+      );
+
+      const resultadoPreparacao =
+        await respostaPreparacao.json();
+
+      if (
+        !respostaPreparacao.ok ||
+        !resultadoPreparacao?.sucesso
+      ) {
+        throw new Error(
+          resultadoPreparacao?.erro ||
+            "Nao foi possivel preparar o acesso do morador."
+        );
+      }
       const moradoresRef = ref(db, "qrCentral/moradores");
       const moradoresSnapshot = await get(moradoresRef);
       const moradoresDados = moradoresSnapshot.val();
@@ -292,7 +327,7 @@ async function aprovarCadastro() {
             telefone: atualizacao.telefone.trim(),
             email: atualizacao.email?.trim() || "",
             unidadeId: unidadeIdEfetivo,
-            unidadeNome: `${atualizacao.condominioNome} • ${atualizacao.unidadeNome}`,
+            unidadeNome: `${atualizacao.condominioNome} â€¢ ${atualizacao.unidadeNome}`,
             localId: localIdEfetivo,
             localNome: localNomeEfetivo,
             prioridade: moradorExistente.prioridade || 1,
@@ -309,7 +344,7 @@ async function aprovarCadastro() {
 
         if (!novoMoradorRef.key) {
           throw new Error(
-            "Não foi possível gerar o identificador do morador."
+            "NÃ£o foi possÃ­vel gerar o identificador do morador."
           );
         }
 
@@ -322,7 +357,7 @@ async function aprovarCadastro() {
           telefone: atualizacao.telefone.trim(),
           email: atualizacao.email?.trim() || "",
           unidadeId: unidadeIdEfetivo,
-          unidadeNome: `${atualizacao.condominioNome} • ${atualizacao.unidadeNome}`,
+          unidadeNome: `${atualizacao.condominioNome} â€¢ ${atualizacao.unidadeNome}`,
           localId: localIdEfetivo,
           localNome: localNomeEfetivo,
           prioridade: 1,
@@ -391,7 +426,7 @@ await atualizarStatusImplantacao(
       console.error("Erro ao aprovar cadastro:", erro);
 
       alert(
-        "Não foi possível aprovar o cadastro. Nenhuma nova tentativa deve ser feita até verificar o erro no terminal."
+        "NÃ£o foi possÃ­vel aprovar o cadastro. Nenhuma nova tentativa deve ser feita atÃ© verificar o erro no terminal."
       );
     } finally {
       setAprovando(false);
@@ -404,11 +439,11 @@ await atualizarStatusImplantacao(
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="text-xs font-black tracking-wider text-blue-300">
-              ATUALIZAÇÃO CADASTRAL
+              ATUALIZAÃ‡ÃƒO CADASTRAL
             </p>
 
             <h2 className="mt-2 text-3xl font-black text-white">
-              📋 Solicitação recebida
+              ðŸ“‹ SolicitaÃ§Ã£o recebida
             </h2>
 
             <p className="mt-2 text-sm text-slate-400">
@@ -425,7 +460,7 @@ await atualizarStatusImplantacao(
             disabled={aprovando}
             className="rounded-xl bg-slate-800 px-4 py-2 font-black text-white hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            ✕
+            âœ•
           </button>
         </div>
 
@@ -435,11 +470,11 @@ await atualizarStatusImplantacao(
           </span>
 
           <span className="rounded-full border border-slate-700 bg-slate-800 px-3 py-1 text-xs font-black text-slate-300">
-            🏢 {atualizacao.condominioNome}
+            ðŸ¢ {atualizacao.condominioNome}
           </span>
 
           <span className="rounded-full border border-slate-700 bg-slate-800 px-3 py-1 text-xs font-black text-slate-300">
-            🏠 {atualizacao.unidadeNome}
+            ðŸ  {atualizacao.unidadeNome}
           </span>
 
           <span className="rounded-full border border-slate-700 bg-slate-800 px-3 py-1 text-xs font-black text-slate-300">
@@ -450,11 +485,11 @@ await atualizarStatusImplantacao(
         <div className="mt-6 grid gap-3 md:grid-cols-2">
           <div className="rounded-2xl border border-slate-700 bg-slate-800 p-4">
             <p className="text-xs font-black text-slate-500">
-              CONDOMÍNIO
+              CONDOMÃNIO
             </p>
 
             <p className="mt-1 text-lg font-black text-white">
-              🏢 {atualizacao.condominioNome}
+              ðŸ¢ {atualizacao.condominioNome}
             </p>
           </div>
 
@@ -464,7 +499,7 @@ await atualizarStatusImplantacao(
             </p>
 
             <p className="mt-1 text-lg font-black text-white">
-              🏠 {atualizacao.unidadeNome}
+              ðŸ  {atualizacao.unidadeNome}
             </p>
           </div>
 
@@ -474,7 +509,7 @@ await atualizarStatusImplantacao(
             </p>
 
             <p className="mt-1 text-lg font-black text-white">
-              👤 {nomeEditado}
+              ðŸ‘¤ {nomeEditado}
             </p>
           </div>
 
@@ -484,7 +519,7 @@ await atualizarStatusImplantacao(
             </p>
 
             <p className="mt-1 text-xl font-black text-white">
-              📱 {atualizacao.telefone}
+              ðŸ“± {atualizacao.telefone}
             </p>
           </div>
 
@@ -494,17 +529,17 @@ await atualizarStatusImplantacao(
             </p>
 
             <p className="mt-1 break-all text-lg font-black text-white">
-              ✉️ {atualizacao.email || "Não informado"}
+              âœ‰ï¸ {atualizacao.email || "NÃ£o informado"}
             </p>
           </div>
 
           <div className="rounded-2xl border border-slate-700 bg-slate-800 p-4">
             <p className="text-xs font-black text-slate-500">
-              RELAÇÃO COM A UNIDADE
+              RELAÃ‡ÃƒO COM A UNIDADE
             </p>
 
             <p className="mt-1 text-lg font-black text-white">
-              🏠 {textoPerfil(atualizacao.perfil)}
+              ðŸ  {textoPerfil(atualizacao.perfil)}
             </p>
           </div>
 
@@ -515,8 +550,8 @@ await atualizarStatusImplantacao(
 
             <p className="mt-1 text-lg font-black text-white">
               {atualizacao.recebeChamadas
-                ? "🔔 Sim"
-                : "🔕 Não"}
+                ? "ðŸ”” Sim"
+                : "ðŸ”• NÃ£o"}
             </p>
           </div>
 
@@ -526,7 +561,7 @@ await atualizarStatusImplantacao(
             </p>
 
             <p className="mt-1 text-lg font-black text-white">
-              🔗 Atualização cadastral
+              ðŸ”— AtualizaÃ§Ã£o cadastral
             </p>
           </div>
         </div>
@@ -537,13 +572,13 @@ await atualizarStatusImplantacao(
           </p>
 
           <p className="mt-1 text-lg font-black text-white">
-            🕒 {formatarData(atualizacao.criadoEm)}
+            ðŸ•’ {formatarData(atualizacao.criadoEm)}
           </p>
         </div>
 
         <div className="mt-5 rounded-2xl border border-yellow-800 bg-yellow-950/30 p-4">
           <p className="text-sm leading-relaxed text-yellow-100">
-            Esta solicitação ainda não alterou o cadastro oficial.
+            Esta solicitaÃ§Ã£o ainda nÃ£o alterou o cadastro oficial.
             Confira todos os dados antes de aprovar.
           </p>
         </div>
@@ -583,29 +618,29 @@ await atualizarStatusImplantacao(
             disabled={aprovando}
             className="rounded-xl bg-blue-600 py-3 font-black text-white hover:bg-blue-500 disabled:cursor-not-allowed disabled:bg-slate-700"
           >
-            ✏️ Editar antes de aprovar
+            âœï¸ Editar antes de aprovar
           </button>
 
           <button
             type="button"
             onClick={() =>
-              acaoAindaNaoImplementada("Solicitar correção")
+              acaoAindaNaoImplementada("Solicitar correÃ§Ã£o")
             }
             disabled={aprovando}
             className="rounded-xl bg-cyan-600 py-3 font-black text-white hover:bg-cyan-500 disabled:cursor-not-allowed disabled:bg-slate-700"
           >
-            📝 Solicitar correção
+            ðŸ“ Solicitar correÃ§Ã£o
           </button>
 
           <button
             type="button"
             onClick={() =>
-              acaoAindaNaoImplementada("Recusar solicitação")
+              acaoAindaNaoImplementada("Recusar solicitaÃ§Ã£o")
             }
             disabled={aprovando}
             className="rounded-xl bg-red-700 py-3 font-black text-white hover:bg-red-600 disabled:cursor-not-allowed disabled:bg-slate-700"
           >
-            ❌ Recusar
+            âŒ Recusar
           </button>
 
           <button
@@ -616,7 +651,7 @@ await atualizarStatusImplantacao(
           >
             {aprovando
               ? "Aprovando cadastro..."
-              : "✅ Aprovar cadastro"}
+              : "âœ… Aprovar cadastro"}
           </button>
         </div>
 
@@ -632,3 +667,5 @@ await atualizarStatusImplantacao(
     </div>
   );
 }
+
+

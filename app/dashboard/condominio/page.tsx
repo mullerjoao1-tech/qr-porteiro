@@ -19,6 +19,7 @@ update,
 } from "firebase/database";
 
 import {
+  auth,
   db,
 } from "@/app/services/firebase";
 
@@ -248,6 +249,35 @@ export default function PaginaCondominio() {
     setAtualizacaoSelecionada,
   ] =
     useState<AtualizacaoCadastralCondominio | null>(null);
+
+  const [
+    verificandoVinculos,
+    setVerificandoVinculos,
+  ] =
+    useState(false);
+
+  const [
+    resultadoVinculos,
+    setResultadoVinculos,
+  ] =
+    useState<Array<{
+      id: string;
+      codigo: string;
+      nome: string;
+      unidadeId: string;
+      unidadeNome: string;
+      email: string;
+      situacao: string;
+      temUsuario: boolean;
+      temVinculo: boolean;
+      temResponsavel: boolean;
+    }> | null>(null);
+
+  const [
+    erroVerificacaoVinculos,
+    setErroVerificacaoVinculos,
+  ] =
+    useState("");
 
   const tipoLocal =
     normalizar(
@@ -1131,6 +1161,228 @@ async function atualizarMoradorCadastrado(
         item.status !== "pendente"
     );
 
+  async function verificarVinculosAprovados() {
+    try {
+      setVerificandoVinculos(true);
+      setErroVerificacaoVinculos("");
+      setResultadoVinculos(null);
+
+      const usuarioAtual =
+        auth.currentUser;
+
+      if (!usuarioAtual) {
+        throw new Error(
+          "Administrador nao autenticado."
+        );
+      }
+
+      const token =
+        await usuarioAtual
+          .getIdToken();
+
+      const resposta =
+        await fetch(
+          "/api/usuarios/aprovar-atualizacao-cadastral",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type":
+                "application/json",
+              Authorization:
+                `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              modo:
+                "simular-regularizacao-tulipas",
+            }),
+          }
+        );
+
+      const resultado =
+        await resposta.json();
+
+      if (
+        !resposta.ok ||
+        !resultado?.sucesso
+      ) {
+        throw new Error(
+          resultado?.erro ||
+            "Nao foi possivel verificar os vinculos."
+        );
+      }
+
+      setResultadoVinculos(
+        Array.isArray(
+          resultado.resultados
+        )
+          ? resultado.resultados
+          : []
+      );
+    } catch (erro) {
+      setErroVerificacaoVinculos(
+        erro instanceof Error
+          ? erro.message
+          : "Nao foi possivel verificar os vinculos."
+      );
+    } finally {
+      setVerificandoVinculos(false);
+    }
+  }
+
+  async function informarEmailCadastroAprovado(
+    atualizacaoId: string,
+    nome: string
+  ) {
+    const emailInformado =
+      window.prompt(
+        `Informe o e-mail de ${nome}:`
+      );
+
+    if (emailInformado === null) {
+      return;
+    }
+
+    const email =
+      emailInformado
+        .trim()
+        .toLowerCase();
+
+    if (
+      !email ||
+      !email.includes("@")
+    ) {
+      window.alert(
+        "Informe um e-mail valido."
+      );
+      return;
+    }
+
+    try {
+      setVerificandoVinculos(true);
+      setErroVerificacaoVinculos("");
+
+      const usuarioAtual =
+        auth.currentUser;
+
+      if (!usuarioAtual) {
+        throw new Error(
+          "Administrador nao autenticado."
+        );
+      }
+
+      const token =
+        await usuarioAtual
+          .getIdToken();
+
+      const resposta =
+        await fetch(
+          "/api/usuarios/aprovar-atualizacao-cadastral",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type":
+                "application/json",
+              Authorization:
+                `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              modo:
+                "informar-email-aprovado-tulipas",
+              atualizacaoId,
+              email,
+            }),
+          }
+        );
+
+      const resultado =
+        await resposta.json();
+
+      if (
+        !resposta.ok ||
+        !resultado?.sucesso
+      ) {
+        throw new Error(
+          resultado?.erro ||
+            "Nao foi possivel salvar o e-mail."
+        );
+      }
+
+      await verificarVinculosAprovados();
+    } catch (erro) {
+      setErroVerificacaoVinculos(
+        erro instanceof Error
+          ? erro.message
+          : "Nao foi possivel salvar o e-mail."
+      );
+    } finally {
+      setVerificandoVinculos(false);
+    }
+  }
+
+  async function regularizarCadastroAprovado(
+    atualizacaoId: string
+  ) {
+    try {
+      setVerificandoVinculos(true);
+      setErroVerificacaoVinculos("");
+
+      const usuarioAtual =
+        auth.currentUser;
+
+      if (!usuarioAtual) {
+        throw new Error(
+          "Administrador nao autenticado."
+        );
+      }
+
+      const token =
+        await usuarioAtual
+          .getIdToken();
+
+      const resposta =
+        await fetch(
+          "/api/usuarios/aprovar-atualizacao-cadastral",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type":
+                "application/json",
+              Authorization:
+                `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              modo:
+                "regularizar-aprovado-tulipas",
+              atualizacaoId,
+            }),
+          }
+        );
+
+      const resultado =
+        await resposta.json();
+
+      if (
+        !resposta.ok ||
+        !resultado?.sucesso
+      ) {
+        throw new Error(
+          resultado?.erro ||
+            "Nao foi possivel regularizar o cadastro."
+        );
+      }
+
+      await verificarVinculosAprovados();
+    } catch (erro) {
+      setErroVerificacaoVinculos(
+        erro instanceof Error
+          ? erro.message
+          : "Nao foi possivel regularizar o cadastro."
+      );
+    } finally {
+      setVerificandoVinculos(false);
+    }
+  }
+
   if (
     carregando ||
     !usuario
@@ -1476,7 +1728,7 @@ async function atualizarMoradorCadastrado(
               </h1>
 
               <p className="mt-2 text-sm text-slate-400">
-                Cadastros, atualizaÃ§Ãµes e solicitaÃ§Ãµes aguardando anÃ¡lise.
+                Cadastros, atualizaÃƒÂ§ÃƒÂµes e solicitaÃƒÂ§ÃƒÂµes aguardando anÃƒÂ¡lise.
               </p>
             </div>
 
@@ -1494,7 +1746,7 @@ async function atualizarMoradorCadastrado(
 
               <div className="rounded-2xl border border-yellow-800 bg-yellow-950/30 p-5">
                 <p className="text-sm font-bold text-yellow-300">
-                  Aguardando anÃ¡lise
+                  Aguardando anÃƒÂ¡lise
                 </p>
 
                 <p className="mt-2 text-3xl font-black">
@@ -1504,7 +1756,7 @@ async function atualizarMoradorCadastrado(
 
               <div className="rounded-2xl border border-green-800 bg-green-950/30 p-5">
                 <p className="text-sm font-bold text-green-300">
-                  JÃ¡ analisadas
+                  JÃƒÂ¡ analisadas
                 </p>
 
                 <p className="mt-2 text-3xl font-black">
@@ -1514,21 +1766,146 @@ async function atualizarMoradorCadastrado(
 
             </div>
 
+            <section className="rounded-3xl border border-cyan-900 bg-slate-900 p-5 md:p-6">
+              <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <h2 className="text-xl font-black text-white">
+                    Vinculos dos moradores aprovados
+                  </h2>
+
+                  <p className="mt-1 text-sm text-slate-400">
+                    Verificacao somente leitura. Nenhum cadastro sera alterado.
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={verificarVinculosAprovados}
+                  disabled={verificandoVinculos}
+                  className="rounded-xl bg-cyan-600 px-5 py-3 text-sm font-black text-white transition hover:bg-cyan-500 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {verificandoVinculos
+                    ? "Verificando..."
+                    : "Verificar vinculos dos aprovados"}
+                </button>
+              </div>
+
+              {erroVerificacaoVinculos && (
+                <div className="mt-4 rounded-xl border border-red-800 bg-red-950/30 p-4 text-sm font-bold text-red-300">
+                  {erroVerificacaoVinculos}
+                </div>
+              )}
+
+              {resultadoVinculos !== null && (
+                <div className="mt-5">
+                  <p className="mb-3 text-sm font-bold text-slate-300">
+                    {resultadoVinculos.length} cadastro(s) aprovado(s) encontrado(s)
+                  </p>
+
+                  {resultadoVinculos.length === 0 ? (
+                    <div className="rounded-xl border border-slate-700 bg-slate-800 p-4 text-sm text-slate-300">
+                      Nenhum cadastro aprovado do Residencial Tulipas foi encontrado.
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {resultadoVinculos.map(
+                        (item) => (
+                          <div
+                            key={item.id}
+                            className="flex flex-col gap-2 rounded-xl border border-slate-700 bg-slate-800 p-4 md:flex-row md:items-center md:justify-between"
+                          >
+                            <div>
+                              <p className="font-black text-white">
+                                {item.nome}
+                              </p>
+
+                              <p className="text-sm text-slate-300">
+                                {item.unidadeNome || item.unidadeId}
+                              </p>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                            <span
+                              className={
+                                item.situacao === "OK"
+                                  ? "rounded-full border border-green-700 bg-green-950/40 px-3 py-1 text-xs font-black text-green-300"
+                                  : "rounded-full border border-yellow-700 bg-yellow-950/40 px-3 py-1 text-xs font-black text-yellow-300"
+                              }
+                            >
+                              {item.situacao === "OK"
+                                ? "VINCULO OK"
+                                : item.situacao === "SEM_USUARIO"
+                                  ? "SEM USUARIO"
+                                  : item.situacao === "SEM_VINCULO_E_RESPONSAVEL"
+                                    ? "SEM VINCULO E RESPONSAVEL"
+                                    : item.situacao === "SEM_VINCULO"
+                                      ? "SEM VINCULO"
+                                      : item.situacao === "EMAIL_COMPARTILHADO"
+                                        ? "E-MAIL COMPARTILHADO"
+                                        : item.situacao === "SEM_EMAIL"
+                                          ? "SEM E-MAIL"
+                                          : "SEM RESPONSAVEL"}
+                            </span>
+                              {item.situacao === "SEM_EMAIL" && (
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    informarEmailCadastroAprovado(
+                                      item.id,
+                                      item.nome
+                                    )
+                                  }
+                                  disabled={verificandoVinculos}
+                                  className="rounded-lg border border-amber-600 bg-amber-600 px-3 py-1 text-xs font-black text-white disabled:opacity-50"
+                                >
+                                  INFORMAR E-MAIL
+                                </button>
+                              )}
+
+                              {[
+                                "SEM_USUARIO",
+                                "SEM_VINCULO_E_RESPONSAVEL",
+                                "SEM_VINCULO",
+                                "SEM_RESPONSAVEL",
+                              ].includes(item.situacao) && (
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    regularizarCadastroAprovado(
+                                      item.id
+                                    )
+                                  }
+                                  disabled={verificandoVinculos}
+                                  className="rounded-lg border border-blue-600 bg-blue-600 px-3 py-1 text-xs font-black text-white disabled:opacity-50"
+                                >
+                                  REGULARIZAR
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        )
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+            </section>
+
             <section className="rounded-3xl border border-slate-800 bg-slate-900 p-5 md:p-6">
 
               <h2 className="text-2xl font-black">
-                AtualizaÃ§Ãµes cadastrais
+                AtualizaÃƒÂ§ÃƒÂµes cadastrais
               </h2>
 
               <p className="mt-1 text-sm text-slate-400">
-                SolicitaÃ§Ãµes recebidas deste condomÃ­nio.
+                SolicitaÃƒÂ§ÃƒÂµes recebidas deste condomÃƒÂ­nio.
               </p>
 
               {atualizacoesPendentes.length === 0 ? (
 
                 <div className="mt-5 rounded-2xl border border-slate-700 bg-slate-800 p-8 text-center">
                   <p className="font-black text-slate-300">
-                    Nenhuma atualizaÃ§Ã£o pendente
+                    Nenhuma atualizaÃƒÂ§ÃƒÂ£o pendente
                   </p>
                 </div>
 
@@ -1643,7 +2020,7 @@ async function atualizarMoradorCadastrado(
                 localIdAtual
               }`}
               painel="/dashboard/condominio"
-              titulo="QR, placa e links do condomínio"
+              titulo="QR, placa e links do condomÃ­nio"
             />
 
           </div>
@@ -1764,5 +2141,3 @@ async function atualizarMoradorCadastrado(
     </main>
   );
 }
-
-
