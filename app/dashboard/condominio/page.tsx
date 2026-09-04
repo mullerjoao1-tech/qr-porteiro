@@ -23,6 +23,10 @@ import {
   db,
 } from "@/app/services/firebase";
 
+import {
+  enviarRecuperacaoSenha,
+} from "@/app/services/auth/auth";
+
 import CentralResidencia from "@/app/dashboard/condominio/CentralResidencia";
 import CentralSindico from "@/app/dashboard/sindico/CentralSindico";
 import Unidades from "@/app/components/dashboard/Unidades";
@@ -1383,6 +1387,209 @@ async function atualizarMoradorCadastrado(
     }
   }
 
+  async function enviarAcessoMorador(
+    atualizacaoId: string,
+    nome: string,
+    email: string
+  ) {
+    try {
+      const emailNormalizado =
+        email.trim();
+
+      if (!emailNormalizado) {
+        throw new Error(
+          "Este morador nao possui e-mail."
+        );
+      }
+
+      const confirmar = window.confirm(
+        `Enviar acesso para ${nome} no e-mail ${emailNormalizado}?`
+      );
+
+      if (!confirmar) {
+        return;
+      }
+
+      setVerificandoVinculos(true);
+      setErroVerificacaoVinculos("");
+
+      const usuarioAtual =
+        auth.currentUser;
+
+      if (!usuarioAtual) {
+        throw new Error(
+          "Administrador nao autenticado."
+        );
+      }
+
+      const token =
+        await usuarioAtual.getIdToken();
+
+      const resposta =
+        await fetch(
+          "/api/usuarios/aprovar-atualizacao-cadastral",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type":
+                "application/json",
+              Authorization:
+                `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              modo:
+                "enviar-acesso-aprovado-tulipas",
+              atualizacaoId,
+            }),
+          }
+        );
+
+      const resultado =
+        await resposta
+          .json()
+          .catch(() => ({}));
+
+      if (
+        !resposta.ok ||
+        !resultado?.sucesso
+      ) {
+        throw new Error(
+          resultado?.erro ||
+            "Nao foi possivel enviar o acesso."
+        );
+      }
+
+      window.alert(
+        `E-mail de primeiro acesso enviado para ${emailNormalizado}.`
+      );
+
+      await verificarVinculosAprovados();
+    } catch (erro) {
+      setErroVerificacaoVinculos(
+        erro instanceof Error
+          ? erro.message
+          : "Nao foi possivel enviar o acesso."
+      );
+    } finally {
+      setVerificandoVinculos(false);
+    }
+  }
+
+  async function regularizarCadastrosElegiveis() {
+    try {
+      setVerificandoVinculos(true);
+      setErroVerificacaoVinculos("");
+
+      if (!resultadoVinculos) {
+        throw new Error(
+          "Verifique os vinculos antes de iniciar a regularizacao."
+        );
+      }
+
+      const situacoesElegiveis = [
+        "SEM_USUARIO",
+        "SEM_VINCULO_E_RESPONSAVEL",
+        "SEM_VINCULO",
+        "SEM_RESPONSAVEL",
+      ];
+
+      const elegiveis =
+        resultadoVinculos.filter(
+          (item) =>
+            situacoesElegiveis.includes(
+              item.situacao
+            )
+        );
+
+      if (elegiveis.length === 0) {
+        throw new Error(
+          "Nao ha cadastros elegiveis para regularizar."
+        );
+      }
+
+      const usuarioAtual =
+        auth.currentUser;
+
+      if (!usuarioAtual) {
+        throw new Error(
+          "Administrador nao autenticado."
+        );
+      }
+
+      const token =
+        await usuarioAtual.getIdToken();
+
+      const falhas: string[] = [];
+
+      for (const item of elegiveis) {
+        try {
+          const resposta =
+            await fetch(
+              "/api/usuarios/aprovar-atualizacao-cadastral",
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type":
+                    "application/json",
+                  Authorization:
+                    `Bearer ${token}`,
+                },
+                body: JSON.stringify({
+                  modo:
+                    "regularizar-aprovado-tulipas",
+                  atualizacaoId:
+                    item.id,
+                }),
+              }
+            );
+
+          const resultado =
+            await resposta
+              .json()
+              .catch(() => ({}));
+
+          if (
+            !resposta.ok ||
+            !resultado?.sucesso
+          ) {
+            falhas.push(
+              `${item.nome}: ${
+                resultado?.erro ||
+                "falha na regularizacao"
+              }`
+            );
+          }
+        } catch (erro) {
+          falhas.push(
+            `${item.nome}: ${
+              erro instanceof Error
+                ? erro.message
+                : "falha na regularizacao"
+            }`
+          );
+        }
+      }
+
+      await verificarVinculosAprovados();
+
+      if (falhas.length > 0) {
+        setErroVerificacaoVinculos(
+          `Alguns cadastros nao foram regularizados: ${falhas.join(
+            " | "
+          )}`
+        );
+      }
+    } catch (erro) {
+      setErroVerificacaoVinculos(
+        erro instanceof Error
+          ? erro.message
+          : "Nao foi possivel regularizar os cadastros elegiveis."
+      );
+    } finally {
+      setVerificandoVinculos(false);
+    }
+  }
+
   if (
     carregando ||
     !usuario
@@ -1788,6 +1995,26 @@ async function atualizarMoradorCadastrado(
                     ? "Verificando..."
                     : "Verificar vinculos dos aprovados"}
                 </button>
+
+                <button
+                  type="button"
+                  onClick={regularizarCadastrosElegiveis}
+                  disabled={
+                    verificandoVinculos ||
+                    !resultadoVinculos?.some(
+                      (item) =>
+                        [
+                          "SEM_USUARIO",
+                          "SEM_VINCULO_E_RESPONSAVEL",
+                          "SEM_VINCULO",
+                          "SEM_RESPONSAVEL",
+                        ].includes(item.situacao)
+                    )
+                  }
+                  className="rounded-xl bg-blue-600 px-5 py-3 text-sm font-black text-white transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  REGULARIZAR ELEGIVEIS
+                </button>
               </div>
 
               {erroVerificacaoVinculos && (
@@ -1846,6 +2073,24 @@ async function atualizarMoradorCadastrado(
                                           ? "SEM E-MAIL"
                                           : "SEM RESPONSAVEL"}
                             </span>
+                              {item.situacao === "OK" &&
+                                item.email && (
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      enviarAcessoMorador(
+                                        item.id,
+                                        item.nome,
+                                        item.email
+                                      )
+                                    }
+                                    disabled={verificandoVinculos}
+                                    className="rounded-lg border border-emerald-600 bg-emerald-600 px-3 py-1 text-xs font-black text-white disabled:opacity-50"
+                                  >
+                                    ENVIAR ACESSO
+                                  </button>
+                                )}
+
                               {item.situacao === "SEM_EMAIL" && (
                                 <button
                                   type="button"

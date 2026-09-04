@@ -4,6 +4,7 @@
 } from "next/server";
 
 import crypto from "node:crypto";
+import nodemailer from "nodemailer";
 
 import {
   obterFirebaseAdmin,
@@ -965,6 +966,463 @@ export async function POST(
         {
           sucesso: true,
           email: novoEmail,
+        },
+        {
+          status: 200,
+        }
+      );
+    }
+
+    const enviarAcessoAprovadoTulipas =
+      modo ===
+      "enviar-acesso-aprovado-tulipas";
+
+    if (enviarAcessoAprovadoTulipas) {
+      if (
+        solicitacao.status !==
+        "aprovada"
+      ) {
+        return NextResponse.json(
+          {
+            sucesso: false,
+            erro:
+              "Somente cadastros aprovados podem receber acesso.",
+          },
+          {
+            status: 409,
+          }
+        );
+      }
+
+      const condominioIdTeste =
+        texto(
+          solicitacao.condominioId
+        ).toLowerCase();
+
+      const condominioSlugTeste =
+        texto(
+          solicitacao.condominioSlug
+        ).toLowerCase();
+
+      const condominioNomeTeste =
+        texto(
+          solicitacao.condominioNome
+        ).toLowerCase();
+
+      const ehTulipas =
+        condominioIdTeste.includes(
+          "tulipas"
+        ) ||
+        condominioSlugTeste.includes(
+          "tulipas"
+        ) ||
+        condominioNomeTeste.includes(
+          "tulipas"
+        );
+
+      if (!ehTulipas) {
+        return NextResponse.json(
+          {
+            sucesso: false,
+            erro:
+              "Esta operacao esta limitada ao Residencial Tulipas.",
+          },
+          {
+            status: 403,
+          }
+        );
+      }
+
+      const email =
+        texto(
+          solicitacao.email
+        ).toLowerCase();
+
+      if (
+        !email ||
+        !email.includes("@")
+      ) {
+        return NextResponse.json(
+          {
+            sucesso: false,
+            erro:
+              "Este cadastro nao possui e-mail valido.",
+          },
+          {
+            status: 409,
+          }
+        );
+      }
+
+      const todasSnapshot =
+        await database
+          .ref(
+            "qrCentral/atualizacoesCadastrais"
+          )
+          .get();
+
+      const todas =
+        todasSnapshot.exists()
+          ? todasSnapshot.val() as Record<
+              string,
+              SolicitacaoCadastral
+            >
+          : {};
+
+      const nomeNormalizado =
+        texto(
+          solicitacao.nome
+        )
+          .trim()
+          .toLowerCase();
+
+      const emailCompartilhado =
+        Object.entries(todas).some(
+          ([
+            outroId,
+            outraSolicitacao,
+          ]) => {
+            if (
+              outroId === atualizacaoId ||
+              outraSolicitacao.status !==
+                "aprovada"
+            ) {
+              return false;
+            }
+
+            const outroEmail =
+              texto(
+                outraSolicitacao.email
+              ).toLowerCase();
+
+            if (
+              outroEmail !== email
+            ) {
+              return false;
+            }
+
+            const outroNome =
+              texto(
+                outraSolicitacao.nome
+              )
+                .trim()
+                .toLowerCase();
+
+            return (
+              outroNome !==
+              nomeNormalizado
+            );
+          }
+        );
+
+      if (emailCompartilhado) {
+        return NextResponse.json(
+          {
+            sucesso: false,
+            erro:
+              "Este e-mail esta compartilhado com outro morador. O envio foi bloqueado.",
+          },
+          {
+            status: 409,
+          }
+        );
+      }
+
+      let uid = "";
+
+      const moradorId =
+        texto(
+          solicitacao.moradorId
+        );
+
+      if (moradorId) {
+        const moradorSnapshot =
+          await database
+            .ref(
+              `qrCentral/moradores/${moradorId}`
+            )
+            .get();
+
+        if (
+          moradorSnapshot.exists()
+        ) {
+          uid =
+            texto(
+              moradorSnapshot
+                .val()
+                ?.uid
+            );
+        }
+      }
+
+      if (!uid) {
+        try {
+          const usuarioAuth =
+            await auth
+              .getUserByEmail(
+                email
+              );
+
+          uid =
+            usuarioAuth.uid;
+        } catch {
+          uid = "";
+        }
+      }
+
+      if (!uid) {
+        return NextResponse.json(
+          {
+            sucesso: false,
+            erro:
+              "Usuario do morador nao encontrado.",
+          },
+          {
+            status: 409,
+          }
+        );
+      }
+
+      const unidadeId =
+        await resolverUnidadeCanonicaTulipas(
+          solicitacao
+        );
+
+      const usuarioSnapshot =
+        await database
+          .ref(
+            `usuarios-v2/${uid}`
+          )
+          .get();
+
+      const temUsuario =
+        usuarioSnapshot.exists();
+
+      const usuario =
+        temUsuario
+          ? usuarioSnapshot.val()
+          : null;
+
+      const localId =
+        texto(
+          solicitacao.condominioId
+        );
+
+      const temVinculo =
+        temUsuario &&
+        (
+          usuario
+            ?.locais
+            ?.[localId]
+            ?.unidades
+            ?.[unidadeId] ===
+            true ||
+          usuario
+            ?.condominios
+            ?.[localId]
+            ?.unidades
+            ?.[unidadeId] ===
+            true
+        );
+
+      const responsaveisSnapshot =
+        await database
+          .ref(
+            `unidades-v2/${unidadeId}/responsaveis`
+          )
+          .get();
+
+      const responsaveis =
+        responsaveisSnapshot.exists()
+          ? responsaveisSnapshot.val() as Record<
+              string,
+              {
+                usuarioId?: string;
+                ativo?: boolean;
+              }
+            >
+          : {};
+
+      const temResponsavel =
+        Object.values(
+          responsaveis
+        ).some(
+          (responsavel) =>
+            texto(
+              responsavel.usuarioId
+            ) === uid &&
+            responsavel.ativo !== false
+        );
+
+      if (
+        !temUsuario ||
+        !temVinculo ||
+        !temResponsavel
+      ) {
+        return NextResponse.json(
+          {
+            sucesso: false,
+            erro:
+              "O cadastro ainda nao esta com VINCULO OK.",
+          },
+          {
+            status: 409,
+          }
+        );
+      }
+
+      const usuarioEmail =
+        await auth
+          .getUser(
+            uid
+          );
+
+      if (
+        texto(
+          usuarioEmail.email
+        ).toLowerCase() !==
+        email
+      ) {
+        return NextResponse.json(
+          {
+            sucesso: false,
+            erro:
+              "O e-mail do cadastro nao corresponde ao usuario autenticado.",
+          },
+          {
+            status: 409,
+          }
+        );
+      }
+
+      const remetente =
+        texto(
+          process.env
+            .QR_ACESSO_EMAIL
+        );
+
+      const senhaApp =
+        texto(
+          process.env
+            .QR_ACESSO_EMAIL_APP_PASSWORD
+        ).replace(
+          /\s/g,
+          ""
+        );
+
+      if (
+        !remetente ||
+        !senhaApp
+      ) {
+        return NextResponse.json(
+          {
+            sucesso: false,
+            erro:
+              "Servico de e-mail do QR Acesso nao configurado.",
+          },
+          {
+            status: 500,
+          }
+        );
+      }
+
+      const linkSenha =
+        await auth
+          .generatePasswordResetLink(
+            email
+          );
+
+      const transportador =
+        nodemailer.createTransport({
+          service: "gmail",
+          auth: {
+            user: remetente,
+            pass: senhaApp,
+          },
+        });
+
+      const nome =
+        texto(
+          solicitacao.nome
+        ) || "Morador";
+
+      await transportador.sendMail({
+        from:
+          `"QR Acesso" <${remetente}>`,
+        to: email,
+        subject:
+          "QR Acesso - Seu acesso esta liberado",
+        html: `
+          <div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;line-height:1.6">
+            <h2>QR Acesso</h2>
+
+            <p>Ola, ${nome}.</p>
+
+            <p>
+              Seu acesso ao
+              <strong>QR Acesso</strong>
+              do Residencial Tulipas esta liberado.
+            </p>
+
+            <p>
+              Para criar ou redefinir sua senha,
+              clique abaixo:
+            </p>
+
+            <p>
+              <a
+                href="${linkSenha}"
+                style="display:inline-block;padding:12px 18px;background:#0f766e;color:white;text-decoration:none;border-radius:8px;font-weight:bold"
+              >
+                DEFINIR MINHA SENHA
+              </a>
+            </p>
+
+            <p>
+              Depois de definir sua senha,
+              entre no aplicativo usando
+              <strong>${email}</strong>.
+            </p>
+
+            <p>
+              Para instalar o QR Acesso no Android:
+            </p>
+
+            <p>
+              <a href="https://qracesso.vercel.app/downloads/qr-acesso.apk">
+                BAIXAR QR ACESSO PARA ANDROID
+              </a>
+            </p>
+
+            <p>
+              Se voce nao reconhece este acesso,
+              ignore esta mensagem.
+            </p>
+
+            <p>
+              Atenciosamente,<br>
+              <strong>Equipe QR Acesso</strong>
+            </p>
+          </div>
+        `,
+      });
+
+      const agora =
+        Date.now();
+
+      await solicitacaoRef.update({
+        acessoEnviadoEm:
+          agora,
+        acessoEnviadoPor:
+          administradorUid,
+      });
+
+      return NextResponse.json(
+        {
+          sucesso: true,
+          email,
+          acessoEnviadoEm:
+            agora,
         },
         {
           status: 200,
