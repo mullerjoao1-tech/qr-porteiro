@@ -1,4 +1,4 @@
-﻿QR ACESSO STUDIO - ARQUIVOS ANDROID ATUAIS
+QR ACESSO STUDIO - ARQUIVOS ANDROID ATUAIS
 Data: 19/08/2026
 
 Este documento contém cópias exatas dos 3 arquivos atuais usados no APK.
@@ -87,7 +87,7 @@ ARQUIVO 1: AndroidManifest.xml
 ARQUIVO 2: IncomingCallActivity.java
 ============================================================
 
-package com.qracesso.studio;
+package com.qracesso.app;
 
 import android.os.Build;
 import android.os.Bundle;
@@ -156,7 +156,7 @@ public class IncomingCallActivity extends AppCompatActivity {
 ARQUIVO 3: IncomingCallService.java
 ============================================================
 
-package com.qracesso.studio;
+package com.qracesso.app;
 
 import android.app.KeyguardManager;
 import android.app.Notification;

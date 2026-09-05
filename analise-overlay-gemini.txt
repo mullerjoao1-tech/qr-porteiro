@@ -1,11 +1,11 @@
-﻿QR ACESSO STUDIO - ANALISE OVERLAY ANDROID 14
+QR ACESSO STUDIO - ANALISE OVERLAY ANDROID 14
 
 
 ============================================================
 ARQUIVO: android/app/src/main/java/com/qracesso/studio/IncomingCallService.java
 ============================================================
 
-package com.qracesso.studio;
+package com.qracesso.app;
 
 import android.app.KeyguardManager;
 import android.app.Notification;
@@ -323,7 +323,7 @@ public class IncomingCallService extends Service {
 ARQUIVO: android/app/src/main/java/com/qracesso/studio/CallOverlayManager.java
 ============================================================
 
-package com.qracesso.studio;
+package com.qracesso.app;
 
 import android.content.Context;
 import android.content.Intent;
@@ -604,7 +604,7 @@ public class CallOverlayManager {
 ARQUIVO: android/app/src/main/java/com/qracesso/studio/MyFirebaseMessagingService.java
 ============================================================
 
-package com.qracesso.studio;
+package com.qracesso.app;
 
 import android.content.Intent;
 import android.util.Log;
@@ -647,7 +647,7 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
 ARQUIVO: android/app/src/main/java/com/qracesso/studio/MainActivity.java
 ============================================================
 
-package com.qracesso.studio;
+package com.qracesso.app;
 
 import android.content.Intent;
 import android.os.Bundle;

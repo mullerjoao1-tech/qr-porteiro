@@ -1,4 +1,4 @@
-﻿const {
+const {
   cert,
   initializeApp,
   getApps,
@@ -54,7 +54,7 @@ async function executar() {
             ),
 
           databaseURL:
-            "https://qr-acesso-studio-default-rtdb.firebaseio.com",
+            "https://qr-porteiro-app-default-rtdb.firebaseio.com",
         });
 
   const db =

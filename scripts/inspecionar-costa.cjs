@@ -1,4 +1,4 @@
-﻿const { loadEnvConfig } = require("@next/env");
+const { loadEnvConfig } = require("@next/env");
 const { cert, getApps, initializeApp } = require("firebase-admin/app");
 const { getDatabase } = require("firebase-admin/database");
 
@@ -11,7 +11,7 @@ const chave = JSON.parse(
 if (getApps().length === 0) {
   initializeApp({
     credential: cert(chave),
-    databaseURL: "https://qr-acesso-studio-default-rtdb.firebaseio.com",
+    databaseURL: "https://qr-porteiro-app-default-rtdb.firebaseio.com",
   });
 }
 

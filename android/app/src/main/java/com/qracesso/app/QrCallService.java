@@ -5,6 +5,7 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
+import android.media.AudioManager;
 import android.media.Ringtone;
 import android.media.RingtoneManager;
 import android.net.Uri;
@@ -636,6 +637,14 @@ public class QrCallService extends Service {
     private void iniciarAlerta() {
         pararAlerta();
 
+        AudioManager audioManager =
+                (AudioManager) getSystemService(AUDIO_SERVICE);
+
+        int ringerMode =
+                audioManager != null
+                        ? audioManager.getRingerMode()
+                        : AudioManager.RINGER_MODE_NORMAL;
+
         try {
             Uri uri =
                     RingtoneManager.getDefaultUri(
@@ -649,7 +658,7 @@ public class QrCallService extends Service {
                                 uri
                         );
 
-                if (ringtone != null) {
+                if (ringtone != null && ringerMode == AudioManager.RINGER_MODE_NORMAL) {
                     ringtone.play();
                 }
             }
@@ -667,7 +676,7 @@ public class QrCallService extends Service {
                             VIBRATOR_SERVICE
                     );
 
-            if (vibrator != null) {
+            if (vibrator != null && ringerMode != AudioManager.RINGER_MODE_SILENT) {
 
                 long[] padrao = {
                         0,

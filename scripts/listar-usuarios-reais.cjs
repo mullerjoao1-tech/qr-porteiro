@@ -1,4 +1,4 @@
-﻿const { loadEnvConfig } = require("@next/env");
+const { loadEnvConfig } = require("@next/env");
 
 const {
   cert,
@@ -38,7 +38,7 @@ if (getApps().length === 0) {
       obterChaveServico()
     ),
     databaseURL:
-      "https://qr-acesso-studio-default-rtdb.firebaseio.com",
+      "https://qr-porteiro-app-default-rtdb.firebaseio.com",
   });
 }
 

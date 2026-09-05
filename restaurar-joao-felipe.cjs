@@ -1,4 +1,4 @@
-﻿const {
+const {
   cert,
   initializeApp,
   getApps,
@@ -36,7 +36,7 @@ async function executar() {
       : initializeApp({
           credential: cert(chave),
           databaseURL:
-            "https://qr-acesso-studio-default-rtdb.firebaseio.com",
+            "https://qr-porteiro-app-default-rtdb.firebaseio.com",
         });
 
   const db =

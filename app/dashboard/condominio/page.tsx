@@ -1935,7 +1935,7 @@ async function atualizarMoradorCadastrado(
               </h1>
 
               <p className="mt-2 text-sm text-slate-400">
-                Cadastros, atualizaÃƒÂ§ÃƒÂµes e solicitaÃƒÂ§ÃƒÂµes aguardando anÃƒÂ¡lise.
+                Cadastros, atualizações e solicitações aguardando análise.
               </p>
             </div>
 
@@ -1953,7 +1953,7 @@ async function atualizarMoradorCadastrado(
 
               <div className="rounded-2xl border border-yellow-800 bg-yellow-950/30 p-5">
                 <p className="text-sm font-bold text-yellow-300">
-                  Aguardando anÃƒÂ¡lise
+                  Aguardando análise
                 </p>
 
                 <p className="mt-2 text-3xl font-black">
@@ -1963,7 +1963,7 @@ async function atualizarMoradorCadastrado(
 
               <div className="rounded-2xl border border-green-800 bg-green-950/30 p-5">
                 <p className="text-sm font-bold text-green-300">
-                  JÃƒÂ¡ analisadas
+                  Já analisadas
                 </p>
 
                 <p className="mt-2 text-3xl font-black">
@@ -2139,18 +2139,18 @@ async function atualizarMoradorCadastrado(
             <section className="rounded-3xl border border-slate-800 bg-slate-900 p-5 md:p-6">
 
               <h2 className="text-2xl font-black">
-                AtualizaÃƒÂ§ÃƒÂµes cadastrais
+                Atualizações cadastrais
               </h2>
 
               <p className="mt-1 text-sm text-slate-400">
-                SolicitaÃƒÂ§ÃƒÂµes recebidas deste condomÃƒÂ­nio.
+                Solicitações recebidas deste condomínio.
               </p>
 
               {atualizacoesPendentes.length === 0 ? (
 
                 <div className="mt-5 rounded-2xl border border-slate-700 bg-slate-800 p-8 text-center">
                   <p className="font-black text-slate-300">
-                    Nenhuma atualizaÃƒÂ§ÃƒÂ£o pendente
+                    Nenhuma atualização pendente
                   </p>
                 </div>
 
@@ -2265,7 +2265,7 @@ async function atualizarMoradorCadastrado(
                 localIdAtual
               }`}
               painel="/dashboard/condominio"
-              titulo="QR, placa e links do condomÃ­nio"
+              titulo="QR, placa e links do condomínio"
             />
 
           </div>

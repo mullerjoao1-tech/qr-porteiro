@@ -18,6 +18,7 @@ import {
   ref,
   remove,
   set,
+  update,
 } from "firebase/database";
 
 import {
@@ -91,6 +92,18 @@ function ConteudoPaginaMorador() {
     setResponsavelChamadasAtivo,
   ] =
     useState(false);
+
+  const [
+    responsavelChamadasExiste,
+    setResponsavelChamadasExiste,
+  ] =
+    useState(false);
+
+  const [
+    responsavelChamadasChave,
+    setResponsavelChamadasChave,
+  ] =
+    useState<string | null>(null);
 
   const [
     popupChamadaAberto,
@@ -271,25 +284,54 @@ function ConteudoPaginaMorador() {
         !usuario?.uid ||
         !unidadeId
       ) {
+        setResponsavelChamadasChave(null);
+        setResponsavelChamadasExiste(false);
         setResponsavelChamadasAtivo(false);
         return;
       }
 
-      const referenciaResponsavel = ref(
+      const referenciaResponsaveis = ref(
         db,
-        `unidades-v2/${unidadeId}/responsaveis/${usuario.uid}`
+        `unidades-v2/${unidadeId}/responsaveis`
       );
 
       const desligarResponsavel = onValue(
-        referenciaResponsavel,
+        referenciaResponsaveis,
         (snapshot) => {
-          const dados = snapshot.val() as
-            | {
-                ativo?: boolean;
-                status?: string;
-                prioridade?: number;
-              }
+          const responsaveis = snapshot.val() as
+            | Record<
+                string,
+                {
+                  usuarioId?: string;
+                  ativo?: boolean;
+                  status?: string;
+                  prioridade?: number;
+                }
+              >
             | null;
+
+          const encontrado = Object.entries(
+            responsaveis ?? {}
+          ).find(
+            ([chave, dados]) =>
+              chave === usuario.uid ||
+              dados?.usuarioId === usuario.uid
+          );
+
+          const chaveResponsavel =
+            encontrado?.[0] ?? null;
+
+          const dados =
+            encontrado?.[1] ?? null;
+
+          setResponsavelChamadasChave(
+            chaveResponsavel
+          );
+
+          setResponsavelChamadasExiste(
+            Boolean(dados) &&
+            dados?.ativo !== false
+          );
 
           const habilitado =
             Boolean(dados) &&
@@ -512,6 +554,30 @@ function ConteudoPaginaMorador() {
     } finally {
       setSaindo(false);
     }
+  }
+
+  async function alterarStatusChamadas() {
+    if (
+      !usuario?.uid ||
+      !unidadeId ||
+      !responsavelChamadasExiste ||
+      !responsavelChamadasChave
+    ) {
+      return;
+    }
+
+    await update(
+      ref(
+        db,
+        `unidades-v2/${unidadeId}/responsaveis/${responsavelChamadasChave}`
+      ),
+      {
+        status: responsavelChamadasAtivo
+          ? "ausente"
+          : "disponivel",
+        atualizadoEm: Date.now(),
+      }
+    );
   }
 
   function abrirAtendimentoVisitantes() {
@@ -1113,26 +1179,26 @@ if (modoResidencia) {
             Aqui aparecem somente os recursos autorizados pelo respons&aacute;vel da resid&ecirc;ncia.
           </p>
 
-          <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="mt-5 grid grid-cols-2 gap-3 xl:grid-cols-4">
 
-            {false && podeReceberChamadas && (
+            {responsavelChamadasExiste && (
               <button
                 type="button"
-                onClick={
-                  abrirAtendimentoVisitantes
-                }
+                onClick={alterarStatusChamadas}
                 className="rounded-2xl border border-blue-800 bg-blue-950/40 p-4 text-left transition hover:border-blue-500 hover:bg-blue-950 active:scale-[0.98]"
               >
                 <div className="text-3xl">
-                  &#128276;
+                  {responsavelChamadasAtivo ? "🟢" : "🔴"}
                 </div>
 
                 <div className="mt-3 font-black text-white">
-                  Atendimento de visitantes
+                  {responsavelChamadasAtivo ? "Online" : "Ausente"}
                 </div>
 
                 <div className="mt-1 text-sm text-slate-400">
-                  Receba chamadas de quem estiver na entrada.
+                  {responsavelChamadasAtivo
+                    ? "Você está disponível para receber chamadas."
+                    : "Você não receberá chamadas. Toque para ficar Online."}
                 </div>
               </button>
             )}
@@ -1394,28 +1460,30 @@ if (modoResidencia) {
               Aqui aparecem somente os recursos liberados para o seu perfil e sua unidade.
             </p>
 
-            <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="mt-5 grid grid-cols-2 gap-3 xl:grid-cols-4">
 
-              {false && podeReceberChamadas && (
+
+              {responsavelChamadasExiste && (
                 <button
                   type="button"
-                  onClick={abrirAtendimentoVisitantes}
+                  onClick={alterarStatusChamadas}
                   className="rounded-2xl border border-blue-800 bg-blue-950/40 p-4 text-left transition hover:border-blue-500 hover:bg-blue-950 active:scale-[0.98]"
                 >
                   <div className="text-3xl">
-                    🔔
+                    {responsavelChamadasAtivo ? "🟢" : "🔴"}
                   </div>
-
+  
                   <div className="mt-3 font-black text-white">
-                    Atendimento de visitantes
+                    {responsavelChamadasAtivo ? "Online" : "Ausente"}
                   </div>
-
+  
                   <div className="mt-1 text-sm text-slate-400">
-                    Receba chamadas destinadas à sua unidade.
+                    {responsavelChamadasAtivo
+                      ? "Você está disponível para receber chamadas."
+                      : "Você não receberá chamadas. Toque para ficar Online."}
                   </div>
                 </button>
               )}
-
               {podeAbrirPortao && (
                 <button
                   type="button"

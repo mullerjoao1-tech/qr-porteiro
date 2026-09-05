@@ -1,50 +1,50 @@
-﻿===== TIPO MORADOR =====
-> C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:69:type MoradorCadastrado = {
-  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:70:  id: string;
-  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:71:  codigo: string;
-  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:72:  nome: string;
-  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:73:  telefone: string;
-  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:74:email?: string;
-  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:75:  unidadeId: string;
-  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:76:  unidadeNome: string;
-  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:77:  prioridade: number;
-  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:78:  podeAbrirPortao: boolean;
-  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:79:recebeChamadas?: boolean;
-  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:80:  status: string;
-  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:81:};
-  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:82:
-  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:83:
-  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:84:type AtualizacaoCadastralCondominio = {
-  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:85:  id: string;
-  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:86:  codigo: string;
-  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:87:  condominioId: string;
-  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:88:  condominioNome: string;
-  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:89:  condominioSlug?: string;
-  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:90:  unidadeId: string;
-  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:91:  unidadeCodigo?: string;
-  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:92:  unidadeNome: string;
-  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:93:  bloco?: string;
-  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:94:  nomeUnidade?: string;
-  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:95:  nome: string;
-  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:96:  telefone: string;
-  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:97:  email?: string;
-  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:98:  perfil: string;
-  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:99:  recebeChamadas: boolean;
-  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:100:  status: string;
-  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:101:  origem?: string;
-  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:102:  criadoEm: string;
-  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:103:  atualizadoEm?: string;
-  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:104:};
-  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:105:
-  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:106:function normalizar(
-  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:107:  valor?: string
-  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:108:) {
-  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:109:  return (valor || "")
-  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:110:    .trim()
-  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:111:    .toLowerCase()
-  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:112:    .replaceAll("-", "_");
-  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:113:}
-  C:\Users\Meu Computador\Desktop\qr-acesso-studio\app\dashboard\condominio\page.tsx:114:
+===== TIPO MORADOR =====
+> C:\Users\Meu Computador\Desktop\qr-porteiro-app\app\dashboard\condominio\page.tsx:69:type MoradorCadastrado = {
+  C:\Users\Meu Computador\Desktop\qr-porteiro-app\app\dashboard\condominio\page.tsx:70:  id: string;
+  C:\Users\Meu Computador\Desktop\qr-porteiro-app\app\dashboard\condominio\page.tsx:71:  codigo: string;
+  C:\Users\Meu Computador\Desktop\qr-porteiro-app\app\dashboard\condominio\page.tsx:72:  nome: string;
+  C:\Users\Meu Computador\Desktop\qr-porteiro-app\app\dashboard\condominio\page.tsx:73:  telefone: string;
+  C:\Users\Meu Computador\Desktop\qr-porteiro-app\app\dashboard\condominio\page.tsx:74:email?: string;
+  C:\Users\Meu Computador\Desktop\qr-porteiro-app\app\dashboard\condominio\page.tsx:75:  unidadeId: string;
+  C:\Users\Meu Computador\Desktop\qr-porteiro-app\app\dashboard\condominio\page.tsx:76:  unidadeNome: string;
+  C:\Users\Meu Computador\Desktop\qr-porteiro-app\app\dashboard\condominio\page.tsx:77:  prioridade: number;
+  C:\Users\Meu Computador\Desktop\qr-porteiro-app\app\dashboard\condominio\page.tsx:78:  podeAbrirPortao: boolean;
+  C:\Users\Meu Computador\Desktop\qr-porteiro-app\app\dashboard\condominio\page.tsx:79:recebeChamadas?: boolean;
+  C:\Users\Meu Computador\Desktop\qr-porteiro-app\app\dashboard\condominio\page.tsx:80:  status: string;
+  C:\Users\Meu Computador\Desktop\qr-porteiro-app\app\dashboard\condominio\page.tsx:81:};
+  C:\Users\Meu Computador\Desktop\qr-porteiro-app\app\dashboard\condominio\page.tsx:82:
+  C:\Users\Meu Computador\Desktop\qr-porteiro-app\app\dashboard\condominio\page.tsx:83:
+  C:\Users\Meu Computador\Desktop\qr-porteiro-app\app\dashboard\condominio\page.tsx:84:type AtualizacaoCadastralCondominio = {
+  C:\Users\Meu Computador\Desktop\qr-porteiro-app\app\dashboard\condominio\page.tsx:85:  id: string;
+  C:\Users\Meu Computador\Desktop\qr-porteiro-app\app\dashboard\condominio\page.tsx:86:  codigo: string;
+  C:\Users\Meu Computador\Desktop\qr-porteiro-app\app\dashboard\condominio\page.tsx:87:  condominioId: string;
+  C:\Users\Meu Computador\Desktop\qr-porteiro-app\app\dashboard\condominio\page.tsx:88:  condominioNome: string;
+  C:\Users\Meu Computador\Desktop\qr-porteiro-app\app\dashboard\condominio\page.tsx:89:  condominioSlug?: string;
+  C:\Users\Meu Computador\Desktop\qr-porteiro-app\app\dashboard\condominio\page.tsx:90:  unidadeId: string;
+  C:\Users\Meu Computador\Desktop\qr-porteiro-app\app\dashboard\condominio\page.tsx:91:  unidadeCodigo?: string;
+  C:\Users\Meu Computador\Desktop\qr-porteiro-app\app\dashboard\condominio\page.tsx:92:  unidadeNome: string;
+  C:\Users\Meu Computador\Desktop\qr-porteiro-app\app\dashboard\condominio\page.tsx:93:  bloco?: string;
+  C:\Users\Meu Computador\Desktop\qr-porteiro-app\app\dashboard\condominio\page.tsx:94:  nomeUnidade?: string;
+  C:\Users\Meu Computador\Desktop\qr-porteiro-app\app\dashboard\condominio\page.tsx:95:  nome: string;
+  C:\Users\Meu Computador\Desktop\qr-porteiro-app\app\dashboard\condominio\page.tsx:96:  telefone: string;
+  C:\Users\Meu Computador\Desktop\qr-porteiro-app\app\dashboard\condominio\page.tsx:97:  email?: string;
+  C:\Users\Meu Computador\Desktop\qr-porteiro-app\app\dashboard\condominio\page.tsx:98:  perfil: string;
+  C:\Users\Meu Computador\Desktop\qr-porteiro-app\app\dashboard\condominio\page.tsx:99:  recebeChamadas: boolean;
+  C:\Users\Meu Computador\Desktop\qr-porteiro-app\app\dashboard\condominio\page.tsx:100:  status: string;
+  C:\Users\Meu Computador\Desktop\qr-porteiro-app\app\dashboard\condominio\page.tsx:101:  origem?: string;
+  C:\Users\Meu Computador\Desktop\qr-porteiro-app\app\dashboard\condominio\page.tsx:102:  criadoEm: string;
+  C:\Users\Meu Computador\Desktop\qr-porteiro-app\app\dashboard\condominio\page.tsx:103:  atualizadoEm?: string;
+  C:\Users\Meu Computador\Desktop\qr-porteiro-app\app\dashboard\condominio\page.tsx:104:};
+  C:\Users\Meu Computador\Desktop\qr-porteiro-app\app\dashboard\condominio\page.tsx:105:
+  C:\Users\Meu Computador\Desktop\qr-porteiro-app\app\dashboard\condominio\page.tsx:106:function normalizar(
+  C:\Users\Meu Computador\Desktop\qr-porteiro-app\app\dashboard\condominio\page.tsx:107:  valor?: string
+  C:\Users\Meu Computador\Desktop\qr-porteiro-app\app\dashboard\condominio\page.tsx:108:) {
+  C:\Users\Meu Computador\Desktop\qr-porteiro-app\app\dashboard\condominio\page.tsx:109:  return (valor || "")
+  C:\Users\Meu Computador\Desktop\qr-porteiro-app\app\dashboard\condominio\page.tsx:110:    .trim()
+  C:\Users\Meu Computador\Desktop\qr-porteiro-app\app\dashboard\condominio\page.tsx:111:    .toLowerCase()
+  C:\Users\Meu Computador\Desktop\qr-porteiro-app\app\dashboard\condominio\page.tsx:112:    .replaceAll("-", "_");
+  C:\Users\Meu Computador\Desktop\qr-porteiro-app\app\dashboard\condominio\page.tsx:113:}
+  C:\Users\Meu Computador\Desktop\qr-porteiro-app\app\dashboard\condominio\page.tsx:114:
 
 ===== CRIACAO DO MORADOR =====
     setSalvandoMorador(
