@@ -6,8 +6,10 @@ import {
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "next/navigation";
-import { ref, onValue, update, remove, set, get } from "firebase/database";
+import { ref, onValue, update, remove, set, get, onDisconnect, runTransaction } from "firebase/database";
 import { db } from "../../services/firebase";
+import { QrCallLiveController } from "@/app/services/qrcall-live/QrCallLiveController";
+import { QrCallVideoPreviewVisitante } from "@/app/services/qrcall-live/QrCallVideoPreview";
 
 type MensagemConversa = {
   autor: "visitante" | "morador";
@@ -77,10 +79,18 @@ function blobParaBase64(blob: Blob): Promise<string> {
   });
 }
 
+let qrcallLiveVisitanteIniciando = false;
+
+// QRCALL_LIVE_LOCK_INICIO_VISITANTE_20260910
+// Impede entradas concorrentes antes do controller existir.
 export default function AcessoV2Condominio() {
   console.log("VERSAO BUILD 05/08/2026 18:45");
   const params = useParams();
   const condominioId = String(params.condominioId || "condominio-teste");
+
+  // QRCALL_A8_1_PERSISTENCIA
+  const chaveChamadaVisitante =
+    `qrcall-visitante-ativo:${condominioId}`;
 
   const [localCadastro, setLocalCadastro] = useState<LocalCadastro | null>(null);
   const [unidades, setUnidades] = useState<Unidade[]>([]);
@@ -123,8 +133,704 @@ export default function AcessoV2Condominio() {
   const chamadaAtivaRef = useRef(false);
   const chamadaFoiEnviadaRef = useRef(false);
   const ultimoPopupRef = useRef("");
+function salvarIdentidadeChamada(
+    unidadeIdAtiva: string,
+    criadoEmAtivo: string
+  ) {
+    if (
+      typeof window === "undefined" ||
+      !unidadeIdAtiva ||
+      !criadoEmAtivo
+    ) {
+      return;
+    }
+
+    try {
+      window.localStorage.setItem(
+        chaveChamadaVisitante,
+        JSON.stringify({
+          unidadeId: unidadeIdAtiva,
+          criadoEm: criadoEmAtivo,
+          condominioId,
+        })
+      );
+    } catch (erro) {
+      console.warn(
+        "QRCALL_A8_1_SALVAR:",
+        erro
+      );
+    }
+  }
+
+  function lerIdentidadeChamada():
+    | {
+        unidadeId: string;
+        criadoEm: string;
+      }
+    | null {
+    if (
+      typeof window === "undefined"
+    ) {
+      return null;
+    }
+
+    try {
+      const bruto =
+        window.localStorage.getItem(
+          chaveChamadaVisitante
+        );
+
+      if (!bruto) {
+        return null;
+      }
+
+      const dados =
+        JSON.parse(bruto);
+
+      const unidadeIdAtiva =
+        String(
+          dados?.unidadeId || ""
+        );
+
+      const criadoEmAtivo =
+        String(
+          dados?.criadoEm || ""
+        );
+
+      if (
+        !unidadeIdAtiva ||
+        !criadoEmAtivo ||
+        String(
+          dados?.condominioId || ""
+        ) !== condominioId
+      ) {
+        return null;
+      }
+
+      return {
+        unidadeId: unidadeIdAtiva,
+        criadoEm: criadoEmAtivo,
+      };
+    } catch {
+      return null;
+    }
+  }
+
+  function limparIdentidadeChamada() {
+    if (
+      typeof window === "undefined"
+    ) {
+      return;
+    }
+
+    try {
+      window.localStorage.removeItem(
+        chaveChamadaVisitante
+      );
+    } catch {
+      // best-effort
+    }
+  }
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
+  // QRCALL_A8_3B_PRESENCA
+  //
+  // A presenca usa caminho EXCLUSIVO da chamada:
+  //
+  // qrcall-presenca/{unidadeId}/{sessaoId}
+  //
+  // Nunca usamos onDisconnect para apagar diretamente
+  // unidades-v2/{unidadeId}/chamada.
+  //
+  // Assim uma desconexao antiga jamais consegue apagar
+  // uma chamada nova da mesma unidade.
+  const presencaOnDisconnectRef =
+    useRef<ReturnType<typeof onDisconnect> | null>(
+      null
+    );
+
+  const presencaFirebaseRef =
+    useRef<ReturnType<typeof ref> | null>(
+      null
+    );
+
+  async function encerrarPresencaVisitante(
+    removerAgora = true
+  ) {
+    const operacao =
+      presencaOnDisconnectRef.current;
+
+    const referencia =
+      presencaFirebaseRef.current;
+
+    presencaOnDisconnectRef.current =
+      null;
+
+    presencaFirebaseRef.current =
+      null;
+
+    if (operacao) {
+      try {
+        await operacao.cancel();
+      } catch {
+        // best-effort
+      }
+    }
+
+    if (
+      removerAgora &&
+      referencia
+    ) {
+      try {
+        await remove(
+          referencia
+        );
+      } catch {
+        // best-effort
+      }
+    }
+  }
+
+  async function registrarPresencaVisitante(
+    unidadeIdAtiva: string,
+    criadoEmAtivo: string
+  ) {
+    const criadoMs =
+      Date.parse(
+        criadoEmAtivo
+      );
+
+    if (
+      !unidadeIdAtiva ||
+      !Number.isFinite(criadoMs)
+    ) {
+      throw new Error(
+        "Identidade invalida para presenca do visitante."
+      );
+    }
+
+    await encerrarPresencaVisitante(
+      true
+    );
+
+    const referencia =
+      ref(
+        db,
+        `qrcall-presenca/${unidadeIdAtiva}/${String(criadoMs)}`
+      );
+
+    /*
+     * Primeiro criamos a presenca.
+     * So depois a chamada sera gravada.
+     */
+    await set(
+      referencia,
+      {
+        unidadeId:
+          unidadeIdAtiva,
+
+        criadoEm:
+          criadoEmAtivo,
+
+        sessaoId:
+          String(criadoMs),
+
+        ativo:
+          true,
+
+        atualizadoEm:
+          Date.now(),
+      }
+    );
+
+    /*
+     * O Firebase registra no SERVIDOR a remocao
+     * desta presenca quando a conexao desaparecer.
+     *
+     * Ela e exclusiva desta sessao.
+     */
+    const operacao =
+      onDisconnect(
+        referencia
+      );
+
+    await operacao.remove();
+
+    presencaFirebaseRef.current =
+      referencia;
+
+    presencaOnDisconnectRef.current =
+      operacao;
+
+    console.log(
+      "QRCALL_A8_3B_PRESENCA_REGISTRADA",
+      unidadeIdAtiva,
+      criadoEmAtivo
+    );
+  }
+
+
+  // QRCALL_A8_3C_TRANSACAO_ORFA
+  //
+  // Regra:
+  //
+  // chamada ativa + presenca daquela identidade ausente
+  // = visitante abandonou.
+  //
+  // A exclusao ocorre diretamente por transacao Firebase,
+  // mas SOMENTE se unidadeId + criadoEm ainda corresponderem
+  // a chamada que estamos verificando.
+  useEffect(() => {
+    if (
+      carregando ||
+      unidades.length === 0
+    ) {
+      return;
+    }
+
+    let cancelado =
+      false;
+
+    async function limparChamadasOrfas() {
+      for (
+        const unidade of unidades
+      ) {
+        if (cancelado) {
+          return;
+        }
+
+        const chamada =
+          unidade.chamada;
+
+        if (!chamada) {
+          continue;
+        }
+
+        const status =
+          String(
+            chamada.status || ""
+          );
+
+        const criadoEm =
+          String(
+            chamada.criadoEm || ""
+          );
+
+        const terminal =
+          !status ||
+          status === "Encerrado" ||
+          status === "Finalizado" ||
+          status === "Cancelado pelo visitante" ||
+          status === "Cancelada pelo visitante" ||
+          status === "Atendimento encerrado";
+
+        if (
+          terminal ||
+          !criadoEm
+        ) {
+          continue;
+        }
+
+        const criadoMs =
+          Date.parse(
+            criadoEm
+          );
+
+        if (
+          !Number.isFinite(
+            criadoMs
+          )
+        ) {
+          continue;
+        }
+
+        const referenciaPresenca =
+          ref(
+            db,
+            `qrcall-presenca/${unidade.id}/${String(criadoMs)}`
+          );
+
+        try {
+          const snapshotPresenca =
+            await get(
+              referenciaPresenca
+            );
+
+          if (
+            cancelado ||
+            snapshotPresenca.exists()
+          ) {
+            continue;
+          }
+
+          console.log(
+            "QRCALL_A8_3C_ORFA_DETECTADA",
+            unidade.id,
+            criadoEm
+          );
+
+          const referenciaChamada =
+            ref(
+              db,
+              `unidades-v2/${unidade.id}/chamada`
+            );
+
+          /*
+           * PROTECAO DE IDENTIDADE.
+           *
+           * Se outra chamada ocupou este mesmo caminho
+           * depois, a transacao retorna o valor intacto.
+           */
+          const resultado =
+            await runTransaction(
+              referenciaChamada,
+              (atual) => {
+                if (!atual) {
+                  return atual;
+                }
+
+                const criadoAtual =
+                  String(
+                    atual.criadoEm || ""
+                  );
+
+                if (
+                  criadoAtual !==
+                  criadoEm
+                ) {
+                  return atual;
+                }
+
+                /*
+                 * null numa transaction Firebase
+                 * remove este no.
+                 */
+                return null;
+              },
+              {
+                applyLocally:
+                  false,
+              }
+            );
+
+          if (cancelado) {
+            return;
+          }
+
+          /*
+           * Se a transacao removeu a chamada,
+           * limpamos somente os dados Live da MESMA
+           * identidade.
+           */
+          if (
+            resultado.committed &&
+            !resultado.snapshot.exists()
+          ) {
+            try {
+              await remove(
+                ref(
+                  db,
+                  `qrcall-live/${unidade.id}/${String(criadoMs)}`
+                )
+              );
+            } catch (erroLive) {
+              console.warn(
+                "QRCALL_A8_3C_LIVE:",
+                erroLive
+              );
+            }
+
+            try {
+              await remove(
+                referenciaPresenca
+              );
+            } catch {
+              // ja pode estar ausente
+            }
+
+            const persistida =
+              lerIdentidadeChamada();
+
+            if (
+              persistida?.unidadeId ===
+                unidade.id &&
+              persistida?.criadoEm ===
+                criadoEm
+            ) {
+              limparIdentidadeChamada();
+            }
+
+            console.log(
+              "QRCALL_A8_3C_ORFA_REMOVIDA",
+              unidade.id,
+              criadoEm
+            );
+          }
+        } catch (erro) {
+          console.warn(
+            "QRCALL_A8_3C_ERRO:",
+            erro
+          );
+        }
+      }
+    }
+
+    void limparChamadasOrfas();
+
+    return () => {
+      cancelado =
+        true;
+    };
+  }, [
+    carregando,
+    unidades,
+  ]);
+  // QRCALL_LIVE_CONVITE_VISITANTE
+  const [liveConvite, setLiveConvite] =
+    useState<{
+      unidadeId: string;
+      criadoEm: string;
+      tipo: "audio" | "video";
+    } | null>(null);
+  // QrCall Live - independente do audio gravado.
+  const liveControllerRef =
+    useRef<QrCallLiveController | null>(null);
+
+  // QRCALL_A9_1_VIDEO_PREVIEW_REF
+  const videoPreviewVisitanteRef =
+    useRef<QrCallVideoPreviewVisitante | null>(
+      null
+    );
+  const liveAudioRemotoRef =
+    useRef<HTMLAudioElement | null>(null);
+
+  const [liveEstado, setLiveEstado] =
+    useState("");
+
+  const [liveErro, setLiveErro] =
+    useState("");
+
+  async function iniciarLiveVisitante(
+    unidadeIdLive: string,
+    criadoEmLive: string,
+    tipoLive: "audio" | "video" = "audio"
+  ) {
+    if (
+      liveControllerRef.current ||
+      qrcallLiveVisitanteIniciando
+    ) {
+      return;
+    }
+
+    // A trava precisa acontecer ANTES do primeiro await.
+    qrcallLiveVisitanteIniciando = true;
+
+    window.setTimeout(() => {
+      if (!liveControllerRef.current) {
+        qrcallLiveVisitanteIniciando = false;
+      }
+    }, 10000);
+
+    setLiveErro("");
+    setLiveEstado("preparando");
+
+    // QRCALL_DIAGNOSTICO_WEB_VISITANTE
+    // QRCALL_TIMELINE_WEBRTC_VISITANTE_V2
+    const timelineLiveInicioMs = Date.now();
+    const diagnosticoLiveRef = ref(
+      db,
+      `qrcall-live/${unidadeIdLive}/${String(
+        Date.parse(criadoEmLive)
+      )}/diagnosticoVisitante`
+    );
+
+    const registrarDiagnosticoVisitante = async (
+      dados: Record<string, unknown>
+    ) => {
+      try {
+        await update(
+          diagnosticoLiveRef,
+          {
+            ...dados,
+            atualizadoEmMs: Date.now(),
+          }
+        );
+      } catch (erroDiagnostico) {
+        console.error(
+          "QRCALL_DIAGNOSTICO_WEB_VISITANTE:",
+          erroDiagnostico
+        );
+      }
+    };
+
+    await registrarDiagnosticoVisitante({
+      etapa: "iniciarLiveVisitante",
+      secureContext:
+        typeof window !== "undefined"
+          ? window.isSecureContext
+          : false,
+      possuiMediaDevices:
+        typeof navigator !== "undefined" &&
+        !!navigator.mediaDevices,
+      possuiGetUserMedia:
+        typeof navigator !== "undefined" &&
+        !!navigator.mediaDevices?.getUserMedia,
+    });
+
+    const controller =
+      new QrCallLiveController({
+        db,
+        unidadeId: unidadeIdLive,
+        criadoEm: criadoEmLive,
+        lado: "visitante",
+        // QRCALL_VIDEO_VISITANTE_REAL_20260910
+        tipo: tipoLive,
+
+        onEstado: (estado) => {
+          setLiveEstado(estado);
+
+          // QRCALL_DIAGNOSTICO_ESTADO_VISITANTE
+          void registrarDiagnosticoVisitante({
+            etapa: "estado_controller",
+            estadoController: estado,
+            [`timelineEstado_${estado}Ms`]: Date.now(),
+          });
+        },
+
+        onRemoteStream: (stream) => {
+          void registrarDiagnosticoVisitante({
+            timelineRemoteStreamMs: Date.now(),
+          });
+          const player =
+            liveAudioRemotoRef.current;
+
+          if (!player) return;
+
+          player.srcObject = stream;
+
+          void player.play().catch(() => {
+            // Pode exigir interacao do usuario.
+          });
+        },
+
+        onErro: (erro) => {
+          console.error(
+            "QRCALL_LIVE_VISITANTE:",
+            erro
+          );
+
+          void registrarDiagnosticoVisitante({
+            etapa: "erro_interno_controller",
+            erroNome: erro.name,
+            erroMensagem: erro.message,
+          });
+
+          setLiveErro(erro.message);
+        },
+      });
+
+    liveControllerRef.current =
+      controller;
+
+    // O controller agora existe e passa a ser a trava principal.
+    qrcallLiveVisitanteIniciando = false;
+
+    try {
+      await registrarDiagnosticoVisitante({
+        etapa: "antes_controller",
+      timelineInicioMs: timelineLiveInicioMs,
+      timelineAntesControllerMs: Date.now(),
+      });
+
+      await controller.iniciarComoVisitante();
+
+      await registrarDiagnosticoVisitante({
+        etapa: "controller_iniciado",
+      });
+    } catch (erro) {
+      const erroFinal =
+        erro instanceof Error
+          ? erro
+          : new Error(String(erro));
+
+      await registrarDiagnosticoVisitante({
+        etapa: "erro_controller",
+        erroNome: erroFinal.name,
+        erroMensagem: erroFinal.message,
+      });
+      try {
+        await controller.encerrar();
+      } catch {
+        // Limpeza best-effort.
+      }
+
+      liveControllerRef.current = null;
+      setLiveEstado("erro");
+
+      setLiveErro(
+        erro instanceof Error
+          ? erro.message
+          : "Erro ao iniciar voz ao vivo."
+      );
+    }
+  }
+
+  async function encerrarLiveVisitante() {
+    // QRCALL_A9_1_VIDEO_PREVIEW_ENCERRAR
+    const previewAtual =
+      videoPreviewVisitanteRef.current;
+
+    videoPreviewVisitanteRef.current =
+      null;
+
+    if (previewAtual) {
+      try {
+        await previewAtual
+          .encerrar();
+      } catch {
+      }
+    }
+    const controller =
+      liveControllerRef.current;
+
+    liveControllerRef.current = null;
+
+    if (controller) {
+      await controller.encerrar();
+    }
+
+    if (liveAudioRemotoRef.current) {
+      liveAudioRemotoRef.current.srcObject =
+        null;
+    }
+
+    setLiveEstado("");
+  }
+
+  useEffect(() => {
+    return () => {
+      // QRCALL_A9_1_VIDEO_PREVIEW_UNMOUNT
+      const previewAtual =
+        videoPreviewVisitanteRef.current;
+
+      videoPreviewVisitanteRef.current =
+        null;
+
+      if (previewAtual) {
+        void previewAtual
+          .encerrar();
+      }
+
+      const controller =
+        liveControllerRef.current;
+
+      liveControllerRef.current = null;
+
+      if (controller) {
+        void controller.encerrar();
+      }
+    };
+  }, []);
 
   useEffect(() => {
     let cancelado = false;
@@ -258,6 +964,142 @@ export default function AcessoV2Condominio() {
     }
   }, [localEhResidencia, unidadeSelecionada, unidades]);
 
+  // QRCALL_LIVE_CONVITE_VISITANTE
+  useEffect(() => {
+    if (
+      !unidadeSelecionada ||
+      !chamadaEmAtendimento
+    ) {
+      setLiveConvite(null);
+      return;
+    }
+
+    const referenciaChamada =
+      ref(
+        db,
+        `unidades-v2/${unidadeSelecionada.id}/chamada`
+      );
+
+    let pararSessao:
+      | (() => void)
+      | null = null;
+
+    let sessaoAtual = "";
+
+    const pararChamada =
+      onValue(
+        referenciaChamada,
+        (snapshot) => {
+          const chamada =
+            snapshot.val();
+
+          const criadoEm =
+            String(
+              chamada?.criadoEm || ""
+            );
+
+          if (
+            chamada?.status !==
+              "Em atendimento" ||
+            !criadoEm
+          ) {
+            setLiveConvite(null);
+
+            if (pararSessao) {
+              pararSessao();
+              pararSessao = null;
+              sessaoAtual = "";
+            }
+
+            return;
+          }
+
+          const criadoMs =
+            Date.parse(
+              criadoEm
+            );
+
+          if (
+            !Number.isFinite(
+              criadoMs
+            )
+          ) {
+            return;
+          }
+
+          const caminho =
+            `qrcall-live/${unidadeSelecionada.id}/${String(criadoMs)}`;
+
+          if (
+            caminho ===
+            sessaoAtual
+          ) {
+            return;
+          }
+
+          if (pararSessao) {
+            pararSessao();
+          }
+
+          sessaoAtual =
+            caminho;
+
+          pararSessao =
+            onValue(
+              ref(
+                db,
+                caminho
+              ),
+              (
+                sessaoSnapshot
+              ) => {
+                const sessao =
+                  sessaoSnapshot.val();
+
+                if (
+                  sessao &&
+                  String(
+                    sessao.criadoEm || ""
+                  ) === criadoEm &&
+                  sessao.iniciadaPor ===
+                    "morador" &&
+                  sessao.estado ===
+                    "solicitando" &&
+                  (
+                    sessao.tipo ===
+                      "audio" ||
+                    sessao.tipo ===
+                      "video"
+                  )
+                ) {
+                  setLiveConvite({
+                    unidadeId:
+                      unidadeSelecionada.id,
+                    criadoEm,
+                    tipo:
+                      sessao.tipo,
+                  });
+                } else {
+                  setLiveConvite(
+                    null
+                  );
+                }
+              }
+            );
+        }
+      );
+
+    return () => {
+      pararChamada();
+
+      if (pararSessao) {
+        pararSessao();
+      }
+    };
+  }, [
+    unidadeSelecionada,
+    chamadaEmAtendimento,
+  ]);
   useEffect(() => {
     if (!unidadeSelecionada) {
       setMensagensConversa([]);
@@ -274,6 +1116,14 @@ export default function AcessoV2Condominio() {
       );
 
       if (!chamada || chamada.status === "Encerrado") {
+        // QRCALL_A8_3B_LIMPAR_PRESENCA_FINAL
+        void encerrarPresencaVisitante(
+          true
+        );
+
+        // QRCALL_A8_1_LIMPAR_FINALIZADA
+        limparIdentidadeChamada();
+        void encerrarLiveVisitante();
         setMensagensConversa([]);
 
         if (chamadaAtivaRef.current && chamadaFoiEnviadaRef.current) {
@@ -434,7 +1284,19 @@ export default function AcessoV2Condominio() {
   const chamadaVisualAtiva =
     Boolean(mensagem) || chamadaEmAtendimento;
 
-  async function chamarUnidade() {
+  async function chamarUnidade(
+    modalidadeRecebida: unknown = "comum"
+  ) {
+    // QRCALL_A9_5C_MODALIDADE_ORIGEM
+    const modalidadeChamada:
+      | "comum"
+      | "audio"
+      | "video" =
+      modalidadeRecebida === "audio"
+        ? "audio"
+        : modalidadeRecebida === "video"
+        ? "video"
+        : "comum";
     if (!unidadeSelecionada) {
       alert("Selecione uma unidade.");
       return;
@@ -482,6 +1344,12 @@ export default function AcessoV2Condominio() {
       const criadoEmChamada =
         new Date().toISOString();
 
+      // QRCALL_A8_3B_PRESENCA_CHAMADA
+      await registrarPresencaVisitante(
+        unidadeIdAtual,
+        criadoEmChamada
+      );
+
       await update(
         ref(db, `unidades-v2/${unidadeIdAtual}/chamada`),
         {
@@ -492,19 +1360,96 @@ export default function AcessoV2Condominio() {
           notificar: true,
           condominioId,
           origem: "acesso-v2",
+
+          modalidadeChamada,
+
           mensagemRapida: null,
           respostaRapida: null,
           mensagemResponsavel: null,
           resposta: null,
           mensagemMorador: null,
-          enviadoEm: null,
+          enviadoEm: null,
+          audioBase64: null,
+          mensagens: null,
         }
       );
 
-      await iniciarEscalonamento(
+      // QRCALL_A8_1_SALVAR_IDENTIDADE
+      salvarIdentidadeChamada(
         unidadeIdAtual,
-        `unidades-v2/${unidadeIdAtual}/chamada`
+        criadoEmChamada
       );
+      const resultadoEscalonamento =
+        await iniciarEscalonamento(
+          unidadeIdAtual,
+          `unidades-v2/${unidadeIdAtual}/chamada`
+        );
+
+      if (
+        !resultadoEscalonamento.sucesso ||
+        !resultadoEscalonamento.responsavel
+      ) {
+        await encerrarPresencaVisitante(true);
+
+        await update(
+          ref(db, `unidades-v2/${unidadeIdAtual}/chamada`),
+          {
+            status: "Encerrado",
+            notificar: false,
+            motivoSemResponsavel: "Nenhum responsavel disponivel no momento.",
+            encerradoEm: Date.now(),
+          }
+        );
+
+        setEnviando(false);
+        setDiagnostico("Nenhum responsavel disponivel.");
+        setMensagem("Nenhum responsavel esta disponivel no momento.");
+        setTimeout(() => {
+          limparSelecao();
+        }, 3000);
+
+        return;
+      }
+      // QRCALL_A9_12_PREVIEW_ANTES_PUSH
+      // Para video, a camera do visitante e a offer WebRTC precisam
+      // estar prontas no Firebase ANTES de o push abrir o balao nativo.
+      if (modalidadeChamada === "video") {
+        try {
+          const previewAnterior =
+            videoPreviewVisitanteRef.current;
+
+          if (previewAnterior) {
+            await previewAnterior.encerrar();
+          }
+
+          const preview =
+            new QrCallVideoPreviewVisitante({
+              db,
+              unidadeId: unidadeIdAtual,
+              criadoEm: criadoEmChamada,
+            });
+
+          videoPreviewVisitanteRef.current =
+            preview;
+
+          await preview.iniciar();
+
+          // Neste ponto preview.iniciar() ja concluiu:
+          // camera -> createOffer -> setLocalDescription ->
+          // qrcall-video-preview/.../offer no Firebase.
+        } catch (erroPreview) {
+          videoPreviewVisitanteRef.current =
+            null;
+
+          console.warn(
+            "QRCALL_A9_12_PREVIEW_ANTES_PUSH_FALHOU:",
+            erroPreview
+          );
+
+          // Mantem a chamada funcional mesmo se o preview falhar.
+        }
+      }
+
 
 
       setTimeout(() => {
@@ -560,6 +1505,10 @@ export default function AcessoV2Condominio() {
           );
         });
     } catch (erro: unknown) {
+      void encerrarPresencaVisitante(
+        true
+      );
+
       console.error("Falha ao gravar a chamada:", erro);
 
       const detalhe =
@@ -691,11 +1640,21 @@ export default function AcessoV2Condominio() {
         chamadaAtivaRef.current = true;
         ultimoPopupRef.current = "";
 
+        const criadoEmNovaChamada =
+          new Date().toISOString();
+
+        // QRCALL_A8_3B_PRESENCA_AUDIO
+        await registrarPresencaVisitante(
+          unidadeSelecionada.id,
+          criadoEmNovaChamada
+        );
+
         await update(referenciaChamada, {
           nome: nomeFinal,
           motivo: motivoFinal,
           status: "Aguardando atendimento",
-          criadoEm: new Date().toISOString(),
+          criadoEm:
+            criadoEmNovaChamada,
           notificar: true,
           condominioId,
           origem: "acesso-v2",
@@ -704,13 +1663,47 @@ export default function AcessoV2Condominio() {
           mensagemResponsavel: null,
           resposta: null,
           mensagemMorador: null,
-          visualizadoPeloVisitante: false,
+          visualizadoPeloVisitante: false,
+          audioBase64: null,
+          mensagens: null,
         });
 
-        await iniciarEscalonamento(
+        salvarIdentidadeChamada(
           unidadeSelecionada.id,
-          `unidades-v2/${unidadeSelecionada.id}/chamada`
+          criadoEmNovaChamada
         );
+
+        const resultadoEscalonamentoAudio =
+          await iniciarEscalonamento(
+            unidadeSelecionada.id,
+            `unidades-v2/${unidadeSelecionada.id}/chamada`
+          );
+
+        if (
+          !resultadoEscalonamentoAudio.sucesso ||
+          !resultadoEscalonamentoAudio.responsavel
+        ) {
+          await encerrarPresencaVisitante(true);
+
+          await update(
+            referenciaChamada,
+            {
+              status: "Encerrado",
+              notificar: false,
+              motivoSemResponsavel: "Nenhum responsavel disponivel no momento.",
+              encerradoEm: Date.now(),
+            }
+          );
+
+          setEnviandoAudio(false);
+          setDiagnostico("Nenhum responsavel disponivel.");
+          setMensagem("Nenhum responsavel esta disponivel no momento.");
+          setTimeout(() => {
+            limparSelecao();
+          }, 3000);
+
+          return;
+        }
       }
 
       await set(
@@ -751,7 +1744,7 @@ export default function AcessoV2Condominio() {
           });
 
           const dadosPush = await respostaPush.json();
-          console.log("RESPOSTA PUSH V2 - ÃUDIO:", dadosPush);
+          console.log("RESPOSTA PUSH V2 - ÁUDIO:", dadosPush);
         } catch (erroPush) {
           console.error("Erro ao enviar push da chamada por áudio:", erroPush);
         }
@@ -772,22 +1765,350 @@ export default function AcessoV2Condominio() {
     }
   }
 
-  async function cancelarChamada() {
-    if (!unidadeSelecionada) return;
+  // QRCALL_AUDIO_SOLICITACAO_VISITANTE
+  async function solicitarLigacaoVisitante(
+    tipoLive: "audio" | "video" = "audio"
+  ) {
+    if (!unidadeSelecionada) {
+      alert("Selecione uma unidade.");
+      return;
+    }
+
+    if (!motivo) {
+      alert("Escolha o motivo da visita.");
+      return;
+    }
 
     try {
-      await update(
-        ref(db, `unidades-v2/${unidadeSelecionada.id}/chamada`),
-        {
-          status: "Cancelado pelo visitante",
-          notificar: false,
-          canceladoEm: Date.now(),
-        }
+      setDiagnostico("");
+
+      // Mantem o QrCall normal exatamente como ja funciona.
+      await chamarUnidade(
+        tipoLive
       );
 
-      await remove(
-        ref(db, `unidades-v2/${unidadeSelecionada.id}/chamada`)
+      const chamadaRef =
+        ref(
+          db,
+          `unidades-v2/${unidadeSelecionada.id}/chamada`
+        );
+
+      let chamadaAtual:
+        | Record<string, any>
+        | null = null;
+
+      for (
+        let tentativa = 0;
+        tentativa < 20;
+        tentativa++
+      ) {
+        const snapshot =
+          await get(chamadaRef);
+
+        const dados =
+          snapshot.val();
+
+        if (
+          dados?.criadoEm &&
+          dados?.status !== "Encerrado"
+        ) {
+          chamadaAtual = dados;
+          break;
+        }
+
+        await new Promise((resolver) =>
+          setTimeout(resolver, 150)
+        );
+      }
+
+      const criadoEm =
+        String(
+          chamadaAtual?.criadoEm || ""
+        );
+
+      if (!criadoEm) {
+        throw new Error(
+          "Identidade da chamada nao encontrada."
+        );
+      }
+
+      const criadoMs =
+        Date.parse(criadoEm);
+
+      if (!Number.isFinite(criadoMs)) {
+        throw new Error(
+          "Identidade da chamada invalida."
+        );
+      }
+
+      const sessaoRef =
+        ref(
+          db,
+          `qrcall-live/${unidadeSelecionada.id}/${String(criadoMs)}`
+        );
+
+      const agora =
+        Date.now();
+
+      // Somente convite.
+      // Microfone e WebRTC continuam desligados.
+      await set(
+        sessaoRef,
+        {
+          unidadeId:
+            unidadeSelecionada.id,
+
+          criadoEm,
+
+          sessaoId:
+            String(criadoMs),
+
+          tipo: tipoLive,
+
+          estado:
+            "solicitando",
+
+          iniciadaPor:
+            "visitante",
+
+          criadaEmMs:
+            agora,
+
+          atualizadaEmMs:
+            agora,
+        }
       );
+      // QRCALL_A9_12_PREVIEW_JA_PRONTO
+      // O preview de video ja foi preparado dentro de chamarUnidade(),
+      // antes do disparo do push. Nao recriar aqui.
+
+      setMensagem(
+        `${tipoLive === "video" ? "Ligacao de video" : "Ligacao de audio"} solicitada. Aguarde o morador atender.`
+      );
+
+      let pararSessao:
+        | (() => void)
+        | null = null;
+
+      pararSessao =
+        onValue(
+          sessaoRef,
+          (snapshot) => {
+            const sessao =
+              snapshot.val();
+
+            if (!sessao) {
+              return;
+            }
+
+            if (
+              String(
+                sessao.criadoEm || ""
+              ) !== criadoEm
+            ) {
+              return;
+            }
+
+            if (sessao.estado === "aceita") {
+              setMensagem(
+                `${tipoLive === "video" ? "Morador aceitou a ligacao de video." : "Morador aceitou a ligacao de audio."}`
+              );
+
+              // QRCALL_AUDIO_REAL_VISITANTE_APOS_ACEITE
+              // Microfone/WebRTC somente depois da confirmacao do morador.
+              if (tipoLive === "video") {
+                const previewAtual =
+                  videoPreviewVisitanteRef.current;
+
+                videoPreviewVisitanteRef.current =
+                  null;
+
+                void (
+                  async () => {
+                    if (previewAtual) {
+                      await previewAtual
+                        .encerrar();
+
+                      /*
+                       * Libera a camera antes da
+                       * Live principal assumir.
+                       */
+                      await new Promise<void>(
+                        (resolve) => {
+                          window.setTimeout(
+                            resolve,
+                            150
+                          );
+                        }
+                      );
+                    }
+
+                    await iniciarLiveVisitante(
+                      unidadeSelecionada.id,
+                      criadoEm,
+                      tipoLive
+                    );
+                  }
+                )();
+
+              } else {
+                void iniciarLiveVisitante(
+                  unidadeSelecionada.id,
+                  criadoEm,
+                  tipoLive
+                );
+              }
+
+              if (pararSessao) {
+                pararSessao();
+                pararSessao = null;
+              }
+
+              return;
+            }
+
+            if (sessao.estado === "recusada") {
+
+              if (tipoLive === "video") {
+                const previewAtual =
+                  videoPreviewVisitanteRef.current;
+
+                videoPreviewVisitanteRef.current =
+                  null;
+
+                if (previewAtual) {
+                  void previewAtual
+                    .encerrar();
+                }
+              }
+              setMensagem(
+                `${tipoLive === "video" ? "Morador preferiu continuar sem ligacao de video." : "Morador preferiu continuar sem ligacao de audio."}`
+              );
+
+              if (pararSessao) {
+                pararSessao();
+                pararSessao = null;
+              }
+            }
+          }
+        );
+    } catch (erro) {
+      console.error(
+        "QRCALL_AUDIO_SOLICITACAO_VISITANTE:",
+        erro
+      );
+
+      alert(
+        "Nao foi possivel solicitar a ligacao de audio."
+      );
+    }
+  }
+  async function cancelarChamada() {
+    const persistida =
+      lerIdentidadeChamada();
+
+    const unidadeIdCancelar =
+      unidadeSelecionada?.id ||
+      persistida?.unidadeId ||
+      "";
+
+    if (!unidadeIdCancelar) {
+      alert(
+        "Nao foi possivel localizar a chamada ativa."
+      );
+      return;
+    }
+
+    try {
+      // QRCALL_A8_3B_CANCELAMENTO_MANUAL
+      await encerrarPresencaVisitante(
+        true
+      );
+
+      await encerrarLiveVisitante();
+
+      const chamadaRef =
+        ref(
+          db,
+          `unidades-v2/${unidadeIdCancelar}/chamada`
+        );
+
+      const snapshot =
+        await get(chamadaRef);
+
+      const chamadaAtual =
+        snapshot.val();
+
+      const criadoEmAtual =
+        String(
+          chamadaAtual?.criadoEm || ""
+        );
+
+      /*
+       * Se a identidade salva for antiga, nunca
+       * cancelar uma chamada nova da mesma unidade.
+       */
+      if (
+        persistida &&
+        persistida.unidadeId ===
+          unidadeIdCancelar &&
+        persistida.criadoEm &&
+        criadoEmAtual &&
+        persistida.criadoEm !==
+          criadoEmAtual
+      ) {
+        limparIdentidadeChamada();
+
+        alert(
+          "A chamada anterior ja nao esta ativa."
+        );
+
+        return;
+      }
+
+      const criadoEmCancelar =
+        persistida?.criadoEm ||
+        criadoEmAtual;
+
+      const criadoMs =
+        Date.parse(
+          criadoEmCancelar
+        );
+
+      if (Number.isFinite(criadoMs)) {
+        try {
+          await remove(
+            ref(
+              db,
+              `qrcall-live/${unidadeIdCancelar}/${String(criadoMs)}`
+            )
+          );
+        } catch (erroLive) {
+          console.warn(
+            "QRCALL_A8_1_LIMPAR_LIVE:",
+            erroLive
+          );
+        }
+      }
+
+      if (chamadaAtual) {
+        await update(
+          chamadaRef,
+          {
+            status:
+              "Cancelado pelo visitante",
+            notificar: false,
+            canceladoEm:
+              Date.now(),
+          }
+        );
+
+        await remove(
+          chamadaRef
+        );
+      }
+
+      limparIdentidadeChamada();
 
       setEnviando(false);
       setEnviandoAudio(false);
@@ -805,15 +2126,28 @@ export default function AcessoV2Condominio() {
       setOutroMotivo("");
       setAudioBlob(null);
       setGravandoAudio(false);
+      setChamadaEmAtendimento(false);
 
-      chamadaAtivaRef.current = false;
-      chamadaFoiEnviadaRef.current = false;
-      ultimoPopupRef.current = "";
+      chamadaAtivaRef.current =
+        false;
+
+      chamadaFoiEnviadaRef.current =
+        false;
+
+      ultimoPopupRef.current =
+        "";
+
     } catch (erro) {
-      console.error("Erro ao cancelar:", erro);
+      console.error(
+        "Erro ao cancelar:",
+        erro
+      );
+
+      alert(
+        "Nao foi possivel cancelar a chamada. Tente novamente."
+      );
     }
   }
-
   function limparSelecao() {
     setMensagensConversa([]);
     setPopupAudioFoiOuvido(false);
@@ -879,8 +2213,114 @@ export default function AcessoV2Condominio() {
     popupTexto,
   ]);
 
+  async function responderConviteLive(
+    aceitar: boolean
+  ) {
+    const convite =
+      liveConvite;
+
+    if (!convite) return;
+
+    try {
+      const sessaoId =
+        String(
+          Date.parse(
+            convite.criadoEm
+          )
+        );
+
+      await update(
+        ref(
+          db,
+          `qrcall-live/${convite.unidadeId}/${sessaoId}`
+        ),
+        {
+          estado:
+            aceitar
+              ? "aceita"
+              : "recusada",
+
+          atualizadaEmMs:
+            Date.now(),
+        }
+      );
+
+      setLiveConvite(
+        null
+      );
+
+      // WebRTC ainda NAO inicia aqui.
+
+    } catch (erro) {
+      console.error(
+        "QRCALL_LIVE_RESPOSTA_CONVITE:",
+        erro
+      );
+
+      alert(
+        "Nao foi possivel responder a solicitacao de ligacao."
+      );
+    }
+  }
   return (
     <main className="min-h-screen bg-slate-950 text-white p-3 flex justify-center">
+      {liveConvite && (
+        <div className="fixed inset-0 z-[70] bg-black/85 flex items-center justify-center p-5">
+          <div className="w-full max-w-md bg-slate-900 border-2 border-emerald-500 rounded-3xl p-6 text-center shadow-2xl">
+
+            <div className="text-xs uppercase tracking-[0.2em] text-emerald-400 font-black">
+              QRCALL
+            </div>
+
+            <h2 className="mt-4 text-2xl font-black">
+              {liveConvite.tipo === "video"
+                ? "CHAMADA DE VIDEO"
+                : "CHAMADA DE AUDIO"}
+            </h2>
+
+            <p className="mt-3 text-slate-300">
+              O morador deseja falar com voce.
+            </p>
+
+            <p className="mt-2 text-sm text-slate-500">
+              {liveConvite.tipo === "video"
+                ? "Camera e microfone so serao solicitados se voce aceitar."
+                : "O microfone so sera solicitado se voce aceitar."}
+            </p>
+
+            <button
+              type="button"
+              onClick={() => {
+                void responderConviteLive(
+                  true
+                );
+              }}
+              className="w-full mt-6 bg-emerald-600 hover:bg-emerald-500 rounded-2xl py-4 text-lg font-black"
+            >
+              ACEITAR
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                void responderConviteLive(
+                  false
+                );
+              }}
+              className="w-full mt-3 bg-slate-700 hover:bg-slate-600 rounded-2xl py-3 font-bold"
+            >
+              CONTINUAR SEM LIGACAO
+            </button>
+
+          </div>
+        </div>
+      )}
+      <audio
+        ref={liveAudioRemotoRef}
+        autoPlay
+        playsInline
+        className="hidden"
+      />
       {popupTexto && (
         <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-5">
           <div
@@ -1311,12 +2751,19 @@ export default function AcessoV2Condominio() {
             )}
 
 
+            {/* QRCALL_VISUAL_4_BOTOES_OK */}
+            <div className={chamadaVisualAtiva ? "hidden" : "mb-3 text-center"}>
+              <p className="text-sm font-bold text-slate-300">
+                Escolha o motivo e depois como deseja falar com o morador
+              </p>
+            </div>
+
             <button
               onClick={chamarUnidade}
               disabled={enviando || !motivo}
-              className={chamadaVisualAtiva ? "hidden" : "w-full sticky bottom-2 z-40 bg-green-500 hover:bg-green-400 disabled:bg-gray-500 text-black text-xl font-black py-3 rounded-2xl shadow-2xl"}
+              className={chamadaVisualAtiva ? "hidden" : "w-full sticky bottom-2 z-40 bg-blue-600 hover:bg-blue-500 disabled:bg-blue-600 disabled:opacity-45 disabled:cursor-not-allowed text-white text-lg font-black py-3 rounded-2xl shadow-2xl transition"}
             >
-              {enviando ? "Enviando..." : "🔔 CHAMAR"}
+              {enviando ? "Enviando..." : "ENVIAR MENSAGEM"}
             </button>
 
             {diagnostico && diagnostico !== "✅ Chamada enviada." && (
@@ -1336,9 +2783,24 @@ export default function AcessoV2Condominio() {
             {mensagem && (
               <div className="mt-5 space-y-4">
                 {chamadaEmAtendimento ? (
-                  <div className="bg-blue-500/15 border border-blue-500 rounded-2xl p-3 text-blue-300 font-black text-center">
-                    🟢 EM ATENDIMENTO
-                  </div>
+                  <>
+                    <div className="bg-blue-500/15 border border-blue-500 rounded-2xl p-3 text-blue-300 font-black text-center">
+                      🟢 EM ATENDIMENTO
+                    </div>
+
+                    {(
+                      mensagem
+                        .toLowerCase()
+                        .includes("ligacao de audio") ||
+                      mensagem
+                        .toLowerCase()
+                        .includes("ligacao de video")
+                    ) && (
+                      <div className="bg-emerald-500/15 border border-emerald-500 rounded-2xl p-4 text-emerald-300 font-bold text-center">
+                        {mensagem}
+                      </div>
+                    )}
+                  </>
                 ) : (
                   <div className="bg-green-500/15 border border-green-500 rounded-2xl p-4 text-green-300 font-bold text-center">
                     {mensagem}
@@ -1447,11 +2909,37 @@ export default function AcessoV2Condominio() {
                   setPopupAudioVisitanteAberto(true);
                   iniciarGravacao();
                 }}
-                disabled={enviandoAudio}
-                className="w-full bg-blue-600 hover:bg-blue-500 disabled:bg-gray-500 text-white text-lg font-black py-3 rounded-2xl"
+                disabled={enviandoAudio || !motivo}
+                className="w-full bg-cyan-600 hover:bg-cyan-500 disabled:bg-cyan-600 disabled:opacity-45 disabled:cursor-not-allowed text-white text-lg font-black py-3 rounded-2xl transition"
               >
                 &#127908; GRAVAR ÁUDIO
               </button>
+            </div>
+            {/* QRCALL_MENU_VISITANTE_AUDIO_VIDEO */}
+            <div className="mt-3 space-y-3">
+
+              <button
+                type="button"
+                onClick={() => {
+                  void solicitarLigacaoVisitante("audio");
+                }}
+                disabled={!motivo}
+                className="w-full bg-emerald-600 hover:bg-emerald-500 disabled:bg-emerald-600 disabled:opacity-45 disabled:cursor-not-allowed text-white text-lg font-black py-3 rounded-2xl transition"
+              >
+                LIGACAO DE AUDIO
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  void solicitarLigacaoVisitante("video");
+                }}
+                disabled={!motivo}
+                className="w-full bg-violet-600 hover:bg-violet-500 disabled:bg-violet-600 disabled:opacity-45 disabled:cursor-not-allowed text-white text-lg font-black py-3 rounded-2xl transition"
+              >
+                LIGACAO DE VIDEO
+              </button>
+
             </div>
           </section>
         )}

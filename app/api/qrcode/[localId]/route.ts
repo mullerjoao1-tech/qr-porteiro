@@ -93,34 +93,32 @@ function normalizarNomeArquivo(
 }
 
 function obterBaseUrl(
-  request: NextRequest
+  _request: NextRequest
 ): string {
   const configurada =
-    process.env.NEXT_PUBLIC_APP_URL ||
-    process.env.VERCEL_URL;
+    process.env.NEXT_PUBLIC_APP_URL?.trim();
 
-  if (configurada) {
-    if (
-      configurada.startsWith(
-        "http://"
-      ) ||
-      configurada.startsWith(
-        "https://"
-      )
-    ) {
-      return configurada.replace(
-        /\/+$/g,
-        ""
-      );
-    }
+  if (!configurada) {
+    throw new Error(
+      "NEXT_PUBLIC_APP_URL obrigatoria para gerar QR permanente."
+    );
+  }
 
-    return `https://${configurada}`.replace(
+  if (
+    configurada.startsWith(
+      "http://"
+    ) ||
+    configurada.startsWith(
+      "https://"
+    )
+  ) {
+    return configurada.replace(
       /\/+$/g,
       ""
     );
   }
 
-  return request.nextUrl.origin.replace(
+  return `https://${configurada}`.replace(
     /\/+$/g,
     ""
   );
@@ -237,10 +235,20 @@ async function buscarQrPrincipal(
   if (
     snapshotQr.exists()
   ) {
-    return (
+    const qrSalvo =
       snapshotQr.val() as
-        QrPrincipalBanco
-    );
+        QrPrincipalBanco;
+
+    const slugSeguro =
+      local.slug?.trim() || local.id?.trim() || identificador;
+
+    return {
+      ...qrSalvo,
+      localId,
+      localSlug: slugSeguro,
+      url:
+        `${obterBaseUrl(request)}/acesso-v2/${slugSeguro}`,
+    };
   }
 
   const snapshotQrLocal =
@@ -257,11 +265,16 @@ async function buscarQrPrincipal(
       snapshotQrLocal.val() as
         QrPrincipalBanco;
 
-    if (
-      qrLocal.url?.trim()
-    ) {
-      return qrLocal;
-    }
+    const slugSeguro =
+      local.slug?.trim() || local.id?.trim() || identificador;
+
+    return {
+      ...qrLocal,
+      localId,
+      localSlug: slugSeguro,
+      url:
+        `${obterBaseUrl(request)}/acesso-v2/${slugSeguro}`,
+    };
   }
 
   const slug =

@@ -727,10 +727,14 @@ export default function ImplantacaoPage() {
     const caminho =
       `/acesso-v2/${resultado.local.slug}`;
 
-    return typeof window !==
-      "undefined"
-      ? `${window.location.origin}${caminho}`
-      : caminho;
+    const baseUrl =
+      process.env.NEXT_PUBLIC_APP_URL?.trim();
+
+    if (!baseUrl) {
+      return caminho;
+    }
+
+    return `${baseUrl.replace(/\/+$/g, "")}${caminho}`;
   }
 
   function obterLinkPainel(): string {
@@ -928,10 +932,7 @@ export default function ImplantacaoPage() {
                 </div>
 
                 <p className="mt-4 break-all text-center text-sm text-slate-400">
-                  {typeof window !==
-                  "undefined"
-                    ? `${window.location.origin}/acesso-v2/${resultado.local?.slug}`
-                    : `/acesso-v2/${resultado.local?.slug}`}
+                  {obterLinkAcesso()}
                 </p>
 
                 <div className="mt-6 grid gap-3 sm:grid-cols-2">

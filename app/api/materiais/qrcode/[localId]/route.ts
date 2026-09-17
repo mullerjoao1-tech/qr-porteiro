@@ -73,30 +73,28 @@ function texto(
 }
 
 function obterBaseUrl(
-  request: NextRequest
+  _request: NextRequest
 ): string {
   const configurada =
-    process.env.NEXT_PUBLIC_APP_URL ||
-    process.env.VERCEL_URL;
+    process.env.NEXT_PUBLIC_APP_URL?.trim();
 
-  if (configurada) {
-    if (
-      configurada.startsWith("http://") ||
-      configurada.startsWith("https://")
-    ) {
-      return configurada.replace(
-        /\/+$/g,
-        ""
-      );
-    }
+  if (!configurada) {
+    throw new Error(
+      "NEXT_PUBLIC_APP_URL obrigatoria para gerar materiais permanentes."
+    );
+  }
 
-    return `https://${configurada}`.replace(
+  if (
+    configurada.startsWith("http://") ||
+    configurada.startsWith("https://")
+  ) {
+    return configurada.replace(
       /\/+$/g,
       ""
     );
   }
 
-  return request.nextUrl.origin.replace(
+  return `https://${configurada}`.replace(
     /\/+$/g,
     ""
   );

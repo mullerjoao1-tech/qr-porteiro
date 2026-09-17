@@ -73,9 +73,13 @@ export type ResultadoPipelineImplantacao = {
 
 function obterBaseUrl(): string {
   const baseUrl =
-    process.env.NEXT_PUBLIC_APP_URL ||
-    process.env.VERCEL_URL ||
-    "http://localhost:3000";
+    process.env.NEXT_PUBLIC_APP_URL?.trim();
+
+  if (!baseUrl) {
+    throw new Error(
+      "NEXT_PUBLIC_APP_URL obrigatoria para gerar URLs permanentes de implantacao."
+    );
+  }
 
   if (
     baseUrl.startsWith(
