@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 import {
@@ -64,36 +64,36 @@ type MoradorExistente = {
 
 function textoPerfil(perfil?: string) {
   const perfis: Record<string, string> = {
-    proprietario: "ProprietÃ¡rio",
+    proprietario: "Proprietário",
     inquilino: "Inquilino",
     familiar: "Familiar",
     morador: "Morador",
-    funcionario: "FuncionÃ¡rio",
+    funcionario: "Funcionário",
     outro: "Outro",
   };
 
-  return perfis[perfil || ""] || perfil || "NÃ£o informado";
+  return perfis[perfil || ""] || perfil || "Não informado";
 }
 
 function textoStatus(status?: string) {
   if (status === "aprovada") {
-    return "ðŸŸ¢ Aprovada";
+    return "🟢 Aprovada";
   }
 
   if (status === "recusada") {
-    return "ðŸ”´ Recusada";
+    return "🔴 Recusada";
   }
 
   if (status === "correcao-solicitada") {
-    return "ðŸ”µ CorreÃ§Ã£o solicitada";
+    return "🔵 Correção solicitada";
   }
 
-  return "ðŸŸ¡ Pendente";
+  return "🟡 Pendente";
 }
 
 function formatarData(data?: string) {
   if (!data) {
-    return "Data nÃ£o informada";
+    return "Data não informada";
   }
 
   const dataConvertida = new Date(data);
@@ -159,7 +159,7 @@ const [nomeEditado, setNomeEditado] =
 
   function acaoAindaNaoImplementada(acao: string) {
     alert(
-      `${acao}\n\nEsta aÃ§Ã£o serÃ¡ conectada na prÃ³xima etapa.`
+      `${acao}\n\nEsta ação será conectada na próxima etapa.`
     );
   }
 
@@ -208,18 +208,18 @@ const [nomeEditado, setNomeEditado] =
 
 async function aprovarCadastro() {
     if (atualizacao.status !== "pendente") {
-      alert("Esta solicitaÃ§Ã£o jÃ¡ foi analisada.");
+      alert("Esta solicitação já foi analisada.");
       return;
     }
 
     const confirmar = confirm(
       [
-        "Aprovar esta atualizaÃ§Ã£o cadastral?",
+        "Aprovar esta atualização cadastral?",
         "",
         `Morador: ${nomeEditado}`,
         `Unidade: ${atualizacao.unidadeNome}`,
         "",
-        "O sistema criarÃ¡ o morador ou atualizarÃ¡ um cadastro existente com o mesmo telefone nesta unidade.",
+        "O sistema criará o morador ou atualizará um cadastro existente com o mesmo telefone nesta unidade.",
       ].join("\n")
     );
 
@@ -239,13 +239,13 @@ async function aprovarCadastro() {
       const solicitacaoAtual = solicitacaoSnapshot.val();
 
       if (!solicitacaoAtual) {
-        alert("Esta solicitaÃ§Ã£o nÃ£o foi localizada.");
+        alert("Esta solicitação não foi localizada.");
         onClose();
         return;
       }
 
       if (solicitacaoAtual.status !== "pendente") {
-        alert("Esta solicitaÃ§Ã£o jÃ¡ foi analisada por outra pessoa.");
+        alert("Esta solicitação já foi analisada por outra pessoa.");
         onClose();
         return;
       }
@@ -327,7 +327,7 @@ async function aprovarCadastro() {
             telefone: atualizacao.telefone.trim(),
             email: atualizacao.email?.trim() || "",
             unidadeId: unidadeIdEfetivo,
-            unidadeNome: `${atualizacao.condominioNome} â€¢ ${atualizacao.unidadeNome}`,
+            unidadeNome: `${atualizacao.condominioNome} • ${atualizacao.unidadeNome}`,
             localId: localIdEfetivo,
             localNome: localNomeEfetivo,
             prioridade: moradorExistente.prioridade || 1,
@@ -344,7 +344,7 @@ async function aprovarCadastro() {
 
         if (!novoMoradorRef.key) {
           throw new Error(
-            "NÃ£o foi possÃ­vel gerar o identificador do morador."
+            "Não foi possível gerar o identificador do morador."
           );
         }
 
@@ -357,7 +357,7 @@ async function aprovarCadastro() {
           telefone: atualizacao.telefone.trim(),
           email: atualizacao.email?.trim() || "",
           unidadeId: unidadeIdEfetivo,
-          unidadeNome: `${atualizacao.condominioNome} â€¢ ${atualizacao.unidadeNome}`,
+          unidadeNome: `${atualizacao.condominioNome} • ${atualizacao.unidadeNome}`,
           localId: localIdEfetivo,
           localNome: localNomeEfetivo,
           prioridade: 1,
@@ -426,7 +426,7 @@ await atualizarStatusImplantacao(
       console.error("Erro ao aprovar cadastro:", erro);
 
       alert(
-        "NÃ£o foi possÃ­vel aprovar o cadastro. Nenhuma nova tentativa deve ser feita atÃ© verificar o erro no terminal."
+        "Não foi possível aprovar o cadastro. Nenhuma nova tentativa deve ser feita até verificar o erro no terminal."
       );
     } finally {
       setAprovando(false);
@@ -439,11 +439,11 @@ await atualizarStatusImplantacao(
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="text-xs font-black tracking-wider text-blue-300">
-              ATUALIZAÃ‡ÃƒO CADASTRAL
+              ATUALIZAÇÃO CADASTRAL
             </p>
 
             <h2 className="mt-2 text-3xl font-black text-white">
-              ðŸ“‹ SolicitaÃ§Ã£o recebida
+              📋 Solicitação recebida
             </h2>
 
             <p className="mt-2 text-sm text-slate-400">
@@ -460,7 +460,7 @@ await atualizarStatusImplantacao(
             disabled={aprovando}
             className="rounded-xl bg-slate-800 px-4 py-2 font-black text-white hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            âœ•
+            ✕
           </button>
         </div>
 
@@ -470,11 +470,11 @@ await atualizarStatusImplantacao(
           </span>
 
           <span className="rounded-full border border-slate-700 bg-slate-800 px-3 py-1 text-xs font-black text-slate-300">
-            ðŸ¢ {atualizacao.condominioNome}
+            🏢 {atualizacao.condominioNome}
           </span>
 
           <span className="rounded-full border border-slate-700 bg-slate-800 px-3 py-1 text-xs font-black text-slate-300">
-            ðŸ  {atualizacao.unidadeNome}
+            🏠 {atualizacao.unidadeNome}
           </span>
 
           <span className="rounded-full border border-slate-700 bg-slate-800 px-3 py-1 text-xs font-black text-slate-300">
@@ -485,11 +485,11 @@ await atualizarStatusImplantacao(
         <div className="mt-6 grid gap-3 md:grid-cols-2">
           <div className="rounded-2xl border border-slate-700 bg-slate-800 p-4">
             <p className="text-xs font-black text-slate-500">
-              CONDOMÃNIO
+              CONDOMÍNIO
             </p>
 
             <p className="mt-1 text-lg font-black text-white">
-              ðŸ¢ {atualizacao.condominioNome}
+              🏢 {atualizacao.condominioNome}
             </p>
           </div>
 
@@ -499,7 +499,7 @@ await atualizarStatusImplantacao(
             </p>
 
             <p className="mt-1 text-lg font-black text-white">
-              ðŸ  {atualizacao.unidadeNome}
+              🏠 {atualizacao.unidadeNome}
             </p>
           </div>
 
@@ -509,7 +509,7 @@ await atualizarStatusImplantacao(
             </p>
 
             <p className="mt-1 text-lg font-black text-white">
-              ðŸ‘¤ {nomeEditado}
+              👤 {nomeEditado}
             </p>
           </div>
 
@@ -519,7 +519,7 @@ await atualizarStatusImplantacao(
             </p>
 
             <p className="mt-1 text-xl font-black text-white">
-              ðŸ“± {atualizacao.telefone}
+              📱 {atualizacao.telefone}
             </p>
           </div>
 
@@ -529,17 +529,17 @@ await atualizarStatusImplantacao(
             </p>
 
             <p className="mt-1 break-all text-lg font-black text-white">
-              âœ‰ï¸ {atualizacao.email || "NÃ£o informado"}
+              ✉️ {atualizacao.email || "Não informado"}
             </p>
           </div>
 
           <div className="rounded-2xl border border-slate-700 bg-slate-800 p-4">
             <p className="text-xs font-black text-slate-500">
-              RELAÃ‡ÃƒO COM A UNIDADE
+              RELAÇÃO COM A UNIDADE
             </p>
 
             <p className="mt-1 text-lg font-black text-white">
-              ðŸ  {textoPerfil(atualizacao.perfil)}
+              🏠 {textoPerfil(atualizacao.perfil)}
             </p>
           </div>
 
@@ -550,8 +550,8 @@ await atualizarStatusImplantacao(
 
             <p className="mt-1 text-lg font-black text-white">
               {atualizacao.recebeChamadas
-                ? "ðŸ”” Sim"
-                : "ðŸ”• NÃ£o"}
+                ? "🔔 Sim"
+                : "🔕 Não"}
             </p>
           </div>
 
@@ -561,7 +561,7 @@ await atualizarStatusImplantacao(
             </p>
 
             <p className="mt-1 text-lg font-black text-white">
-              ðŸ”— AtualizaÃ§Ã£o cadastral
+              🔗 Atualização cadastral
             </p>
           </div>
         </div>
@@ -572,13 +572,13 @@ await atualizarStatusImplantacao(
           </p>
 
           <p className="mt-1 text-lg font-black text-white">
-            ðŸ•’ {formatarData(atualizacao.criadoEm)}
+            🕒 {formatarData(atualizacao.criadoEm)}
           </p>
         </div>
 
         <div className="mt-5 rounded-2xl border border-yellow-800 bg-yellow-950/30 p-4">
           <p className="text-sm leading-relaxed text-yellow-100">
-            Esta solicitaÃ§Ã£o ainda nÃ£o alterou o cadastro oficial.
+            Esta solicitação ainda não alterou o cadastro oficial.
             Confira todos os dados antes de aprovar.
           </p>
         </div>
@@ -618,29 +618,29 @@ await atualizarStatusImplantacao(
             disabled={aprovando}
             className="rounded-xl bg-blue-600 py-3 font-black text-white hover:bg-blue-500 disabled:cursor-not-allowed disabled:bg-slate-700"
           >
-            âœï¸ Editar antes de aprovar
+            ✏️ Editar antes de aprovar
           </button>
 
           <button
             type="button"
             onClick={() =>
-              acaoAindaNaoImplementada("Solicitar correÃ§Ã£o")
+              acaoAindaNaoImplementada("Solicitar correção")
             }
             disabled={aprovando}
             className="rounded-xl bg-cyan-600 py-3 font-black text-white hover:bg-cyan-500 disabled:cursor-not-allowed disabled:bg-slate-700"
           >
-            ðŸ“ Solicitar correÃ§Ã£o
+            📝 Solicitar correção
           </button>
 
           <button
             type="button"
             onClick={() =>
-              acaoAindaNaoImplementada("Recusar solicitaÃ§Ã£o")
+              acaoAindaNaoImplementada("Recusar solicitação")
             }
             disabled={aprovando}
             className="rounded-xl bg-red-700 py-3 font-black text-white hover:bg-red-600 disabled:cursor-not-allowed disabled:bg-slate-700"
           >
-            âŒ Recusar
+            ❌ Recusar
           </button>
 
           <button
@@ -651,7 +651,7 @@ await atualizarStatusImplantacao(
           >
             {aprovando
               ? "Aprovando cadastro..."
-              : "âœ… Aprovar cadastro"}
+              : "✅ Aprovar cadastro"}
           </button>
         </div>
 

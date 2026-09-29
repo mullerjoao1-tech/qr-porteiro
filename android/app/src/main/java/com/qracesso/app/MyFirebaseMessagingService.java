@@ -72,6 +72,18 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
             String criadoEm = data.get("criadoEm");
             String responsavelAtualUid = data.get("responsavelAtualUid");
 
+            // QRCALL_A9_5F_MODALIDADE_FCM
+            String modalidadeChamada =
+                    data.get("modalidadeChamada");
+
+            if (
+                    modalidadeChamada == null ||
+                    modalidadeChamada.trim().isEmpty()
+            ) {
+                modalidadeChamada =
+                        "comum";
+            }
+
             if (unidadeId != null) {
                 // Iniciar serviço de toque contínuo
                 Intent serviceIntent = new Intent(this, QrCallService.class);
@@ -86,6 +98,12 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
                                 ? responsavelAtualUid
                                 : ""
                 );
+
+                serviceIntent.putExtra(
+                        QrCallService.EXTRA_MODALIDADE_CHAMADA,
+                        modalidadeChamada
+                );
+
                 try {
                     androidx.core.content.ContextCompat.startForegroundService(this, serviceIntent);
                 } catch (Exception e) {

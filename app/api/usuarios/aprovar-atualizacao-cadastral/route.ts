@@ -61,6 +61,11 @@ type SolicitacaoCadastral = {
   status?: string;
   origem?: string;
   moradorId?: string;
+
+  identificadorDependente?: string;
+  emailTecnicoDependente?: string;
+  emailContato?: string;
+  dependente?: boolean;
 };
 
 function texto(
@@ -205,6 +210,51 @@ async function validarAdministradorMaster(
   return tokenDecodificado.uid;
 }
 
+function gerarIdentificadorDependente(
+  nome: string
+): string {
+  const primeiroNome =
+    nome
+      .normalize("NFD")
+      .replace(
+        /[\u0300-\u036f]/g,
+        ""
+      )
+      .replace(
+        /[^a-zA-Z0-9]/g,
+        ""
+      )
+      .slice(
+        0,
+        12
+      )
+      .toUpperCase() ||
+    "DEPENDENTE";
+
+  const codigo =
+    crypto
+      .randomBytes(5)
+      .toString("hex")
+      .slice(
+        0,
+        6
+      )
+      .toUpperCase();
+
+  return `${primeiroNome}-${codigo}`;
+}
+
+function gerarEmailTecnicoDependente(
+  identificador: string
+): string {
+  return (
+    identificador
+      .trim()
+      .toLowerCase() +
+    "@dependente.qracesso.local"
+  );
+}
+
 function gerarSenhaInterna(): string {
   return (
     "Qr!" +
@@ -234,6 +284,7 @@ export async function POST(
         await request.json()
       ) as {
         atualizacaoId?: unknown;
+        moradorId?: unknown;
         modo?: unknown;
         email?: unknown;
       };
@@ -530,11 +581,40 @@ export async function POST(
               )
             : false;
 
+        const dependenteEmailCompartilhado =
+          emailCompartilhado &&
+          solicitacao.dependente === true;
+
         let uid = "";
+
+        if (dependenteEmailCompartilhado) {
+          const identificadorDependente =
+            texto(
+              solicitacao.identificadorDependente
+            ).toLowerCase();
+
+          if (identificadorDependente) {
+            const indiceDependenteSnapshot =
+              await database
+                .ref(
+                  `indices-v2/identificadorDependente/${identificadorDependente}`
+                )
+                .get();
+
+            if (
+              indiceDependenteSnapshot.exists()
+            ) {
+              uid =
+                texto(
+                  indiceDependenteSnapshot.val()
+                );
+            }
+          }
+        }
 
         if (
           email &&
-          !emailCompartilhado
+          !dependenteEmailCompartilhado
         ) {
           const chaveEmail =
             email.replace(
@@ -635,12 +715,9 @@ export async function POST(
         let situacao =
           !email
             ? "SEM_EMAIL"
-            : emailCompartilhado
-              ? "EMAIL_COMPARTILHADO"
-              : "SEM_USUARIO";
+            : "SEM_USUARIO";
 
         if (
-          !emailCompartilhado &&
           temUsuario
         ) {
           if (
@@ -706,6 +783,408 @@ export async function POST(
             resultados.length,
           resultados,
           administradorUid,
+        },
+        {
+          status: 200,
+        }
+      );
+    }
+
+    if (
+      modo ===
+      "editar-email-morador"
+    ) {
+      const moradorId =
+        texto(
+          corpo.moradorId
+        );
+
+      const novoEmail =
+        texto(
+          corpo.email
+        ).toLowerCase();
+
+      if (!moradorId) {
+        return NextResponse.json(
+          {
+            sucesso: false,
+            erro:
+              "Morador nao informado.",
+          },
+          {
+            status: 400,
+          }
+        );
+      }
+
+      if (
+        !novoEmail ||
+        !novoEmail.includes("@")
+      ) {
+        return NextResponse.json(
+          {
+            sucesso: false,
+            erro:
+              "Informe um e-mail valido.",
+          },
+          {
+            status: 400,
+          }
+        );
+      }
+
+      const moradorRef =
+        database.ref(
+          `qrCentral/moradores/${moradorId}`
+        );
+
+      const moradorSnapshot =
+        await moradorRef.get();
+
+      if (
+        !moradorSnapshot.exists()
+      ) {
+        return NextResponse.json(
+          {
+            sucesso: false,
+            erro:
+              "Morador nao encontrado.",
+          },
+          {
+            status: 404,
+          }
+        );
+      }
+
+      const morador =
+        moradorSnapshot.val() as {
+          email?: string;
+          uid?: string;
+          solicitacaoOrigemId?: string;
+        };
+
+      const emailAnterior =
+        texto(
+          morador.email
+        ).toLowerCase();
+
+      const solicitacaoOrigemId =
+        texto(
+          morador.solicitacaoOrigemId
+        );
+
+      let uid =
+        texto(
+          morador.uid
+        );
+
+      let solicitacaoRefEdicao:
+        ReturnType<typeof database.ref> |
+        null =
+        null;
+
+      let solicitacaoEmailAnterior =
+        "";
+
+      if (solicitacaoOrigemId) {
+        solicitacaoRefEdicao =
+          database.ref(
+            `qrCentral/atualizacoesCadastrais/${solicitacaoOrigemId}`
+          );
+
+        const solicitacaoSnapshotEdicao =
+          await solicitacaoRefEdicao.get();
+
+        if (
+          solicitacaoSnapshotEdicao.exists()
+        ) {
+          const solicitacaoEdicao =
+            solicitacaoSnapshotEdicao.val() as
+              SolicitacaoCadastral;
+
+          solicitacaoEmailAnterior =
+            texto(
+              solicitacaoEdicao.email
+            ).toLowerCase();
+        }
+      }
+
+      const emailsParaResolver =
+        Array.from(
+          new Set(
+            [
+              emailAnterior,
+              solicitacaoEmailAnterior,
+            ].filter(Boolean)
+          )
+        );
+
+      if (!uid) {
+        for (
+          const emailResolver
+          of emailsParaResolver
+        ) {
+          const chaveEmail =
+            emailResolver.replace(
+              /[.#$[\]]/g,
+              "_"
+            );
+
+          const indiceSnapshot =
+            await database
+              .ref(
+                `indices-v2/email/${chaveEmail}`
+              )
+              .get();
+
+          if (
+            indiceSnapshot.exists()
+          ) {
+            uid =
+              texto(
+                indiceSnapshot.val()
+              );
+
+            if (uid) {
+              break;
+            }
+          }
+        }
+      }
+
+      if (!uid) {
+        for (
+          const emailResolver
+          of emailsParaResolver
+        ) {
+          try {
+            const usuarioAuth =
+              await auth
+                .getUserByEmail(
+                  emailResolver
+                );
+
+            uid =
+              usuarioAuth.uid;
+
+            if (uid) {
+              break;
+            }
+          } catch (erro) {
+            const codigo =
+              (
+                erro as {
+                  code?: string;
+                }
+              )?.code;
+
+            if (
+              codigo &&
+              codigo !==
+                "auth/user-not-found"
+            ) {
+              throw erro;
+            }
+          }
+        }
+      }
+
+      if (!uid) {
+        return NextResponse.json(
+          {
+            sucesso: false,
+            erro:
+              "Nao foi possivel localizar a identidade do morador.",
+          },
+          {
+            status: 409,
+          }
+        );
+      }
+
+      let usuarioNovoEmail =
+        null;
+
+      try {
+        usuarioNovoEmail =
+          await auth
+            .getUserByEmail(
+              novoEmail
+            );
+      } catch (erro) {
+        const codigo =
+          (
+            erro as {
+              code?: string;
+            }
+          )?.code;
+
+        if (
+          codigo &&
+          codigo !==
+            "auth/user-not-found"
+        ) {
+          throw erro;
+        }
+      }
+
+      if (
+        usuarioNovoEmail &&
+        usuarioNovoEmail.uid !== uid
+      ) {
+        return NextResponse.json(
+          {
+            sucesso: false,
+            erro:
+              "Este e-mail ja pertence a outro usuario.",
+          },
+          {
+            status: 409,
+          }
+        );
+      }
+
+      const usuarioAuthAnterior =
+        await auth.getUser(
+          uid
+        );
+
+      const emailAuthAnterior =
+        texto(
+          usuarioAuthAnterior.email
+        ).toLowerCase();
+
+      if (
+        emailAuthAnterior !==
+        novoEmail
+      ) {
+        await auth.updateUser(
+          uid,
+          {
+            email:
+              novoEmail,
+          }
+        );
+      }
+
+      const agora =
+        Date.now();
+
+      const alteracoes:
+        Record<
+          string,
+          unknown
+        > = {
+        [`qrCentral/moradores/${moradorId}/email`]:
+          novoEmail,
+
+        [`qrCentral/moradores/${moradorId}/uid`]:
+          uid,
+
+        [`qrCentral/moradores/${moradorId}/atualizadoEm`]:
+          new Date(
+            agora
+          ).toISOString(),
+
+        [`usuarios-v2/${uid}/email`]:
+          novoEmail,
+
+        [`usuarios-v2/${uid}/atualizadoEm`]:
+          agora,
+      };
+
+      if (solicitacaoOrigemId) {
+        alteracoes[
+          `qrCentral/atualizacoesCadastrais/${solicitacaoOrigemId}/email`
+        ] = novoEmail;
+
+        alteracoes[
+          `qrCentral/atualizacoesCadastrais/${solicitacaoOrigemId}/atualizadoEm`
+        ] = agora;
+      }
+
+      const chaveEmailNovo =
+        novoEmail.replace(
+          /[.#$[\]]/g,
+          "_"
+        );
+
+      alteracoes[
+        `indices-v2/email/${chaveEmailNovo}`
+      ] = uid;
+
+      for (
+        const emailAntigo
+        of emailsParaResolver
+      ) {
+        if (
+          emailAntigo === novoEmail
+        ) {
+          continue;
+        }
+
+        const chaveEmailAntigo =
+          emailAntigo.replace(
+            /[.#$[\]]/g,
+              "_"
+          );
+
+        const indiceAntigoSnapshot =
+          await database
+            .ref(
+              `indices-v2/email/${chaveEmailAntigo}`
+            )
+            .get();
+
+        if (
+          indiceAntigoSnapshot.exists() &&
+          texto(
+            indiceAntigoSnapshot.val()
+          ) === uid
+        ) {
+          alteracoes[
+            `indices-v2/email/${chaveEmailAntigo}`
+          ] = null;
+        }
+      }
+
+      try {
+        await database
+          .ref()
+          .update(
+            alteracoes
+          );
+      } catch (erroBanco) {
+        if (
+          emailAuthAnterior &&
+          emailAuthAnterior !==
+            novoEmail
+        ) {
+          try {
+            await auth.updateUser(
+              uid,
+              {
+                email:
+                  emailAuthAnterior,
+              }
+            );
+          } catch {
+            // Mantem o erro original do banco.
+          }
+        }
+
+        throw erroBanco;
+      }
+
+      return NextResponse.json(
+        {
+          sucesso: true,
+          uid,
+          email:
+            novoEmail,
+          solicitacaoOrigemId:
+            solicitacaoOrigemId ||
+            null,
         },
         {
           status: 200,
@@ -1110,12 +1589,22 @@ export async function POST(
 
             return (
               outroNome !==
-              nomeNormalizado
+                nomeNormalizado &&
+              (
+                solicitacao.dependente === true ||
+                outraSolicitacao.dependente !== true
+              )
             );
           }
         );
 
-      if (emailCompartilhado) {
+      const ehDependente =
+        solicitacao.dependente === true;
+
+      if (
+        emailCompartilhado &&
+        !ehDependente
+      ) {
         return NextResponse.json(
           {
             sucesso: false,
@@ -1130,12 +1619,35 @@ export async function POST(
 
       let uid = "";
 
+      if (ehDependente) {
+        const identificadorDependente =
+          texto(
+            solicitacao.identificadorDependente
+          ).toLowerCase();
+
+        if (identificadorDependente) {
+          const indiceDependenteSnapshot =
+            await database
+              .ref(
+                `indices-v2/identificadorDependente/${identificadorDependente}`
+              )
+              .get();
+
+          if (indiceDependenteSnapshot.exists()) {
+            uid =
+              texto(
+                indiceDependenteSnapshot.val()
+              );
+          }
+        }
+      }
+
       const moradorId =
         texto(
           solicitacao.moradorId
         );
 
-      if (moradorId) {
+      if (!uid && moradorId) {
         const moradorSnapshot =
           await database
             .ref(
@@ -1271,6 +1783,26 @@ export async function POST(
         );
       }
 
+      const emailEsperadoAuth =
+        ehDependente
+          ? texto(
+              solicitacao.emailTecnicoDependente
+            ).toLowerCase()
+          : email;
+
+      if (!emailEsperadoAuth) {
+        return NextResponse.json(
+          {
+            sucesso: false,
+            erro:
+              "A identidade de acesso do dependente nao esta completa.",
+          },
+          {
+            status: 409,
+          }
+        );
+      }
+
       const usuarioEmail =
         await auth
           .getUser(
@@ -1281,13 +1813,13 @@ export async function POST(
         texto(
           usuarioEmail.email
         ).toLowerCase() !==
-        email
+        emailEsperadoAuth
       ) {
         return NextResponse.json(
           {
             sucesso: false,
             erro:
-              "O e-mail do cadastro nao corresponde ao usuario autenticado.",
+              "A identidade do cadastro nao corresponde ao usuario autenticado.",
           },
           {
             status: 409,
@@ -1326,10 +1858,43 @@ export async function POST(
         );
       }
 
+      const emailAutenticacaoEnvio =
+        ehDependente
+          ? texto(
+              solicitacao.emailTecnicoDependente
+            ).toLowerCase()
+          : email;
+
+      const identificadorAcesso =
+        ehDependente
+          ? texto(
+              solicitacao.identificadorDependente
+            )
+          : email;
+
+      if (
+        ehDependente &&
+        (
+          !emailAutenticacaoEnvio ||
+          !identificadorAcesso
+        )
+      ) {
+        return NextResponse.json(
+          {
+            sucesso: false,
+            erro:
+              "A identidade de acesso do dependente nao esta completa.",
+          },
+          {
+            status: 409,
+          }
+        );
+      }
+
       const linkSenha =
         await auth
           .generatePasswordResetLink(
-            email
+            emailAutenticacaoEnvio
           );
 
       const transportador =
@@ -1381,7 +1946,7 @@ export async function POST(
             <p>
               Depois de definir sua senha,
               entre no aplicativo usando
-              <strong>${email}</strong>.
+              <strong>${identificadorAcesso}</strong>.
             </p>
 
             <p>
@@ -1573,6 +2138,8 @@ export async function POST(
         solicitacao.moradorId
       );
 
+    let emailCompartilhado = false;
+
     if (
       regularizacaoAprovadaTulipas &&
       email
@@ -1591,6 +2158,7 @@ export async function POST(
               SolicitacaoCadastral
             >
           : {};
+
 
       const nomeNormalizado =
         nome
@@ -1661,18 +2229,9 @@ export async function POST(
           }
         );
 
-      if (conflitoEmail) {
-        return NextResponse.json(
-          {
-            sucesso: false,
-            erro:
-              "Este e-mail esta compartilhado com outro morador. A regularizacao automatica foi bloqueada para evitar vincular duas pessoas ao mesmo usuario.",
-          },
-          {
-            status: 409,
-          }
-        );
-      }
+      emailCompartilhado =
+        Boolean(conflitoEmail) &&
+        solicitacao.dependente === true;
     }
 
     if (!nome) {
@@ -1699,19 +2258,43 @@ export async function POST(
       );
     }
 
+    let identificadorDependente = "";
+    let emailAutenticacao = email;
+
+    if (emailCompartilhado) {
+      identificadorDependente =
+        texto(
+          solicitacao.identificadorDependente
+        ) ||
+        gerarIdentificadorDependente(
+          nome
+        );
+
+      emailAutenticacao =
+        texto(
+          solicitacao.emailTecnicoDependente
+        ) ||
+        gerarEmailTecnicoDependente(
+          identificadorDependente
+        );
+    }
+
     const pessoa =
       await buscarOuCriarPessoaUniversal({
         auth,
         database,
         nome,
-        email,
+        email:
+          emailAutenticacao,
         telefone,
         cpf:
           cpf || undefined,
         senhaProvisoria:
           gerarSenhaInterna(),
         origem:
-          "atualizacao-cadastral-aprovada",
+          emailCompartilhado
+            ? "dependente-email-compartilhado"
+            : "atualizacao-cadastral-aprovada",
       });
 
     const uid =
@@ -1992,6 +2575,35 @@ export async function POST(
         [`unidades-v2/${unidadeId}/responsaveis/${uid}`]:
           responsavel,
       };
+
+    if (
+      emailCompartilhado &&
+      identificadorDependente
+    ) {
+      atualizacoes[
+        `qrCentral/atualizacoesCadastrais/${atualizacaoId}/identificadorDependente`
+      ] = identificadorDependente;
+
+      atualizacoes[
+        `qrCentral/atualizacoesCadastrais/${atualizacaoId}/emailTecnicoDependente`
+      ] = emailAutenticacao;
+
+      atualizacoes[
+        `qrCentral/atualizacoesCadastrais/${atualizacaoId}/emailContato`
+      ] = email;
+
+      atualizacoes[
+        `usuarios-v2/${uid}/identificadorDependente`
+      ] = identificadorDependente;
+
+      atualizacoes[
+        `usuarios-v2/${uid}/emailContato`
+      ] = email;
+
+      atualizacoes[
+        `indices-v2/identificadorDependente/${identificadorDependente.toLowerCase()}`
+      ] = uid;
+    }
 
     if (
       solicitacaoEhTulipas &&

@@ -17,6 +17,13 @@ import androidx.appcompat.app.AppCompatActivity;
 
 public class QrCallActivity extends AppCompatActivity {
 
+    // QRCALL_A9_1_VIDEO_PREVIEW_ACTIVITY
+    private QrCallVideoPreview videoPreview;
+
+    // QRCALL_A9_14_PRESERVAR_NO_DESTROY
+    private boolean preservarVideoPreviewNoDestroy =
+            false;
+
     private final android.os.Handler timeoutHandler =
             new android.os.Handler(android.os.Looper.getMainLooper());
 
@@ -71,6 +78,7 @@ public class QrCallActivity extends AppCompatActivity {
                             criadoEmRecebido.equals(criadoEmExibido);
 
                     if (mesmaChamada) {
+                        encerrarVideoPreview();
                         finish();
                     }
                 }
@@ -100,7 +108,67 @@ public class QrCallActivity extends AppCompatActivity {
                 WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
         );
 
-        setContentView(R.layout.activity_qr_call);
+        // QRCALL_A9_5F_LAYOUT_VIDEO
+        String modalidadeChamada =
+                getIntent().getStringExtra(
+                        QrCallService.EXTRA_MODALIDADE_CHAMADA
+                );
+
+        boolean chamadaDeVideo =
+                modalidadeChamada != null &&
+                "video".equalsIgnoreCase(
+                        modalidadeChamada.trim()
+                );
+
+        setContentView(
+                chamadaDeVideo
+                        ? R.layout.activity_qr_call_video
+                        : R.layout.activity_qr_call
+        );
+
+        /*
+         * QRCALL_A9_1_VIDEO_PREVIEW_START
+         *
+         * Chamadas comuns nao possuem sessao
+         * qrcall-video-preview e permanecem iguais.
+         */
+        String unidadeIdPreview =
+                getIntent().getStringExtra(
+                        QrCallService.EXTRA_UNIDADE_ID
+                );
+
+        String criadoEmPreview =
+                getIntent().getStringExtra(
+                        "criadoEm"
+                );
+
+        if (
+                unidadeIdPreview != null &&
+                criadoEmPreview != null &&
+                !unidadeIdPreview.trim().isEmpty() &&
+                !criadoEmPreview.trim().isEmpty()
+        ) {
+            try {
+                videoPreview =
+                        new QrCallVideoPreview(
+                                this,
+                                unidadeIdPreview,
+                                criadoEmPreview
+                        );
+
+                videoPreview.iniciar();
+
+            } catch (Throwable erroPreview) {
+                android.util.Log.w(
+                        "QR_CALL_VIDEO_PREVIEW",
+                        "Preview indisponivel; chamada continua.",
+                        erroPreview
+                );
+
+                videoPreview =
+                        null;
+            }
+        }
 
         android.content.IntentFilter filtroCancelar =
                 new android.content.IntentFilter(
@@ -134,7 +202,7 @@ public class QrCallActivity extends AppCompatActivity {
         }
 
         if (motivo == null || motivo.trim().isEmpty()) {
-            motivo = "Não informado";
+            motivo = "N\u00e3o informado";
         }
 
         TextView txtNome =
@@ -158,6 +226,7 @@ public class QrCallActivity extends AppCompatActivity {
         btnNaoPosso.setEnabled(true);
 
         btnNaoPosso.setOnClickListener(v -> {
+            encerrarVideoPreview();
             btnNaoPosso.setEnabled(false);
 
             final String unidadeIdNaoPosso =
@@ -286,83 +355,177 @@ public class QrCallActivity extends AppCompatActivity {
         });
 
         btnAtender.setOnClickListener(v -> {
+            // QRCALL_A9_10_ACEITE_DIRETO
+            // Remove somente o A9-8 de fotografia/frame.
+            // O balao nativo continua sendo o aceite definitivo.
+            btnAtender.setEnabled(false);
 
-            /*
-             * 1. Para imediatamente a camada nativa da chamada.
-             */
-            Intent parar =
-                    new Intent(
-                            QrCallActivity.this,
-                            QrCallService.class
-                    );
-
-            parar.setAction(
-                    QrCallService.ACTION_STOP
-            );
-
-            /*
-             * Identidade exata da chamada que originou este STOP.
-             * Um STOP antigo nao pode encerrar uma chamada nova.
-             */
-            parar.putExtra(
-                    QrCallService.EXTRA_UNIDADE_ID,
-                    getIntent().getStringExtra(
-                            QrCallService.EXTRA_UNIDADE_ID
-                    )
-            );
-
-            parar.putExtra(
-                    "criadoEm",
-                    getIntent().getStringExtra("criadoEm")
-            );
-
-            try {
-                startService(parar);
-            } catch (Exception ignored) {
-            }
-
-            /*
-             * 2. Abre SOMENTE a nova arquitetura
-             * de atendimento.
-             *
-             * Nenhuma rota Morador V2 e utilizada.
-             */
+            // QRCALL_A9_14_HANDOFF_ATENDER
             if (
-                    unidadeId != null &&
-                    !unidadeId.trim().isEmpty()
+                    chamadaDeVideo &&
+                    videoPreview != null
             ) {
-                Intent atendimento =
-                        new Intent(
-                                QrCallActivity.this,
-                                MainActivity.class
-                        );
-
-                atendimento.addFlags(
-                        Intent.FLAG_ACTIVITY_CLEAR_TOP |
-                        Intent.FLAG_ACTIVITY_SINGLE_TOP
-                );
-
-                atendimento.putExtra(
-                        "route",
-                        "/atendimento-chamada/" +
-                        unidadeId.trim() +
-                        "?iniciar=1"
-                );
-
-                atendimento.putExtra(
-                        "qrcallAtendimento",
-                        true
-                );
-
-                startActivity(atendimento);
+                try {
+                    videoPreview.prepararHandoff();
+                    preservarVideoPreviewNoDestroy =
+                            true;
+                } catch (Throwable erroHandoff) {
+                    android.util.Log.w(
+                            "QR_CALL_NEW",
+                            "Falha ao preparar handoff de video.",
+                            erroHandoff
+                    );
+                }
             }
 
-            finish();
+            concluirAceite(
+                    unidadeId,
+                    chamadaDeVideo,
+                    null
+            );
         });
     }
 
+    // QRCALL_A9_8_FRAME_PERSISTENTE_CONCLUIR_ACEITE
+    private void concluirAceite(
+            String unidadeId,
+            boolean chamadaDeVideo,
+            String caminhoFrame
+    ) {
+        if (
+                isFinishing() ||
+                (
+                        Build.VERSION.SDK_INT >=
+                                Build.VERSION_CODES.JELLY_BEAN_MR1 &&
+                        isDestroyed()
+                )
+        ) {
+            return;
+        }
+
+        /*
+         * 1. Para imediatamente a camada nativa da chamada.
+         */
+        Intent parar =
+                new Intent(
+                        QrCallActivity.this,
+                        QrCallService.class
+                );
+
+        parar.setAction(
+                QrCallService.ACTION_STOP
+        );
+
+        /*
+         * Identidade exata da chamada que originou este STOP.
+         * Um STOP antigo nao pode encerrar uma chamada nova.
+         */
+        parar.putExtra(
+                QrCallService.EXTRA_UNIDADE_ID,
+                getIntent().getStringExtra(
+                        QrCallService.EXTRA_UNIDADE_ID
+                )
+        );
+
+        parar.putExtra(
+                "criadoEm",
+                getIntent().getStringExtra("criadoEm")
+        );
+
+        try {
+            startService(parar);
+        } catch (Exception ignored) {
+        }
+
+        /*
+         * 2. Abre SOMENTE a nova arquitetura
+         * de atendimento.
+         *
+         * Nenhuma rota Morador V2 e utilizada.
+         */
+        if (
+                unidadeId != null &&
+                !unidadeId.trim().isEmpty()
+        ) {
+            Intent atendimento =
+                    new Intent(
+                            QrCallActivity.this,
+                            MainActivity.class
+                    );
+
+            atendimento.addFlags(
+                    Intent.FLAG_ACTIVITY_CLEAR_TOP |
+                    Intent.FLAG_ACTIVITY_SINGLE_TOP
+            );
+
+            atendimento.putExtra(
+                    "route",
+                    "/atendimento-chamada/" +
+                    unidadeId.trim() +
+                    "?iniciar=1" +
+                    (chamadaDeVideo ? "&video=1" : "&audio=1")
+            );
+
+            atendimento.putExtra(
+                    "qrcallAtendimento",
+                    true
+            );
+
+            atendimento.putExtra(
+                    "qrcallAtendimentoVideo",
+                    chamadaDeVideo
+            );
+
+            android.util.Log.d(
+                    "QR_FRAME_TRANSICAO",
+                    "6_ANTES_INTENT caminho=" + String.valueOf(caminhoFrame)
+            );
+
+            if (
+                    caminhoFrame != null &&
+                    !caminhoFrame.trim().isEmpty()
+            ) {
+                atendimento.putExtra(
+                        "qrcallFramePath",
+                        caminhoFrame.trim()
+                );
+            }
+
+            startActivity(atendimento);
+        }
+
+        /*
+         * O preview WebRTC sera encerrado pelo onDestroy(),
+         * somente DEPOIS de a imagem persistente ja ter sido
+         * entregue para a MainActivity.
+         */
+        finish();
+    }
+
+    // QRCALL_A9_1_VIDEO_PREVIEW_CLEANUP
+    private synchronized void encerrarVideoPreview() {
+        QrCallVideoPreview atual =
+                videoPreview;
+
+        videoPreview =
+                null;
+
+        if (atual != null) {
+            try {
+                atual.encerrar();
+            } catch (Throwable ignored) {
+            }
+        }
+    }
     @Override
     protected void onDestroy() {
+        // QRCALL_A9_14_ONDESTROY_HANDOFF
+        if (!preservarVideoPreviewNoDestroy) {
+            encerrarVideoPreview();
+        } else {
+            videoPreview =
+                    null;
+        }
         try {
             unregisterReceiver(
                     receiverCancelarRemoto

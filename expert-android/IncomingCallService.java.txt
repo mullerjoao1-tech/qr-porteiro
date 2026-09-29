@@ -1,4 +1,4 @@
-package com.qracesso.app;
+package com.qracesso.studio;
 
 import android.app.KeyguardManager;
 import android.app.Notification;

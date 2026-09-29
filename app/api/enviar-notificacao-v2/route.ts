@@ -545,6 +545,22 @@ export async function POST(request: Request) {
       chamada?.motivo ||
       "Não informado";
 
+    // QRCALL_A9_5F_MODALIDADE_PUSH
+    const modalidadeBruta =
+      String(
+        chamada?.modalidadeChamada ||
+        "comum"
+      )
+        .trim()
+        .toLowerCase();
+
+    const modalidadeChamada =
+      modalidadeBruta === "video"
+        ? "video"
+        : modalidadeBruta === "audio"
+        ? "audio"
+        : "comum";
+
     const tokens =
       new Set<string>();
 
@@ -724,6 +740,9 @@ export async function POST(request: Request) {
 
               motivo:
                 String(motivo),
+
+              modalidadeChamada:
+                String(modalidadeChamada),
 
               tipo:
                 cancelamentoQrCall

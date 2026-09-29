@@ -532,7 +532,13 @@ function classesStatus(status: CondominioSaude["status"]) {
   return "border-red-700 bg-red-950/30 hover:bg-red-950/50";
 }
 
-export default function CentralSindico() {
+type CentralSindicoProps = {
+  onAbrirMenuMobile?: () => void;
+};
+
+export default function CentralSindico({
+  onAbrirMenuMobile,
+}: CentralSindicoProps) {
   const {
     usuario,
     vinculosAtivos,
@@ -1668,6 +1674,16 @@ async function sair() {
             <p className="mt-2 text-sm text-blue-100 md:text-base">
               {textoEscopo}
             </p>
+
+            {onAbrirMenuMobile && (
+              <button
+                type="button"
+                onClick={onAbrirMenuMobile}
+                className="mt-4 rounded-2xl border border-white/30 bg-slate-900/90 px-4 py-3 text-sm font-black text-white shadow-lg xl:hidden"
+              >
+                ☰ Menu
+              </button>
+            )}
           </div>
 
           <div className="flex w-full flex-col gap-3 md:w-auto">

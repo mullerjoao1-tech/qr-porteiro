@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -332,7 +332,7 @@ function TelaLogin() {
 
     if (!emailLimpo) {
       setErro(
-        "Digite seu e-mail."
+        "Digite seu e-mail ou identificador."
       );
 
       return;
@@ -386,7 +386,15 @@ function TelaLogin() {
 
     if (!emailLimpo) {
       setErro(
-        "Digite seu e-mail acima para receber o link de recuperação."
+        "Digite seu e-mail ou identificador acima."
+      );
+
+      return;
+    }
+
+    if (!emailLimpo.includes("@")) {
+      setErro(
+        "A recuperação de acesso de dependentes deve ser feita pelo responsável."
       );
 
       return;
@@ -439,7 +447,7 @@ function TelaLogin() {
             </h1>
 
             <p className="mt-2 text-sm leading-relaxed text-slate-400">
-              Acesse a plataforma com seu e-mail e senha.
+              Acesse a plataforma com seu e-mail ou identificador e senha.
             </p>
           </div>
 
@@ -454,12 +462,12 @@ function TelaLogin() {
                 htmlFor="email"
                 className="mb-2 block text-sm font-bold text-slate-200"
               >
-                E-mail
+                E-mail ou identificador
               </label>
 
               <input
                 id="email"
-                type="email"
+                type="text"
                 value={
                   email
                 }
@@ -471,9 +479,9 @@ function TelaLogin() {
                       evento.target.value
                     )
                 }
-                autoComplete="email"
-                inputMode="email"
-                placeholder="seuemail@exemplo.com"
+                autoComplete="username"
+                inputMode="text"
+                placeholder="E-mail ou identificador"
                 disabled={
                   enviando
                 }

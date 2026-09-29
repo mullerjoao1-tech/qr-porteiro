@@ -148,6 +148,8 @@ export default function PaginaCondominio() {
       "inicio"
     );
 
+  const [menuMobileAberto, setMenuMobileAberto] = useState(false);
+
   const [
     locais,
     setLocais,
@@ -1017,6 +1019,86 @@ async function atualizarMoradorCadastrado(
     );
   }
 
+  const moradorAtual =
+    moradores.find(
+      (item) =>
+        item.id === moradorId
+    );
+
+  const emailAnterior =
+    (
+      moradorAtual?.email || ""
+    )
+      .trim()
+      .toLowerCase();
+
+  const emailNovo =
+    (
+      dados.email || ""
+    )
+      .trim()
+      .toLowerCase();
+
+  if (
+    emailNovo !== emailAnterior
+  ) {
+    if (
+      !emailNovo ||
+      !emailNovo.includes("@")
+    ) {
+      throw new Error(
+        "Informe um e-mail valido."
+      );
+    }
+
+    const usuarioAtual =
+      auth.currentUser;
+
+    if (!usuarioAtual) {
+      throw new Error(
+        "Administrador nao autenticado."
+      );
+    }
+
+    const token =
+      await usuarioAtual
+        .getIdToken();
+
+    const resposta =
+      await fetch(
+        "/api/usuarios/aprovar-atualizacao-cadastral",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type":
+              "application/json",
+            Authorization:
+              `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            modo:
+              "editar-email-morador",
+            moradorId,
+            email:
+              emailNovo,
+          }),
+        }
+      );
+
+    const resultado =
+      await resposta.json();
+
+    if (
+      !resposta.ok ||
+      !resultado?.sucesso
+    ) {
+      throw new Error(
+        resultado?.erro ||
+          "Nao foi possivel atualizar o e-mail do morador."
+      );
+    }
+  }
+
   await update(
     ref(
       db,
@@ -1029,7 +1111,7 @@ async function atualizarMoradorCadastrado(
       telefone,
 
       email:
-        dados.email?.trim() || "",
+        emailNovo,
 
       prioridade:
         Number(dados.prioridade),
@@ -1617,8 +1699,17 @@ async function atualizarMoradorCadastrado(
   return (
     <main className="min-h-screen bg-slate-950 text-white">
 
+
       {vinculoSelecionadoId && (
-      <aside className="fixed left-4 top-4 z-40 hidden max-h-[calc(100vh-32px)] w-[210px] overflow-y-auto rounded-3xl border border-slate-800 bg-slate-900/95 p-4 shadow-2xl backdrop-blur xl:block">
+      <aside className={`fixed left-4 top-4 z-[60] max-h-[calc(100vh-32px)] w-[210px] overflow-y-auto rounded-3xl border border-slate-800 bg-slate-900/95 p-4 shadow-2xl backdrop-blur xl:z-40 xl:block ${menuMobileAberto ? "block" : "hidden"}`}>
+
+        <button
+          type="button"
+          onClick={() => setMenuMobileAberto(false)}
+          className="mb-4 w-full rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 text-sm font-black text-white xl:hidden"
+        >
+          ✕ Fechar
+        </button>
 
         <div className="mb-5">
           <p className="text-[10px] font-black uppercase tracking-[0.18em] text-cyan-400">
@@ -1634,11 +1725,12 @@ async function atualizarMoradorCadastrado(
 
           <button
             type="button"
-            onClick={() =>
+            onClick={() => {
               setTelaAtiva(
                 "inicio"
-              )
-            }
+              );
+              setMenuMobileAberto(false);
+            }}
             className="w-full rounded-2xl bg-cyan-500 px-4 py-3 text-left text-sm font-black text-slate-950 transition hover:bg-cyan-400"
           >
             Inicio
@@ -1646,11 +1738,12 @@ async function atualizarMoradorCadastrado(
 
           <button
             type="button"
-            onClick={() =>
+            onClick={() => {
               setTelaAtiva(
                 "unidades"
-              )
-            }
+              );
+              setMenuMobileAberto(false);
+            }}
             className={[
               "w-full rounded-2xl border px-4 py-3 text-left text-sm font-bold transition",
               telaAtiva ===
@@ -1680,11 +1773,12 @@ async function atualizarMoradorCadastrado(
               <button
                 key={id}
                 type="button"
-                onClick={() =>
+                onClick={() => {
                   setTelaAtiva(
                     id as TelaCondominio
-                  )
-                }
+                  );
+                  setMenuMobileAberto(false);
+                }}
                 className={[
                   "w-full rounded-2xl border px-4 py-3 text-left text-sm font-bold transition",
                   telaAtiva === id
@@ -2236,7 +2330,7 @@ async function atualizarMoradorCadastrado(
         ) : telaAtiva ===
         "inicio" ? (
 
-          <CentralSindico />
+          <CentralSindico onAbrirMenuMobile={() => setMenuMobileAberto(true)} />
 
         ) : telaAtiva ===
         "materiais" ? (
@@ -2265,6 +2359,11 @@ async function atualizarMoradorCadastrado(
                 localIdAtual
               }`}
               painel="/dashboard/condominio"
+              atualizacao={`/atualizacao/${
+                (localAtual as any)?.slug ||
+                localAtual?.id ||
+                localIdAtual
+              }`}
               titulo="QR, placa e links do condomínio"
             />
 

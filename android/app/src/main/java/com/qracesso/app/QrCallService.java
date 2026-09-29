@@ -39,6 +39,10 @@ public class QrCallService extends Service {
     public static final String EXTRA_MOTIVO = "motivo";
     public static final String EXTRA_RESPONSAVEL_UID = "responsavelAtualUid";
 
+    // QRCALL_A9_5E_MODALIDADE_SERVICE
+    public static final String EXTRA_MODALIDADE_CHAMADA =
+            "modalidadeChamada";
+
     private static final String CHANNEL_ID =
             "qr_call_incoming_v2";
 
@@ -250,6 +254,20 @@ public class QrCallService extends Service {
                         EXTRA_RESPONSAVEL_UID
                 );
 
+        // QRCALL_A9_5E_MODALIDADE_SERVICE
+        String modalidadeChamada =
+                intent.getStringExtra(
+                        EXTRA_MODALIDADE_CHAMADA
+                );
+
+        if (
+                modalidadeChamada == null ||
+                modalidadeChamada.trim().isEmpty()
+        ) {
+            modalidadeChamada =
+                    "comum";
+        }
+
         chamadaAtivaUnidadeId =
                 unidadeId != null ? unidadeId : "";
 
@@ -272,6 +290,8 @@ public class QrCallService extends Service {
                 motivo,
                 criadoEm,
                 responsavelAtualUid
+        ,
+                modalidadeChamada
         );
 
         iniciarAlerta();
@@ -302,6 +322,12 @@ public class QrCallService extends Service {
         tela.putExtra(EXTRA_MOTIVO, motivo);
         tela.putExtra("criadoEm", criadoEm);
         tela.putExtra(EXTRA_RESPONSAVEL_UID, responsavelAtualUid);
+
+        // QRCALL_A9_5E_MODALIDADE_SERVICE
+        tela.putExtra(
+                EXTRA_MODALIDADE_CHAMADA,
+                modalidadeChamada
+        );
 
         try {
             startActivity(tela);
@@ -527,6 +553,8 @@ public class QrCallService extends Service {
             String motivo,
             String criadoEm,
             String responsavelAtualUid
+    ,
+            String modalidadeChamada
     ) {
         NotificationManager manager =
                 (NotificationManager)
@@ -573,6 +601,12 @@ public class QrCallService extends Service {
         chamadaIntent.putExtra(EXTRA_MOTIVO, motivo);
         chamadaIntent.putExtra("criadoEm", criadoEm);
         chamadaIntent.putExtra(EXTRA_RESPONSAVEL_UID, responsavelAtualUid);
+
+        // QRCALL_A9_5E_MODALIDADE_SERVICE
+        chamadaIntent.putExtra(
+                EXTRA_MODALIDADE_CHAMADA,
+                modalidadeChamada
+        );
 
         PendingIntent chamadaPendingIntent =
                 PendingIntent.getActivity(

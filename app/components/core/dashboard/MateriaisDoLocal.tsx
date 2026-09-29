@@ -1,12 +1,31 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
+import { Capacitor, registerPlugin } from "@capacitor/core";
+
+type MaterialPdfPlugin = {
+  abrirPdf(options: { url: string }): Promise<void>;
+};
+
+const MaterialPdf =
+  registerPlugin<MaterialPdfPlugin>("MaterialPdf");
+
+type QrDownloadPlugin = {
+  baixar(options: {
+    url: string;
+    nomeArquivo: string;
+  }): Promise<void>;
+};
+
+const QrDownload =
+  registerPlugin<QrDownloadPlugin>("QrDownload");
 
 type Props = {
   localId: string;
   visitante?: string;
   morador?: string;
   painel?: string;
+  atualizacao?: string;
   titulo?: string;
 };
 
@@ -48,11 +67,68 @@ export default function MateriaisDoLocal({
   visitante,
   morador,
   painel,
+  atualizacao,
   titulo = "QR e materiais",
 }: Props) {
   const [copiado, setCopiado] =
     useState<string | null>(null);
 
+  async function abrirPlacaPdfNoApp() {
+    const url =
+      montarUrlCompleta(obterUrlPlaca(localId));
+
+    try {
+      await MaterialPdf.abrirPdf({ url });
+    } catch (erro) {
+      console.error(
+        "Erro ao abrir placa PDF no app:",
+        erro
+      );
+
+      alert("Não foi possível abrir a placa PDF.");
+    }
+  }
+
+  async function baixarQrPngNoApp() {
+    const url =
+      montarUrlCompleta(
+        obterUrlQr(localId, "png", true)
+      );
+
+    try {
+      await QrDownload.baixar({
+        url,
+        nomeArquivo: `qr-${localId}.png`,
+      });
+    } catch (erro) {
+      console.error(
+        "Erro ao baixar QR PNG no app:",
+        erro
+      );
+
+      alert("Não foi possível baixar o QR PNG.");
+    }
+  }
+  async function baixarQrSvgNoApp() {
+    const url =
+      montarUrlCompleta(
+        obterUrlQr(localId, "svg", true)
+      );
+
+    try {
+      await QrDownload.baixar({
+        url,
+        nomeArquivo: `qr-${localId}.svg`,
+      });
+    } catch (erro) {
+      console.error(
+        "Erro ao baixar QR SVG no app:",
+        erro
+      );
+
+      alert("Não foi possível baixar o QR SVG.");
+    }
+  }
   async function copiarTexto(
     identificador: string,
     texto: string
@@ -90,6 +166,12 @@ export default function MateriaisDoLocal({
     if (painel) {
       linhas.push(
         `Painel: ${montarUrlCompleta(painel)}`
+      );
+    }
+
+    if (atualizacao) {
+      linhas.push(
+        `Atualização cadastral: ${montarUrlCompleta(atualizacao)}`
       );
     }
 
@@ -147,6 +229,14 @@ export default function MateriaisDoLocal({
 
         <a
           href={obterUrlQr(localId, "png", true)}
+          onClick={(evento) => {
+            if (!Capacitor.isNativePlatform()) {
+              return;
+            }
+
+            evento.preventDefault();
+            void baixarQrPngNoApp();
+          }}
           className="rounded-xl border border-blue-500/30 bg-blue-500/10 px-4 py-3 text-center text-sm font-black text-blue-300 transition hover:bg-blue-500/20"
         >
           PNG
@@ -154,6 +244,14 @@ export default function MateriaisDoLocal({
 
         <a
           href={obterUrlQr(localId, "svg", true)}
+          onClick={(evento) => {
+            if (!Capacitor.isNativePlatform()) {
+              return;
+            }
+
+            evento.preventDefault();
+            void baixarQrSvgNoApp();
+          }}
           className="rounded-xl border border-fuchsia-500/30 bg-fuchsia-500/10 px-4 py-3 text-center text-sm font-black text-fuchsia-300 transition hover:bg-fuchsia-500/20"
         >
           SVG
@@ -163,6 +261,14 @@ export default function MateriaisDoLocal({
           href={obterUrlPlaca(localId)}
           target="_blank"
           rel="noreferrer"
+          onClick={(evento) => {
+            if (!Capacitor.isNativePlatform()) {
+              return;
+            }
+
+            evento.preventDefault();
+            void abrirPlacaPdfNoApp();
+          }}
           className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-center text-sm font-black text-emerald-300 transition hover:bg-emerald-500/20"
         >
           Placa PDF
@@ -206,6 +312,23 @@ export default function MateriaisDoLocal({
               {copiado === "morador"
                 ? "Link do morador copiado"
                 : "Copiar link do morador"}
+            </button>
+          )}
+
+          {atualizacao && (
+            <button
+              type="button"
+              onClick={() =>
+                copiarTexto(
+                  "atualizacao",
+                  montarUrlCompleta(atualizacao)
+                )
+              }
+              className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-left text-sm font-bold text-emerald-300 transition hover:bg-emerald-500/20"
+            >
+              {copiado === "atualizacao"
+                ? "Link de atualização cadastral copiado"
+                : "Copiar link de atualização cadastral"}
             </button>
           )}
 

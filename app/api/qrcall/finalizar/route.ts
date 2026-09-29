@@ -112,27 +112,17 @@ export async function POST(
       motivoSemResponsavel:
         null,
     });
-
-    const criadoEmEncerrado =
-      chamada?.criadoEm || null;
-
-    const snapshotAtual =
-      await referencia.get();
-
-    const chamadaAtual =
-      snapshotAtual.val();
-
-    if (
-      chamadaAtual &&
-      chamadaAtual.status ===
-        "Encerrado" &&
-      chamadaAtual.criadoEm ===
-        criadoEmEncerrado
-    ) {
-      await referencia.remove();
-    }
-
-    return NextResponse.json({
+    /*
+     * QRCALL_MANTER_ENCERRADO_PARA_VISITANTE_20260910
+     *
+     * Nao remover imediatamente a chamada.
+     *
+     * O visitante observa este mesmo caminho no RTDB e
+     * precisa receber status "Encerrado" para limpar o
+     * atendimento e voltar ao estado inicial.
+     *
+     * O historico ja foi salvo acima.
+     */return NextResponse.json({
       sucesso: true,
       unidadeId,
       status:

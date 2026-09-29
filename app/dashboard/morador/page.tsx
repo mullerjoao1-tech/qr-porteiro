@@ -1195,6 +1195,13 @@ if (modoResidencia) {
                   {responsavelChamadasAtivo ? "Online" : "Ausente"}
                 </div>
 
+                <div className="mt-1 text-xs font-bold text-blue-200">
+                  {nomeLocal}
+                  {unidadeId && (
+                    <> &bull; {formatarNomeUnidadePainel(unidadeId)}</>
+                  )}
+                </div>
+
                 <div className="mt-1 text-sm text-slate-400">
                   {responsavelChamadasAtivo
                     ? "Você está disponível para receber chamadas."
@@ -1474,8 +1481,15 @@ if (modoResidencia) {
                   </div>
   
                   <div className="mt-3 font-black text-white">
-                    {responsavelChamadasAtivo ? "Online" : "Ausente"}
-                  </div>
+                  {responsavelChamadasAtivo ? "Online" : "Ausente"}
+                </div>
+
+                <div className="mt-1 text-xs font-bold text-blue-200">
+                  {nomeLocal}
+                  {unidadeId && (
+                    <> &bull; {formatarNomeUnidadePainel(unidadeId)}</>
+                  )}
+                </div>
   
                   <div className="mt-1 text-sm text-slate-400">
                     {responsavelChamadasAtivo

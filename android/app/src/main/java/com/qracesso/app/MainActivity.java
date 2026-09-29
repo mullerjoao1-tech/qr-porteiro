@@ -8,6 +8,8 @@ import com.getcapacitor.BridgeActivity;
 
 public class MainActivity extends BridgeActivity {
 
+    private AppUpdateManager appUpdateManager = null;
+
     private static volatile boolean activityVisivel = false;
 
     public static boolean isActivityVisivel() {
@@ -24,8 +26,6 @@ public class MainActivity extends BridgeActivity {
     private int confirmacoesInterfaceChamada = 0;
 
     private boolean aguardandoQrCallAtendimento = false;
-    private android.widget.TextView coberturaQrCallAtendimento = null;
-
     private final Runnable verificarQrCallAtendimento =
         new Runnable() {
             @Override
@@ -39,7 +39,7 @@ public class MainActivity extends BridgeActivity {
                 }
 
                 getBridge().getWebView().evaluateJavascript(
-                    "Boolean(document.getElementById('qrcall-atendimento-pronto'))",
+                    "Boolean(document.getElementById('qrcall-atendimento-pronto') || document.getElementById('qrcall-video-base-inerte'))",
                     resultado -> {
                         if ("true".equals(resultado)) {
                             revelarQrCallAtendimento();
@@ -55,31 +55,29 @@ public class MainActivity extends BridgeActivity {
             }
         };
 
-    private void revelarQrCallAtendimento() {
-        aguardandoQrCallAtendimento = false;
-
-        chamadaHandler.removeCallbacks(
-            verificarQrCallAtendimento
-        );
-
-        if (
-            getBridge() != null &&
-            getBridge().getWebView() != null
-        ) {
-            getBridge()
-                .getWebView()
-                .setVisibility(
-                    android.view.View.VISIBLE
-                );
-        }
-
-        if (coberturaQrCallAtendimento != null) {
-            coberturaQrCallAtendimento.setVisibility(
-                android.view.View.GONE
-            );
+    // QRCALL_A9_7K_VIDEO_TRANSICAO
+    private void ocultarQrCallAtendimentoVideo(Intent intent) {
+        // QRCALL_TRANSICAO_DIRETA_LIVE
+        // Nao esconder o WebView.
+        // Nao criar tela preta.
+        // Nao criar frame/imagem de cobertura.
+        try {
+            if (bridge != null && bridge.getWebView() != null) {
+                bridge.getWebView().setVisibility(android.view.View.VISIBLE);
+            }
+        } catch (Exception ignored) {
         }
     }
-
+    private void revelarQrCallAtendimento() {
+        // QRCALL_TRANSICAO_DIRETA_LIVE
+        // A propria Live principal assume a tela.
+        try {
+            if (bridge != null && bridge.getWebView() != null) {
+                bridge.getWebView().setVisibility(android.view.View.VISIBLE);
+            }
+        } catch (Exception ignored) {
+        }
+    }
     private final Runnable verificarInterfaceChamada =
         new Runnable() {
             @Override
@@ -200,8 +198,26 @@ public class MainActivity extends BridgeActivity {
         prepararTelaDeChamada();
 
         registerPlugin(CallControlPlugin.class);
+        registerPlugin(QrCallLivePlugin.class);
+        registerPlugin(MaterialPdfPlugin.class);
+        registerPlugin(QrDownloadPlugin.class);
         super.onCreate(savedInstanceState);
         handleIntent(getIntent());
+
+        appUpdateManager = new AppUpdateManager(this);
+
+        Intent intentInicial = getIntent();
+
+        boolean abriuPorChamada =
+            intentInicial != null &&
+            (
+                intentInicial.getBooleanExtra("qrcallAtendimento", false) ||
+                intentInicial.getBooleanExtra("chamadaFullscreen", false)
+            );
+
+        if (!abriuPorChamada) {
+            appUpdateManager.verificarAtualizacao();
+        }
     }
 
     private void enviarParadaParaServicoDeChamada() {
@@ -243,6 +259,10 @@ public class MainActivity extends BridgeActivity {
         super.onResume();
         activityVisivel = true;
         abrirRotaPendente();
+
+        if (appUpdateManager != null) {
+            appUpdateManager.retomarAposPermissao();
+        }
     }
 
     @Override
@@ -256,10 +276,32 @@ public class MainActivity extends BridgeActivity {
             return;
         }
 
-        if (intent.getBooleanExtra("qrcallAtendimento", false)) {
+        boolean qrcallAtendimento =
+            intent.getBooleanExtra(
+                "qrcallAtendimento",
+                false
+            );
+
+        boolean qrcallAtendimentoVideo =
+            intent.getBooleanExtra(
+                "qrcallAtendimentoVideo",
+                false
+            );
+
+        if (qrcallAtendimentoVideo) {
+            // QRCALL_A9_7K_VIDEO_TRANSICAO
+            ocultarQrCallAtendimentoVideo(intent);
+
+        } else if (qrcallAtendimento) {
+            // QRCALL_TRANSICAO_DIRETA_20260910
+            aguardandoQrCallAtendimento = false;
+
+            chamadaHandler.removeCallbacks(
+                verificarQrCallAtendimento
+            );
+
             revelarQrCallAtendimento();
         }
-
         if (intent.getBooleanExtra("chamadaFullscreen", false)) {
             ocultarWebViewParaChamada();
         }

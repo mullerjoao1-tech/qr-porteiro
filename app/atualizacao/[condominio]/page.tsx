@@ -123,6 +123,7 @@ export default function AtualizacaoCadastralPage() {
 
   const [locais, setLocais] = useState<LocalCadastrado[]>([]);
   const [unidades, setUnidades] = useState<UnidadeCadastrada[]>([]);
+  const [nomeBaseLocalV2, setNomeBaseLocalV2] = useState("");
 
   const [carregando, setCarregando] = useState(true);
   const [erroCarregamento, setErroCarregamento] = useState("");
@@ -147,12 +148,14 @@ export default function AtualizacaoCadastralPage() {
 
     const locaisRef = ref(db, "qrCentral/locais");
     const unidadesRef = ref(db, "qrCentral/unidades");
+    const localV2Ref = ref(db, `locais-v2/${condominioSlug}`);
 
     let locaisCarregados = false;
     let unidadesCarregadas = false;
+    let localV2Carregado = false;
 
     function finalizarCarregamento() {
-      if (locaisCarregados && unidadesCarregadas) {
+      if (locaisCarregados && unidadesCarregadas && localV2Carregado) {
         setCarregando(false);
       }
     }
@@ -190,6 +193,27 @@ export default function AtualizacaoCadastralPage() {
       }
     );
 
+    const desligarLocalV2 = onValue(
+      localV2Ref,
+      (snapshot) => {
+        const dados = snapshot.val();
+
+        setNomeBaseLocalV2(
+          typeof dados?.nomeBase === "string"
+            ? dados.nomeBase
+            : ""
+        );
+
+        localV2Carregado = true;
+        finalizarCarregamento();
+      },
+      (erro) => {
+        console.error("Erro ao carregar local V2:", erro);
+        setNomeBaseLocalV2("");
+        localV2Carregado = true;
+        finalizarCarregamento();
+      }
+    );
     const desligarUnidades = onValue(
       unidadesRef,
       (snapshot) => {
@@ -225,12 +249,14 @@ export default function AtualizacaoCadastralPage() {
 
     return () => {
       desligarLocais();
+      desligarLocalV2();
       desligarUnidades();
     };
-  }, []);
+  }, [condominioSlug]);
 
   const localSelecionado = useMemo(() => {
     const slugNormalizado = normalizarTexto(condominioSlug);
+    const nomeBaseV2Normalizado = normalizarTexto(nomeBaseLocalV2);
 
     return locais.find((local) => {
       const slugDoLocal = normalizarTexto(local.slug);
@@ -239,10 +265,13 @@ export default function AtualizacaoCadastralPage() {
       return (
         slugDoLocal === slugNormalizado ||
         slugPeloNome === slugNormalizado ||
-        `cnd-${slugPeloNome}` === slugNormalizado
+        `cnd-${slugPeloNome}` === slugNormalizado ||
+        (nomeBaseV2Normalizado !== "" &&
+          (slugDoLocal === nomeBaseV2Normalizado ||
+            slugPeloNome === nomeBaseV2Normalizado))
       );
     });
-  }, [condominioSlug, locais]);
+  }, [condominioSlug, locais, nomeBaseLocalV2]);
 
   const nomeCondominio =
     localSelecionado?.nome ||

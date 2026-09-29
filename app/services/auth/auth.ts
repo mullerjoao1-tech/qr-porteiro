@@ -109,18 +109,16 @@ export async function entrarComEmailSenha(
     string
 ): Promise<ResultadoAutenticacao> {
   try {
-    const emailNormalizado =
-      normalizarEmail(
-        email
-      );
+    const loginInformado =
+      email.trim();
 
-    if (!emailNormalizado) {
+    if (!loginInformado) {
       return {
         sucesso:
           false,
 
         erro:
-          "Informe o e-mail.",
+          "Informe o e-mail ou identificador.",
       };
     }
 
@@ -134,10 +132,69 @@ export async function entrarComEmailSenha(
       };
     }
 
+    let emailAutenticacao = "";
+
+    if (
+      loginInformado.includes(
+        "@"
+      )
+    ) {
+      emailAutenticacao =
+        normalizarEmail(
+          loginInformado
+        );
+    } else {
+      const resposta =
+        await fetch(
+          "/api/auth/resolver-identificador",
+          {
+            method:
+              "POST",
+            headers: {
+              "Content-Type":
+                "application/json",
+            },
+            body:
+              JSON.stringify({
+                identificador:
+                  loginInformado,
+              }),
+          }
+        );
+
+      const resultado =
+        await resposta
+          .json()
+          .catch(
+            () => ({})
+          );
+
+      if (
+        !resposta.ok ||
+        !resultado?.sucesso ||
+        typeof resultado
+          ?.emailAutenticacao !==
+          "string"
+      ) {
+        return {
+          sucesso:
+            false,
+
+          erro:
+            "Identificador ou senha incorretos.",
+        };
+      }
+
+      emailAutenticacao =
+        normalizarEmail(
+          resultado.emailAutenticacao
+        );
+    }
+
     const credencial =
       await signInWithEmailAndPassword(
         auth,
-        emailNormalizado,
+        emailAutenticacao,
         senha
       );
 
