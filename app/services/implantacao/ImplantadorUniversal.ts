@@ -41,7 +41,11 @@ export type TipoPortariaImplantacao =
 export type ConfiguracaoCondominioImplantacao = {
   tipoCondominio: TipoCondominioImplantacao;
   quantidadeBlocos: number;
+  identificadoresBlocos?: string[];
   apartamentosPorBloco: number;
+  numerosApartamentos?: string[];
+  apartamentosPorIdentificadorBloco?: Record<string, string[]>;
+  apartamentosPorAndarPorBloco?: Record<string, Record<string, string[]>>;
   quantidadeCasas: number;
   possuiPortaria: boolean;
   tipoPortaria: TipoPortariaImplantacao;

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import {
   useEffect,
@@ -83,6 +83,13 @@ type LocalUniversal = {
     totalUsuarios?: number;
     totalMoradores?: number;
   };
+};
+
+type UnidadeBanco = {
+  localId?: string;
+  condominioId?: string;
+  status?: string;
+  ativo?: boolean;
 };
 
 type LocalResumo = {
@@ -244,6 +251,16 @@ export default function PainelLocais({
   >({});
 
   const [
+    unidadesBanco,
+    setUnidadesBanco,
+  ] = useState<
+    Record<
+      string,
+      UnidadeBanco
+    >
+  >({});
+
+  const [
     carregandoLocais,
     setCarregandoLocais,
   ] = useState(true);
@@ -324,6 +341,27 @@ export default function PainelLocais({
     };
   }, []);
 
+  useEffect(() => {
+    const parar =
+      onValue(
+        ref(
+          db,
+          "unidades-v2"
+        ),
+        (
+          snapshot
+        ) => {
+          setUnidadesBanco(
+            snapshot.val() ||
+            {}
+          );
+        }
+      );
+
+    return () => {
+      parar();
+    };
+  }, []);
   useEffect(() => {
     const parar =
       onValue(
@@ -411,10 +449,58 @@ export default function PainelLocais({
                   local.estado ||
                   "",
 
-                totalUnidades:
-                  contarUnidades(
-                    local
-                  ),
+                totalUnidades: (() => {
+                  const unidadesOficiais =
+                    Object.values(
+                      unidadesBanco
+                    ).filter(
+                      (
+                        unidade
+                      ) => {
+                        const unidadeLocalId =
+                          unidade.localId ||
+                          unidade.condominioId ||
+                          "";
+
+                        if (
+                          unidadeLocalId !==
+                          localId
+                        ) {
+                          return false;
+                        }
+
+                        if (
+                          unidade.ativo ===
+                          false
+                        ) {
+                          return false;
+                        }
+
+                        const status =
+                          String(
+                            unidade.status ||
+                            ""
+                          ).toLowerCase();
+
+                        return ![
+                          "inativa",
+                          "inativo",
+                          "arquivada",
+                          "arquivado",
+                          "excluida",
+                          "excluido",
+                        ].includes(
+                          status
+                        );
+                      }
+                    ).length;
+
+                  return unidadesOficiais > 0
+                    ? unidadesOficiais
+                    : contarUnidades(
+                        local
+                      );
+                })(),
 
                 totalPessoas,
               };
@@ -434,6 +520,7 @@ export default function PainelLocais({
       [
         locais,
         usuarios,
+        unidadesBanco,
       ]
     );
 

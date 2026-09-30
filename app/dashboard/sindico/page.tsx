@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import ModalTrocarContexto from "@/app/components/core/dashboard/ModalTrocarContexto";
 
@@ -323,6 +323,7 @@ const tipoLocalSelecionado = vinculoSelecionado
           }
           painel="/dashboard/sindico"
           titulo="QR, placa e links do condomínio"
+          placaVertical
         />
       )}
 

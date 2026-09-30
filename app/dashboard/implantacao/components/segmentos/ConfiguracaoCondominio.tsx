@@ -17,7 +17,18 @@ export type ConfiguracaoCondominioDados = {
 
   quantidadeBlocos: number;
 
+  identificadoresBlocos: string[];
+
   apartamentosPorBloco: number;
+
+  numerosApartamentos: string[];
+
+  apartamentosPorIdentificadorBloco: Record<string, string[]>;
+
+  apartamentosPorAndarPorBloco: Record<
+    string,
+    Record<string, string[]>
+  >;
 
   quantidadeCasas: number;
 
@@ -264,63 +275,321 @@ export default function ConfiguracaoCondominio({
         </div>
 
         {possuiEstruturaVertical && (
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <label
-                htmlFor="quantidade-blocos"
-                className="mb-2 block text-sm font-bold text-slate-200"
-              >
-                Quantidade de blocos
-              </label>
+          <div className="space-y-4">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label
+                  htmlFor="quantidade-blocos"
+                  className="mb-2 block text-sm font-bold text-slate-200"
+                >
+                  Quantidade de blocos
+                </label>
 
-              <input
-                id="quantidade-blocos"
-                type="number"
-                min={0}
-                value={
-                  valor.quantidadeBlocos
-                }
-                onChange={(evento) =>
-                  atualizar(
-                    "quantidadeBlocos",
-                    normalizarNumero(
-                      evento.target.value
+                <input
+                  id="quantidade-blocos"
+                  type="number"
+                  min={0}
+                  value={valor.quantidadeBlocos}
+                  onChange={(evento) =>
+                    atualizar(
+                      "quantidadeBlocos",
+                      normalizarNumero(
+                        evento.target.value
+                      )
                     )
-                  )
-                }
-                className="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-4 text-white outline-none focus:border-green-500"
-              />
+                  }
+                  className="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-4 text-white outline-none focus:border-green-500"
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="apartamentos-por-bloco"
+                  className="mb-2 block text-sm font-bold text-slate-200"
+                >
+                  Apartamentos por bloco
+                </label>
+
+                <input
+                  id="apartamentos-por-bloco"
+                  type="number"
+                  min={0}
+                  value={valor.apartamentosPorBloco}
+                  onChange={(evento) =>
+                    atualizar(
+                      "apartamentosPorBloco",
+                      normalizarNumero(
+                        evento.target.value
+                      )
+                    )
+                  }
+                  className="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-4 text-white outline-none focus:border-green-500"
+                />
+              </div>
             </div>
 
             <div>
               <label
-                htmlFor="apartamentos-por-bloco"
+                htmlFor="identificadores-blocos"
                 className="mb-2 block text-sm font-bold text-slate-200"
               >
-                Apartamentos por bloco
+                Identificação dos blocos
               </label>
 
               <input
-                id="apartamentos-por-bloco"
-                type="number"
-                min={0}
-                value={
-                  valor.apartamentosPorBloco
-                }
+                id="identificadores-blocos"
+                type="text"
+                value={valor.identificadoresBlocos.join(", ")}
                 onChange={(evento) =>
                   atualizar(
-                    "apartamentosPorBloco",
-                    normalizarNumero(
-                      evento.target.value
-                    )
+                    "identificadoresBlocos",
+                    evento.target.value
+                      .split(",")
+                      .map((item) => item.trim())
                   )
                 }
+                placeholder="Ex.: A, B, C ou 1, 2, 3"
                 className="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-4 text-white outline-none focus:border-green-500"
               />
+
+              <p className="mt-2 text-xs text-slate-400">
+                Opcional. Separe os blocos por vírgula. Se deixar vazio, serão usados 1, 2, 3...
+              </p>
             </div>
+
+            <div>
+              <label
+                htmlFor="numeros-apartamentos"
+                className="mb-2 block text-sm font-bold text-slate-200"
+              >
+                Numeração dos apartamentos
+              </label>
+
+              <textarea
+                id="numeros-apartamentos"
+                rows={3}
+                value={valor.numerosApartamentos.join(", ")}
+                onChange={(evento) =>
+                  atualizar(
+                    "numerosApartamentos",
+                    evento.target.value
+                      .split(",")
+                      .map((item) => item.trim())
+                  )
+                }
+                placeholder="Ex.: 101, 102, 103, 104, 201, 202, 203, 204"
+                className="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-4 text-white outline-none focus:border-green-500"
+              />
+
+              <p className="mt-2 text-xs text-slate-400">
+                Opcional. Aceita qualquer numeração: 101, 202, 1004, 1005 etc. Separe por vírgula.
+              </p>
+            </div>
+
+            {valor.identificadoresBlocos
+              .map((bloco) => bloco.trim())
+              .filter(Boolean)
+              .map((bloco) => {
+                const andares =
+                  Object.keys(
+                    valor.apartamentosPorAndarPorBloco[
+                      bloco
+                    ] || {}
+                  );
+
+                return (
+                  <div
+                    key={bloco}
+                    className="rounded-2xl border border-slate-700 bg-slate-950/50 p-4"
+                  >
+                    <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-black text-white">
+                          Bloco {bloco}
+                        </p>
+
+                        <p className="mt-1 text-xs text-slate-400">
+                          Informe os andares e os apartamentos existentes em cada andar.
+                        </p>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          let numero = 1;
+
+                          while (
+                            valor.apartamentosPorAndarPorBloco[
+                              bloco
+                            ]?.[String(numero)]
+                          ) {
+                            numero += 1;
+                          }
+
+                          atualizar(
+                            "apartamentosPorAndarPorBloco",
+                            {
+                              ...valor.apartamentosPorAndarPorBloco,
+                              [bloco]: {
+                                ...(
+                                  valor.apartamentosPorAndarPorBloco[
+                                    bloco
+                                  ] || {}
+                                ),
+                                [String(numero)]: [],
+                              },
+                            }
+                          );
+                        }}
+                        className="rounded-xl border border-green-500/50 bg-green-500/10 px-4 py-2 text-sm font-bold text-green-300 hover:bg-green-500/20"
+                      >
+                        + Adicionar andar
+                      </button>
+                    </div>
+
+                    {andares.length === 0 ? (
+                      <div className="rounded-xl border border-dashed border-slate-700 p-4 text-sm text-slate-400">
+                        Nenhum andar informado.
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {andares.map((andar) => (
+                          <div
+                            key={andar}
+                            className="grid gap-3 rounded-xl border border-slate-800 bg-slate-950 p-3 sm:grid-cols-[140px_1fr_auto]"
+                          >
+                            <div>
+                              <label
+                                htmlFor={`andar-${bloco}-${andar}`}
+                                className="mb-2 block text-xs font-bold text-slate-300"
+                              >
+                                Andar
+                              </label>
+
+                              <input
+                                id={`andar-${bloco}-${andar}`}
+                                type="text"
+                                value={andar}
+                                onChange={(evento) => {
+                                  const novoAndar =
+                                    evento.target.value.trim();
+
+                                  if (
+                                    !novoAndar ||
+                                    novoAndar === andar
+                                  ) {
+                                    return;
+                                  }
+
+                                  const mapaBloco = {
+                                    ...(
+                                      valor.apartamentosPorAndarPorBloco[
+                                        bloco
+                                      ] || {}
+                                    ),
+                                  };
+
+                                  const apartamentos =
+                                    mapaBloco[andar] || [];
+
+                                  delete mapaBloco[andar];
+
+                                  mapaBloco[novoAndar] =
+                                    apartamentos;
+
+                                  atualizar(
+                                    "apartamentosPorAndarPorBloco",
+                                    {
+                                      ...valor.apartamentosPorAndarPorBloco,
+                                      [bloco]: mapaBloco,
+                                    }
+                                  );
+                                }}
+                                className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-3 text-white outline-none focus:border-green-500"
+                              />
+                            </div>
+
+                            <div>
+                              <label
+                                htmlFor={`apartamentos-${bloco}-${andar}`}
+                                className="mb-2 block text-xs font-bold text-slate-300"
+                              >
+                                Apartamentos do andar {andar}
+                              </label>
+
+                              <input
+                                id={`apartamentos-${bloco}-${andar}`}
+                                type="text"
+                                defaultValue={
+                                  (
+                                    valor.apartamentosPorAndarPorBloco[
+                                      bloco
+                                    ]?.[andar] || []
+                                  ).join(", ")
+                                }
+                                onBlur={(evento) =>
+                                  atualizar(
+                                    "apartamentosPorAndarPorBloco",
+                                    {
+                                      ...valor.apartamentosPorAndarPorBloco,
+                                      [bloco]: {
+                                        ...(
+                                          valor.apartamentosPorAndarPorBloco[
+                                            bloco
+                                          ] || {}
+                                        ),
+                                        [andar]:
+                                          evento.target.value
+                                            .split(/[\s,.;]+/)
+                                            .map((item) =>
+                                              item.trim()
+                                            )
+                                            .filter(Boolean),
+                                      },
+                                    }
+                                  )
+                                }
+                                placeholder="Ex.: 101, 102, 103, 104"
+                                className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-3 text-white outline-none focus:border-green-500"
+                              />
+                            </div>
+
+                            <div className="flex items-end">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const mapaBloco = {
+                                    ...(
+                                      valor.apartamentosPorAndarPorBloco[
+                                        bloco
+                                      ] || {}
+                                    ),
+                                  };
+
+                                  delete mapaBloco[andar];
+
+                                  atualizar(
+                                    "apartamentosPorAndarPorBloco",
+                                    {
+                                      ...valor.apartamentosPorAndarPorBloco,
+                                      [bloco]: mapaBloco,
+                                    }
+                                  );
+                                }}
+                                className="rounded-xl border border-red-500/40 px-3 py-3 text-sm font-bold text-red-300 hover:bg-red-500/10"
+                              >
+                                Remover
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
           </div>
         )}
-
         {possuiEstruturaHorizontal && (
           <div>
             <label

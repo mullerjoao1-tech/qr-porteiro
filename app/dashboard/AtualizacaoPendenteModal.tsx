@@ -206,7 +206,70 @@ const [nomeEditado, setNomeEditado] =
   }
 }
 
-async function aprovarCadastro() {
+async function recusarSolicitacao() {
+    if (atualizacao.status !== "pendente") {
+      alert("Esta solicitacao ja foi analisada.");
+      return;
+    }
+
+    const confirmar = confirm(
+      [
+        "Recusar esta solicitacao cadastral?",
+        "",
+        `Morador: ${nomeEditado}`,
+        `Unidade: ${unidadeNomeEfetivo}`,
+        "",
+        "A solicitacao saira dos Pendentes.",
+        "Nenhum morador, usuario ou vinculo sera apagado.",
+      ].join("\n")
+    );
+
+    if (!confirmar) {
+      return;
+    }
+
+    setAprovando(true);
+
+    try {
+      const solicitacaoRef = ref(
+        db,
+        `qrCentral/atualizacoesCadastrais/${atualizacao.id}`
+      );
+
+      const solicitacaoSnapshot = await get(solicitacaoRef);
+      const solicitacaoAtual = solicitacaoSnapshot.val();
+
+      if (!solicitacaoAtual) {
+        alert("Esta solicitacao nao foi localizada.");
+        onClose();
+        return;
+      }
+
+      if (solicitacaoAtual.status !== "pendente") {
+        alert("Esta solicitacao ja foi analisada por outra pessoa.");
+        onClose();
+        return;
+      }
+
+      const agora = new Date().toISOString();
+
+      await update(solicitacaoRef, {
+        status: "recusada",
+        recusadoEm: agora,
+        atualizadoEm: agora,
+      });
+
+      alert("Solicitacao recusada com sucesso.");
+      onClose();
+    } catch (erro) {
+      console.error("Erro ao recusar solicitacao:", erro);
+      alert("Nao foi possivel recusar a solicitacao.");
+    } finally {
+      setAprovando(false);
+    }
+  }
+
+  async function aprovarCadastro() {
     if (atualizacao.status !== "pendente") {
       alert("Esta solicitação já foi analisada.");
       return;
@@ -269,6 +332,7 @@ async function aprovarCadastro() {
           },
           body: JSON.stringify({
             atualizacaoId: atualizacao.id,
+            localId: localIdEfetivo,
           }),
         }
       );
@@ -293,6 +357,11 @@ async function aprovarCadastro() {
         atualizacao.telefone
       );
 
+      const nomeSolicitacao =
+        formatarNome(nomeEditado)
+          .trim()
+          .toLowerCase();
+
       let moradorExistente: MoradorExistente | null = null;
 
       if (moradoresDados) {
@@ -303,13 +372,42 @@ async function aprovarCadastro() {
           })
         );
 
-        moradorExistente =
-          listaMoradores.find(
+        const moradoresDaUnidade =
+          listaMoradores.filter(
             (morador) =>
-              morador.unidadeId === unidadeIdEfetivo &&
+              morador.unidadeId === unidadeIdEfetivo
+          );
+
+        const correspondencias =
+          moradoresDaUnidade.filter((morador) => {
+            const mesmoTelefone =
+              Boolean(telefoneSolicitacao) &&
               somenteNumeros(morador.telefone) ===
-                telefoneSolicitacao
-          ) || null;
+                telefoneSolicitacao;
+
+            const mesmoNome =
+              Boolean(nomeSolicitacao) &&
+              formatarNome(morador.nome || "")
+                .trim()
+                .toLowerCase() ===
+                nomeSolicitacao;
+
+            return (
+              mesmoTelefone ||
+              mesmoNome
+            );
+          });
+
+        if (correspondencias.length > 1) {
+          throw new Error(
+            "Mais de um morador existente corresponde a esta atualizacao. A aprovacao foi interrompida para evitar duplicidade."
+          );
+        }
+
+        moradorExistente =
+          correspondencias.length === 1
+            ? correspondencias[0]
+            : null;
       }
 
       const agora = new Date().toISOString();
@@ -634,9 +732,7 @@ await atualizarStatusImplantacao(
 
           <button
             type="button"
-            onClick={() =>
-              acaoAindaNaoImplementada("Recusar solicitação")
-            }
+            onClick={recusarSolicitacao}
             disabled={aprovando}
             className="rounded-xl bg-red-700 py-3 font-black text-white hover:bg-red-600 disabled:cursor-not-allowed disabled:bg-slate-700"
           >

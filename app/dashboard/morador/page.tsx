@@ -27,6 +27,7 @@ import {
 
 import DashboardBase from "@/app/components/core/dashboard/DashboardBase";
 import MateriaisDoLocal from "@/app/components/core/dashboard/MateriaisDoLocal";
+import ComunicadosMorador from "@/app/components/core/morador/ComunicadosMorador";
 import FamiliaResidencia from "@/app/dashboard/condominio/FamiliaResidencia";
 import AcessosTemporariosResidencia from "@/app/dashboard/condominio/AcessosTemporariosResidencia";
 import { useAuth } from "@/app/context/AuthContext";
@@ -71,6 +72,18 @@ function ConteudoPaginaMorador() {
 
   const modoPessoal =
     searchParams.get("modo") === "pessoal";
+
+  const comunicadoIdPeloPush =
+    searchParams.get("comunicado") ||
+    "";
+
+  const localComunicadoPeloPush =
+    searchParams.get("local") ||
+    "";
+
+  const unidadeComunicadoPeloPush =
+    searchParams.get("unidade") ||
+    "";
 
   const {
     usuario,
@@ -206,6 +219,10 @@ function ConteudoPaginaMorador() {
     PushNotifications.addListener(
       "registration",
       async (token) => {
+        console.log(
+          "[PUSH NATIVO] Token FCM recebido:",
+          token.value
+        );
         const chaveDeviceId =
           "qr-core:device-id-nativo";
 
@@ -269,10 +286,36 @@ function ConteudoPaginaMorador() {
       }
     );
 
+    PushNotifications.addListener(
+      "registrationError",
+      (erro) => {
+        console.error(
+          "[PUSH NATIVO] Erro ao registrar FCM:",
+          erro
+        );
+      }
+    );
+
     PushNotifications.requestPermissions().then(
-      (result) => {
+      async (result) => {
+        console.log(
+          "[PUSH NATIVO] Permissao:",
+          result.receive
+        );
+
         if (result.receive === "granted") {
-          PushNotifications.register();
+          try {
+            await PushNotifications.register();
+
+            console.log(
+              "[PUSH NATIVO] register() executado."
+            );
+          } catch (erro) {
+            console.error(
+              "[PUSH NATIVO] Falha no register():",
+              erro
+            );
+          }
         }
       }
     );
@@ -761,6 +804,47 @@ if (modoResidencia) {
           : "Erro ao encaminhar chamada."
       );
     }
+  }
+
+  function renderizarComunicadoDoPush() {
+    if (
+      !comunicadoIdPeloPush ||
+      !localComunicadoPeloPush ||
+      !unidadeComunicadoPeloPush
+    ) {
+      return null;
+    }
+
+    const prefixoCondominio =
+      `${localComunicadoPeloPush}-`;
+
+    const unidadeComunicadoId =
+      unidadeComunicadoPeloPush.startsWith(
+        prefixoCondominio
+      )
+        ? unidadeComunicadoPeloPush.slice(
+            prefixoCondominio.length
+          )
+        : unidadeComunicadoPeloPush;
+
+    return (
+      <div className="fixed inset-0 z-[1100]">
+        <ComunicadosMorador
+          condominioId={
+            localComunicadoPeloPush
+          }
+          unidadeId={
+            unidadeComunicadoId
+          }
+          localNome={nomeLocal}
+          onVoltar={() =>
+            router.replace(
+              "/dashboard/morador"
+            )
+          }
+        />
+      </div>
+    );
   }
 
   function renderizarPopupChamada() {
@@ -1310,6 +1394,7 @@ if (modoResidencia) {
             )}
           </div>
         </div>
+        {renderizarComunicadoDoPush()}
         {renderizarPopupChamada()}
       </DashboardBase>
     );

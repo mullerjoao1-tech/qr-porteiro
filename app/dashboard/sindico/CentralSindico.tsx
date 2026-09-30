@@ -1098,11 +1098,13 @@ Boolean(
   async function enviarPushComunicadoParaUnidades({
     unidadesIds,
     comunicadoId,
+    condominioId,
     titulo,
     mensagem,
   }: {
     unidadesIds: string[];
     comunicadoId: string;
+    condominioId: string;
     titulo: string;
     mensagem: string;
   }) {
@@ -1119,6 +1121,7 @@ Boolean(
           body: JSON.stringify({
             unidadeId,
             comunicadoId,
+            condominioId,
             titulo,
             mensagem,
           }),
@@ -1330,6 +1333,7 @@ Boolean(
         const resultadoPush = await enviarPushComunicadoParaUnidades({
           unidadesIds: idsUnidadesDestinatarias,
           comunicadoId,
+          condominioId: condominioComunicacaoId,
           titulo: tituloComunicacao.trim(),
           mensagem: mensagemComunicacao.trim(),
         });
@@ -1510,6 +1514,7 @@ Boolean(
         const resultadoPush = await enviarPushComunicadoParaUnidades({
           unidadesIds: idsPendentes,
           comunicadoId: comunicado.id,
+          condominioId: comunicado.condominioId,
           titulo: comunicado.titulo,
           mensagem: comunicado.mensagem,
         });
@@ -1601,6 +1606,7 @@ Boolean(
       const resultadoPush = await enviarPushComunicadoParaUnidades({
         unidadesIds: unidadesParaReenvio,
         comunicadoId: comunicado.id,
+        condominioId: comunicado.condominioId,
         titulo: comunicado.titulo,
         mensagem: comunicado.mensagem,
       });

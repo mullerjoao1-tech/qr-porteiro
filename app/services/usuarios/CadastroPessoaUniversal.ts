@@ -68,11 +68,11 @@ export function validarCpf(
   if (!cpf && !obrigatorio) return "";
 
   if (!cpf) {
-    throw new Error("O CPF é obrigatório.");
+    throw new Error("O CPF ÃƒÂ© obrigatÃƒÂ³rio.");
   }
 
   if (!cpfValido(cpf)) {
-    throw new Error("Digite um CPF válido.");
+    throw new Error("Digite um CPF vÃƒÂ¡lido.");
   }
 
   return cpf;
@@ -119,7 +119,7 @@ async function buscarPorEmail(
         ? String((erro as { code?: unknown }).code ?? "")
         : "";
 
-    if (codigo === "auth/user-not-found") return null;
+if (codigo === "auth/user-not-found") return null;
     throw erro;
   }
 }
@@ -127,7 +127,7 @@ async function buscarPorEmail(
 function validarSenhaNova(senha: string): string {
   if (senha.length < 6) {
     throw new Error(
-      "A senha provisória precisa ter pelo menos 6 caracteres."
+      "A senha provisÃƒÂ³ria precisa ter pelo menos 6 caracteres."
     );
   }
 
@@ -143,11 +143,11 @@ export async function buscarOuCriarPessoaUniversal(
   const cpf = validarCpf(dados.cpf, false);
 
   if (!nome) {
-    throw new Error("O nome da pessoa é obrigatório.");
+    throw new Error("O nome da pessoa ÃƒÂ© obrigatÃƒÂ³rio.");
   }
 
   if (!email) {
-    throw new Error("O e-mail da pessoa é obrigatório.");
+    throw new Error("O e-mail da pessoa ÃƒÂ© obrigatÃƒÂ³rio.");
   }
 
   let usuarioAuth: UserRecord | null = null;
@@ -171,12 +171,43 @@ export async function buscarOuCriarPessoaUniversal(
       );
 
     if (uidCpf) {
-      usuarioAuth =
-        await dados.auth.getUser(
-          uidCpf
-        );
+      console.error(
+        "DEBUG UID ENCONTRADO POR CPF:",
+        {
+          cpf,
+          uidCpf,
+        }
+      );
 
-      encontradoPor = "cpf";
+            try {
+        usuarioAuth =
+          await dados.auth.getUser(
+            uidCpf
+          );
+
+        encontradoPor = "cpf";
+      } catch (erro) {
+        const codigo =
+          typeof erro === "object" &&
+          erro !== null &&
+          "code" in erro
+            ? String(
+                (erro as { code?: unknown }).code ?? ""
+              )
+            : "";
+
+        if (codigo !== "auth/user-not-found") {
+          throw erro;
+        }
+
+        console.warn(
+          "UID CPF ORFAO IGNORADO:",
+          {
+            cpf,
+            uidCpf,
+          }
+        );
+      }
     }
   }
 

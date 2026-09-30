@@ -11,6 +11,7 @@ import {
 } from "next/navigation";
 
 import {
+  get,
   onValue,
   push,
   ref,
@@ -518,7 +519,21 @@ export default function PaginaCondominio() {
           const lista =
             Object.entries(
               dados
-            ).map(
+            )
+            .filter(
+              ([, valor]) => {
+                const unidade =
+                  valor as {
+                    status?: string;
+                  };
+
+                return (
+                  unidade.status !==
+                  "arquivada"
+                );
+              }
+            )
+            .map(
               ([id, valor]) => {
                 const unidade =
                   valor as {
@@ -712,61 +727,184 @@ export default function PaginaCondominio() {
     );
 
     try {
-      const unidadesRef =
-        ref(
-          db,
-          "qrCentral/unidades"
+      const numero =
+        nomeUnidade.trim();
+
+      const identificadorBloco =
+        blocoUnidade
+          .trim()
+          .toLowerCase()
+          .normalize("NFD")
+          .replace(
+            /[\u0300-\u036f]/g,
+            ""
+          )
+          .replace(
+            /^bloco\s*/i,
+            ""
+          )
+          .replace(
+            /^torre\s*/i,
+            ""
+          )
+          .replace(
+            /[^a-z0-9]+/g,
+            "-"
+          )
+          .replace(
+            /^-+|-+$/g,
+            ""
+          );
+
+      if (!identificadorBloco) {
+        alert(
+          "Bloco ou torre invalido."
+        );
+        return;
+      }
+
+      const estruturaPaiId =
+        `bloco-${identificadorBloco}`;
+
+      const estruturaPaiNome =
+        `Bloco ${identificadorBloco}`;
+
+      const slug =
+        `${estruturaPaiId}-ap-${numero}`;
+
+      const unidadeId =
+        `${localIdAtual}-${slug}`;
+
+      const caminhoUnidade =
+        `unidades-v2/${unidadeId}`;
+
+      const caminhoReferenciaLocal =
+        `locais-v2/${localIdAtual}/unidades/${unidadeId}`;
+
+      const unidadeExistente =
+        await get(
+          ref(
+            db,
+            caminhoUnidade
+          )
         );
 
-      const novaUnidadeRef =
-        push(
-          unidadesRef
+      const referenciaExistente =
+        await get(
+          ref(
+            db,
+            caminhoReferenciaLocal
+          )
         );
+
+      if (
+        unidadeExistente.exists() ||
+        referenciaExistente.exists()
+      ) {
+        alert(
+          "Esta unidade ja esta cadastrada."
+        );
+        return;
+      }
+
+      const agora =
+        Date.now();
 
       const codigo =
-        `UNI-${String(
-          unidades.length + 1
-        ).padStart(
-          4,
-          "0"
-        )}`;
+        `${identificadorBloco}${numero}`;
 
-      await set(
-        novaUnidadeRef,
+      const nomeEstruturado =
+        `${estruturaPaiNome} • Apartamento ${numero}`;
+
+      await update(
+        ref(
+          db
+        ),
         {
-          codigo,
+          [caminhoUnidade]: {
+            id:
+              unidadeId,
 
-          localId:
-            local.id,
+            nome:
+              nomeEstruturado,
 
-          localNome:
-            local.nome,
+            slug,
 
-          tipoLocal:
-            "condominio",
+            tipo:
+              tipoUnidade,
 
-          bloco:
-            formatarNome(
-              blocoUnidade
-            ),
+            numero,
 
-          nome:
-            formatarNome(
-              nomeUnidade
-            ),
+            codigo,
 
-          tipo:
-            tipoUnidade,
+            localId:
+              localIdAtual,
 
-          modoChamado:
-            modoChamadoUnidade,
+            localNome:
+              local.nome,
 
-          status:
-            "ativa",
+            localSlug:
+              localIdAtual,
 
-          criadoEm:
-            new Date()
-              .toISOString(),
+            estruturaPaiId,
+
+            estruturaPaiNome,
+
+            status:
+              "ativa",
+
+            modoChamado:
+              modoChamadoUnidade,
+
+            moradores:
+              {},
+
+            usuarios:
+              {},
+
+            configuracao: {
+              rotaMorador:
+                `/morador-v2/${slug}`,
+            },
+
+            criadoEm:
+              agora,
+
+            atualizadoEm:
+              agora,
+          },
+
+          [caminhoReferenciaLocal]: {
+            unidadeId,
+
+            nome:
+              nomeEstruturado,
+
+            slug,
+
+            tipo:
+              tipoUnidade,
+
+            numero,
+
+            codigo,
+
+            estruturaPaiId,
+
+            estruturaPaiNome,
+
+            status:
+              "ativa",
+
+            modoChamado:
+              modoChamadoUnidade,
+
+            criadoEm:
+              agora,
+
+            atualizadoEm:
+              agora,
+          },
         }
       );
 
@@ -2365,6 +2503,7 @@ async function atualizarMoradorCadastrado(
                 localIdAtual
               }`}
               titulo="QR, placa e links do condomínio"
+              placaVertical
             />
 
           </div>

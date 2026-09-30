@@ -545,6 +545,136 @@ export default function PainelUnidades({
     }
   }
 
+  async function excluirUnidadeDefinitivamente(
+    unidade: UnidadeResumo
+  ) {
+    if (
+      arquivandoUnidadeId
+    ) {
+      return;
+    }
+
+    if (
+      unidade.status ===
+      "ativa"
+    ) {
+      window.alert(
+        "A unidade ainda esta ativa. Arquive primeiro."
+      );
+      return;
+    }
+
+    if (
+      unidade.totalPessoas > 0
+    ) {
+      window.alert(
+        "Esta unidade possui pessoas vinculadas e nao pode ser excluida definitivamente."
+      );
+      return;
+    }
+
+    const confirmado =
+      window.confirm(
+        'EXCLUIR DEFINITIVAMENTE "' +
+          unidade.nome +
+          '" de "' +
+          unidade.localNome +
+          '"?\n\n' +
+          'Esta acao remove o cadastro da unidade e nao pode ser desfeita.'
+      );
+
+    if (
+      !confirmado
+    ) {
+      return;
+    }
+
+    try {
+      setArquivandoUnidadeId(
+        unidade.id
+      );
+
+      const atualizacoes: Record<
+        string,
+        unknown
+      > = {};
+
+      const local =
+        locais[
+          unidade.localId
+        ];
+
+      if (
+        unidadesBanco[
+          unidade.id
+        ]
+      ) {
+        atualizacoes[
+          "unidades-v2/" +
+            unidade.id
+        ] = null;
+      }
+
+      if (
+        local?.unidades?.[
+          unidade.id
+        ]
+      ) {
+        atualizacoes[
+          "locais-v2/" +
+            unidade.localId +
+            "/unidades/" +
+            unidade.id
+        ] = null;
+      }
+
+      if (
+        local?.estruturas
+          ?.unidades?.[
+            unidade.id
+          ]
+      ) {
+        atualizacoes[
+          "locais-v2/" +
+            unidade.localId +
+            "/estruturas/unidades/" +
+            unidade.id
+        ] = null;
+      }
+
+      if (
+        Object.keys(
+          atualizacoes
+        ).length === 0
+      ) {
+        throw new Error(
+          "Registro oficial da unidade nao localizado."
+        );
+      }
+
+      await update(
+        ref(
+          db
+        ),
+        atualizacoes
+      );
+    } catch (
+      erro
+    ) {
+      console.error(
+        "Erro ao excluir unidade definitivamente:",
+        erro
+      );
+
+      window.alert(
+        "Nao foi possivel excluir definitivamente a unidade."
+      );
+    } finally {
+      setArquivandoUnidadeId(
+        null
+      );
+    }
+  }
   const unidades =
     useMemo<
       UnidadeResumo[]
@@ -947,7 +1077,7 @@ export default function PainelUnidades({
           </p>
 
           <p className="mt-2 text-3xl font-black text-white">
-            {unidades.length}
+            {unidades.filter((unidade) => unidade.status === "ativa").length}
           </p>
         </div>
 
@@ -1138,6 +1268,31 @@ export default function PainelUnidades({
                       }
                     </button>
                   )}
+                  {unidade.status !==
+                    "ativa" && (
+                    <button
+                      type="button"
+                      title="Excluir unidade definitivamente"
+                      onClick={() =>
+                        void excluirUnidadeDefinitivamente(
+                          unidade
+                        )
+                      }
+                      disabled={
+                        arquivandoUnidadeId ===
+                          unidade.id ||
+                        unidade.totalPessoas > 0
+                      }
+                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-red-900 bg-red-950/30 text-sm text-red-300 transition hover:bg-red-950/60 disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      {
+                        arquivandoUnidadeId ===
+                        unidade.id
+                          ? "..."
+                          : "🗑"
+                      }
+                    </button>
+                  )}
                 </div>
 
                 <div className="mt-4 rounded-xl border border-slate-700 bg-slate-800 p-3">
@@ -1205,3 +1360,5 @@ export default function PainelUnidades({
     </div>
   );
 }
+
+

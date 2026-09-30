@@ -41,6 +41,9 @@ export type ConfiguracaoGeradorEstrutura = {
   quantidadePais:
     number;
 
+  identificadoresPais?:
+    string[];
+
   quantidadeFilhos:
     number;
 
@@ -55,6 +58,9 @@ export type ConfiguracaoGeradorEstrutura = {
     Array<
       string | number
     >;
+
+  numerosFilhosPorPai?:
+    Record<string, string[]>;
 
   /*
    * Prefixo utilizado no endereço da unidade.
@@ -189,20 +195,58 @@ export function gerarEstrutura(
       .preencherNumeroPai ??
     true;
 
-  for (
-    let pai =
-      1;
-    pai <=
-    configuracao.quantidadePais;
-    pai +=
-      1
-  ) {
-    const paiFormatado =
-      obterNumeroPai(
-        pai,
-        preencherNumeroPai
+  const identificadoresPais =
+    configuracao
+      .identificadoresPais
+      ?.map(
+        (identificador) =>
+          String(
+            identificador
+          ).trim()
+      )
+      .filter(
+        Boolean
       );
 
+  const pais =
+    identificadoresPais &&
+    identificadoresPais.length > 0
+      ? identificadoresPais
+      : Array.from(
+          {
+            length:
+              configuracao.quantidadePais,
+          },
+          (
+            _,
+            indice
+          ) =>
+            obterNumeroPai(
+              indice + 1,
+              preencherNumeroPai
+            )
+        );
+
+  for (
+    const paiFormatado of
+      pais
+  ) {
+    const pai =
+      paiFormatado;
+    const numerosFilhosDoPai =
+      configuracao
+        .numerosFilhosPorPai?.[
+          paiFormatado
+        ]
+        ?.map(
+          (numero) =>
+            String(
+              numero
+            ).trim()
+        )
+        .filter(
+          Boolean
+        ) || numerosFilhos;
     const paiId =
       `${configuracao.tipoPai}-${paiFormatado}`;
 
@@ -232,7 +276,7 @@ export function gerarEstrutura(
         "ativa",
 
       totalUnidades:
-        numerosFilhos.length,
+        numerosFilhosDoPai.length,
 
       criadoEm:
         configuracao.criadoEm,
@@ -243,7 +287,7 @@ export function gerarEstrutura(
 
     for (
       const numeroFilho of
-        numerosFilhos
+        numerosFilhosDoPai
     ) {
       const slug =
         `${paiId}-${prefixoSlugFilho}-${numeroFilho}`;

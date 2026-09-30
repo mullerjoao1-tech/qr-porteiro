@@ -146,16 +146,14 @@ export default function AtualizacaoCadastralPage() {
     setCarregando(true);
     setErroCarregamento("");
 
-    const locaisRef = ref(db, "qrCentral/locais");
-    const unidadesRef = ref(db, "qrCentral/unidades");
-    const localV2Ref = ref(db, `locais-v2/${condominioSlug}`);
+    const locaisRef = ref(db, "locais-v2");
+    const unidadesRef = ref(db, "unidades-v2");
 
     let locaisCarregados = false;
     let unidadesCarregadas = false;
-    let localV2Carregado = false;
 
     function finalizarCarregamento() {
-      if (locaisCarregados && unidadesCarregadas && localV2Carregado) {
+      if (locaisCarregados && unidadesCarregadas) {
         setCarregando(false);
       }
     }
@@ -167,53 +165,66 @@ export default function AtualizacaoCadastralPage() {
 
         if (!dados) {
           setLocais([]);
+          setNomeBaseLocalV2("");
         } else {
           const lista = Object.entries(dados).map(
-            ([id, valor]) => ({
-              id,
-              ...(valor as Omit<LocalCadastrado, "id">),
-            })
+            ([id, valor]) => {
+              const local = valor as any;
+
+              return {
+                id,
+                nome:
+                  local.nomeExibicao ||
+                  local.nome ||
+                  id,
+                slug:
+                  local.slug ||
+                  id,
+                tipo:
+                  local.tipoLocal ||
+                  local.tipo ||
+                  local.segmento ||
+                  "",
+                status:
+                  local.status ||
+                  (local.ativo === false
+                    ? "inativo"
+                    : "ativo"),
+                implantacao:
+                  local.implantacao,
+              } as LocalCadastrado;
+            }
           );
 
           setLocais(lista);
+
+          const localAtual = dados[condominioSlug];
+
+          setNomeBaseLocalV2(
+            typeof localAtual?.nomeBase === "string"
+              ? localAtual.nomeBase
+              : ""
+          );
         }
 
         locaisCarregados = true;
         finalizarCarregamento();
       },
       (erro) => {
-        console.error("Erro ao carregar locais:", erro);
+        console.error("Erro ao carregar locais V2:", erro);
 
         setErroCarregamento(
           "Não foi possível carregar o condomínio."
         );
+
+        setLocais([]);
+        setNomeBaseLocalV2("");
 
         locaisCarregados = true;
         finalizarCarregamento();
       }
     );
 
-    const desligarLocalV2 = onValue(
-      localV2Ref,
-      (snapshot) => {
-        const dados = snapshot.val();
-
-        setNomeBaseLocalV2(
-          typeof dados?.nomeBase === "string"
-            ? dados.nomeBase
-            : ""
-        );
-
-        localV2Carregado = true;
-        finalizarCarregamento();
-      },
-      (erro) => {
-        console.error("Erro ao carregar local V2:", erro);
-        setNomeBaseLocalV2("");
-        localV2Carregado = true;
-        finalizarCarregamento();
-      }
-    );
     const desligarUnidades = onValue(
       unidadesRef,
       (snapshot) => {
@@ -223,10 +234,44 @@ export default function AtualizacaoCadastralPage() {
           setUnidades([]);
         } else {
           const lista = Object.entries(dados).map(
-            ([id, valor]) => ({
-              id,
-              ...(valor as Omit<UnidadeCadastrada, "id">),
-            })
+            ([id, valor]) => {
+              const unidade = valor as any;
+
+              return {
+                id,
+                codigo:
+                  unidade.codigo ||
+                  unidade.numero ||
+                  unidade.slug ||
+                  id,
+                localId:
+                  unidade.localId ||
+                  unidade.condominioId ||
+                  "",
+                localNome:
+                  unidade.localNome ||
+                  "",
+                bloco:
+                  unidade.bloco ||
+                  unidade.estruturaPaiNome ||
+                  "",
+                nome:
+                  unidade.nome ||
+                  unidade.identificacao ||
+                  unidade.numero ||
+                  id,
+                tipo:
+                  unidade.tipo ||
+                  "",
+                status:
+                  unidade.status ||
+                  (unidade.ativo === false
+                    ? "desativada"
+                    : "ativa"),
+                implantacao:
+                  unidade.implantacao,
+              } as UnidadeCadastrada;
+            }
           );
 
           setUnidades(lista);
@@ -236,7 +281,7 @@ export default function AtualizacaoCadastralPage() {
         finalizarCarregamento();
       },
       (erro) => {
-        console.error("Erro ao carregar unidades:", erro);
+        console.error("Erro ao carregar unidades V2:", erro);
 
         setErroCarregamento(
           "Não foi possível carregar as unidades."
@@ -249,7 +294,6 @@ export default function AtualizacaoCadastralPage() {
 
     return () => {
       desligarLocais();
-      desligarLocalV2();
       desligarUnidades();
     };
   }, [condominioSlug]);
@@ -345,12 +389,31 @@ export default function AtualizacaoCadastralPage() {
     (unidade) => unidade.id === unidadeSelecionadaId
   );
 
+  function textoNomeUnidade(unidade: UnidadeCadastrada) {
+    const nome = unidade.nome.trim();
+    const bloco = unidade.bloco?.trim() || "";
+
+    if (!bloco) return nome;
+
+    const prefixos = [
+      `${bloco} • `,
+      `${bloco} - `,
+      `${bloco} / `,
+    ];
+
+    const prefixo = prefixos.find((item) => nome.startsWith(item));
+
+    return prefixo ? nome.slice(prefixo.length) : nome;
+  }
+
   function textoUnidadeSelecionada() {
     if (!unidadeSelecionada) return "";
 
+    const nomeUnidade = textoNomeUnidade(unidadeSelecionada);
+
     return unidadeSelecionada.bloco
-      ? `${unidadeSelecionada.bloco} / ${unidadeSelecionada.nome}`
-      : unidadeSelecionada.nome;
+      ? `${unidadeSelecionada.bloco} / ${nomeUnidade}`
+      : nomeUnidade;
   }
 
   async function continuarComUnidade() {
@@ -407,11 +470,13 @@ export default function AtualizacaoCadastralPage() {
       return;
     }
 
-    if (
-      emailMorador.trim() &&
-      !emailMorador.includes("@")
-    ) {
-      alert("Digite um e-mail válido ou deixe o campo vazio.");
+    if (!emailMorador.trim()) {
+      alert("Digite seu e-mail.");
+      return;
+    }
+
+    if (!emailMorador.includes("@")) {
+      alert("Digite um e-mail válido.");
       return;
     }
 
@@ -721,9 +786,7 @@ export default function AtualizacaoCadastralPage() {
                           key={unidade.id}
                           value={unidade.id}
                         >
-                          {unidade.bloco
-                            ? `${unidade.bloco} / ${unidade.nome}`
-                            : unidade.nome}
+                          {textoNomeUnidade(unidade)}
                         </option>
                       ))}
                     </select>
@@ -849,10 +912,6 @@ export default function AtualizacaoCadastralPage() {
               <div>
                 <label className="block text-sm font-black text-slate-300 mb-2">
                   E-mail
-                  <span className="text-slate-500 font-normal">
-                    {" "}
-                    (opcional)
-                  </span>
                 </label>
 
                 <input
@@ -863,6 +922,7 @@ export default function AtualizacaoCadastralPage() {
                   }
                   placeholder="seunome@email.com"
                   autoComplete="email"
+                  required
                   className="w-full bg-slate-800 border border-slate-700 rounded-xl p-4 text-white"
                 />
               </div>

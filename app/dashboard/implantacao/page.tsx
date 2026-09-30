@@ -77,7 +77,15 @@ const CONFIGURACAO_CONDOMINIO_INICIAL:
 
     quantidadeBlocos: 1,
 
+    identificadoresBlocos: [],
+
     apartamentosPorBloco: 0,
+
+    numerosApartamentos: [],
+
+    apartamentosPorIdentificadorBloco: {},
+
+    apartamentosPorAndarPorBloco: {},
 
     quantidadeCasas: 0,
 
@@ -591,8 +599,7 @@ export default function ImplantacaoPage() {
         await usuarioAtual.getIdToken(
           true
         );
-
-      const resposta =
+const resposta =
         await fetch(
           "/api/implantacao/criar-responsavel",
           {

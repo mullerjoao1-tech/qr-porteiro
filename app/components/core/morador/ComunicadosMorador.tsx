@@ -1,7 +1,19 @@
 "use client";
 
+import { Capacitor, registerPlugin } from "@capacitor/core";
+
+type ComunicadoControlPlugin = {
+  comunicadoPronto: () => Promise<{ ok: boolean }>;
+};
+
+const comunicadoControl =
+  registerPlugin<ComunicadoControlPlugin>(
+    "ComunicadoControl"
+  );
+
 import {
   useEffect,
+  useRef,
   useState,
 } from "react";
 
@@ -259,6 +271,11 @@ export default function ComunicadosMorador({
     ) ||
     "";
 
+  const comunicadoLinkProcessadoRef =
+    useRef<string>(
+      ""
+    );
+
   const caminhoComunicados =
     `comunicados-v2/${condominioId}`;
 
@@ -455,35 +472,66 @@ export default function ComunicadosMorador({
   );
 
   useEffect(
-  () => {
-    if (
-      !comunicadoIdPeloLink ||
-      comunicadoAberto
-    ) {
-      return;
-    }
-
-    const comunicado =
-      comunicados.find(
-        (item) =>
-          item.id ===
+    () => {
+      if (
+        !condominioId ||
+        !comunicadoIdPeloLink ||
+        comunicadoAberto ||
+        comunicadoLinkProcessadoRef.current ===
           comunicadoIdPeloLink
-      );
+      ) {
+        return;
+      }
 
-    if (!comunicado) {
-      return;
-    }
+      const referenciaComunicadoDireto =
+        ref(
+          db,
+          `${caminhoComunicados}/${comunicadoIdPeloLink}`
+        );
 
-    abrirComunicado(
-      comunicado
-    );
-  },
-  [
-    comunicadoIdPeloLink,
-    comunicados,
-    comunicadoAberto,
-  ]
-);
+      const pararComunicadoDireto =
+        onValue(
+          referenciaComunicadoDireto,
+          (snapshot) => {
+            const valor =
+              snapshot.val();
+
+            if (!valor) {
+              return;
+            }
+
+            const comunicado = {
+              id:
+                comunicadoIdPeloLink,
+
+              ...(valor as Omit<
+                ComunicadoMorador,
+                "id"
+              >),
+            };
+
+            comunicadoLinkProcessadoRef.current =
+              comunicadoIdPeloLink;
+
+            abrirComunicado(
+              comunicado
+            );
+          },
+          {
+            onlyOnce: true,
+          }
+        );
+
+      return () =>
+        pararComunicadoDireto();
+    },
+    [
+      condominioId,
+      comunicadoIdPeloLink,
+      comunicadoAberto,
+      caminhoComunicados,
+    ]
+  );
 
 async function abrirComunicado(
     comunicado:
@@ -492,6 +540,23 @@ async function abrirComunicado(
     setComunicadoAberto(
       comunicado
     );
+
+    if (Capacitor.isNativePlatform()) {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          comunicadoControl
+            .comunicadoPronto()
+            .catch(
+              (erro) => {
+                console.error(
+                  "Erro ao remover cobertura nativa do comunicado:",
+                  erro
+                );
+              }
+            );
+        });
+      });
+    }
 
     const visualizacaoAtual =
       comunicado
@@ -576,6 +641,10 @@ async function abrirComunicado(
             Date.now(),
         }
       );
+
+      setComunicadoAberto(
+        null
+      );
     } catch (
       erro
     ) {
@@ -607,8 +676,13 @@ async function abrirComunicado(
     ).length;
 
   if (
-    carregando
+    carregando &&
+    !comunicadoAberto
   ) {
+    if (comunicadoIdPeloLink) {
+      return null;
+    }
+
     return (
       <section className="rounded-3xl border border-slate-800 bg-slate-900 p-6 text-slate-300">
         Carregando comunicados...

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { get, ref, onValue, push, set, update } from "firebase/database";
+import { get, ref, onValue, orderByKey, push, query, set, startAt, update } from "firebase/database";
 import { db } from "../services/firebase";
 import Unidades from "../components/dashboard/Unidades";
 import Moradores from "../components/dashboard/Moradores";
@@ -101,6 +101,11 @@ export default function Dashboard() {
   const [telaAtiva, setTelaAtiva] = useState<Tela>("dashboard");
   const [menuMobileAberto, setMenuMobileAberto] = useState(false);
   const [localAberto, setLocalAberto] = useState<LocalCadastrado | null>(null);
+  const [editandoLocal, setEditandoLocal] = useState(false);
+  const [salvandoEdicaoLocal, setSalvandoEdicaoLocal] = useState(false);
+  const [nomeLocalEdicao, setNomeLocalEdicao] = useState("");
+  const [cidadeLocalEdicao, setCidadeLocalEdicao] = useState("");
+  const [estadoLocalEdicao, setEstadoLocalEdicao] = useState("");
   const [modalNovoLocalAberto, setModalNovoLocalAberto] = useState(false);
   const [buscaLocal, setBuscaLocal] = useState("");
   const [filtroTipoLocal, setFiltroTipoLocal] = useState("todos");
@@ -151,6 +156,10 @@ export default function Dashboard() {
   const [locais, setLocais] = useState<LocalCadastrado[]>([]);
   const [unidades, setUnidades] = useState<UnidadeCadastrada[]>([]);
   const [moradores, setMoradores] = useState<MoradorCadastrado[]>([]);
+  const [unidadesV2Cards, setUnidadesV2Cards] = useState<Record<string, any>>({});
+  const [usuariosV2Cards, setUsuariosV2Cards] = useState<Record<string, any>>({});
+  const [historicoChamadasLocal, setHistoricoChamadasLocal] = useState<any[]>([]);
+  const [carregandoHistoricoChamadas, setCarregandoHistoricoChamadas] = useState(false);
   const [atualizacoesCadastrais, setAtualizacoesCadastrais] =
     useState<AtualizacaoCadastral[]>([]);
   const [filtroImplantacao, setFiltroImplantacao] = useState<
@@ -158,7 +167,7 @@ export default function Dashboard() {
   >("acao");
 
   useEffect(() => {
-    const locaisRef = ref(db, "qrCentral/locais");
+    const locaisRef = ref(db, "locais-v2");
 
     const desligar = onValue(locaisRef, (snapshot) => {
       
@@ -175,6 +184,114 @@ export default function Dashboard() {
       }));
 
       setLocais(lista);
+    });
+
+    return () => desligar();
+  }, []);
+
+  useEffect(() => {
+    const unidadesV2Ref = ref(db, "unidades-v2");
+
+    const desligar = onValue(unidadesV2Ref, (snapshot) => {
+      setUnidadesV2Cards(snapshot.val() || {});
+    });
+
+    return () => desligar();
+  }, []);
+
+  useEffect(() => {
+    if (!localAberto || abaLocalAtiva !== "historico") {
+      setHistoricoChamadasLocal([]);
+      setCarregandoHistoricoChamadas(false);
+      return;
+    }
+
+    const unidadesDoLocal = Object.entries(unidadesV2Cards)
+      .filter(([unidadeId, unidade]: any) => {
+        const pertenceAoLocal =
+          unidade?.localId === localAberto.id ||
+          unidade?.condominioId === localAberto.id ||
+          unidadeId.startsWith(`${localAberto.id}-`);
+
+        return pertenceAoLocal;
+      })
+      .map(([unidadeId, unidade]: any) => ({
+        unidadeId,
+        unidadeNome: unidade?.nome || unidadeId,
+      }));
+
+    if (unidadesDoLocal.length === 0) {
+      setHistoricoChamadasLocal([]);
+      setCarregandoHistoricoChamadas(false);
+      return;
+    }
+
+    setCarregandoHistoricoChamadas(true);
+
+    const historicosPorUnidade: Record<string, any[]> = {};
+
+    const atualizarHistorico = () => {
+      const lista = Object.values(historicosPorUnidade)
+        .flat()
+        .sort((a: any, b: any) => b.ordem - a.ordem);
+
+      setHistoricoChamadasLocal(lista);
+      setCarregandoHistoricoChamadas(false);
+    };
+
+    const desligadores = unidadesDoLocal.map(({ unidadeId, unidadeNome }) => {
+      const limiteHistorico = Date.now() - 30 * 24 * 60 * 60 * 1000;
+      const historicoRef = query(
+        ref(db, `historico-v2/${unidadeId}`),
+        orderByKey(),
+        startAt(String(limiteHistorico))
+      );
+
+      return onValue(historicoRef, (snapshot) => {
+        const dados = snapshot.val() || {};
+
+        historicosPorUnidade[unidadeId] = Object.entries(dados)
+          .map(([historicoId, chamada]: any) => {
+            const encerradoEm = chamada?.encerradoEm || "";
+            const criadoEm = chamada?.criadoEm || "";
+
+            const ordemEncerramento = Date.parse(encerradoEm);
+            const ordemCriacao =
+              typeof criadoEm === "number"
+                ? criadoEm
+                : Date.parse(String(criadoEm));
+
+            const ordem =
+              Number.isFinite(ordemEncerramento)
+                ? ordemEncerramento
+                : Number.isFinite(ordemCriacao)
+                  ? ordemCriacao
+                  : Number(historicoId) || 0;
+
+            return {
+              id: historicoId,
+              unidadeId,
+              unidadeNome,
+              ordem,
+              ...chamada,
+            };
+          })
+          .filter((chamada: any) => chamada.ordem >= limiteHistorico);
+
+        atualizarHistorico();
+      });
+    });
+
+    return () => {
+      desligadores.forEach((desligar) => desligar());
+    };
+  }, [localAberto, abaLocalAtiva, unidadesV2Cards]);
+
+  useEffect(() => {
+    const usuariosV2Ref = ref(db, "usuarios-v2");
+
+    const desligar = onValue(usuariosV2Ref, (snapshot) => {
+      setUsuariosV2Cards(snapshot.val() || {});
     });
 
     return () => desligar();
@@ -865,10 +982,67 @@ async function atualizarMorador(
 
   function abrirPerfilLocal(local: LocalCadastrado) {
     setLocalAberto(local);
+    setEditandoLocal(false);
     setAbaLocalAtiva("geral");
   }
 
+  function iniciarEdicaoLocal() {
+    if (!localAberto) return;
+
+    setNomeLocalEdicao(localAberto.nome || "");
+    setCidadeLocalEdicao(localAberto.cidade || "");
+    setEstadoLocalEdicao(localAberto.estado || "");
+    setEditandoLocal(true);
+  }
+
+  function cancelarEdicaoLocal() {
+    setEditandoLocal(false);
+  }
+
+  async function salvarEdicaoLocal() {
+    if (!localAberto || salvandoEdicaoLocal) return;
+
+    const nome = nomeLocalEdicao.trim();
+    const cidade = cidadeLocalEdicao.trim();
+    const estado = estadoLocalEdicao.trim();
+
+    if (!nome) {
+      alert("Digite o nome do local.");
+      return;
+    }
+
+    try {
+      setSalvandoEdicaoLocal(true);
+
+      await update(ref(db, `locais-v2/${localAberto.id}`), {
+        nome,
+        cidade,
+        estado,
+      });
+
+      setLocalAberto((atual) =>
+        atual
+          ? {
+              ...atual,
+              nome,
+              cidade,
+              estado,
+            }
+          : atual
+      );
+
+      setEditandoLocal(false);
+    } catch (erro) {
+      console.error("Erro ao atualizar local:", erro);
+      alert("Nao foi possivel salvar as alteracoes do local.");
+    } finally {
+      setSalvandoEdicaoLocal(false);
+    }
+  }
+
   function fecharPerfilLocal() {
+    if (salvandoEdicaoLocal) return;
+    setEditandoLocal(false);
     setLocalAberto(null);
     setAbaLocalAtiva("geral");
   }
@@ -1572,14 +1746,62 @@ setMenuMobileAberto(false);
                 ) : (
                   <div className="mt-5 grid gap-3">
                     {locaisFiltrados.map((local) => {
-                      const unidadesDoLocal = unidades.filter(
-                        (unidade) => unidade.localId === local.id
-                      );
+                      const unidadesDoLocal = Object.entries(unidadesV2Cards)
+                        .filter(([unidadeId, unidade]: any) => {
+                          const status = String(unidade?.status || "").toLowerCase();
 
-                      const moradoresDoLocal = moradores.filter((morador) =>
-                        unidadesDoLocal.some(
-                          (unidade) => unidade.id === morador.unidadeId
-                        )
+                          const ativa = ![
+                            "inativa",
+                            "inativo",
+                            "arquivada",
+                            "arquivado",
+                            "excluida",
+                            "excluido",
+                          ].includes(status);
+
+                          const pertenceAoLocal =
+                            unidade?.localId === local.id ||
+                            unidadeId.startsWith(`${local.id}-`);
+
+                          return ativa && pertenceAoLocal;
+                        })
+                        .map(([id, unidade]: any) => ({
+                          id,
+                          ...unidade,
+                        }));
+
+                      const moradoresDoLocal = Object.entries(usuariosV2Cards).filter(
+                        ([, usuario]: any) => {
+                          const fontes = [
+                            usuario?.locais,
+                            usuario?.condominios,
+                            usuario?.vinculos,
+                          ];
+
+                          return fontes.some((fonte: any) => {
+                            if (!fonte) return false;
+
+                            return Object.entries(fonte).some(
+                              ([vinculoId, vinculo]: any) => {
+                                if (!vinculo || vinculo.ativo === false) {
+                                  return false;
+                                }
+
+                                const mesmoLocal =
+                                  vinculoId === local.id ||
+                                  vinculo.localId === local.id ||
+                                  vinculo.localSlug === local.id;
+
+                                if (!mesmoLocal) return false;
+
+                                return unidadesDoLocal.some(
+                                  (unidade) =>
+                                    vinculo.unidades?.[unidade.id] === true
+                                );
+                              }
+                            );
+                          });
+                        }
                       );
 
                       const ativo = local.status === "ativo";
@@ -2472,24 +2694,61 @@ setMenuMobileAberto(false);
                     <div className="mt-5 space-y-4">
                       <div className="grid gap-4 lg:grid-cols-3">
                         <div className="rounded-2xl border border-slate-700 bg-slate-800 p-4 lg:col-span-2">
-                          <p className="text-xs font-bold text-slate-400">
-                            DADOS PRINCIPAIS
-                          </p>
+                          <div className="flex items-center justify-between gap-3">
+                            <p className="text-xs font-bold text-slate-400">
+                              DADOS PRINCIPAIS
+                            </p>
+
+                            {!editandoLocal ? (
+                              <button
+                                type="button"
+                                onClick={iniciarEdicaoLocal}
+                                className="rounded-lg bg-blue-600 px-3 py-2 text-xs font-black text-white transition-all hover:bg-blue-500 active:scale-95"
+                              >
+                                Editar
+                              </button>
+                            ) : (
+                              <div className="flex gap-2">
+                                <button
+                                  type="button"
+                                  onClick={cancelarEdicaoLocal}
+                                  disabled={salvandoEdicaoLocal}
+                                  className="rounded-lg bg-slate-700 px-3 py-2 text-xs font-black text-white transition-all hover:bg-slate-600 disabled:opacity-50"
+                                >
+                                  Cancelar
+                                </button>
+
+                                <button
+                                  type="button"
+                                  onClick={salvarEdicaoLocal}
+                                  disabled={salvandoEdicaoLocal}
+                                  className="rounded-lg bg-green-600 px-3 py-2 text-xs font-black text-white transition-all hover:bg-green-500 disabled:opacity-50"
+                                >
+                                  {salvandoEdicaoLocal ? "Salvando..." : "Salvar"}
+                                </button>
+                              </div>
+                            )}
+                          </div>
 
                           <div className="mt-4 grid gap-4 sm:grid-cols-2">
                             <div>
-                              <p className="text-xs text-slate-500">
-                                Nome
-                              </p>
-                              <p className="mt-1 font-black text-white">
-                                {localAberto.nome}
-                              </p>
+                              <p className="text-xs text-slate-500">Nome</p>
+                              {editandoLocal ? (
+                                <input
+                                  type="text"
+                                  value={nomeLocalEdicao}
+                                  onChange={(e) => setNomeLocalEdicao(e.target.value)}
+                                  className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 font-bold text-white outline-none focus:border-blue-500"
+                                />
+                              ) : (
+                                <p className="mt-1 font-black text-white">
+                                  {localAberto.nome}
+                                </p>
+                              )}
                             </div>
 
                             <div>
-                              <p className="text-xs text-slate-500">
-                                Tipo
-                              </p>
+                              <p className="text-xs text-slate-500">Tipo</p>
                               <p className="mt-1 font-black text-white">
                                 {formatarTextoTipo(localAberto.tipo)}
                               </p>
@@ -2499,27 +2758,46 @@ setMenuMobileAberto(false);
                               <p className="text-xs text-slate-500">
                                 Cidade / Estado
                               </p>
-                              <p className="mt-1 font-black text-white">
-                                {localAberto.cidade}/{localAberto.estado}
-                              </p>
+
+                              {editandoLocal ? (
+                                <div className="mt-1 flex gap-2">
+                                  <input
+                                    type="text"
+                                    value={cidadeLocalEdicao}
+                                    onChange={(e) => setCidadeLocalEdicao(e.target.value)}
+                                    placeholder="Cidade"
+                                    className="min-w-0 flex-1 rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 font-bold text-white outline-none focus:border-blue-500"
+                                  />
+                                  <input
+                                    type="text"
+                                    value={estadoLocalEdicao}
+                                    onChange={(e) =>
+                                      setEstadoLocalEdicao(e.target.value.toUpperCase())
+                                    }
+                                    placeholder="UF"
+                                    maxLength={2}
+                                    className="w-20 rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-center font-bold text-white outline-none focus:border-blue-500"
+                                  />
+                                </div>
+                              ) : (
+                                <p className="mt-1 font-black text-white">
+                                  {localAberto.cidade}/{localAberto.estado}
+                                </p>
+                              )}
                             </div>
 
                             <div>
-                              <p className="text-xs text-slate-500">
-                                Plano
-                              </p>
+                              <p className="text-xs text-slate-500">Plano</p>
                               <p className="mt-1 font-black text-blue-300">
                                 {localAberto.plano}
                               </p>
                             </div>
 
                             <div>
-                              <p className="text-xs text-slate-500">
-                                Status
-                              </p>
+                              <p className="text-xs text-slate-500">Status</p>
                               <p className="mt-1 font-black text-green-300">
                                 {localAberto.status === "ativo"
-                                  ? "🟢 Ativo"
+                                  ? "Ativo"
                                   : localAberto.status}
                               </p>
                             </div>
@@ -2882,18 +3160,154 @@ setMenuMobileAberto(false);
                   {abaLocalAtiva === "historico" && (
                     <div className="mt-5 rounded-2xl border border-blue-800 bg-blue-950/20 p-5">
                       <p className="text-xs font-bold text-blue-300">
-                        🕘 HISTÓRICO DO LOCAL
+                        HISTORICO DO LOCAL
                       </p>
-                      <p className="mt-2 text-2xl font-black text-white">
-                        Linha do tempo geral
-                      </p>
-                      <p className="mt-2 text-sm text-slate-400">
-                        Eventos de unidades, moradores, acessos, entregas,
-                        hardware e operação serão consolidados aqui.
-                      </p>
+
+                      <div className="mt-2 flex flex-wrap items-end justify-between gap-3">
+                        <div>
+                          <p className="text-2xl font-black text-white">
+                            Chamadas
+                          </p>
+                          <p className="mt-1 text-sm text-slate-400">
+                            Atendimentos registrados nas unidades deste local.
+                          </p>
+                        </div>
+
+                        <div className="flex flex-wrap items-end gap-2">
+                          <div>
+                            <label className="mb-1 block text-xs font-bold text-slate-400">
+                              Periodo do PDF
+                            </label>
+                            <select
+                              id="periodo-pdf-historico"
+                              defaultValue="30"
+                              className="rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none"
+                            >
+                              <option value="30">Ultimos 30 dias</option>
+                              <option value="90">Ultimos 90 dias</option>
+                              <option value="180">Ultimos 6 meses</option>
+                              <option value="365">Ultimos 12 meses</option>
+                            </select>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (!localAberto) return;
+
+                              const seletor = document.getElementById(
+                                "periodo-pdf-historico"
+                              ) as HTMLSelectElement | null;
+
+                              const dias = Number(seletor?.value || 30);
+                              const fim = Date.now();
+                              const inicio =
+                                fim - dias * 24 * 60 * 60 * 1000;
+
+                              const parametros = new URLSearchParams({
+                                localId: localAberto.id,
+                                inicio: String(inicio),
+                                fim: String(fim),
+                              });
+
+                              window.open(
+                                `/api/historico/chamadas-pdf?${parametros.toString()}`,
+                                "_blank"
+                              );
+                            }}
+                            className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-black text-white transition hover:bg-blue-500"
+                          >
+                            Gerar PDF
+                          </button>
+
+                          <div className="rounded-xl border border-slate-700 bg-slate-900 px-4 py-2 text-center">
+                            <p className="text-xs text-slate-500">Registros</p>
+                            <p className="text-xl font-black text-white">
+                              {historicoChamadasLocal.length}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {carregandoHistoricoChamadas ? (
+                        <div className="mt-5 rounded-xl border border-slate-700 bg-slate-900 p-5 text-sm text-slate-400">
+                          Carregando historico...
+                        </div>
+                      ) : historicoChamadasLocal.length === 0 ? (
+                        <div className="mt-5 rounded-xl border border-slate-700 bg-slate-900 p-5">
+                          <p className="font-bold text-white">
+                            Nenhuma chamada registrada.
+                          </p>
+                          <p className="mt-1 text-sm text-slate-400">
+                            Nao foram encontrados registros de chamadas para as unidades deste local.
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="mt-5 space-y-3">
+                          {historicoChamadasLocal.map((chamada: any) => {
+                            const dataReferencia =
+                              chamada.encerradoEm ||
+                              chamada.atendidoEm ||
+                              chamada.criadoEm;
+
+                            let dataFormatada = "-";
+
+                            if (dataReferencia) {
+                              const data =
+                                typeof dataReferencia === "number"
+                                  ? new Date(dataReferencia)
+                                  : new Date(String(dataReferencia));
+
+                              if (!Number.isNaN(data.getTime())) {
+                                dataFormatada = data.toLocaleString("pt-BR");
+                              }
+                            }
+
+                            return (
+                              <div
+                                key={`${chamada.unidadeId}-${chamada.id}`}
+                                className="rounded-xl border border-slate-700 bg-slate-900 p-4"
+                              >
+                                <div className="flex flex-wrap items-start justify-between gap-3">
+                                  <div>
+                                    <p className="font-black text-white">
+                                      {chamada.unidadeNome}
+                                    </p>
+                                    <p className="mt-1 text-sm text-slate-400">
+                                      Visitante:{" "}
+                                      {chamada.nome ||
+                                        chamada.nomeVisitante ||
+                                        "Nao informado"}
+                                    </p>
+                                    <p className="mt-1 text-sm text-slate-400">
+                                      Motivo: {chamada.motivo || "Nao informado"}
+                                    </p>
+                                  </div>
+
+                                  <div className="text-right">
+                                    <p className="text-sm font-bold text-green-300">
+                                      {chamada.statusFinal ||
+                                        chamada.status ||
+                                        "Encerrado"}
+                                    </p>
+                                    <p className="mt-1 text-xs text-slate-500">
+                                      {dataFormatada}
+                                    </p>
+                                  </div>
+                                </div>
+
+                                {chamada.tipoFinalizacao && (
+                                  <p className="mt-3 border-t border-slate-800 pt-3 text-xs text-slate-500">
+                                    Finalizacao: {chamada.tipoFinalizacao}
+                                  </p>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
                   )}
-
                   {abaLocalAtiva !== "geral" &&
                     abaLocalAtiva !== "estrutura" &&
                     abaLocalAtiva !== "operacao" &&

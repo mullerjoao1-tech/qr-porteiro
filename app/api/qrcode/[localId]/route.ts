@@ -1,4 +1,4 @@
-import "server-only";
+﻿import "server-only";
 
 import QRCode from "qrcode";
 
@@ -354,7 +354,7 @@ export async function GET(
           sucesso: false,
 
           mensagem:
-            "O local não foi informado.",
+            "O local nÃ£o foi informado.",
         },
         {
           status: 400,
@@ -374,7 +374,7 @@ export async function GET(
           sucesso: false,
 
           mensagem:
-            "Local não encontrado para gerar o QR principal.",
+            "Local nÃ£o encontrado para gerar o QR principal.",
         },
         {
           status: 404,
@@ -390,7 +390,7 @@ export async function GET(
           sucesso: false,
 
           mensagem:
-            "O QR principal deste local está inativo.",
+            "O QR principal deste local estÃ¡ inativo.",
         },
         {
           status: 410,
@@ -407,7 +407,7 @@ export async function GET(
           sucesso: false,
 
           mensagem:
-            "A URL de destino do QR não foi encontrada.",
+            "A URL de destino do QR nÃ£o foi encontrada.",
         },
         {
           status: 422,
@@ -574,10 +574,10 @@ export async function GET(
     const mensagem =
       erro instanceof Error
         ? erro.message
-        : "Não foi possível gerar o QR Code.";
+        : "NÃ£o foi possÃ­vel gerar o QR Code.";
 
     console.error(
-      "Erro ao gerar QR dinâmico:",
+      "Erro ao gerar QR dinÃ¢mico:",
       erro
     );
 

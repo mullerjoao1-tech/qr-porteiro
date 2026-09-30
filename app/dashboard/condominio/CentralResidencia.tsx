@@ -271,7 +271,7 @@ export default function CentralResidencia() {
             : "border border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700",
         ].join(" ")}
       >
-        InÃƒÂ­cio
+        Início
       </button>
 
       <button
@@ -284,7 +284,7 @@ export default function CentralResidencia() {
             : "border border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700",
         ].join(" ")}
       >
-        FamÃƒÂ­lia / Moradores
+        Família / Moradores
       </button>
 
       <button

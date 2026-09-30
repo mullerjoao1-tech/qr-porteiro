@@ -1,4 +1,4 @@
-import "server-only";
+﻿import "server-only";
 
 import type {
   ImplantacaoContext,
@@ -122,7 +122,7 @@ export function gerarQr(
 
   /*
    * O QR precisa codificar a URL direta.
-   * Assim, a câmera do celular abre imediatamente
+   * Assim, a cÃ¢mera do celular abre imediatamente
    * o acesso do visitante ao escanear a placa.
    */
   const valor =

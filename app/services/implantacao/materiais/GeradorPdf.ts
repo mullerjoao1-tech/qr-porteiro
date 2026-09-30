@@ -8,6 +8,7 @@ import type {
 
 import ResidenciaA4 from "./templates/ResidenciaA4";
 import CondominioA4 from "./templates/CondominioA4";
+import CondominioVertical from "./templates/CondominioVertical";
 
 const templates: Record<
   SegmentoMaterial,
@@ -65,6 +66,13 @@ export async function gerarMaterialCondominio(
   dados: DadosMaterial
 ) {
   return CondominioA4.gerar(
+    dados
+  );
+}
+export async function gerarMaterialCondominioVertical(
+  dados: DadosMaterial
+) {
+  return CondominioVertical.gerar(
     dados
   );
 }

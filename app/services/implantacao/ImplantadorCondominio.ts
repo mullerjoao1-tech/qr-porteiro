@@ -164,9 +164,25 @@ async function gerarEstruturaComFallback(
           configuracao.dados
             .quantidadeBlocos,
 
+        identificadoresBlocos:
+          configuracao.dados
+            .identificadoresBlocos,
+
         apartamentosPorBloco:
           configuracao.dados
             .apartamentosPorBloco,
+
+        numerosApartamentos:
+          configuracao.dados
+            .numerosApartamentos,
+
+        apartamentosPorIdentificadorBloco:
+          configuracao.dados
+            .apartamentosPorIdentificadorBloco,
+
+        apartamentosPorAndarPorBloco:
+          configuracao.dados
+            .apartamentosPorAndarPorBloco,
 
         quantidadeCasas:
           configuracao.dados

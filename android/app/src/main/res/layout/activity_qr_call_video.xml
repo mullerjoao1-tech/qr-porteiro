@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!-- QRCALL_A9_5F_LAYOUT_VIDEO -->
+
+<FrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#020617">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_marginStart="22dp"
+        android:layout_marginEnd="22dp"
+        android:orientation="vertical"
+        android:gravity="center_horizontal"
+        android:padding="22dp"
+        android:background="@drawable/bg_call_card"
+        android:elevation="24dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="VIDEOCHAMADA"
+            android:textColor="#FFFFFF"
+            android:textSize="26sp"
+            android:textStyle="bold"
+            android:gravity="center" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:text="Visitante aguardando atendimento"
+            android:textColor="#93C5FD"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:gravity="center" />
+
+        <TextView
+            android:id="@+id/qr_call_nome"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:text="Visitante"
+            android:textColor="#FFFFFF"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:gravity="center" />
+
+        <TextView
+            android:id="@+id/qr_call_motivo"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Motivo"
+            android:textColor="#CBD5E1"
+            android:textSize="16sp"
+            android:gravity="center" />
+
+        <Button
+            android:id="@+id/qr_call_atender"
+            android:layout_width="match_parent"
+            android:layout_height="64dp"
+            android:layout_marginTop="22dp"
+            android:text="ATENDER VIDEOCHAMADA"
+            android:textColor="#000000"
+            android:textSize="17sp"
+            android:textStyle="bold"
+            android:backgroundTint="#22C55E"
+            android:enabled="false" />
+
+        <Button
+            android:id="@+id/qr_call_nao_posso"
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:layout_marginTop="10dp"
+            android:text="NAO POSSO ATENDER"
+            android:textColor="#FFFFFF"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:backgroundTint="#2563EB"
+            android:enabled="false" />
+
+    </LinearLayout>
+
+</FrameLayout>

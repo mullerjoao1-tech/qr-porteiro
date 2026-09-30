@@ -11,6 +11,7 @@ import {
 
 import {
   gerarMaterialPdf,
+  gerarMaterialCondominioVertical,
   type DadosMaterial,
   type SegmentoMaterial,
   type TemaMaterial,
@@ -328,7 +329,7 @@ export async function GET(
             false,
 
           mensagem:
-            "O local não foi informado.",
+            "O local nÃ£o foi informado.",
         },
         {
           status:
@@ -349,7 +350,7 @@ export async function GET(
             false,
 
           mensagem:
-            "Local não encontrado em locais-v2 pelo ID ou slug.",
+            "Local nÃ£o encontrado em locais-v2 pelo ID ou slug.",
         },
         {
           status:
@@ -373,7 +374,7 @@ export async function GET(
             false,
 
           mensagem:
-            "O local está inativo.",
+            "O local estÃ¡ inativo.",
         },
         {
           status:
@@ -509,10 +510,21 @@ export async function GET(
           undefined,
       };
 
+    const orientacao =
+      request.nextUrl.searchParams
+        .get("orientacao")
+        ?.trim()
+        .toLowerCase();
+
     const resultado =
-      await gerarMaterialPdf(
-        dadosMaterial
-      );
+      segmento === "condominio" &&
+      orientacao === "vertical"
+        ? await gerarMaterialCondominioVertical(
+            dadosMaterial
+          )
+        : await gerarMaterialPdf(
+            dadosMaterial
+          );
 
     return new Response(
       Buffer.from(

@@ -237,10 +237,55 @@ function gerarEstruturaVertical(
     ConfiguracaoCondominioGerador
 ): EstruturaUnidadesGerada {
   const numerosApartamentos =
-    gerarNumeracaoApartamentos(
-      configuracao
-        .apartamentosPorBloco
-    );
+    configuracao.numerosApartamentos &&
+    configuracao.numerosApartamentos.length > 0
+      ? configuracao.numerosApartamentos
+          .map((numero) =>
+            String(numero).trim()
+          )
+          .filter(Boolean)
+      : gerarNumeracaoApartamentos(
+          configuracao
+            .apartamentosPorBloco
+        );
+  const apartamentosPorBlocoVindosDosAndares:
+    Record<string, string[]> =
+      Object.fromEntries(
+        Object.entries(
+          configuracao
+            .apartamentosPorAndarPorBloco ||
+            {}
+        ).map(
+          ([
+            bloco,
+            apartamentosPorAndar,
+          ]) => [
+            bloco,
+            Object.values(
+              apartamentosPorAndar ||
+                {}
+            )
+              .flat()
+              .map(
+                (numero) =>
+                  String(
+                    numero
+                  ).trim()
+              )
+              .filter(
+                Boolean
+              ),
+          ]
+        )
+      );
+
+  const apartamentosPorBlocoEfetivos =
+    Object.keys(
+      apartamentosPorBlocoVindosDosAndares
+    ).length > 0
+      ? apartamentosPorBlocoVindosDosAndares
+      : configuracao
+          .apartamentosPorIdentificadorBloco;
 
   return gerarEstrutura({
     tipoEstrutura:
@@ -271,12 +316,19 @@ function gerarEstruturaVertical(
       configuracao
         .quantidadeBlocos,
 
+    identificadoresPais:
+      configuracao
+        .identificadoresBlocos,
+
     quantidadeFilhos:
       configuracao
         .apartamentosPorBloco,
 
     numerosFilhos:
       numerosApartamentos,
+
+    numerosFilhosPorPai:
+      apartamentosPorBlocoEfetivos,
 
     prefixoSlugFilho:
       "ap",

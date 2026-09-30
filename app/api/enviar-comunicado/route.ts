@@ -253,42 +253,61 @@ export async function POST(request: Request) {
     const messaging = getMessaging(app);
     const urlBase = obterUrlBase(request);
 
-    const tokensSnapshot = await db
-      .ref("configuracoes-v2/tokensMorador")
-      .get();
+    const unidadesParaPush =
+      unidadesSolicitadas.length > 0
+        ? unidadesSolicitadas
+        : [];
 
-    const tokensCadastrados =
-      (tokensSnapshot.val() as Record<string, RegistroTokenMorador> | null) ||
-      {};
+    const destinatarios: DestinatarioPush[] = [];
 
-    let destinatarios = Object.entries(tokensCadastrados)
-      .map(([unidadeIdChave, valor]) =>
-        normalizarRegistroToken(unidadeIdChave, valor)
-      )
-      .filter((registro) => Boolean(registro.token));
+    for (const unidadeDestino of unidadesParaPush) {
+      const unidadeTokenNativo =
+        condominioId === "residencial-tulipas" &&
+        !unidadeDestino.startsWith("residencial-tulipas-")
+          ? `residencial-tulipas-${unidadeDestino}`
+          : unidadeDestino;
 
-    if (unidadesSolicitadas.length > 0) {
-      const unidadesPermitidas = new Set(unidadesSolicitadas);
+      const dispositivosSnapshot = await db
+        .ref(`configuracoes-v2/tokensNativos/${unidadeTokenNativo}`)
+        .get();
 
-      destinatarios = destinatarios.filter((registro) =>
-        unidadesPermitidas.has(registro.unidadeId)
-      );
-    } else if (condominioId) {
-      destinatarios = destinatarios.filter(
-        (registro) => registro.condominioId === condominioId
-      );
+      const dispositivos =
+        dispositivosSnapshot.val() as
+          Record<
+            string,
+            {
+              token?: string;
+              usuarioUid?: string | null;
+            }
+          > | null;
+
+      if (!dispositivos) {
+        continue;
+      }
+
+      for (const dispositivo of Object.values(dispositivos)) {
+        const token = String(dispositivo?.token || "").trim();
+
+        if (token) {
+          destinatarios.push({
+            unidadeId: unidadeDestino,
+            condominioId,
+            token,
+          });
+        }
+      }
     }
 
-    destinatarios = removerDuplicados(destinatarios);
+    const destinatariosUnicos = removerDuplicados(destinatarios);
 
-    if (destinatarios.length === 0) {
+    if (destinatariosUnicos.length === 0) {
       return NextResponse.json(
         {
           ok: false,
-          erro: "Nenhum token encontrado para os destinatários informados.",
+          erro: "Nenhum token nativo encontrado para os destinatários informados.",
           unidadesSolicitadas,
           condominioId,
-          chavesDisponiveis: Object.keys(tokensCadastrados),
+          unidadesConsultadas: unidadesParaPush,
         },
         { status: 400 }
       );
@@ -304,7 +323,7 @@ export async function POST(request: Request) {
       };
     }> = [];
 
-    for (const destinatario of destinatarios) {
+    for (const destinatario of destinatariosUnicos) {
       const { unidadeId: unidadeDestino, token } = destinatario;
       const link =
         `${urlBase}/dashboard/morador/comunicados` +
@@ -328,15 +347,6 @@ export async function POST(request: Request) {
                 ? `${mensagem.slice(0, 117)}...`
                 : mensagem,
             url: link,
-          },
-          webpush: {
-            headers: {
-              Urgency: "high",
-              TTL: "86400",
-            },
-            fcmOptions: {
-              link,
-            },
           },
         });
 

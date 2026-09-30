@@ -1698,9 +1698,9 @@ function salvarIdentidadeChamada(
           setEnviandoAudio(false);
           setDiagnostico("Nenhum responsavel disponivel.");
           setMensagem("Nenhum responsavel esta disponivel no momento.");
-          setTimeout(() => {
-            limparSelecao();
-          }, 3000);
+        setTimeout(() => {
+          limparSelecao();
+        }, 3000);
 
           return;
         }

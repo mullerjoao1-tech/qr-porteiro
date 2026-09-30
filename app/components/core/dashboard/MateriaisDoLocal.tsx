@@ -27,6 +27,7 @@ type Props = {
   painel?: string;
   atualizacao?: string;
   titulo?: string;
+  placaVertical?: boolean;
 };
 
 function montarUrlCompleta(caminho?: string) {
@@ -58,8 +59,14 @@ function obterUrlQr(
   );
 }
 
-function obterUrlPlaca(localId: string) {
-  return `/api/materiais/qrcode/${encodeURIComponent(localId)}`;
+function obterUrlPlaca(
+  localId: string,
+  orientacao?: "vertical"
+) {
+  const base = `/api/materiais/qrcode/${encodeURIComponent(localId)}`;
+  return orientacao === "vertical"
+    ? `${base}?orientacao=vertical`
+    : base;
 }
 
 export default function MateriaisDoLocal({
@@ -69,13 +76,21 @@ export default function MateriaisDoLocal({
   painel,
   atualizacao,
   titulo = "QR e materiais",
+  placaVertical = false,
 }: Props) {
   const [copiado, setCopiado] =
     useState<string | null>(null);
 
-  async function abrirPlacaPdfNoApp() {
+  async function abrirPlacaPdfNoApp(
+    orientacao?: "vertical"
+  ) {
     const url =
-      montarUrlCompleta(obterUrlPlaca(localId));
+      montarUrlCompleta(
+        obterUrlPlaca(
+          localId,
+          orientacao
+        )
+      );
 
     try {
       await MaterialPdf.abrirPdf({ url });
@@ -273,6 +288,59 @@ export default function MateriaisDoLocal({
         >
           Placa PDF
         </a>
+
+        {placaVertical && (
+          <a
+            href={obterUrlPlaca(localId, "vertical")}
+            target="_blank"
+            rel="noreferrer"
+            onClick={(evento) => {
+              if (!Capacitor.isNativePlatform()) {
+                return;
+              }
+
+              evento.preventDefault();
+              void abrirPlacaPdfNoApp("vertical");
+            }}
+            className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-center text-sm font-black text-emerald-300 transition hover:bg-emerald-500/20"
+          >
+            Placa vertical
+          </a>
+        )}
+      </div>
+
+      <div className="mt-5 border-t border-slate-800 pt-5">
+        <p className="mb-3 text-xs font-black uppercase tracking-wider text-slate-500">
+          Materiais de apoio
+        </p>
+
+        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+          {[
+            ["Guia do morador", "QR_Acesso_Guia_Morador_V5_telas_reais_video.pdf"],
+            ["Comunicado de implantacao", "QR_Acesso_Comunicado_Implantacao_Moradores_V1.pdf"],
+            ["Apresentacao sindico / administradora", "QR_Acesso_Apresentacao_Sindico_Administradora_V1.pdf"],
+            ["Modelo de primeiro acesso", "QR_Acesso_Email_Primeiro_Acesso_Modelo_V1.pdf"],
+            ["Aviso de inicio da operacao", "QR_Acesso_Aviso_Inicio_Operacao_Moradores_V2_CORRIGIDO.pdf"],
+            ["Lembrete de atualizacao cadastral", "QR_Acesso_Lembrete_Atualizacao_Cadastral_V1_CORRIGIDO.pdf"],
+            ["Mensagem para WhatsApp", "QR_Acesso_Mensagem_WhatsApp_Implantacao_V1.pdf"],
+            ["Duvidas frequentes", "QR_Acesso_Duvidas_Frequentes_Morador_V1_CORRIGIDO.pdf"],
+            ["Checklist de implantacao", "QR_Acesso_Checklist_Implantacao_Condominio_V1.pdf"],
+            ["Orientacao de contingencia", "QR_Acesso_Orientacao_Contingencia_Moradores_V1.pdf"],
+            ["Privacidade e uso responsavel", "QR_Acesso_Privacidade_Uso_Responsavel_Morador_V1.pdf"],
+            ["Cartao de suporte", "QR_Acesso_Cartao_Suporte_Morador_V1.pdf"],
+            ["Resumo do kit de comunicacao", "QR_Acesso_Kit_Comunicacao_Resumo_V3_CORRIGIDO.pdf"],
+          ].map(([rotulo, arquivo]) => (
+            <a
+              key={arquivo}
+              href={`/materiais-apoio/${arquivo}`}
+              target="_blank"
+              rel="noreferrer"
+              className="rounded-xl border border-violet-500/30 bg-violet-500/10 px-4 py-3 text-center text-sm font-black text-violet-300 transition hover:bg-violet-500/20"
+            >
+              {rotulo}
+            </a>
+          ))}
+        </div>
       </div>
 
       <div className="mt-5 border-t border-slate-800 pt-5">

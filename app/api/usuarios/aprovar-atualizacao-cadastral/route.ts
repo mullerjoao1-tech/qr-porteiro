@@ -152,7 +152,7 @@ function possuiPerfilAdministradorMaster(
   );
 }
 
-async function validarAdministradorMaster(
+async function obterUsuarioAprovador(
   request: NextRequest
 ) {
   const {
@@ -197,17 +197,110 @@ async function validarAdministradorMaster(
     );
   }
 
+  return {
+    uid: tokenDecodificado.uid,
+    usuario,
+  };
+}
+
+function podeAprovarCondominio(
+  usuario: UsuarioAdministrador,
+  condominioId: string
+): boolean {
   if (
-    !possuiPerfilAdministradorMaster(
+    possuiPerfilAdministradorMaster(
       usuario
     )
   ) {
-    throw new Error(
-      "Apenas o Administrador Master pode aprovar cadastros."
+    return true;
+  }
+
+  const localId =
+    texto(condominioId);
+
+  if (!localId) {
+    return false;
+  }
+
+  const possuiPerfilSindico = (
+    vinculo: {
+      ativo?: boolean;
+      perfilPrincipal?: string;
+      perfis?: Record<string, boolean>;
+    }
+  ) => {
+    if (
+      vinculo.ativo === false
+    ) {
+      return false;
+    }
+
+    const perfilPrincipal =
+      texto(
+        vinculo.perfilPrincipal
+      )
+        .toLowerCase()
+        .replaceAll("-", "_");
+
+    const perfilSindicoAtivo =
+      Object.entries(
+        vinculo.perfis ?? {}
+      ).some(
+        ([perfil, ativo]) =>
+          ativo === true &&
+          perfil
+            .trim()
+            .toLowerCase()
+            .replaceAll("-", "_") ===
+            "sindico"
+      );
+
+    return (
+      perfilPrincipal ===
+        "sindico" ||
+      perfilSindicoAtivo
+    );
+  };
+
+  const locaisAtivos =
+    Object.entries(
+      usuario.locais ?? {}
+    ).filter(
+      ([, vinculo]) =>
+        vinculo?.ativo !== false
+    );
+
+  if (
+    locaisAtivos.length > 0
+  ) {
+    return locaisAtivos.some(
+      ([chave, vinculo]) =>
+        (
+          chave === localId ||
+          texto(
+            (
+              vinculo as typeof vinculo & {
+                localId?: string;
+              }
+            ).localId
+          ) === localId
+        ) &&
+        possuiPerfilSindico(
+          vinculo
+        )
     );
   }
 
-  return tokenDecodificado.uid;
+  return Object.entries(
+    usuario.condominios ?? {}
+  ).some(
+    ([chave, vinculo]) =>
+      chave === localId &&
+      vinculo?.ativo !== false &&
+      possuiPerfilSindico(
+        vinculo
+      )
+  );
 }
 
 function gerarIdentificadorDependente(
@@ -268,8 +361,11 @@ export async function POST(
   request: NextRequest
 ) {
   try {
-    const administradorUid =
-      await validarAdministradorMaster(
+    const {
+      uid: administradorUid,
+      usuario: usuarioAprovador,
+    } =
+      await obterUsuarioAprovador(
         request
       );
 
@@ -284,6 +380,7 @@ export async function POST(
         await request.json()
       ) as {
         atualizacaoId?: unknown;
+        localId?: unknown;
         moradorId?: unknown;
         modo?: unknown;
         email?: unknown;
@@ -1237,6 +1334,42 @@ export async function POST(
       solicitacaoSnapshot.val() as
         SolicitacaoCadastral;
 
+    const condominioIdSolicitacao =
+      texto(solicitacao.condominioId);
+
+    const condominioSlugSolicitacao =
+      texto(solicitacao.condominioSlug);
+
+    const condominioNomeSolicitacao =
+      texto(solicitacao.condominioNome);
+
+    const solicitacaoAutorizacaoEhTulipas =
+      condominioIdSolicitacao
+        .toLowerCase()
+        .includes("tulipas") ||
+      condominioSlugSolicitacao
+        .toLowerCase()
+        .includes("tulipas") ||
+      condominioNomeSolicitacao
+        .toLowerCase()
+        .includes("tulipas");
+
+    const localIdAutorizacao =
+      solicitacaoAutorizacaoEhTulipas
+        ? "residencial-tulipas"
+        : condominioIdSolicitacao;
+
+    if (
+      !podeAprovarCondominio(
+        usuarioAprovador,
+        localIdAutorizacao
+      )
+    ) {
+      throw new Error(
+        "Voce nao possui permissao para aprovar cadastros deste condominio."
+      );
+    }
+
     const informarEmailAprovadoTulipas =
       modo ===
       "informar-email-aprovado-tulipas";
@@ -1911,6 +2044,16 @@ export async function POST(
           solicitacao.nome
         ) || "Morador";
 
+      const baseUrl =
+        texto(process.env.NEXT_PUBLIC_APP_URL)
+          .replace(/\/+$/, "");
+
+      if (!baseUrl) {
+        throw new Error(
+          "NEXT_PUBLIC_APP_URL nao configurada."
+        );
+      }
+
       await transportador.sendMail({
         from:
           `"QR Acesso" <${remetente}>`,
@@ -1954,8 +2097,23 @@ export async function POST(
             </p>
 
             <p>
-              <a href="https://qracesso.vercel.app/downloads/qr-acesso.apk">
+              <a href="${baseUrl}/downloads/qr-acesso.apk">
                 BAIXAR QR ACESSO PARA ANDROID
+              </a>
+            </p>
+
+            <p>
+              <strong>Guia rapido do morador</strong><br>
+              Veja como instalar, configurar e utilizar os principais
+              recursos do QR Acesso.
+            </p>
+
+            <p>
+              <a
+                href="${baseUrl}/materiais-apoio/QR_Acesso_Guia_Morador_V5_telas_reais_video.pdf"
+                style="display:inline-block;padding:12px 18px;background:#0f766e;color:white;text-decoration:none;border-radius:8px;font-weight:bold"
+              >
+                ABRIR GUIA DO MORADOR
               </a>
             </p>
 

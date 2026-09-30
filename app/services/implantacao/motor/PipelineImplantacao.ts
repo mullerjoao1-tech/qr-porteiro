@@ -1,4 +1,4 @@
-import "server-only";
+﻿import "server-only";
 
 import type {
   Database,
@@ -183,7 +183,7 @@ export async function executarPipelineImplantacao(
 
   try {
     contexto.resultado.mensagens.push(
-      "Pipeline de implantação iniciado."
+      "Pipeline de implantaÃ§Ã£o iniciado."
     );
 
     const estrutura =
@@ -223,7 +223,7 @@ export async function executarPipelineImplantacao(
       estrutura.totalUnidades;
 
     contexto.resultado.mensagens.push(
-      `${estrutura.totalUnidades} unidade(s) gerada(s) em memória.`
+      `${estrutura.totalUnidades} unidade(s) gerada(s) em memÃ³ria.`
     );
 
     const resultadoLinks =
@@ -303,7 +303,7 @@ export async function executarPipelineImplantacao(
       true;
 
     contexto.resultado.mensagens.push(
-      "Pipeline de implantação concluído com sucesso."
+      "Pipeline de implantaÃ§Ã£o concluÃ­do com sucesso."
     );
 
     return {
@@ -322,13 +322,13 @@ export async function executarPipelineImplantacao(
       dispositivos,
 
       mensagem:
-        "Estrutura, links, QR principal, permissões, hardware e Firebase preparados com sucesso.",
+        "Estrutura, links, QR principal, permissÃµes, hardware e Firebase preparados com sucesso.",
     };
   } catch (erro) {
     const mensagem =
       erro instanceof Error
         ? erro.message
-        : "Erro desconhecido no pipeline de implantação.";
+        : "Erro desconhecido no pipeline de implantaÃ§Ã£o.";
 
     contexto.resultado.sucesso =
       false;
@@ -346,7 +346,7 @@ export async function executarPipelineImplantacao(
       contexto.resultado.avisos.push(
         erroRollback instanceof Error
           ? erroRollback.message
-          : "Não foi possível concluir o rollback do pipeline."
+          : "NÃ£o foi possÃ­vel concluir o rollback do pipeline."
       );
     }
 

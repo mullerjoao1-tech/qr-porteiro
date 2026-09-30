@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.util.Log;
 
 import com.getcapacitor.BridgeActivity;
+import com.google.firebase.messaging.FirebaseMessaging;
 
 public class MainActivity extends BridgeActivity {
 
@@ -18,6 +19,8 @@ public class MainActivity extends BridgeActivity {
 
     private String rotaPendente = null;
     private String acaoChamadaPendente = null;
+    private android.widget.FrameLayout coberturaComunicado = null;
+    private android.widget.TextView diagnosticoComunicadoView = null;
     private final android.os.Handler chamadaHandler =
         new android.os.Handler(android.os.Looper.getMainLooper());
     private android.widget.TextView coberturaChamada = null;
@@ -201,7 +204,29 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(QrCallLivePlugin.class);
         registerPlugin(MaterialPdfPlugin.class);
         registerPlugin(QrDownloadPlugin.class);
+        registerPlugin(ComunicadoControlPlugin.class);
         super.onCreate(savedInstanceState);
+
+        FirebaseMessaging.getInstance()
+            .getToken()
+            .addOnCompleteListener(task -> {
+                if (!task.isSuccessful()) {
+                    Log.e(
+                        "FCM_NATIVO",
+                        "Falha ao obter token FCM atual",
+                        task.getException()
+                    );
+                    return;
+                }
+
+                String tokenAtual = task.getResult();
+
+                Log.d(
+                    "FCM_NATIVO",
+                    "Token FCM atual obtido: " + tokenAtual
+                );
+            });
+
         handleIntent(getIntent());
 
         appUpdateManager = new AppUpdateManager(this);
@@ -218,6 +243,123 @@ public class MainActivity extends BridgeActivity {
         if (!abriuPorChamada) {
             appUpdateManager.verificarAtualizacao();
         }
+    }
+
+    private void mostrarCoberturaComunicado(
+        String titulo,
+        String mensagem
+    ) {
+        if (titulo == null) titulo = "Novo comunicado";
+        if (mensagem == null) mensagem = "";
+
+        if (coberturaComunicado != null) {
+            ((android.view.ViewGroup) coberturaComunicado.getParent())
+                .removeView(coberturaComunicado);
+        }
+
+        android.widget.FrameLayout fundo =
+            new android.widget.FrameLayout(this);
+
+        fundo.setBackgroundColor(
+            android.graphics.Color.rgb(248, 250, 252)
+        );
+        fundo.setElevation(200f);
+
+        android.widget.LinearLayout card =
+            new android.widget.LinearLayout(this);
+        card.setOrientation(android.widget.LinearLayout.VERTICAL);
+        card.setPadding(48, 42, 48, 42);
+        card.setGravity(android.view.Gravity.CENTER_VERTICAL);
+
+        android.graphics.drawable.GradientDrawable bg =
+            new android.graphics.drawable.GradientDrawable();
+        bg.setColor(android.graphics.Color.WHITE);
+        bg.setCornerRadius(32f);
+        card.setBackground(bg);
+        card.setElevation(16f);
+
+        android.widget.TextView rotulo =
+            new android.widget.TextView(this);
+        rotulo.setText("COMUNICADO");
+        rotulo.setTextSize(13);
+        rotulo.setTextColor(android.graphics.Color.rgb(37, 99, 235));
+        rotulo.setTypeface(null, android.graphics.Typeface.BOLD);
+
+        android.widget.TextView tituloView =
+            new android.widget.TextView(this);
+        tituloView.setText(titulo);
+        tituloView.setTextSize(23);
+        tituloView.setTextColor(android.graphics.Color.rgb(15, 23, 42));
+        tituloView.setTypeface(null, android.graphics.Typeface.BOLD);
+        tituloView.setPadding(0, 18, 0, 12);
+
+        android.widget.TextView mensagemView =
+            new android.widget.TextView(this);
+        mensagemView.setText(mensagem);
+        mensagemView.setTextSize(17);
+        mensagemView.setTextColor(android.graphics.Color.rgb(71, 85, 105));
+
+        android.widget.TextView carregando =
+            new android.widget.TextView(this);
+        carregando.setText("Abrindo comunicado...");
+        diagnosticoComunicadoView = carregando;
+        carregando.setTextSize(13);
+        carregando.setTextColor(android.graphics.Color.rgb(100, 116, 139));
+        carregando.setPadding(0, 26, 0, 0);
+
+        card.addView(rotulo);
+        card.addView(tituloView);
+        card.addView(mensagemView);
+        card.addView(carregando);
+
+        android.widget.FrameLayout.LayoutParams cardParams =
+            new android.widget.FrameLayout.LayoutParams(
+                android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                android.view.ViewGroup.LayoutParams.WRAP_CONTENT
+            );
+        cardParams.gravity = android.view.Gravity.CENTER;
+        cardParams.setMargins(40, 40, 40, 40);
+
+        fundo.addView(card, cardParams);
+
+        addContentView(
+            fundo,
+            new android.view.ViewGroup.LayoutParams(
+                android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                android.view.ViewGroup.LayoutParams.MATCH_PARENT
+            )
+        );
+
+        coberturaComunicado = fundo;
+    }
+
+    public void diagnosticoComunicado(String etapa) {
+        runOnUiThread(() -> {
+            if (diagnosticoComunicadoView != null) {
+                diagnosticoComunicadoView.setText(
+                    "Abrindo comunicado...\n" + etapa
+                );
+            }
+        });
+    }
+
+    public void comunicadoWebPronto() {
+        removerCoberturaComunicado();
+    }
+
+    private void removerCoberturaComunicado() {
+        if (coberturaComunicado == null) return;
+
+        android.view.ViewParent pai =
+            coberturaComunicado.getParent();
+
+        if (pai instanceof android.view.ViewGroup) {
+            ((android.view.ViewGroup) pai)
+                .removeView(coberturaComunicado);
+        }
+
+        coberturaComunicado = null;
+        diagnosticoComunicadoView = null;
     }
 
     private void enviarParadaParaServicoDeChamada() {
@@ -313,6 +455,18 @@ public class MainActivity extends BridgeActivity {
         String route =
             intent.getStringExtra("route");
 
+        boolean comunicadoPush =
+            intent.getBooleanExtra(
+                "comunicadoPush",
+                false
+            );
+
+        String comunicadoTitulo =
+            intent.getStringExtra("comunicadoTitulo");
+
+        String comunicadoMensagem =
+            intent.getStringExtra("comunicadoMensagem");
+
         boolean chamadaFullscreen =
             intent.getBooleanExtra(
                 "chamadaFullscreen",
@@ -366,6 +520,52 @@ public class MainActivity extends BridgeActivity {
                 "Rota recebida pela notificacao: " +
                 rotaPendente
             );
+
+            if (
+                comunicadoPush &&
+                activityVisivel &&
+                getBridge() != null &&
+                getBridge().getWebView() != null
+            ) {
+                final String rotaComunicado =
+                    rotaPendente;
+
+                getBridge().getWebView().post(() -> {
+                    try {
+                        String rotaJs =
+                            org.json.JSONObject.quote(
+                                rotaComunicado
+                            );
+
+                        getBridge()
+                            .getWebView()
+                            .evaluateJavascript(
+                                "window.dispatchEvent(new CustomEvent(" +
+                                "'qr-acesso:abrir-comunicado'," +
+                                "{detail:{route:" + rotaJs + "}}));",
+                                null
+                            );
+
+                        rotaPendente = null;
+
+                        Log.d(
+                            "MainActivity",
+                            "Comunicado enviado para navegacao interna: " +
+                            rotaComunicado
+                        );
+                    } catch (Exception e) {
+                        Log.e(
+                            "MainActivity",
+                            "Falha na navegacao interna do comunicado",
+                            e
+                        );
+
+                        abrirRotaPendente();
+                    }
+                });
+
+                return;
+            }
 
             abrirRotaPendente();
         }
@@ -460,4 +660,5 @@ public class MainActivity extends BridgeActivity {
         super.onDestroy();
     }
 }
+
 

@@ -111,6 +111,25 @@ function ConteudoPaginaComunicadosMorador() {
     );
   }
 
+  const comunicadoIdPeloLink =
+    searchParams.get("comunicado") ||
+    "";
+
+  if (comunicadoIdPeloLink) {
+    return (
+      <ComunicadosMorador
+        condominioId={condominioId}
+        unidadeId={unidadeId}
+        localNome={localNome}
+        onVoltar={() =>
+          router.push(
+            "/dashboard/morador/comunicados"
+          )
+        }
+      />
+    );
+  }
+
   return (
     <DashboardBase>
       <ComunicadosMorador

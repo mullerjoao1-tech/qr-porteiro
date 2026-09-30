@@ -144,7 +144,15 @@ export type ConfiguracaoCondominioGerador = {
 
   quantidadeBlocos: number;
 
+  identificadoresBlocos?: string[];
+
   apartamentosPorBloco: number;
+
+  numerosApartamentos?: string[];
+
+  apartamentosPorIdentificadorBloco?: Record<string, string[]>;
+
+  apartamentosPorAndarPorBloco?: Record<string, Record<string, string[]>>;
 
   quantidadeCasas: number;
 };
