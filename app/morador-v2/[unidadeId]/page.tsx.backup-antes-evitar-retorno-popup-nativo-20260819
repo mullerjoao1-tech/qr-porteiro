@@ -106,16 +106,16 @@ function formatarDataComunicado(data?: string) {
 }
 
 function iconeTipoComunicado(tipo: ComunicadoMorador["tipo"]) {
-  if (tipo === "assembleia") return "ðŸ‘¥";
-  if (tipo === "manutencao") return "ðŸ› ï¸";
-  if (tipo === "emergencia") return "ðŸš¨";
-  return "ðŸ“¢";
+  if (tipo === "assembleia") return "👥";
+  if (tipo === "manutencao") return "🛠️";
+  if (tipo === "emergencia") return "🚨";
+  return "📢";
 }
 
 function textoTipoComunicado(tipo: ComunicadoMorador["tipo"]) {
   if (tipo === "assembleia") return "ASSEMBLEIA";
-  if (tipo === "manutencao") return "MANUTENÃ‡ÃƒO";
-  if (tipo === "emergencia") return "EMERGÃŠNCIA";
+  if (tipo === "manutencao") return "MANUTENÇÃO";
+  if (tipo === "emergencia") return "EMERGÊNCIA";
   return "COMUNICADO";
 }
 
@@ -129,6 +129,11 @@ export default function MoradorV2() {
 
   const comunicadoIdPeloLink = searchParams.get("comunicado") || "";
 
+  const acaoChamadaPeloLink =
+    searchParams.get("acaoChamada") || "";
+
+  const acaoChamadaExecutadaRef = useRef("");
+
   const slug = String(
     params?.unidadeId ||
       params?.slug ||
@@ -137,7 +142,7 @@ export default function MoradorV2() {
       "qr1"
   );
 
-  const [nome, setNome] = useState("Nenhuma solicitaÃ§Ã£o");
+  const [nome, setNome] = useState("Nenhuma solicitação");
   const [motivo, setMotivo] = useState("Aguardando visitante");
   const [status, setStatus] = useState("Sem chamado ativo");
   const [horaChamada, setHoraChamada] = useState("");
@@ -182,6 +187,8 @@ export default function MoradorV2() {
     mensagemId?: string;
     autor?: "visitante" | "morador";
   } | null>(null);
+  const [installPrompt, setInstallPrompt] = useState<any>(null);
+  const [appInstalavel, setAppInstalavel] = useState(false);
   const [comunicados, setComunicados] = useState<ComunicadoMorador[]>([]);
   const [comunicadoAberto, setComunicadoAberto] =
     useState<ComunicadoMorador | null>(null);
@@ -237,7 +244,7 @@ const nomeLocal =
 
   const chamadaAtiva =
     chamadaDestinadaAoUsuarioAtual &&
-    nome !== "Nenhuma solicitaÃ§Ã£o" &&
+    nome !== "Nenhuma solicitação" &&
     status !== "Sem chamado ativo" &&
     status !== "Encerrado";
 
@@ -356,7 +363,7 @@ const nomeLocal =
             if (!estaDisponivel) return false;
 
             // Compatibilidade com comunicados antigos, criados antes da
-            // separaÃ§Ã£o por pÃºblico: continuam aparecendo para os moradores.
+            // separação por público: continuam aparecendo para os moradores.
             if (!comunicado.destinatario) return true;
 
             if (comunicado.destinatario === "moradores") return true;
@@ -372,7 +379,7 @@ const nomeLocal =
               return comunicado.unidadesDestinatarias?.includes(slug) === true;
             }
 
-            // PÃºblicos prÃ³prios nÃ£o devem aparecer no painel comum do morador.
+            // Públicos próprios não devem aparecer no painel comum do morador.
             return false;
           })
           .sort((a, b) => (b.criadoEm || 0) - (a.criadoEm || 0));
@@ -417,7 +424,7 @@ const nomeLocal =
         }
       );
     } catch (erro) {
-      console.error("Erro ao registrar visualizaÃ§Ã£o:", erro);
+      console.error("Erro ao registrar visualização:", erro);
     }
   }
 
@@ -443,10 +450,10 @@ const nomeLocal =
       );
 
       setComunicadoAberto(null);
-      alert("Sua ciÃªncia foi registrada com sucesso.");
+      alert("Sua ciência foi registrada com sucesso.");
     } catch (erro) {
-      console.error("Erro ao registrar ciÃªncia:", erro);
-      alert("NÃ£o foi possÃ­vel registrar sua ciÃªncia.");
+      console.error("Erro ao registrar ciência:", erro);
+      alert("Não foi possível registrar sua ciência.");
     } finally {
       setSalvandoCiencia(false);
     }
@@ -516,7 +523,7 @@ const nomeLocal =
         ultimaChamadaAtivaRef.current = false;
         ultimaChamadaDadosRef.current = null;
 
-        setNome("Nenhuma solicitaÃ§Ã£o");
+        setNome("Nenhuma solicitação");
         setMotivo("Aguardando visitante");
         setStatus("Sem chamado ativo");
         setHoraChamada("");
@@ -549,11 +556,11 @@ const nomeLocal =
 
       /*
        * Compatibilidade:
-       * chamadas antigas sem responsÃ¡vel individual
+       * chamadas antigas sem responsável individual
        * continuam funcionando como antes.
        *
-       * Chamadas novas com responsÃ¡vel definido
-       * pertencem somente ao usuÃ¡rio selecionado
+       * Chamadas novas com responsável definido
+       * pertencem somente ao usuário selecionado
        * pelo MotorEscalonamento.
        */
       const chamadaDestinadaAoUsuario =
@@ -565,7 +572,7 @@ const nomeLocal =
         chamadaDestinadaAoUsuario
       );
 
-      setNome(dados.nome || "Nenhuma solicitaÃ§Ã£o");
+      setNome(dados.nome || "Nenhuma solicitação");
       setMotivo(dados.motivo || "Aguardando visitante");
       setStatus(dados.status || "Sem chamado ativo");
       setHoraChamada(
@@ -614,7 +621,7 @@ const nomeLocal =
         ultimoAudioPopupRef.current = audioVisitanteAtual;
 
         setAudioPopup({
-          titulo: "ðŸŽ™ï¸ Novo Ã¡udio do visitante",
+          titulo: "🎙️ Novo áudio do visitante",
           audio: audioVisitanteAtual,
           mensagemId: ultimoAudioVisitante?.id,
           autor: "visitante",
@@ -631,7 +638,7 @@ const nomeLocal =
         setPopupAtendimentoAberto(false);
         setAudioPopup(null);
 
-        setNome("Nenhuma solicitaÃ§Ã£o");
+        setNome("Nenhuma solicitação");
         setMotivo("Aguardando visitante");
         setStatus("Sem chamado ativo");
         setHoraChamada("");
@@ -711,7 +718,7 @@ const nomeLocal =
     setCapturandoCamera(true);
 
     try {
-      await registrarLog("camera_tentativa", "Tentando capturar foto da cÃ¢mera");
+      await registrarLog("camera_tentativa", "Tentando capturar foto da câmera");
 
       const resposta = await fetch(`/api/capturar-camera?cache=${Date.now()}`);
       const dados = await resposta.json();
@@ -722,21 +729,21 @@ const nomeLocal =
 
         await registrarLog(
           "camera_sucesso",
-          "Foto da cÃ¢mera capturada com sucesso"
+          "Foto da câmera capturada com sucesso"
         );
       } else {
-        await registrarLog("erro_camera", "A cÃ¢mera nÃ£o retornou imagem vÃ¡lida");
-        console.log("A cÃ¢mera nÃ£o retornou imagem.");
+        await registrarLog("erro_camera", "A câmera não retornou imagem válida");
+        console.log("A câmera não retornou imagem.");
       }
     } catch (erro) {
-      console.error("Erro ao capturar foto da cÃ¢mera:", erro);
+      console.error("Erro ao capturar foto da câmera:", erro);
 
       await registrarLog(
         "erro_camera",
-        "Erro ao atualizar foto da cÃ¢mera: " + String(erro)
+        "Erro ao atualizar foto da câmera: " + String(erro)
       );
 
-      alert("Erro ao atualizar foto da cÃ¢mera.");
+      alert("Erro ao atualizar foto da câmera.");
     }
 
     setCapturandoCamera(false);
@@ -749,7 +756,7 @@ const nomeLocal =
 
     const novoRegistro = {
       nome: dados.nome || "Visitante",
-      motivo: dados.motivo || "NÃ£o informado",
+      motivo: dados.motivo || "Não informado",
       modo: dados.modo || "",
       statusFinal: dados.status || "Sem status",
       tipoFinalizacao,
@@ -766,7 +773,7 @@ const nomeLocal =
   }
 
   async function salvarHistorico(tipoFinalizacao: string) {
-    if (nome === "Nenhuma solicitaÃ§Ã£o") return;
+    if (nome === "Nenhuma solicitação") return;
 
     const agora = new Date();
 
@@ -823,7 +830,7 @@ const nomeLocal =
     }
 
     const minutos = Math.ceil(tempoRestante / 60000);
-    setAvisoAuto(`FinalizaÃ§Ã£o automÃ¡tica em atÃ© ${minutos} min.`);
+    setAvisoAuto(`Finalização automática em até ${minutos} min.`);
 
     finalizacaoAutoRef.current = setTimeout(() => {
       finalizarAutomaticamente();
@@ -938,7 +945,7 @@ const nomeLocal =
         "timeout_atendimento",
         "Chamada finalizada automaticamente"
       ),
-      salvarHistorico(timeoutAguardando ? "NÃ£o atendida" : "AutomÃ¡tica"),
+      salvarHistorico(timeoutAguardando ? "Não atendida" : "Automática"),
     ]);
 
     const identificadorEncerramento =
@@ -996,12 +1003,12 @@ const nomeLocal =
 
   async function atenderSolicitacao() {
   if (status === "Sem chamado ativo") {
-    alert("NÃ£o existe chamada ativa para atender.");
+    alert("Não existe chamada ativa para atender.");
     return;
   }
 
   if (status === "Em atendimento") {
-    alert("Esta chamada jÃ¡ estÃ¡ em atendimento.");
+    alert("Esta chamada já está em atendimento.");
     return;
   }
 
@@ -1045,7 +1052,7 @@ const nomeLocal =
     }
 
     /*
-     * Enquanto ainda nÃ£o houver responsÃ¡vel individual
+     * Enquanto ainda não houver responsável individual
      * definido na chamada, preserva o funcionamento atual.
      */
     if (!responsavelAtualId) {
@@ -1085,7 +1092,7 @@ const nomeLocal =
 
       if (!responsavelAtual) {
         throw new Error(
-          "O responsÃ¡vel atual da chamada nÃ£o foi encontrado."
+          "O responsável atual da chamada não foi encontrado."
         );
       }
 
@@ -1120,7 +1127,7 @@ const nomeLocal =
       registrarLog(
         "chamada_atendida",
         responsavelAtualId
-          ? `Chamada atendida pelo responsÃ¡vel ${responsavelAtualId}`
+          ? `Chamada atendida pelo responsável ${responsavelAtualId}`
           : "Chamada atendida pelo painel"
       ),
     ]);
@@ -1133,7 +1140,7 @@ const nomeLocal =
     alert(
       erro instanceof Error
         ? erro.message
-        : "NÃ£o foi possÃ­vel confirmar o atendimento."
+        : "Não foi possível confirmar o atendimento."
     );
   }
 }
@@ -1143,7 +1150,7 @@ async function naoPossoAtender() {
     "Sem chamado ativo"
   ) {
     alert(
-      "NÃ£o existe chamada ativa."
+      "Não existe chamada ativa."
     );
 
     return;
@@ -1193,7 +1200,7 @@ async function naoPossoAtender() {
 
     if (!responsavelAtualId) {
       alert(
-        "A chamada ainda nÃ£o possui um responsÃ¡vel individual definido."
+        "A chamada ainda não possui um responsável individual definido."
       );
 
       setPopupAtendimentoAberto(
@@ -1212,7 +1219,7 @@ async function naoPossoAtender() {
 
     await registrarLog(
       "chamada_recusada",
-      `ResponsÃ¡vel ${responsavelAtualId} informou que nÃ£o pode atender.`
+      `Responsável ${responsavelAtualId} informou que não pode atender.`
     );
 
     if (
@@ -1263,7 +1270,7 @@ async function naoPossoAtender() {
       }
 
       setAvisoAuto(
-        `âœ“ Chamada encaminhada para ${resultado.responsavel.nome}.`
+        `✓ Chamada encaminhada para ${resultado.responsavel.nome}.`
       );
 
       setTimeout(() => {
@@ -1275,7 +1282,7 @@ async function naoPossoAtender() {
 
     setAvisoAuto(
       resultado.motivo ||
-      "Nenhum responsÃ¡vel disponÃ­vel. Chamada encerrada."
+      "Nenhum responsável disponível. Chamada encerrada."
     );
 
     setTimeout(() => {
@@ -1294,10 +1301,97 @@ async function naoPossoAtender() {
     alert(
       erro instanceof Error
         ? erro.message
-        : "NÃ£o foi possÃ­vel encaminhar a chamada."
+        : "Não foi possível encaminhar a chamada."
     );
   }
 }
+
+  /*
+   * Ponte da tela nativa para o fluxo Morador V2 existente.
+   *
+   * Nenhuma regra de atendimento e duplicada aqui.
+   * A Activity apenas informa qual acao foi escolhida.
+   */
+  useEffect(() => {
+    if (!acaoChamadaPeloLink) return;
+
+    if (
+      acaoChamadaExecutadaRef.current ===
+      acaoChamadaPeloLink
+    ) {
+      return;
+    }
+
+    /*
+     * A MainActivity pode abrir a pagina antes de o Firebase
+     * terminar de entregar a chamada ativa.
+     *
+     * Esperamos o mesmo estado usado pelo fluxo normal.
+     */
+    if (status !== "Aguardando atendimento") {
+      return;
+    }
+
+    if (
+      acaoChamadaPeloLink !== "atender" &&
+      acaoChamadaPeloLink !== "nao-posso-atender"
+    ) {
+      return;
+    }
+
+    acaoChamadaExecutadaRef.current =
+      acaoChamadaPeloLink;
+
+    /*
+     * Remove a acao da URL antes de executar.
+     * O ref acima impede repeticao durante o mesmo ciclo.
+     */
+    if (typeof window !== "undefined") {
+      const urlAtual = new URL(window.location.href);
+
+      urlAtual.searchParams.delete("acaoChamada");
+
+      window.history.replaceState(
+        {},
+        "",
+        urlAtual.pathname +
+          urlAtual.search +
+          urlAtual.hash
+      );
+    }
+
+    if (acaoChamadaPeloLink === "atender") {
+      void atenderSolicitacao();
+      return;
+    }
+
+    void naoPossoAtender();
+  }, [
+    acaoChamadaPeloLink,
+    status,
+  ]);
+
+  /*
+   * Quando o ATENDER veio da tela nativa bloqueada,
+   * o atendimento real continua sendo feito por atenderSolicitacao().
+   *
+   * Aqui apenas garantimos o mesmo estado visual final
+   * que ja funciona quando o atendimento acontece com a tela aberta.
+   */
+  useEffect(() => {
+    if (
+      acaoChamadaExecutadaRef.current !== "atender" ||
+      status !== "Em atendimento"
+    ) {
+      return;
+    }
+
+    setPopupAtendimentoAberto(false);
+    setRespostasRapidasAbertas(true);
+
+    acaoChamadaExecutadaRef.current = "";
+  }, [status]);
+
   useEffect(() => {
     if (status !== "Em atendimento") return;
 
@@ -1338,7 +1432,7 @@ async function naoPossoAtender() {
 
   async function enviarMensagemRapida(mensagem: string) {
     if (status === "Sem chamado ativo") {
-      alert("NÃ£o existe chamada ativa para responder.");
+      alert("Não existe chamada ativa para responder.");
       return;
     }
 
@@ -1393,7 +1487,7 @@ async function naoPossoAtender() {
 
   async function iniciarGravacaoMorador() {
     if (status === "Sem chamado ativo") {
-      alert("NÃ£o existe chamada ativa para responder.");
+      alert("Não existe chamada ativa para responder.");
       return;
     }
 
@@ -1419,8 +1513,8 @@ async function naoPossoAtender() {
          * Usa o formato real produzido pelo navegador.
          * Firefox normalmente pode gravar em audio/ogg,
          * enquanto Chrome costuma usar audio/webm.
-         * ForÃ§ar audio/webm em todos os navegadores pode
-         * fazer o Ã¡udio chegar sem som no aparelho visitante.
+         * Forçar audio/webm em todos os navegadores pode
+         * fazer o áudio chegar sem som no aparelho visitante.
          */
         const tipoAudio =
           recorder.mimeType ||
@@ -1455,7 +1549,7 @@ async function naoPossoAtender() {
       }, 15000);
     } catch (erro) {
       console.error(erro);
-      alert("NÃ£o foi possÃ­vel acessar o microfone.");
+      alert("Não foi possível acessar o microfone.");
       setGravandoAudioMorador(false);
       setPopupAudioMoradorAberto(false);
     }
@@ -1474,17 +1568,17 @@ async function naoPossoAtender() {
 
   async function enviarAudioMorador() {
     if (status === "Sem chamado ativo") {
-      alert("NÃ£o existe chamada ativa para responder.");
+      alert("Não existe chamada ativa para responder.");
       return;
     }
 
     if (status !== "Em atendimento") {
-      alert("Atenda a chamada antes de enviar Ã¡udio.");
+      alert("Atenda a chamada antes de enviar áudio.");
       return;
     }
 
     if (!audioRespostaBlob) {
-      alert("Grave um Ã¡udio antes de enviar.");
+      alert("Grave um áudio antes de enviar.");
       return;
     }
 
@@ -1511,14 +1605,14 @@ async function naoPossoAtender() {
         audioBase64,
       });
 
-      await registrarLog("audio_morador", "Morador enviou Ã¡udio ao visitante");
+      await registrarLog("audio_morador", "Morador enviou áudio ao visitante");
 
       setAudioRespostaBlob(null);
       setPopupAudioMoradorAberto(false);
       pararToqueContinuo();
     } catch (erro) {
       console.error(erro);
-      alert("Erro ao enviar Ã¡udio.");
+      alert("Erro ao enviar áudio.");
     } finally {
       setEnviandoAudioMorador(false);
     }
@@ -1526,19 +1620,19 @@ async function naoPossoAtender() {
 
   async function limparHistorico() {
     const confirmar = window.confirm(
-      "Tem certeza que deseja limpar todo o histÃ³rico?"
+      "Tem certeza que deseja limpar todo o histórico?"
     );
 
     if (!confirmar) return;
 
     await remove(ref(db, caminhoHistorico));
     setHistoricoLista([]);
-    alert("HistÃ³rico limpo com sucesso.");
+    alert("Histórico limpo com sucesso.");
   }
 
   async function finalizarSolicitacao() {
     if (status === "Sem chamado ativo") {
-      alert("NÃ£o existe chamada ativa para finalizar.");
+      alert("Não existe chamada ativa para finalizar.");
       return;
     }
 
@@ -1559,7 +1653,7 @@ async function naoPossoAtender() {
       });
     } catch (erro) {
       console.error("Erro ao finalizar chamada:", erro);
-      alert("NÃ£o foi possÃ­vel finalizar o atendimento.");
+      alert("Não foi possível finalizar o atendimento.");
       return;
     }
 
@@ -1690,29 +1784,29 @@ async function naoPossoAtender() {
 
     try {
       setAbrindoPortao(true);
-      setStatusPortao("â³ Abrindo portÃ£o...");
+      setStatusPortao("⏳ Abrindo portão...");
 
-      await registrarLog("portao_tentativa", "Tentativa de abertura do portÃ£o");
+      await registrarLog("portao_tentativa", "Tentativa de abertura do portão");
 
       const resposta = await fetch("/api/abrir-portao");
       const dados = await resposta.json();
 
       if (dados.success) {
-        setStatusPortao("âœ… PortÃ£o aberto com sucesso");
-        await registrarLog("portao_sucesso", "PortÃ£o aberto com sucesso");
+        setStatusPortao("✅ Portão aberto com sucesso");
+        await registrarLog("portao_sucesso", "Portão aberto com sucesso");
       } else {
-        setStatusPortao("âŒ Falha ao abrir portÃ£o");
+        setStatusPortao("❌ Falha ao abrir portão");
         await registrarLog(
           "erro_portao",
-          "API respondeu falha ao abrir portÃ£o"
+          "API respondeu falha ao abrir portão"
         );
       }
     } catch (erro) {
-      setStatusPortao("âŒ Erro ao abrir portÃ£o");
+      setStatusPortao("❌ Erro ao abrir portão");
 
       await registrarLog("erro_portao", "Erro inesperado: " + String(erro));
 
-      console.error("Erro ao abrir portÃ£o:", erro);
+      console.error("Erro ao abrir portão:", erro);
     } finally {
       setTimeout(() => {
         setAbrindoPortao(false);
@@ -1724,27 +1818,27 @@ async function naoPossoAtender() {
   async function ativarNotificacoes() {
     try {
       if (typeof window === "undefined") {
-        alert("As notificaÃ§Ãµes sÃ³ podem ser ativadas no navegador.");
+        alert("As notificações só podem ser ativadas no navegador.");
         return;
       }
 
       if (!("Notification" in window)) {
         await registrarLog(
           "push_nao_suportado",
-          "Este navegador nÃ£o possui suporte Ã  API de notificaÃ§Ãµes"
+          "Este navegador não possui suporte à API de notificações"
         );
 
-        alert("Este navegador nÃ£o suporta notificaÃ§Ãµes.");
+        alert("Este navegador não suporta notificações.");
         return;
       }
 
       if (!("serviceWorker" in navigator)) {
         await registrarLog(
           "push_sem_service_worker",
-          "Este navegador nÃ£o possui suporte a Service Worker"
+          "Este navegador não possui suporte a Service Worker"
         );
 
-        alert("Este navegador nÃ£o suporta notificaÃ§Ãµes em segundo plano.");
+        alert("Este navegador não suporta notificações em segundo plano.");
         return;
       }
 
@@ -1753,10 +1847,10 @@ async function naoPossoAtender() {
       if (!messaging) {
         await registrarLog(
           "push_nao_suportado",
-          "Firebase Messaging nÃ£o foi inicializado neste navegador"
+          "Firebase Messaging não foi inicializado neste navegador"
         );
 
-        alert("NÃ£o foi possÃ­vel iniciar as notificaÃ§Ãµes neste navegador.");
+        alert("Não foi possível iniciar as notificações neste navegador.");
         return;
       }
 
@@ -1765,10 +1859,10 @@ async function naoPossoAtender() {
       if (permissao !== "granted") {
         await registrarLog(
           "push_permissao_negada",
-          "PermissÃ£o para notificaÃ§Ãµes negada: " + permissao
+          "Permissão para notificações negada: " + permissao
         );
 
-        alert("PermissÃ£o para notificaÃ§Ãµes nÃ£o foi concedida.");
+        alert("Permissão para notificações não foi concedida.");
         return;
       }
 
@@ -1787,7 +1881,7 @@ async function naoPossoAtender() {
 });
       if (!token) {
         throw new Error(
-          "O Firebase nÃ£o retornou um token de notificaÃ§Ã£o."
+          "O Firebase não retornou um token de notificação."
         );
       }
       const condominioId =
@@ -1872,12 +1966,12 @@ async function naoPossoAtender() {
 
       await registrarLog(
         "push_token_salvo",
-        "Token de notificaÃ§Ã£o salvo com sucesso"
+        "Token de notificação salvo com sucesso"
       );
 
-      alert("NotificaÃ§Ãµes ativadas com sucesso!");
+      alert("Notificações ativadas com sucesso!");
     } catch (erro: any) {
-      console.error("Erro completo ao ativar notificaÃ§Ãµes:", erro);
+      console.error("Erro completo ao ativar notificações:", erro);
 
       const codigo =
         erro?.code ||
@@ -1890,15 +1984,55 @@ async function naoPossoAtender() {
 
       await registrarLog(
         "push_erro_token",
-        `CÃ³digo: ${codigo} | Mensagem: ${mensagemErro}`
+        `Código: ${codigo} | Mensagem: ${mensagemErro}`
       );
 
       alert(
-        `NÃ£o foi possÃ­vel ativar as notificaÃ§Ãµes.
+        `Não foi possível ativar as notificações.
 
-CÃ³digo: ${codigo}
+Código: ${codigo}
 Mensagem: ${mensagemErro}`
       );
+    }
+  }
+
+  useEffect(() => {
+    function prepararInstalacao(evento: any) {
+      evento.preventDefault();
+      setInstallPrompt(evento);
+      setAppInstalavel(true);
+    }
+
+    function appInstalado() {
+      setInstallPrompt(null);
+      setAppInstalavel(false);
+    }
+
+    window.addEventListener("beforeinstallprompt", prepararInstalacao);
+    window.addEventListener("appinstalled", appInstalado);
+
+    return () => {
+      window.removeEventListener("beforeinstallprompt", prepararInstalacao);
+      window.removeEventListener("appinstalled", appInstalado);
+    };
+  }, []);
+
+  async function instalarApp() {
+    if (!installPrompt) {
+      alert(
+        "Se o botão não abrir a instalação automaticamente, use o menu do navegador e procure por 'Instalar app' ou 'Adicionar à tela inicial'."
+      );
+      return;
+    }
+
+    try {
+      await installPrompt.prompt();
+      await installPrompt.userChoice;
+      setInstallPrompt(null);
+      setAppInstalavel(false);
+    } catch (erro) {
+      console.error("Erro ao instalar app:", erro);
+      alert("Não foi possível abrir a instalação agora.");
     }
   }
 
@@ -1920,7 +2054,7 @@ Mensagem: ${mensagemErro}`
 
     silenciarToqueAoOuvirAudio();
     setAudioPopup({
-      titulo: "ðŸŽ™ï¸ Ãudio do visitante",
+      titulo: "🎙️ Áudio do visitante",
       audio: audioVisitante,
     });
   }
@@ -1929,27 +2063,27 @@ Mensagem: ${mensagemErro}`
     {
       texto: "Aguarde um momento",
       mensagem: "Aguarde um momento, por favor.",
-      icone: "ðŸ’¬",
+      icone: "💬",
     },
     {
-      texto: "JÃ¡ estou descendo",
-      mensagem: "OlÃ¡, entendi. JÃ¡ estou descendo.",
-      icone: "ðŸš¶",
+      texto: "Já estou descendo",
+      mensagem: "Olá, entendi. Já estou descendo.",
+      icone: "🚶",
     },
     {
       texto: "Pode deixar na portaria",
       mensagem: "Pode deixar na portaria, obrigado.",
-      icone: "ðŸ“¦",
+      icone: "📦",
     },
     {
-      texto: "NÃ£o estou em casa",
-      mensagem: "NÃ£o estou em casa no momento.",
-      icone: "ðŸ ",
+      texto: "Não estou em casa",
+      mensagem: "Não estou em casa no momento.",
+      icone: "🏠",
     },
     {
       texto: "Estou indo retirar",
       mensagem: "Estou indo retirar agora.",
-      icone: "ðŸš¶",
+      icone: "🚶",
     },
   ];
 
@@ -2009,7 +2143,7 @@ Mensagem: ${mensagemErro}`
                     onClick={() => setComunicadoAberto(null)}
                     className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-800/90 text-xl font-black"
                   >
-                    âœ•
+                    ✕
                   </button>
                 </div>
               </div>
@@ -2020,7 +2154,7 @@ Mensagem: ${mensagemErro}`
                     {detalhes.dataEvento && (
                       <div className="rounded-2xl border border-slate-700 bg-slate-800 p-3">
                         <p className="text-[10px] font-black text-slate-400">
-                          ðŸ“… DATA
+                          📅 DATA
                         </p>
                         <p className="mt-1 text-sm font-black text-white">
                           {formatarDataComunicado(detalhes.dataEvento)}
@@ -2031,7 +2165,7 @@ Mensagem: ${mensagemErro}`
                     {detalhes.horarioEvento && (
                       <div className="rounded-2xl border border-slate-700 bg-slate-800 p-3">
                         <p className="text-[10px] font-black text-slate-400">
-                          ðŸ•— HORÃRIO
+                          🕗 HORÁRIO
                         </p>
                         <p className="mt-1 text-sm font-black text-white">
                           {detalhes.horarioEvento}
@@ -2042,7 +2176,7 @@ Mensagem: ${mensagemErro}`
                     {detalhes.localEvento && (
                       <div className="rounded-2xl border border-slate-700 bg-slate-800 p-3">
                         <p className="text-[10px] font-black text-slate-400">
-                          ðŸ“ LOCAL
+                          📍 LOCAL
                         </p>
                         <p className="mt-1 text-sm font-black text-white">
                           {detalhes.localEvento}
@@ -2053,7 +2187,7 @@ Mensagem: ${mensagemErro}`
                     {detalhes.empresaResponsavel && (
                       <div className="rounded-2xl border border-slate-700 bg-slate-800 p-3">
                         <p className="text-[10px] font-black text-slate-400">
-                          ðŸ‘· RESPONSÃVEL
+                          👷 RESPONSÁVEL
                         </p>
                         <p className="mt-1 text-sm font-black text-white">
                           {detalhes.empresaResponsavel}
@@ -2066,7 +2200,7 @@ Mensagem: ${mensagemErro}`
                 {detalhes.pauta && (
                   <div className="mt-4 rounded-2xl border border-violet-800 bg-violet-950/25 p-4">
                     <p className="text-xs font-black text-violet-300">
-                      ðŸ“‹ PAUTA
+                      📋 PAUTA
                     </p>
                     <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-slate-200">
                       {detalhes.pauta}
@@ -2077,7 +2211,7 @@ Mensagem: ${mensagemErro}`
                 {detalhes.impactoPrevisto && (
                   <div className="mt-4 rounded-2xl border border-orange-800 bg-orange-950/25 p-4">
                     <p className="text-xs font-black text-orange-300">
-                      âš ï¸ IMPACTO PREVISTO
+                      ⚠️ IMPACTO PREVISTO
                     </p>
                     <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-slate-200">
                       {detalhes.impactoPrevisto}
@@ -2088,7 +2222,7 @@ Mensagem: ${mensagemErro}`
                 {detalhes.tipoEmergencia && (
                   <div className="mt-4 rounded-2xl border border-red-800 bg-red-950/30 p-4">
                     <p className="text-xs font-black text-red-300">
-                      ðŸš¨ TIPO DA EMERGÃŠNCIA
+                      🚨 TIPO DA EMERGÊNCIA
                     </p>
                     <p className="mt-2 text-base font-black text-white">
                       {detalhes.tipoEmergencia}
@@ -2099,7 +2233,7 @@ Mensagem: ${mensagemErro}`
                 {detalhes.orientacaoImediata && (
                   <div className="mt-4 rounded-2xl border border-red-700 bg-red-950/40 p-4">
                     <p className="text-xs font-black text-red-300">
-                      âš¡ ORIENTAÃ‡ÃƒO IMEDIATA
+                      ⚡ ORIENTAÇÃO IMEDIATA
                     </p>
                     <p className="mt-2 whitespace-pre-wrap text-sm font-bold leading-relaxed text-white">
                       {detalhes.orientacaoImediata}
@@ -2120,7 +2254,7 @@ Mensagem: ${mensagemErro}`
                 {precisaConfirmarCiencia ? (
                   comunicadoAberto.visualizacoes?.[slug]?.ciente === true ? (
                     <div className="mt-5 rounded-xl border border-green-700 bg-green-950/30 p-4 text-center font-black text-green-300">
-                      âœ… Ciente registrado
+                      ✅ Ciente registrado
                     </div>
                   ) : (
                     <button
@@ -2136,8 +2270,8 @@ Mensagem: ${mensagemErro}`
                       {salvandoCiencia
                         ? "Registrando..."
                         : ehEmergencia
-                        ? "ðŸš¨ Confirmo que li e estou ciente"
-                        : "âœ… Li e estou ciente"}
+                        ? "🚨 Confirmo que li e estou ciente"
+                        : "✅ Li e estou ciente"}
                     </button>
                   )
                 ) : (
@@ -2158,7 +2292,7 @@ Mensagem: ${mensagemErro}`
       {mostrarPopupChamada && (
         <div className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center p-4 overflow-y-auto">
           <div className="w-full max-w-md bg-slate-900 border-4 border-green-400 rounded-3xl p-5 text-center shadow-2xl my-4">
-            <p className="text-6xl mb-3">ðŸš¨</p>
+            <p className="text-6xl mb-3">🚨</p>
 
             <h2 className="text-3xl font-black text-green-400 mb-2">
               CHAMADA RECEBIDA
@@ -2171,7 +2305,7 @@ Mensagem: ${mensagemErro}`
               {audioVisitante && (
                 <div className="mt-4 bg-slate-900 rounded-2xl p-4 border border-blue-500/40">
                   <p className="text-sm text-blue-300 font-bold mb-3">
-                    ðŸŽ™ï¸ Ãudio do visitante
+                    🎙️ Áudio do visitante
                   </p>
 
                   <audio
@@ -2192,13 +2326,13 @@ Mensagem: ${mensagemErro}`
 
             <div className="mt-4 bg-slate-800 rounded-2xl p-3">
               <p className="text-green-400 text-sm font-bold mb-2">
-                ðŸ“· CÃ¢mera do portÃ£o
+                📷 Câmera do portão
               </p>
 
               {fotoCameraAtual ? (
                 <img
                   src={`${fotoCameraAtual}?t=${fotoCameraAtualizadaEm}`}
-                  alt="CÃ¢mera do portÃ£o"
+                  alt="Câmera do portão"
                   className="w-full rounded-xl border border-slate-600"
                 />
               ) : (
@@ -2210,18 +2344,18 @@ Mensagem: ${mensagemErro}`
               onClick={atenderSolicitacao}
               className="w-full mt-5 bg-green-500 hover:bg-green-400 text-black text-xl font-black py-4 rounded-2xl"
             >
-              âœ… ATENDER AGORA
+              ✅ ATENDER AGORA
             </button>
 <button
   type="button"
   onClick={naoPossoAtender}
   className="w-full mt-3 rounded-2xl bg-blue-600 py-4 text-lg font-black text-white transition-all hover:bg-blue-500 active:scale-95"
 >
-  ðŸ”µ NÃƒO POSSO ATENDER
+  🔵 NÃO POSSO ATENDER
 </button>
             <div className="mt-4 bg-slate-800 border border-yellow-500/40 rounded-2xl p-3">
               <p className="text-yellow-300 text-sm font-bold">
-                OuÃ§a o Ã¡udio e veja a cÃ¢mera. Para responder, clique em ATENDER AGORA.
+                Ouça o áudio e veja a câmera. Para responder, clique em ATENDER AGORA.
               </p>
             </div>
            
@@ -2242,25 +2376,25 @@ Mensagem: ${mensagemErro}`
                 }}
                 className="absolute top-3 right-4 text-slate-400 hover:text-white text-3xl font-black"
               >
-                Ã—
+                ×
               </button>
             )}
 
             <div className="text-center mb-5">
               <div className="text-5xl mb-3">
-                {gravandoAudioMorador ? "ðŸŽ™ï¸" : "ðŸŽ§"}
+                {gravandoAudioMorador ? "🎙️" : "🎧"}
               </div>
 
               <h2 className="text-2xl font-black">
                 {gravandoAudioMorador
-                  ? "GRAVANDO ÃUDIO"
-                  : "ÃUDIO GRAVADO"}
+                  ? "GRAVANDO ÁUDIO"
+                  : "ÁUDIO GRAVADO"}
               </h2>
 
               <p className="text-slate-400 text-sm mt-2">
                 {gravandoAudioMorador
                   ? "Fale normalmente e toque em parar quando terminar."
-                  : "Confira o Ã¡udio antes de enviar ao visitante."}
+                  : "Confira o áudio antes de enviar ao visitante."}
               </p>
             </div>
 
@@ -2269,7 +2403,7 @@ Mensagem: ${mensagemErro}`
 
                 <div className="bg-red-500/10 border border-red-500/40 rounded-2xl p-4 text-center">
                   <p className="text-red-400 font-black animate-pulse">
-                    GRAVAÃ‡ÃƒO EM ANDAMENTO
+                    GRAVAÇÃO EM ANDAMENTO
                   </p>
                 </div>
 
@@ -2278,7 +2412,7 @@ Mensagem: ${mensagemErro}`
                   onClick={pararGravacaoMorador}
                   className="w-full bg-red-600 hover:bg-red-500 text-white text-xl font-black py-4 rounded-2xl"
                 >
-                  â¹ï¸ PARAR GRAVAÃ‡ÃƒO
+                  ⏹️ PARAR GRAVAÇÃO
                 </button>
 
               </div>
@@ -2303,7 +2437,7 @@ Mensagem: ${mensagemErro}`
                 >
                   {enviandoAudioMorador
                     ? "Enviando..."
-                    : "ðŸ“¤ ENVIAR ÃUDIO"}
+                    : "📤 ENVIAR ÁUDIO"}
                 </button>
 
                 {!enviandoAudioMorador && (
@@ -2315,7 +2449,7 @@ Mensagem: ${mensagemErro}`
                     }}
                     className="w-full bg-slate-800 hover:bg-slate-700 border border-slate-600 text-white font-bold py-3 rounded-2xl"
                   >
-                    ðŸ”„ GRAVAR NOVAMENTE
+                    🔄 GRAVAR NOVAMENTE
                   </button>
                 )}
 
@@ -2336,7 +2470,7 @@ Mensagem: ${mensagemErro}`
 
         <div className="fixed inset-0 z-[999] bg-black/95 flex items-center justify-center p-4">
           <div className="w-full max-w-md bg-slate-900 border-4 border-blue-400 rounded-3xl p-5 text-center shadow-2xl">
-            <p className="text-6xl mb-3">ðŸŽ™ï¸</p>
+            <p className="text-6xl mb-3">🎙️</p>
             <h2 className="text-2xl font-black text-blue-300 mb-4">
               {audioPopup.titulo}
             </h2>
@@ -2393,13 +2527,13 @@ Mensagem: ${mensagemErro}`
         <div className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center p-4 overflow-y-auto">
           <div className="w-full max-w-md bg-slate-900 border-4 border-green-400 rounded-3xl p-5 text-center shadow-2xl">
             <h2 className="text-2xl font-black text-green-400 mb-4">
-              ðŸ“· CÃ¢mera do portÃ£o
+              📷 Câmera do portão
             </h2>
 
             {fotoCameraAtual ? (
               <img
                 src={`${fotoCameraAtual}?t=${fotoCameraAtualizadaEm}`}
-                alt="CÃ¢mera do portÃ£o"
+                alt="Câmera do portão"
                 className="w-full rounded-2xl border border-slate-600"
               />
             ) : (
@@ -2414,7 +2548,7 @@ Mensagem: ${mensagemErro}`
                 disabled={capturandoCamera}
                 className="bg-slate-700 hover:bg-slate-600 disabled:bg-gray-500 text-white text-sm font-bold py-3 rounded-2xl"
               >
-                {capturandoCamera ? "ðŸ“¸ Atualizando" : "ðŸ“¸ Atualizar"}
+                {capturandoCamera ? "📸 Atualizando" : "📸 Atualizar"}
               </button>
 
               <button
@@ -2432,7 +2566,7 @@ Mensagem: ${mensagemErro}`
         <div className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center p-4 overflow-y-auto">
           <div className="w-full max-w-md bg-slate-900 border-4 border-slate-600 rounded-3xl p-5 shadow-2xl my-4">
             <div className="flex items-center justify-between gap-3 mb-4">
-              <h3 className="text-2xl font-black">ðŸ“‹ HistÃ³rico</h3>
+              <h3 className="text-2xl font-black">📋 Histórico</h3>
 
               <button
                 onClick={() => setMostrarHistorico(false)}
@@ -2446,7 +2580,7 @@ Mensagem: ${mensagemErro}`
               onClick={limparHistorico}
               className="w-full bg-red-600 hover:bg-red-500 text-white text-sm font-bold py-3 rounded-2xl mb-4"
             >
-              LIMPAR HISTÃ“RICO
+              LIMPAR HISTÓRICO
             </button>
 
             {historicoLista.length > 0 ? (
@@ -2463,7 +2597,7 @@ Mensagem: ${mensagemErro}`
                     {item.fotoCamera && (
                       <img
                         src={item.fotoCamera}
-                        alt="Snapshot da cÃ¢mera"
+                        alt="Snapshot da câmera"
                         className="w-full mt-3 rounded-xl border border-slate-600"
                       />
                     )}
@@ -2473,14 +2607,14 @@ Mensagem: ${mensagemErro}`
                     </p>
 
                     <p className="text-blue-300 text-xs mt-1">
-                      Tipo: {item.tipoFinalizacao || "NÃ£o informado"}
+                      Tipo: {item.tipoFinalizacao || "Não informado"}
                     </p>
                   </div>
                 ))}
               </div>
             ) : (
               <p className="text-green-400 text-sm bg-slate-800 rounded-2xl p-4">
-                ðŸ”” Nenhum atendimento finalizado
+                🔔 Nenhum atendimento finalizado
               </p>
             )}
           </div>
@@ -2491,7 +2625,7 @@ Mensagem: ${mensagemErro}`
         <div className="flex items-start justify-between gap-3">
           <div>
             <h1 className="text-3xl font-black">
-              ðŸ  {nomeLocal}
+              🏠 {nomeLocal}
             </h1>
             <p className="text-slate-400 text-sm mt-1">
               {ehResidencia
@@ -2510,10 +2644,88 @@ Mensagem: ${mensagemErro}`
                 : "bg-red-500/10 hover:bg-red-500/20 border border-red-500/40 text-red-400 text-xs font-bold px-3 py-2 rounded-xl transition"
             }
           >
-            {online ? "ðŸŸ¢ DisponÃ­vel" : "ðŸ”´ Ausente"}
+            {online ? "🟢 Disponível" : "🔴 Ausente"}
           </button>
         </div>
 
+        {comunicados.length > 0 && (
+          <div className="mt-5 rounded-2xl border border-blue-500/50 bg-blue-950/30 p-4">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-xs font-black text-blue-300">
+                  📢 COMUNICADOS
+                </p>
+
+                <h2 className="mt-1 text-lg font-black text-white">
+                  {comunicados.filter(
+                    (item) =>
+                      item.visualizacoes?.[slug]?.ciente !== true
+                  ).length > 0
+                    ? `${comunicados.filter(
+                        (item) =>
+                          item.visualizacoes?.[slug]?.ciente !== true
+                      ).length} comunicado(s) aguardando sua ciência`
+                    : ehResidencia
+                    ? "Avisos da residência"
+                    : "Comunicados do condomínio"}
+                </h2>
+              </div>
+
+              <span className="rounded-full bg-blue-600 px-3 py-1 text-xs font-black text-white">
+                {comunicados.length}
+              </span>
+            </div>
+
+            <div className="mt-4 space-y-2">
+              {comunicados.slice(0, 3).map((comunicado) => {
+                const ciente =
+                  comunicado.visualizacoes?.[slug]?.ciente === true;
+
+                return (
+                  <button
+                    key={comunicado.id}
+                    type="button"
+                    onClick={() => abrirComunicado(comunicado)}
+                    className="flex w-full items-center justify-between gap-3 rounded-xl bg-slate-900 p-3 text-left transition-all hover:bg-slate-800 active:scale-[0.98]"
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-black text-white">
+                        {comunicado.tipo === "assembleia"
+                          ? "👥"
+                          : comunicado.tipo === "manutencao"
+                          ? "🛠️"
+                          : comunicado.tipo === "emergencia"
+                          ? "🚨"
+                          : "📢"}{" "}
+                        {comunicado.titulo}
+                      </p>
+
+                      <p className="mt-1 truncate text-xs text-slate-400">
+                        {comunicado.mensagem}
+                      </p>
+                    </div>
+
+                    <span
+                      className={`shrink-0 rounded-full px-3 py-1 text-[10px] font-black ${
+                        ciente
+                          ? "bg-green-950 text-green-300"
+                          : "bg-orange-950 text-orange-300"
+                      }`}
+                    >
+                      {ciente ? "CIENTE" : "LER"}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        <div className="grid grid-cols-2 gap-3 mt-5">
+          
+
+          
+        </div>
 
         <div className="grid grid-cols-2 gap-3 mt-3">
           <button
@@ -2521,7 +2733,7 @@ Mensagem: ${mensagemErro}`
             onClick={() => {
               if (!cameraContratada) {
                 alert(
-                  "ðŸ“· Recurso opcional\n\nA cÃ¢mera Ã© um recurso opcional do QR Acesso. Consulte a administraÃ§Ã£o para ativaÃ§Ã£o."
+                  "📷 Recurso opcional\n\nA câmera é um recurso opcional do QR Acesso. Consulte a administração para ativação."
                 );
                 return;
               }
@@ -2537,9 +2749,9 @@ Mensagem: ${mensagemErro}`
           >
             {cameraContratada
               ? capturandoCamera
-                ? "ðŸ“¸ Atualizando"
-                : "ðŸ“· CÃ¢mera"
-              : "ðŸ”’ CÃ¢mera"}
+                ? "📸 Atualizando"
+                : "📷 Câmera"
+              : "🔒 Câmera"}
           </button>
 
           <button
@@ -2547,7 +2759,7 @@ Mensagem: ${mensagemErro}`
             onClick={() => {
               if (!portaoContratado) {
                 alert(
-                  "ðŸšª Recurso opcional\n\nA abertura de portÃ£o Ã© um recurso opcional do QR Acesso. Consulte a administraÃ§Ã£o para ativaÃ§Ã£o."
+                  "🚪 Recurso opcional\n\nA abertura de portão é um recurso opcional do QR Acesso. Consulte a administração para ativação."
                 );
                 return;
               }
@@ -2563,9 +2775,9 @@ Mensagem: ${mensagemErro}`
           >
             {portaoContratado
               ? abrindoPortao
-                ? "â³ Abrindo"
-                : "ðŸšª Abrir portÃ£o"
-              : "ðŸ”’ Abrir portÃ£o"}
+                ? "⏳ Abrindo"
+                : "🚪 Abrir portão"
+              : "🔒 Abrir portão"}
           </button>
         </div>
 
@@ -2576,12 +2788,13 @@ Mensagem: ${mensagemErro}`
         )}
 
         <div className="grid grid-cols-2 gap-3 mt-3">
+          
 
 
         </div>
 
         <div className="bg-slate-800 rounded-2xl p-4 mt-4 border border-green-500/20">
-          <h2 className="font-black text-green-400 text-xl">ðŸ”” {nome}</h2>
+          <h2 className="font-black text-green-400 text-xl">🔔 {nome}</h2>
 
           {nome.trim().toLowerCase() !== motivo.trim().toLowerCase() && (
             <p className="text-sm text-slate-300 mt-3">
@@ -2602,7 +2815,7 @@ Mensagem: ${mensagemErro}`
               onClick={atenderSolicitacao}
               className="w-full mt-4 bg-green-500 hover:bg-green-400 text-black font-black py-3 rounded-2xl"
             >
-              âœ… ATENDER
+              ✅ ATENDER
             </button>
           )}
 
@@ -2612,7 +2825,7 @@ Mensagem: ${mensagemErro}`
                 <div className="mt-4 bg-slate-900 border border-slate-700 rounded-2xl p-4">
                   <div className="flex items-center justify-between gap-3 mb-3">
                     <h3 className="font-bold text-blue-300">
-                      ðŸ’¬ Respostas rÃ¡pidas
+                      💬 Respostas rápidas
                     </h3>
 
                     <button
@@ -2640,14 +2853,14 @@ Mensagem: ${mensagemErro}`
                   onClick={() => setRespostasRapidasAbertas(true)}
                   className="w-full mt-4 bg-slate-800 hover:bg-slate-700 border border-blue-500/40 text-blue-300 font-black py-3 rounded-2xl"
                 >
-                  ðŸ’¬ RESPOSTAS RÃPIDAS
+                  💬 RESPOSTAS RÁPIDAS
                 </button>
               )}
 
               {mensagensConversa.length > 0 && (
                 <div className="mt-4 bg-slate-900 border border-blue-500/40 rounded-2xl p-4">
                   <h3 className="font-bold text-blue-300 mb-3">
-                    ðŸ’¬ Conversa do atendimento
+                    💬 Conversa do atendimento
                   </h3>
 
                   <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
@@ -2661,7 +2874,7 @@ Mensagem: ${mensagemErro}`
                         }
                       >
                         <p className="text-xs font-black mb-2">
-                          {item.autor === "morador" ? "VocÃª" : "Visitante"}
+                          {item.autor === "morador" ? "Você" : "Visitante"}
                         </p>
 
                         {item.tipo === "texto" && (
@@ -2696,14 +2909,14 @@ Mensagem: ${mensagemErro}`
                               setAudioPopup({
                                 titulo:
                                   item.autor === "morador"
-                                    ? "ðŸŽ™ï¸ Seu Ã¡udio enviado"
-                                    : "ðŸŽ™ï¸ Ãudio do visitante",
+                                    ? "🎙️ Seu áudio enviado"
+                                    : "🎙️ Áudio do visitante",
                                 audio: item.audioBase64 || "",
                               });
                             }}
                             className="w-full bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-xl py-3 font-bold text-white"
                           >
-                            ðŸŽ™ï¸ Ouvir Ã¡udio
+                            🎙️ Ouvir áudio
                           </button>
                         )}
 
@@ -2717,8 +2930,8 @@ Mensagem: ${mensagemErro}`
                               }
                             >
                               {visitanteVisualizou
-                                ? "âœ“âœ“ Lido"
-                                : "âœ“ Enviado"}
+                                ? "✓✓ Lido"
+                                : "✓ Enviado"}
                             </p>
                           )}
                       </div>
@@ -2737,7 +2950,7 @@ Mensagem: ${mensagemErro}`
                   disabled={enviandoAudioMorador}
                   className="w-full bg-cyan-600 hover:bg-cyan-500 disabled:bg-slate-700 py-3 rounded-xl font-black"
                 >
-                  ðŸŽ™ï¸ GRAVAR ÃUDIO
+                  🎙️ GRAVAR ÁUDIO
                 </button>
               </div>
             </>
@@ -2751,7 +2964,7 @@ Mensagem: ${mensagemErro}`
                 onClick={finalizarSolicitacao}
                 className="w-full mt-6 bg-red-600 hover:bg-red-500 text-white font-bold py-3 rounded-2xl"
               >
-                âŒ FINALIZAR ATENDIMENTO
+                ❌ FINALIZAR ATENDIMENTO
               </button>
             )}
         </div>

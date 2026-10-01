@@ -134,20 +134,21 @@ export default function MoradorV2() {
 
   const acaoChamadaExecutadaRef = useRef("");
 
+  const atendimentoNativoEmTransicao =
+    acaoChamadaPeloLink === "atender" &&
+    status !== "Em atendimento";
+
   const slug = String(
     params?.unidadeId ||
       params?.slug ||
       params?.id ||
-      params?.unidade || ""
+      params?.unidade ||
+      "qr1"
   );
 
   const [nome, setNome] = useState("Nenhuma solicitação");
   const [motivo, setMotivo] = useState("Aguardando visitante");
   const [status, setStatus] = useState("Sem chamado ativo");
-
-  const atendimentoNativoEmTransicao =
-    acaoChamadaPeloLink === "atender" &&
-    status !== "Em atendimento";
   const [horaChamada, setHoraChamada] = useState("");
   const [modo, setModo] = useState("");
   const [mensagemResponsavel, setMensagemResponsavel] = useState("");
@@ -310,6 +311,12 @@ const nomeLocal =
 
   useEffect(() => {
     if (Capacitor.isNativePlatform()) {
+      PushNotifications.requestPermissions().then((result) => {
+        if (result.receive === "granted") {
+          PushNotifications.register();
+        }
+      });
+
       PushNotifications.addListener("registration", async (token) => {
         const condominioId = identificarCondominioPeloSlug(slug);
         const chaveDeviceId = "qr-core:device-id-nativo";
@@ -324,16 +331,9 @@ const nomeLocal =
           ref(db, `configuracoes-v2/tokensNativos/${slug}/${deviceId}`),
           {
             token: token.value,
-            usuarioUid: usuario?.uid || null,
             atualizadoEm: Date.now(),
           }
         );
-      });
-
-      PushNotifications.requestPermissions().then((result) => {
-        if (result.receive === "granted") {
-          PushNotifications.register();
-        }
       });
     }
   }, [slug]);
@@ -480,26 +480,17 @@ const nomeLocal =
   }
 
   useEffect(() => {
-    if (!usuario?.uid) {
-      return;
-    }
+    const referenciaStatus = ref(db, caminhoStatus);
 
-    const referenciaStatus = ref(
-      db,
-      `unidades-v2/${slug}/responsaveis/${usuario.uid}/status`
-    );
-
-    const pararDeOuvirStatus = onValue(
-      referenciaStatus,
-      (snapshot) => {
-        const statusResponsavel = snapshot.val();
-
-        setOnline(statusResponsavel !== "ausente");
+    const pararDeOuvirStatus = onValue(referenciaStatus, (snapshot) => {
+      const dados = snapshot.val();
+      if (dados && typeof dados.online === "boolean") {
+        setOnline(dados.online);
       }
-    );
+    });
 
     return () => pararDeOuvirStatus();
-  }, [slug, usuario?.uid]);
+  }, [caminhoStatus]);
 
   useEffect(() => {
     const referenciaHistorico = ref(db, caminhoHistorico);
@@ -701,8 +692,7 @@ const nomeLocal =
 
       if (
         deveTocar &&
-        !acaoChamadaPeloLink &&
-        acaoChamadaExecutadaRef.current !== "atender"
+        !acaoChamadaPeloLink
       ) {
         // Fluxo normal da tela aberta continua igual.
         // Quando a acao veio da tela nativa, nao reabre CHAMADA RECEBIDA.
@@ -1803,27 +1793,14 @@ async function naoPossoAtender() {
   }
 
   async function alterarStatusOnline() {
-    if (!usuario?.uid) {
-      alert("Nao foi possivel identificar o responsavel.");
-      return;
-    }
-
     const novoStatus = !online;
 
-    await update(
-      ref(
-        db,
-        `unidades-v2/${slug}/responsaveis/${usuario.uid}`
-      ),
-      {
-        status: novoStatus
-          ? "disponivel"
-          : "ausente",
-        atualizadoEm: Date.now(),
-      }
-    );
-
     setOnline(novoStatus);
+
+    await set(ref(db, caminhoStatus), {
+      online: novoStatus,
+      atualizadoEm: new Date().toISOString(),
+    });
   }
 
   async function acionarPortao() {

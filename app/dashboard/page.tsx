@@ -1289,13 +1289,6 @@ setMenuMobileAberto(false);
               </button>
             ))}
           </nav>
-
-          <div className="mt-8 bg-slate-800 rounded-xl p-4 border border-slate-700">
-            <p className="text-xs text-slate-400">Piloto atual protegido</p>
-            <p className="text-sm font-bold text-green-400 mt-1">
-              qr1 até qr5 intactos
-            </p>
-          </div>
         </aside>
 
         <section className="min-w-0 flex-1 overflow-x-hidden p-3 sm:p-4 md:p-8">
@@ -1362,10 +1355,6 @@ setMenuMobileAberto(false);
 
                       <p className="mt-1 text-lg font-black text-white">
                         Piloto preservado
-                      </p>
-
-                      <p className="mt-1 text-xs leading-relaxed text-blue-100">
-                        qr1 até qr5 permanecem intactos durante os testes.
                       </p>
                     </div>
                   </div>

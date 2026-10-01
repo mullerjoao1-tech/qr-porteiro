@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useRef, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
@@ -6,20 +6,11 @@ import { getToken } from "firebase/messaging";
 import { ref, onValue, update, remove, push, set, get } from "firebase/database";
 import { db, messagingPromise } from "../../services/firebase";
 import { useLocalAtual } from "@/app/hooks/useLocalAtual";
-import { useAuth } from "@/app/context/AuthContext";
-import { Capacitor, registerPlugin } from "@capacitor/core";
-import { PushNotifications } from "@capacitor/push-notifications";
 import {
   listarResponsaveisDaUnidade,
   recusarEEncaminhar,
   registrarAtendimentoDoResponsavel,
 } from "@/app/services/chamadas/MotorEscalonamento";
-
-type CallControlPlugin = {
-  stopIncomingCall: () => Promise<any>;
-};
-
-const callControl = registerPlugin<CallControlPlugin>("CallControl");
 type MensagemConversa = {
   id?: string;
   autor: "visitante" | "morador";
@@ -27,10 +18,6 @@ type MensagemConversa = {
   texto?: string;
   audioBase64?: string;
   criadoEm: number;
-  visualizadoPeloMorador?: boolean;
-  visualizadoPeloMoradorEm?: number;
-  audioOuvidoPeloMorador?: boolean;
-  audioOuvidoPeloMoradorEm?: number;
 };
 
 type ComunicadoMorador = {
@@ -122,32 +109,19 @@ function textoTipoComunicado(tipo: ComunicadoMorador["tipo"]) {
 export default function MoradorV2() {
   const params = useParams();
   const searchParams = useSearchParams();
-
-  const {
-    usuario,
-  } = useAuth();
-
   const comunicadoIdPeloLink = searchParams.get("comunicado") || "";
-
-  const acaoChamadaPeloLink =
-    searchParams.get("acaoChamada") || "";
-
-  const acaoChamadaExecutadaRef = useRef("");
 
   const slug = String(
     params?.unidadeId ||
       params?.slug ||
       params?.id ||
-      params?.unidade || ""
+      params?.unidade ||
+      "qr1"
   );
 
   const [nome, setNome] = useState("Nenhuma solicitação");
   const [motivo, setMotivo] = useState("Aguardando visitante");
   const [status, setStatus] = useState("Sem chamado ativo");
-
-  const atendimentoNativoEmTransicao =
-    acaoChamadaPeloLink === "atender" &&
-    status !== "Em atendimento";
   const [horaChamada, setHoraChamada] = useState("");
   const [modo, setModo] = useState("");
   const [mensagemResponsavel, setMensagemResponsavel] = useState("");
@@ -173,23 +147,9 @@ export default function MoradorV2() {
   const [popupAudioMoradorAberto, setPopupAudioMoradorAberto] = useState(false);
   const [respostasRapidasAbertas, setRespostasRapidasAbertas] = useState(true);
   const [popupAtendimentoAberto, setPopupAtendimentoAberto] = useState(false);
-
-  // Indica se a chamada atual pertence ao usuario autenticado.
-  // Quando o MotorEscalonamento encaminha para outro responsavel,
-  // esta tela deixa imediatamente de considerar a chamada como sua.
-  const [
-    chamadaDestinadaAoUsuarioAtual,
-    setChamadaDestinadaAoUsuarioAtual,
-  ] = useState(true);
-
   const [mostrarHistorico, setMostrarHistorico] = useState(false);
   const [mostrarCameraGrande, setMostrarCameraGrande] = useState(false);
-  const [audioPopup, setAudioPopup] = useState<{
-    titulo: string;
-    audio: string;
-    mensagemId?: string;
-    autor?: "visitante" | "morador";
-  } | null>(null);
+  const [audioPopup, setAudioPopup] = useState<{ titulo: string; audio: string } | null>(null);
   const [installPrompt, setInstallPrompt] = useState<any>(null);
   const [appInstalavel, setAppInstalavel] = useState(false);
   const [comunicados, setComunicados] = useState<ComunicadoMorador[]>([]);
@@ -246,23 +206,13 @@ const nomeLocal =
   const TEMPO_EM_ATENDIMENTO = 3 * 60 * 1000;
 
   const chamadaAtiva =
-    chamadaDestinadaAoUsuarioAtual &&
     nome !== "Nenhuma solicitação" &&
     status !== "Sem chamado ativo" &&
     status !== "Encerrado";
 
-  const aguardandoAtendimento =
-    chamadaDestinadaAoUsuarioAtual &&
-    status === "Aguardando atendimento";
-
-  const atendimentoEmAndamento =
-    chamadaDestinadaAoUsuarioAtual &&
-    status === "Em atendimento";
-
-  const mostrarPopupChamada =
-    chamadaAtiva &&
-    popupAtendimentoAberto &&
-    aguardandoAtendimento;
+  const aguardandoAtendimento = status === "Aguardando atendimento";
+  const atendimentoEmAndamento = status === "Em atendimento";
+  const mostrarPopupChamada = chamadaAtiva && popupAtendimentoAberto && aguardandoAtendimento;
 
   async function registrarLog(tipo: string, detalhes: string) {
     try {
@@ -309,36 +259,6 @@ const nomeLocal =
   }
 
   useEffect(() => {
-    if (Capacitor.isNativePlatform()) {
-      PushNotifications.addListener("registration", async (token) => {
-        const condominioId = identificarCondominioPeloSlug(slug);
-        const chaveDeviceId = "qr-core:device-id-nativo";
-
-        let deviceId = window.localStorage.getItem(chaveDeviceId) || "";
-        if (!deviceId) {
-          deviceId = crypto.randomUUID();
-          window.localStorage.setItem(chaveDeviceId, deviceId);
-        }
-
-        await set(
-          ref(db, `configuracoes-v2/tokensNativos/${slug}/${deviceId}`),
-          {
-            token: token.value,
-            usuarioUid: usuario?.uid || null,
-            atualizadoEm: Date.now(),
-          }
-        );
-      });
-
-      PushNotifications.requestPermissions().then((result) => {
-        if (result.receive === "granted") {
-          PushNotifications.register();
-        }
-      });
-    }
-  }, [slug]);
-
-  useEffect(() => {
     const referenciaComunicados = ref(db, caminhoComunicados);
 
     const pararDeOuvirComunicados = onValue(
@@ -373,23 +293,7 @@ const nomeLocal =
             if (comunicado.destinatario === "moradores") return true;
 
             if (comunicado.destinatario === "unidade") {
-              if (atendimentoNativoEmTransicao) {
-    return (
-      <div className="fixed inset-0 z-[5000] bg-slate-950 flex items-center justify-center">
-        <div className="text-center px-6">
-          <p className="text-green-400 text-xl font-black">
-            ATENDENDO CHAMADA
-          </p>
-
-          <p className="text-slate-300 mt-3">
-            Abrindo atendimento...
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  return (
+              return (
                 comunicado.unidadeId === slug ||
                 comunicado.unidadesDestinatarias?.includes(slug) === true
               );
@@ -480,26 +384,17 @@ const nomeLocal =
   }
 
   useEffect(() => {
-    if (!usuario?.uid) {
-      return;
-    }
+    const referenciaStatus = ref(db, caminhoStatus);
 
-    const referenciaStatus = ref(
-      db,
-      `unidades-v2/${slug}/responsaveis/${usuario.uid}/status`
-    );
-
-    const pararDeOuvirStatus = onValue(
-      referenciaStatus,
-      (snapshot) => {
-        const statusResponsavel = snapshot.val();
-
-        setOnline(statusResponsavel !== "ausente");
+    const pararDeOuvirStatus = onValue(referenciaStatus, (snapshot) => {
+      const dados = snapshot.val();
+      if (dados && typeof dados.online === "boolean") {
+        setOnline(dados.online);
       }
-    );
+    });
 
     return () => pararDeOuvirStatus();
-  }, [slug, usuario?.uid]);
+  }, [caminhoStatus]);
 
   useEffect(() => {
     const referenciaHistorico = ref(db, caminhoHistorico);
@@ -576,31 +471,6 @@ const nomeLocal =
       ultimaChamadaAtivaRef.current = true;
       ultimaChamadaDadosRef.current = dados;
 
-      const responsavelAtualUid =
-        String(
-          dados.responsavelAtualUid ||
-          dados.responsavelAtualId ||
-          ""
-        );
-
-      /*
-       * Compatibilidade:
-       * chamadas antigas sem responsável individual
-       * continuam funcionando como antes.
-       *
-       * Chamadas novas com responsável definido
-       * pertencem somente ao usuário selecionado
-       * pelo MotorEscalonamento.
-       */
-      const chamadaDestinadaAoUsuario =
-        !responsavelAtualUid ||
-        !usuario?.uid ||
-        responsavelAtualUid === usuario?.uid;
-
-      setChamadaDestinadaAoUsuarioAtual(
-        chamadaDestinadaAoUsuario
-      );
-
       setNome(dados.nome || "Nenhuma solicitação");
       setMotivo(dados.motivo || "Aguardando visitante");
       setStatus(dados.status || "Sem chamado ativo");
@@ -642,18 +512,12 @@ const nomeLocal =
       const audioVisitanteAtual = ultimoAudioVisitante?.audioBase64 || dados.audioBase64 || "";
       setAudioVisitante(audioVisitanteAtual);
 
-      if (
-        chamadaDestinadaAoUsuario &&
-        audioVisitanteAtual &&
-        ultimoAudioPopupRef.current !== audioVisitanteAtual
-      ) {
+      if (audioVisitanteAtual && ultimoAudioPopupRef.current !== audioVisitanteAtual) {
         ultimoAudioPopupRef.current = audioVisitanteAtual;
 
         setAudioPopup({
           titulo: "🎙️ Novo áudio do visitante",
           audio: audioVisitanteAtual,
-          mensagemId: ultimoAudioVisitante?.id,
-          autor: "visitante",
         });
       }
 
@@ -662,50 +526,18 @@ const nomeLocal =
         ultimaChamadaDadosRef.current = null;
 
         pararToqueContinuo();
-        limparFinalizacaoAutomatica();
-
         setPopupAtendimentoAberto(false);
-        setAudioPopup(null);
-
-        setNome("Nenhuma solicitação");
-        setMotivo("Aguardando visitante");
-        setStatus("Sem chamado ativo");
-        setHoraChamada("");
-        setModo("");
-        setMensagemResponsavel("");
-        setVisitanteVisualizou(false);
-
-        setAudioVisitante("");
-        setMensagensConversa([]);
-        setAudioRespostaBlob(null);
-
-        ultimoAudioPopupRef.current = "";
-        idChamadaAtualRef.current = "";
-
-        setChamadaDestinadaAoUsuarioAtual(true);
-
-        setAvisoAuto("Atendimento encerrado.");
-
-        setTimeout(() => {
-          setAvisoAuto("");
-        }, 2000);
-
+        setAvisoAuto("Atendimento encerrado. Limpando em instantes.");
         return;
       }
 
       const deveTocar =
-        chamadaDestinadaAoUsuario &&
         dados.notificar === true &&
         dados.status === "Aguardando atendimento" &&
         !toqueSilenciadoPorAudioRef.current;
 
-      if (
-        deveTocar &&
-        !acaoChamadaPeloLink &&
-        acaoChamadaExecutadaRef.current !== "atender"
-      ) {
-        // Fluxo normal da tela aberta continua igual.
-        // Quando a acao veio da tela nativa, nao reabre CHAMADA RECEBIDA.
+      if (deveTocar) {
+        iniciarToqueContinuo();
         setPopupAtendimentoAberto(true);
 
         const idChamada = dados.criadoEm || dados.nome || "";
@@ -722,20 +554,9 @@ const nomeLocal =
         }
       } else {
         pararToqueContinuo();
-
-        if (!chamadaDestinadaAoUsuario) {
-          setPopupAtendimentoAberto(false);
-        }
       }
 
-      if (chamadaDestinadaAoUsuario) {
-        programarFinalizacaoAutomatica(
-          dados
-        );
-      } else {
-        limparFinalizacaoAutomatica();
-        setAvisoAuto("");
-      }
+      programarFinalizacaoAutomatica(dados);
     });
 
     return () => {
@@ -743,10 +564,7 @@ const nomeLocal =
       pararToqueContinuo();
       pararDeOuvir();
     };
-  }, [
-    caminhoFirebase,
-    usuario?.uid,
-  ]);
+  }, [caminhoFirebase]);
 
   async function capturarFotoCamera() {
     setCapturandoCamera(true);
@@ -833,17 +651,7 @@ const nomeLocal =
     const agora = Date.now();
 
     let tempoLimite = TEMPO_AGUARDANDO;
-
-    /*
-     * Enquanto estiver aguardando, cada responsavel recebe
-     * sua propria janela de atendimento.
-     *
-     * escalonamentoAtualizadoEm muda quando a prioridade
-     * passa para o proximo responsavel.
-     */
-    let dataBase =
-      dados.escalonamentoAtualizadoEm ||
-      dados.criadoEm;
+    let dataBase = dados.criadoEm;
 
     if (dados.status === "Em atendimento") {
       tempoLimite = TEMPO_EM_ATENDIMENTO;
@@ -875,80 +683,7 @@ const nomeLocal =
     pararToqueContinuo();
     limparFinalizacaoAutomatica();
 
-    /*
-     * Protecao contra timer antigo.
-     *
-     * Antes de encerrar qualquer chamada, confirmamos que:
-     * - ela ainda existe;
-     * - ainda esta aguardando/em atendimento;
-     * - ainda pertence ao usuario deste aparelho;
-     * - continua sendo a mesma chamada observada.
-     */
-    try {
-      const snapshotAtual =
-        await get(
-          ref(
-            db,
-            caminhoFirebase
-          )
-        );
-
-      const chamadaAtual =
-        snapshotAtual.val();
-
-      if (!chamadaAtual) {
-        return;
-      }
-
-      const responsavelAtualUid =
-        String(
-          chamadaAtual.responsavelAtualUid ||
-          chamadaAtual.responsavelAtualId ||
-          ""
-        );
-
-      if (
-        responsavelAtualUid &&
-        responsavelAtualUid !==
-          usuario?.uid
-      ) {
-        return;
-      }
-
-      if (
-        chamadaAtual.status !==
-          "Aguardando atendimento" &&
-        chamadaAtual.status !==
-          "Em atendimento"
-      ) {
-        return;
-      }
-
-      const chamadaObservada =
-        ultimaChamadaDadosRef.current;
-
-      if (
-        chamadaObservada?.criadoEm &&
-        chamadaAtual.criadoEm !==
-          chamadaObservada.criadoEm
-      ) {
-        return;
-      }
-    } catch (erro) {
-      console.error(
-        "Erro ao validar chamada antes do timeout:",
-        erro
-      );
-
-      /*
-       * Em caso de duvida, nao apagamos uma chamada.
-       */
-      return;
-    }
-
-    const timeoutAguardando =
-      status ===
-      "Aguardando atendimento";
+    const timeoutAguardando = status === "Aguardando atendimento";
 
     ultimaChamadaAtivaRef.current = false;
     setPopupAtendimentoAberto(false);
@@ -982,49 +717,10 @@ const nomeLocal =
       salvarHistorico(timeoutAguardando ? "Não atendida" : "Automática"),
     ]);
 
-    const identificadorEncerramento =
-      new Date().toISOString();
-
-    setTimeout(async () => {
-      try {
-        const snapshotAtual =
-          await get(
-            ref(
-              db,
-              caminhoFirebase
-            )
-          );
-
-        if (!snapshotAtual.exists()) {
-          return;
-        }
-
-        const chamadaAtual =
-          snapshotAtual.val();
-
-        /*
-         * Nunca permite que o timer de uma chamada antiga
-         * apague uma chamada nova que nasceu no mesmo caminho.
-         */
-        if (
-          chamadaAtual?.status !==
-          "Encerrado"
-        ) {
-          return;
-        }
-
-        await remove(
-          ref(
-            db,
-            caminhoFirebase
-          )
-        );
-      } catch (erro) {
-        console.error(
-          "Erro ao limpar chamada encerrada:",
-          erro
-        );
-      }
+    setTimeout(() => {
+      void remove(ref(db, caminhoFirebase)).catch((erro) => {
+        console.error("Erro ao limpar chamada encerrada:", erro);
+      });
     }, 2000);
   }
 
@@ -1046,6 +742,7 @@ const nomeLocal =
     return;
   }
 
+  setPopupAtendimentoAberto(false);
   pararToqueContinuo();
 
   try {
@@ -1065,25 +762,6 @@ const nomeLocal =
         chamadaAtual.responsavelAtualId ||
         ""
       );
-
-    const responsavelAtualUid =
-      String(
-        chamadaAtual.responsavelAtualUid ||
-        responsavelAtualId ||
-        ""
-      );
-
-    if (
-      responsavelAtualUid &&
-      responsavelAtualUid !==
-        usuario?.uid
-    ) {
-      alert(
-        "Esta chamada esta destinada a outro responsavel."
-      );
-
-      return;
-    }
 
     /*
      * Enquanto ainda não houver responsável individual
@@ -1134,17 +812,6 @@ const nomeLocal =
         caminhoFirebase,
         responsavelAtual
       );
-    }
-
-    if (Capacitor.isNativePlatform()) {
-      try {
-        await callControl.stopIncomingCall();
-      } catch (erroCallControl) {
-        console.error(
-          "Erro ao parar alerta nativo da chamada:",
-          erroCallControl
-        );
-      }
     }
 
     setStatus(
@@ -1213,25 +880,6 @@ async function naoPossoAtender() {
         ""
       );
 
-    const responsavelAtualUid =
-      String(
-        chamadaAtual.responsavelAtualUid ||
-        responsavelAtualId ||
-        ""
-      );
-
-    if (
-      responsavelAtualUid &&
-      responsavelAtualUid !==
-        usuario?.uid
-    ) {
-      alert(
-        "Esta chamada esta destinada a outro responsavel."
-      );
-
-      return;
-    }
-
     if (!responsavelAtualId) {
       alert(
         "A chamada ainda não possui um responsável individual definido."
@@ -1260,68 +908,17 @@ async function naoPossoAtender() {
       resultado.sucesso &&
       resultado.responsavel
     ) {
-      /*
-       * O MotorEscalonamento ja concluiu a transferencia.
-       * Agora a API consulta o novo responsavelAtualUid
-       * e envia o push ao proximo responsavel.
-       */
-      try {
-        const respostaPush =
-          await fetch(
-            "/api/enviar-notificacao-v2",
-            {
-              method: "POST",
-
-              headers: {
-                "Content-Type":
-                  "application/json",
-              },
-
-              body:
-                JSON.stringify({
-                  unidadeId:
-                    slug,
-                }),
-            }
-          );
-
-        const dadosPush =
-          await respostaPush
-            .json()
-            .catch(
-              () => null
-            );
-
-        console.log(
-          "PUSH APOS TRANSFERENCIA:",
-          dadosPush
-        );
-      } catch (erroPush) {
-        console.error(
-          "Erro ao enviar push para o proximo responsavel:",
-          erroPush
-        );
-      }
-
-      setAvisoAuto(
-        `✓ Chamada encaminhada para ${resultado.responsavel.nome}.`
+      alert(
+        `Chamada encaminhada para ${resultado.responsavel.nome}.`
       );
-
-      setTimeout(() => {
-        setAvisoAuto("");
-      }, 2000);
 
       return;
     }
 
-    setAvisoAuto(
+    alert(
       resultado.motivo ||
-      "Nenhum responsável disponível. Chamada encerrada."
+      "Não existe outro responsável disponível no momento."
     );
-
-    setTimeout(() => {
-      setAvisoAuto("");
-    }, 2000);
   } catch (erro) {
     console.error(
       "Erro ao encaminhar chamada:",
@@ -1339,131 +936,6 @@ async function naoPossoAtender() {
     );
   }
 }
-
-  /*
-   * Ponte da tela nativa para o fluxo Morador V2 existente.
-   *
-   * Nenhuma regra de atendimento e duplicada aqui.
-   * A Activity apenas informa qual acao foi escolhida.
-   */
-  useEffect(() => {
-    if (!acaoChamadaPeloLink) return;
-
-    if (
-      acaoChamadaExecutadaRef.current ===
-      acaoChamadaPeloLink
-    ) {
-      return;
-    }
-
-    /*
-     * A MainActivity pode abrir a pagina antes de o Firebase
-     * terminar de entregar a chamada ativa.
-     *
-     * Esperamos o mesmo estado usado pelo fluxo normal.
-     */
-    if (status !== "Aguardando atendimento") {
-      return;
-    }
-
-    if (
-      acaoChamadaPeloLink !== "atender" &&
-      acaoChamadaPeloLink !== "nao-posso-atender"
-    ) {
-      return;
-    }
-
-    acaoChamadaExecutadaRef.current =
-      acaoChamadaPeloLink;
-
-    /*
-     * Remove a acao da URL antes de executar.
-     * O ref acima impede repeticao durante o mesmo ciclo.
-     */
-    if (typeof window !== "undefined") {
-      const urlAtual = new URL(window.location.href);
-
-      urlAtual.searchParams.delete("acaoChamada");
-
-      window.history.replaceState(
-        {},
-        "",
-        urlAtual.pathname +
-          urlAtual.search +
-          urlAtual.hash
-      );
-    }
-
-    if (acaoChamadaPeloLink === "atender") {
-      void atenderSolicitacao();
-      return;
-    }
-
-    void naoPossoAtender();
-  }, [
-    acaoChamadaPeloLink,
-    status,
-  ]);
-
-  /*
-   * Quando o ATENDER veio da tela nativa bloqueada,
-   * o atendimento real continua sendo feito por atenderSolicitacao().
-   *
-   * Aqui apenas garantimos o mesmo estado visual final
-   * que ja funciona quando o atendimento acontece com a tela aberta.
-   */
-  useEffect(() => {
-    if (
-      acaoChamadaExecutadaRef.current !== "atender" ||
-      status !== "Em atendimento"
-    ) {
-      return;
-    }
-
-    setPopupAtendimentoAberto(false);
-    setRespostasRapidasAbertas(true);
-
-    acaoChamadaExecutadaRef.current = "";
-  }, [status]);
-
-  useEffect(() => {
-    if (status !== "Em atendimento") return;
-
-    if (
-      typeof document !== "undefined" &&
-      document.visibilityState !== "visible"
-    ) {
-      return;
-    }
-
-    const mensagensPendentes = mensagensConversa.filter(
-      (item) =>
-        item.autor === "visitante" &&
-        item.tipo === "texto" &&
-        Boolean(item.id) &&
-        item.visualizadoPeloMorador !== true
-    );
-
-    if (mensagensPendentes.length === 0) return;
-
-    Promise.all(
-      mensagensPendentes.map((item) =>
-        update(
-          ref(db, `${caminhoFirebase}/mensagens/${item.id}`),
-          {
-            visualizadoPeloMorador: true,
-            visualizadoPeloMoradorEm: Date.now(),
-          }
-        )
-      )
-    ).catch((erro) => {
-      console.error(
-        "Erro ao registrar leitura das mensagens pelo morador:",
-        erro
-      );
-    });
-  }, [mensagensConversa, status, caminhoFirebase]);
-
   async function enviarMensagemRapida(mensagem: string) {
     if (status === "Sem chamado ativo") {
       alert("Não existe chamada ativa para responder.");
@@ -1702,49 +1174,10 @@ async function naoPossoAtender() {
       salvarHistorico("Manual"),
     ]);
 
-    const identificadorEncerramento =
-      new Date().toISOString();
-
-    setTimeout(async () => {
-      try {
-        const snapshotAtual =
-          await get(
-            ref(
-              db,
-              caminhoFirebase
-            )
-          );
-
-        if (!snapshotAtual.exists()) {
-          return;
-        }
-
-        const chamadaAtual =
-          snapshotAtual.val();
-
-        /*
-         * Nunca permite que o timer de uma chamada antiga
-         * apague uma chamada nova que nasceu no mesmo caminho.
-         */
-        if (
-          chamadaAtual?.status !==
-          "Encerrado"
-        ) {
-          return;
-        }
-
-        await remove(
-          ref(
-            db,
-            caminhoFirebase
-          )
-        );
-      } catch (erro) {
-        console.error(
-          "Erro ao limpar chamada encerrada:",
-          erro
-        );
-      }
+    setTimeout(() => {
+      void remove(ref(db, caminhoFirebase)).catch((erro) => {
+        console.error("Erro ao limpar chamada encerrada:", erro);
+      });
     }, 2000);
   }
 
@@ -1803,27 +1236,14 @@ async function naoPossoAtender() {
   }
 
   async function alterarStatusOnline() {
-    if (!usuario?.uid) {
-      alert("Nao foi possivel identificar o responsavel.");
-      return;
-    }
-
     const novoStatus = !online;
 
-    await update(
-      ref(
-        db,
-        `unidades-v2/${slug}/responsaveis/${usuario.uid}`
-      ),
-      {
-        status: novoStatus
-          ? "disponivel"
-          : "ausente",
-        atualizadoEm: Date.now(),
-      }
-    );
-
     setOnline(novoStatus);
+
+    await set(ref(db, caminhoStatus), {
+      online: novoStatus,
+      atualizadoEm: new Date().toISOString(),
+    });
   }
 
   async function acionarPortao() {
@@ -1931,85 +1351,13 @@ async function naoPossoAtender() {
           "O Firebase não retornou um token de notificação."
         );
       }
-      const condominioId =
-        identificarCondominioPeloSlug(
-          slug
-        );
-
-      /*
-       * Compatibilidade com Tulipas e fluxos legados.
-       * Mantemos temporariamente o token antigo por unidade.
-       */
-      await set(
-        ref(
-          db,
-          `configuracoes-v2/tokensMorador/${slug}`
-        ),
-        {
-          token,
-          unidadeId: slug,
-          condominioId,
-          atualizadoEm: Date.now(),
-        }
-      );
-
-      /*
-       * Token individual do QR Core.
-       *
-       * Cada usuario pode possuir varios dispositivos.
-       * O identificador fica salvo neste navegador/PWA
-       * e nao depende da unidade.
-       */
-      if (usuario?.uid) {
-        const chaveDeviceId =
-          "qr-core:device-id";
-
-        let deviceId =
-          window.localStorage.getItem(
-            chaveDeviceId
-          ) || "";
-
-        if (!deviceId) {
-          deviceId =
-            typeof crypto !== "undefined" &&
-            typeof crypto.randomUUID ===
-              "function"
-              ? crypto.randomUUID()
-              : `device-${Date.now()}-${Math.random()
-                  .toString(36)
-                  .slice(2)}`;
-
-          window.localStorage.setItem(
-            chaveDeviceId,
-            deviceId
-          );
-        }
-
-        await set(
-          ref(
-            db,
-            `configuracoes-v2/tokensUsuarios/${usuario.uid}/${deviceId}`
-          ),
-          {
-            token,
-            uid:
-              usuario.uid,
-
-            deviceId,
-
-            unidadeId:
-              slug,
-
-            condominioId,
-
-            ativo:
-              true,
-
-            atualizadoEm:
-              Date.now(),
-          }
-        );
-      }
+const condominioId = identificarCondominioPeloSlug(slug);
+      await set(ref(db, `configuracoes-v2/tokensMorador/${slug}`), {
+        token,
+        unidadeId: slug,
+        condominioId,
+        atualizadoEm: Date.now(),
+      });
 
       await registrarLog(
         "push_token_salvo",
@@ -2133,11 +1481,6 @@ Mensagem: ${mensagemErro}`
       icone: "🚶",
     },
   ];
-
-  const ultimaMensagemMoradorId =
-    [...mensagensConversa]
-      .reverse()
-      .find((item) => item.autor === "morador")?.id || "";
 
   return (
     <main className="min-h-screen bg-slate-950 text-white p-4 relative">
@@ -2530,29 +1873,7 @@ Mensagem: ${mensagemErro}`
                 onPointerDown={silenciarToqueAoOuvirAudio}
                 onTouchStart={silenciarToqueAoOuvirAudio}
                 onClick={silenciarToqueAoOuvirAudio}
-                onPlay={async () => {
-                  silenciarToqueAoOuvirAudio();
-
-                  if (
-                    audioPopup.autor === "visitante" &&
-                    audioPopup.mensagemId
-                  ) {
-                    const agora = Date.now();
-
-                    await update(
-                      ref(
-                        db,
-                        `${caminhoFirebase}/mensagens/${audioPopup.mensagemId}`
-                      ),
-                      {
-                        visualizadoPeloMorador: true,
-                        visualizadoPeloMoradorEm: agora,
-                        audioOuvidoPeloMorador: true,
-                        audioOuvidoPeloMoradorEm: agora,
-                      }
-                    );
-                  }
-                }}
+                onPlay={silenciarToqueAoOuvirAudio}
                 onPlaying={silenciarToqueAoOuvirAudio}
               />
             </div>
@@ -2769,9 +2090,19 @@ Mensagem: ${mensagemErro}`
         )}
 
         <div className="grid grid-cols-2 gap-3 mt-5">
-          
+          <button
+            onClick={tocarBip}
+            className="bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold py-3 rounded-2xl"
+          >
+            🔊 Testar Som
+          </button>
 
-          
+          <button
+            onClick={ativarNotificacoes}
+            className="bg-yellow-500 hover:bg-yellow-400 text-black text-sm font-bold py-3 rounded-2xl"
+          >
+            🔔 Notificações
+          </button>
         </div>
 
         <div className="grid grid-cols-2 gap-3 mt-3">
@@ -2835,7 +2166,16 @@ Mensagem: ${mensagemErro}`
         )}
 
         <div className="grid grid-cols-2 gap-3 mt-3">
-          
+          <button
+            onClick={instalarApp}
+            className={
+              appInstalavel
+                ? "bg-green-600 hover:bg-green-500 text-white text-sm font-bold py-3 rounded-2xl"
+                : "bg-slate-700 hover:bg-slate-600 text-white text-sm font-bold py-3 rounded-2xl"
+            }
+          >
+            📲 Instalar app
+          </button>
 
 
         </div>
@@ -2931,26 +2271,9 @@ Mensagem: ${mensagemErro}`
                         {item.tipo === "audio" && item.audioBase64 && (
                           <button
                             type="button"
-                            onClick={async () => {
+                            onClick={() => {
                               if (item.autor === "visitante") {
                                 silenciarToqueAoOuvirAudio();
-
-                                if (item.id) {
-                                  const agora = Date.now();
-
-                                  await update(
-                                    ref(
-                                      db,
-                                      `${caminhoFirebase}/mensagens/${item.id}`
-                                    ),
-                                    {
-                                      visualizadoPeloMorador: true,
-                                      visualizadoPeloMoradorEm: agora,
-                                      audioOuvidoPeloMorador: true,
-                                      audioOuvidoPeloMoradorEm: agora,
-                                    }
-                                  );
-                                }
                               }
 
                               setAudioPopup({
@@ -2966,21 +2289,6 @@ Mensagem: ${mensagemErro}`
                             🎙️ Ouvir áudio
                           </button>
                         )}
-
-                        {item.autor === "morador" &&
-                          item.id === ultimaMensagemMoradorId && (
-                            <p
-                              className={
-                                visitanteVisualizou
-                                  ? "text-xs text-green-400 font-bold mt-2 text-right"
-                                  : "text-xs text-slate-400 font-bold mt-2 text-right"
-                              }
-                            >
-                              {visitanteVisualizou
-                                ? "✓✓ Lido"
-                                : "✓ Enviado"}
-                            </p>
-                          )}
                       </div>
                     ))}
                   </div>
@@ -3020,18 +2328,6 @@ Mensagem: ${mensagemErro}`
     </main>
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

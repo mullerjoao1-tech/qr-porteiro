@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useRef, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
@@ -7,19 +7,11 @@ import { ref, onValue, update, remove, push, set, get } from "firebase/database"
 import { db, messagingPromise } from "../../services/firebase";
 import { useLocalAtual } from "@/app/hooks/useLocalAtual";
 import { useAuth } from "@/app/context/AuthContext";
-import { Capacitor, registerPlugin } from "@capacitor/core";
-import { PushNotifications } from "@capacitor/push-notifications";
 import {
   listarResponsaveisDaUnidade,
   recusarEEncaminhar,
   registrarAtendimentoDoResponsavel,
 } from "@/app/services/chamadas/MotorEscalonamento";
-
-type CallControlPlugin = {
-  stopIncomingCall: () => Promise<any>;
-};
-
-const callControl = registerPlugin<CallControlPlugin>("CallControl");
 type MensagemConversa = {
   id?: string;
   autor: "visitante" | "morador";
@@ -122,8 +114,6 @@ function textoTipoComunicado(tipo: ComunicadoMorador["tipo"]) {
 export default function MoradorV2() {
   const params = useParams();
   const searchParams = useSearchParams();
-  const chamadaFullscreenAndroid =
-    searchParams.get("chamadaFullscreen") === "1";
 
   const {
     usuario,
@@ -167,15 +157,6 @@ export default function MoradorV2() {
   const [popupAudioMoradorAberto, setPopupAudioMoradorAberto] = useState(false);
   const [respostasRapidasAbertas, setRespostasRapidasAbertas] = useState(true);
   const [popupAtendimentoAberto, setPopupAtendimentoAberto] = useState(false);
-
-  // Indica se a chamada atual pertence ao usuario autenticado.
-  // Quando o MotorEscalonamento encaminha para outro responsavel,
-  // esta tela deixa imediatamente de considerar a chamada como sua.
-  const [
-    chamadaDestinadaAoUsuarioAtual,
-    setChamadaDestinadaAoUsuarioAtual,
-  ] = useState(true);
-
   const [mostrarHistorico, setMostrarHistorico] = useState(false);
   const [mostrarCameraGrande, setMostrarCameraGrande] = useState(false);
   const [audioPopup, setAudioPopup] = useState<{
@@ -240,23 +221,13 @@ const nomeLocal =
   const TEMPO_EM_ATENDIMENTO = 3 * 60 * 1000;
 
   const chamadaAtiva =
-    chamadaDestinadaAoUsuarioAtual &&
     nome !== "Nenhuma solicitação" &&
     status !== "Sem chamado ativo" &&
     status !== "Encerrado";
 
-  const aguardandoAtendimento =
-    chamadaDestinadaAoUsuarioAtual &&
-    status === "Aguardando atendimento";
-
-  const atendimentoEmAndamento =
-    chamadaDestinadaAoUsuarioAtual &&
-    status === "Em atendimento";
-
-  const mostrarPopupChamada =
-    chamadaAtiva &&
-    popupAtendimentoAberto &&
-    aguardandoAtendimento;
+  const aguardandoAtendimento = status === "Aguardando atendimento";
+  const atendimentoEmAndamento = status === "Em atendimento";
+  const mostrarPopupChamada = chamadaAtiva && popupAtendimentoAberto && aguardandoAtendimento;
 
   async function registrarLog(tipo: string, detalhes: string) {
     try {
@@ -301,35 +272,6 @@ const nomeLocal =
       console.error("Erro analytics:", erro);
     }
   }
-
-  useEffect(() => {
-    if (Capacitor.isNativePlatform()) {
-      PushNotifications.requestPermissions().then((result) => {
-        if (result.receive === "granted") {
-          PushNotifications.register();
-        }
-      });
-
-      PushNotifications.addListener("registration", async (token) => {
-        const condominioId = identificarCondominioPeloSlug(slug);
-        const chaveDeviceId = "qr-core:device-id-nativo";
-
-        let deviceId = window.localStorage.getItem(chaveDeviceId) || "";
-        if (!deviceId) {
-          deviceId = crypto.randomUUID();
-          window.localStorage.setItem(chaveDeviceId, deviceId);
-        }
-
-        await set(
-          ref(db, `configuracoes-v2/tokensNativos/${slug}/${deviceId}`),
-          {
-            token: token.value,
-            atualizadoEm: Date.now(),
-          }
-        );
-      });
-    }
-  }, [slug]);
 
   useEffect(() => {
     const referenciaComunicados = ref(db, caminhoComunicados);
@@ -562,12 +504,11 @@ const nomeLocal =
        */
       const chamadaDestinadaAoUsuario =
         !responsavelAtualUid ||
-        !usuario?.uid ||
-        responsavelAtualUid === usuario?.uid;
-
-      setChamadaDestinadaAoUsuarioAtual(
-        chamadaDestinadaAoUsuario
-      );
+        (
+          Boolean(usuario?.uid) &&
+          responsavelAtualUid ===
+            usuario?.uid
+        );
 
       setNome(dados.nome || "Nenhuma solicitação");
       setMotivo(dados.motivo || "Aguardando visitante");
@@ -630,34 +571,8 @@ const nomeLocal =
         ultimaChamadaDadosRef.current = null;
 
         pararToqueContinuo();
-        limparFinalizacaoAutomatica();
-
         setPopupAtendimentoAberto(false);
-        setAudioPopup(null);
-
-        setNome("Nenhuma solicitação");
-        setMotivo("Aguardando visitante");
-        setStatus("Sem chamado ativo");
-        setHoraChamada("");
-        setModo("");
-        setMensagemResponsavel("");
-        setVisitanteVisualizou(false);
-
-        setAudioVisitante("");
-        setMensagensConversa([]);
-        setAudioRespostaBlob(null);
-
-        ultimoAudioPopupRef.current = "";
-        idChamadaAtualRef.current = "";
-
-        setChamadaDestinadaAoUsuarioAtual(true);
-
-        setAvisoAuto("Atendimento encerrado.");
-
-        setTimeout(() => {
-          setAvisoAuto("");
-        }, 2000);
-
+        setAvisoAuto("Atendimento encerrado. Limpando em instantes.");
         return;
       }
 
@@ -667,15 +582,8 @@ const nomeLocal =
         dados.status === "Aguardando atendimento" &&
         !toqueSilenciadoPorAudioRef.current;
 
-      if (
-        deveTocar &&
-        (
-          !Capacitor.isNativePlatform() ||
-          chamadaFullscreenAndroid
-        )
-      ) {
-        // No Android, a interface aguarda o fluxo nativo iniciar a chamada.
-        // Na web/PWA, continua abrindo diretamente pelo Firebase.
+      if (deveTocar) {
+        iniciarToqueContinuo();
         setPopupAtendimentoAberto(true);
 
         const idChamada = dados.criadoEm || dados.nome || "";
@@ -1016,6 +924,7 @@ const nomeLocal =
     return;
   }
 
+  setPopupAtendimentoAberto(false);
   pararToqueContinuo();
 
   try {
@@ -1104,17 +1013,6 @@ const nomeLocal =
         caminhoFirebase,
         responsavelAtual
       );
-    }
-
-    if (Capacitor.isNativePlatform()) {
-      try {
-        await callControl.stopIncomingCall();
-      } catch (erroCallControl) {
-        console.error(
-          "Erro ao parar alerta nativo da chamada:",
-          erroCallControl
-        );
-      }
     }
 
     setStatus(
@@ -1230,68 +1128,17 @@ async function naoPossoAtender() {
       resultado.sucesso &&
       resultado.responsavel
     ) {
-      /*
-       * O MotorEscalonamento ja concluiu a transferencia.
-       * Agora a API consulta o novo responsavelAtualUid
-       * e envia o push ao proximo responsavel.
-       */
-      try {
-        const respostaPush =
-          await fetch(
-            "/api/enviar-notificacao-v2",
-            {
-              method: "POST",
-
-              headers: {
-                "Content-Type":
-                  "application/json",
-              },
-
-              body:
-                JSON.stringify({
-                  unidadeId:
-                    slug,
-                }),
-            }
-          );
-
-        const dadosPush =
-          await respostaPush
-            .json()
-            .catch(
-              () => null
-            );
-
-        console.log(
-          "PUSH APOS TRANSFERENCIA:",
-          dadosPush
-        );
-      } catch (erroPush) {
-        console.error(
-          "Erro ao enviar push para o proximo responsavel:",
-          erroPush
-        );
-      }
-
-      setAvisoAuto(
-        `✓ Chamada encaminhada para ${resultado.responsavel.nome}.`
+      alert(
+        `Chamada encaminhada para ${resultado.responsavel.nome}.`
       );
-
-      setTimeout(() => {
-        setAvisoAuto("");
-      }, 2000);
 
       return;
     }
 
-    setAvisoAuto(
+    alert(
       resultado.motivo ||
-      "Nenhum responsável disponível. Chamada encerrada."
+      "Não existe outro responsável disponível no momento."
     );
-
-    setTimeout(() => {
-      setAvisoAuto("");
-    }, 2000);
   } catch (erro) {
     console.error(
       "Erro ao encaminhar chamada:",
@@ -2639,9 +2486,19 @@ Mensagem: ${mensagemErro}`
         )}
 
         <div className="grid grid-cols-2 gap-3 mt-5">
-          
+          <button
+            onClick={tocarBip}
+            className="bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold py-3 rounded-2xl"
+          >
+            🔊 Testar Som
+          </button>
 
-          
+          <button
+            onClick={ativarNotificacoes}
+            className="bg-yellow-500 hover:bg-yellow-400 text-black text-sm font-bold py-3 rounded-2xl"
+          >
+            🔔 Notificações
+          </button>
         </div>
 
         <div className="grid grid-cols-2 gap-3 mt-3">
@@ -2705,7 +2562,16 @@ Mensagem: ${mensagemErro}`
         )}
 
         <div className="grid grid-cols-2 gap-3 mt-3">
-          
+          <button
+            onClick={instalarApp}
+            className={
+              appInstalavel
+                ? "bg-green-600 hover:bg-green-500 text-white text-sm font-bold py-3 rounded-2xl"
+                : "bg-slate-700 hover:bg-slate-600 text-white text-sm font-bold py-3 rounded-2xl"
+            }
+          >
+            📲 Instalar app
+          </button>
 
 
         </div>
@@ -2890,11 +2756,6 @@ Mensagem: ${mensagemErro}`
     </main>
   );
 }
-
-
-
-
-
 
 
 

@@ -129,25 +129,17 @@ export default function MoradorV2() {
 
   const comunicadoIdPeloLink = searchParams.get("comunicado") || "";
 
-  const acaoChamadaPeloLink =
-    searchParams.get("acaoChamada") || "";
-
-  const acaoChamadaExecutadaRef = useRef("");
-
   const slug = String(
     params?.unidadeId ||
       params?.slug ||
       params?.id ||
-      params?.unidade || ""
+      params?.unidade ||
+      "qr1"
   );
 
   const [nome, setNome] = useState("Nenhuma solicitação");
   const [motivo, setMotivo] = useState("Aguardando visitante");
   const [status, setStatus] = useState("Sem chamado ativo");
-
-  const atendimentoNativoEmTransicao =
-    acaoChamadaPeloLink === "atender" &&
-    status !== "Em atendimento";
   const [horaChamada, setHoraChamada] = useState("");
   const [modo, setModo] = useState("");
   const [mensagemResponsavel, setMensagemResponsavel] = useState("");
@@ -310,6 +302,12 @@ const nomeLocal =
 
   useEffect(() => {
     if (Capacitor.isNativePlatform()) {
+      PushNotifications.requestPermissions().then((result) => {
+        if (result.receive === "granted") {
+          PushNotifications.register();
+        }
+      });
+
       PushNotifications.addListener("registration", async (token) => {
         const condominioId = identificarCondominioPeloSlug(slug);
         const chaveDeviceId = "qr-core:device-id-nativo";
@@ -324,16 +322,9 @@ const nomeLocal =
           ref(db, `configuracoes-v2/tokensNativos/${slug}/${deviceId}`),
           {
             token: token.value,
-            usuarioUid: usuario?.uid || null,
             atualizadoEm: Date.now(),
           }
         );
-      });
-
-      PushNotifications.requestPermissions().then((result) => {
-        if (result.receive === "granted") {
-          PushNotifications.register();
-        }
       });
     }
   }, [slug]);
@@ -373,23 +364,7 @@ const nomeLocal =
             if (comunicado.destinatario === "moradores") return true;
 
             if (comunicado.destinatario === "unidade") {
-              if (atendimentoNativoEmTransicao) {
-    return (
-      <div className="fixed inset-0 z-[5000] bg-slate-950 flex items-center justify-center">
-        <div className="text-center px-6">
-          <p className="text-green-400 text-xl font-black">
-            ATENDENDO CHAMADA
-          </p>
-
-          <p className="text-slate-300 mt-3">
-            Abrindo atendimento...
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  return (
+              return (
                 comunicado.unidadeId === slug ||
                 comunicado.unidadesDestinatarias?.includes(slug) === true
               );
@@ -480,26 +455,17 @@ const nomeLocal =
   }
 
   useEffect(() => {
-    if (!usuario?.uid) {
-      return;
-    }
+    const referenciaStatus = ref(db, caminhoStatus);
 
-    const referenciaStatus = ref(
-      db,
-      `unidades-v2/${slug}/responsaveis/${usuario.uid}/status`
-    );
-
-    const pararDeOuvirStatus = onValue(
-      referenciaStatus,
-      (snapshot) => {
-        const statusResponsavel = snapshot.val();
-
-        setOnline(statusResponsavel !== "ausente");
+    const pararDeOuvirStatus = onValue(referenciaStatus, (snapshot) => {
+      const dados = snapshot.val();
+      if (dados && typeof dados.online === "boolean") {
+        setOnline(dados.online);
       }
-    );
+    });
 
     return () => pararDeOuvirStatus();
-  }, [slug, usuario?.uid]);
+  }, [caminhoStatus]);
 
   useEffect(() => {
     const referenciaHistorico = ref(db, caminhoHistorico);
@@ -699,13 +665,8 @@ const nomeLocal =
         dados.status === "Aguardando atendimento" &&
         !toqueSilenciadoPorAudioRef.current;
 
-      if (
-        deveTocar &&
-        !acaoChamadaPeloLink &&
-        acaoChamadaExecutadaRef.current !== "atender"
-      ) {
-        // Fluxo normal da tela aberta continua igual.
-        // Quando a acao veio da tela nativa, nao reabre CHAMADA RECEBIDA.
+      if (deveTocar) {
+        // Bip web desativado: o Android ja possui toque nativo da chamada.
         setPopupAtendimentoAberto(true);
 
         const idChamada = dados.criadoEm || dados.nome || "";
@@ -1339,93 +1300,6 @@ async function naoPossoAtender() {
     );
   }
 }
-
-  /*
-   * Ponte da tela nativa para o fluxo Morador V2 existente.
-   *
-   * Nenhuma regra de atendimento e duplicada aqui.
-   * A Activity apenas informa qual acao foi escolhida.
-   */
-  useEffect(() => {
-    if (!acaoChamadaPeloLink) return;
-
-    if (
-      acaoChamadaExecutadaRef.current ===
-      acaoChamadaPeloLink
-    ) {
-      return;
-    }
-
-    /*
-     * A MainActivity pode abrir a pagina antes de o Firebase
-     * terminar de entregar a chamada ativa.
-     *
-     * Esperamos o mesmo estado usado pelo fluxo normal.
-     */
-    if (status !== "Aguardando atendimento") {
-      return;
-    }
-
-    if (
-      acaoChamadaPeloLink !== "atender" &&
-      acaoChamadaPeloLink !== "nao-posso-atender"
-    ) {
-      return;
-    }
-
-    acaoChamadaExecutadaRef.current =
-      acaoChamadaPeloLink;
-
-    /*
-     * Remove a acao da URL antes de executar.
-     * O ref acima impede repeticao durante o mesmo ciclo.
-     */
-    if (typeof window !== "undefined") {
-      const urlAtual = new URL(window.location.href);
-
-      urlAtual.searchParams.delete("acaoChamada");
-
-      window.history.replaceState(
-        {},
-        "",
-        urlAtual.pathname +
-          urlAtual.search +
-          urlAtual.hash
-      );
-    }
-
-    if (acaoChamadaPeloLink === "atender") {
-      void atenderSolicitacao();
-      return;
-    }
-
-    void naoPossoAtender();
-  }, [
-    acaoChamadaPeloLink,
-    status,
-  ]);
-
-  /*
-   * Quando o ATENDER veio da tela nativa bloqueada,
-   * o atendimento real continua sendo feito por atenderSolicitacao().
-   *
-   * Aqui apenas garantimos o mesmo estado visual final
-   * que ja funciona quando o atendimento acontece com a tela aberta.
-   */
-  useEffect(() => {
-    if (
-      acaoChamadaExecutadaRef.current !== "atender" ||
-      status !== "Em atendimento"
-    ) {
-      return;
-    }
-
-    setPopupAtendimentoAberto(false);
-    setRespostasRapidasAbertas(true);
-
-    acaoChamadaExecutadaRef.current = "";
-  }, [status]);
-
   useEffect(() => {
     if (status !== "Em atendimento") return;
 
@@ -1803,27 +1677,14 @@ async function naoPossoAtender() {
   }
 
   async function alterarStatusOnline() {
-    if (!usuario?.uid) {
-      alert("Nao foi possivel identificar o responsavel.");
-      return;
-    }
-
     const novoStatus = !online;
 
-    await update(
-      ref(
-        db,
-        `unidades-v2/${slug}/responsaveis/${usuario.uid}`
-      ),
-      {
-        status: novoStatus
-          ? "disponivel"
-          : "ausente",
-        atualizadoEm: Date.now(),
-      }
-    );
-
     setOnline(novoStatus);
+
+    await set(ref(db, caminhoStatus), {
+      online: novoStatus,
+      atualizadoEm: new Date().toISOString(),
+    });
   }
 
   async function acionarPortao() {
