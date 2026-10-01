@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { get, ref, onValue, orderByKey, push, query, set, startAt, update } from "firebase/database";
 import { db } from "../services/firebase";
+import { useAuth } from "../context/AuthContext";
+import { obterPerfisAtivos } from "../services/perfis/PermissoesPorPerfil";
 import Unidades from "../components/dashboard/Unidades";
 import Moradores from "../components/dashboard/Moradores";
 import AtualizacaoPendenteModal from "./AtualizacaoPendenteModal";
@@ -34,6 +36,14 @@ type LocalCadastrado = {
   plano: string;
   qrPrincipal: string;
   criadoEm: string;
+
+  cnpj?: string;
+  cep?: string;
+  endereco?: string;
+  numero?: string;
+  bairro?: string;
+  telefoneLocal?: string;
+  nomeExibicao?: string;
 };
 
 type UnidadeCadastrada = {
@@ -98,14 +108,24 @@ type MoradorCadastrado = {
 };
 
 export default function Dashboard() {
+  const {
+    vinculosAtivos,
+    vinculoSelecionado,
+  } = useAuth();
   const [telaAtiva, setTelaAtiva] = useState<Tela>("dashboard");
   const [menuMobileAberto, setMenuMobileAberto] = useState(false);
   const [localAberto, setLocalAberto] = useState<LocalCadastrado | null>(null);
   const [editandoLocal, setEditandoLocal] = useState(false);
   const [salvandoEdicaoLocal, setSalvandoEdicaoLocal] = useState(false);
   const [nomeLocalEdicao, setNomeLocalEdicao] = useState("");
+  const [cnpjLocalEdicao, setCnpjLocalEdicao] = useState("");
+  const [cepLocalEdicao, setCepLocalEdicao] = useState("");
+  const [enderecoLocalEdicao, setEnderecoLocalEdicao] = useState("");
+  const [numeroLocalEdicao, setNumeroLocalEdicao] = useState("");
+  const [bairroLocalEdicao, setBairroLocalEdicao] = useState("");
   const [cidadeLocalEdicao, setCidadeLocalEdicao] = useState("");
   const [estadoLocalEdicao, setEstadoLocalEdicao] = useState("");
+  const [telefoneLocalEdicao, setTelefoneLocalEdicao] = useState("");
   const [modalNovoLocalAberto, setModalNovoLocalAberto] = useState(false);
   const [buscaLocal, setBuscaLocal] = useState("");
   const [filtroTipoLocal, setFiltroTipoLocal] = useState("todos");
@@ -936,6 +956,7 @@ async function atualizarMorador(
 
   const localSelecionado = locais.find((item) => item.id === localSelecionadoId);
   const modoCondominio = localSelecionado?.tipo === "condominio";
+  const modoResidencia = localSelecionado?.tipo === "residencia";
 
 
   const locaisFiltrados = locais
@@ -990,8 +1011,14 @@ async function atualizarMorador(
     if (!localAberto) return;
 
     setNomeLocalEdicao(localAberto.nome || "");
+    setCnpjLocalEdicao(localAberto.cnpj || "");
+    setCepLocalEdicao(localAberto.cep || "");
+    setEnderecoLocalEdicao(localAberto.endereco || "");
+    setNumeroLocalEdicao(localAberto.numero || "");
+    setBairroLocalEdicao(localAberto.bairro || "");
     setCidadeLocalEdicao(localAberto.cidade || "");
     setEstadoLocalEdicao(localAberto.estado || "");
+    setTelefoneLocalEdicao(localAberto.telefoneLocal || "");
     setEditandoLocal(true);
   }
 
@@ -1003,30 +1030,86 @@ async function atualizarMorador(
     if (!localAberto || salvandoEdicaoLocal) return;
 
     const nome = nomeLocalEdicao.trim();
+    const cnpj = cnpjLocalEdicao.trim();
+    const cep = cepLocalEdicao.trim();
+    const endereco = enderecoLocalEdicao.trim();
+    const numero = numeroLocalEdicao.trim();
+    const bairro = bairroLocalEdicao.trim();
     const cidade = cidadeLocalEdicao.trim();
-    const estado = estadoLocalEdicao.trim();
+    const estado = estadoLocalEdicao.trim().toUpperCase();
+    const telefoneLocal = telefoneLocalEdicao.trim();
 
     if (!nome) {
       alert("Digite o nome do local.");
       return;
     }
 
+    if (localAberto.tipo === "condominio") {
+      const cnpjNumeros = cnpj.replace(/\D/g, "");
+
+      if (cnpjNumeros.length !== 14) {
+        alert("Informe um CNPJ valido com 14 digitos.");
+        return;
+      }
+    }
+
+    if (cep.replace(/\D/g, "").length !== 8) {
+      alert("Informe um CEP valido com 8 digitos.");
+      return;
+    }
+
+    if (endereco.length < 3) {
+      alert("Informe o endereco do local.");
+      return;
+    }
+
+    if (!numero) {
+      alert("Informe o numero do local.");
+      return;
+    }
+
+    if (bairro.length < 2) {
+      alert("Informe o bairro do local.");
+      return;
+    }
+
+    if (cidade.length < 2) {
+      alert("Informe a cidade do local.");
+      return;
+    }
+
+    if (estado.length !== 2) {
+      alert("Informe a UF com 2 letras.");
+      return;
+    }
+
     try {
       setSalvandoEdicaoLocal(true);
 
-      await update(ref(db, `locais-v2/${localAberto.id}`), {
+      const dadosAtualizados = {
         nome,
+        nomeExibicao: nome,
+        cnpj,
+        cep,
+        endereco,
+        numero,
+        bairro,
         cidade,
         estado,
-      });
+        telefoneLocal,
+        atualizadoEm: Date.now(),
+      };
+
+      await update(
+        ref(db, `locais-v2/${localAberto.id}`),
+        dadosAtualizados
+      );
 
       setLocalAberto((atual) =>
         atual
           ? {
               ...atual,
-              nome,
-              cidade,
-              estado,
+              ...dadosAtualizados,
             }
           : atual
       );
@@ -1053,36 +1136,73 @@ async function atualizarMorador(
   }
 
  
+  const perfisSelecionados =
+    vinculoSelecionado
+      ? obterPerfisAtivos({
+          perfilPrincipal: vinculoSelecionado.perfilPrincipal,
+          perfis: vinculoSelecionado.perfis,
+        })
+      : [];
+
+  const ehSindico =
+    perfisSelecionados.includes("sindico");
+
+  const ehProprietario =
+    perfisSelecionados.includes("proprietario");
+
+  const administradorMaster =
+    vinculosAtivos.some(([, vinculo]) =>
+      obterPerfisAtivos({
+        perfilPrincipal: vinculo.perfilPrincipal,
+        perfis: vinculo.perfis,
+      }).includes("administrador_master")
+    );
+
+  const podeVerPlanosPendentes =
+    administradorMaster ||
+    ehSindico ||
+    (ehProprietario && modoResidencia);
+
   const menu: {
-  id: Tela | "inicio";
-  nome: string;
-  icone: string;
-}[] = [
-  { id: "inicio", nome: "Início", icone: "🏠" },
+    id: Tela | "inicio";
+    nome: string;
+    icone: string;
+  }[] = [
+    { id: "inicio", nome: "Início", icone: "🏠" },
+    { id: "dashboard", nome: "Dashboard", icone: "📊" },
 
-  { id: "dashboard", nome: "Dashboard", icone: "📊" },
+    ...(modoCondominio && ehSindico
+      ? [{ id: "sindico" as const, nome: "Síndico", icone: "🏢" }]
+      : []),
 
-  ...(modoCondominio
-  ? [{ id: "sindico" as const, nome: "Síndico", icone: "🏢" }]
-  : []),
+    ...(administradorMaster
+      ? [
+          { id: "locais" as const, nome: "Locais", icone: "🏢" },
+          { id: "locais-universais" as const, nome: "Cadastro Universal", icone: "🌐" },
+        ]
+      : []),
 
-  { id: "locais", nome: "Locais", icone: "🏢" },
+    ...(administradorMaster || ehSindico
+      ? [
+          { id: "unidades" as const, nome: "Unidades", icone: "🚪" },
+          { id: "moradores" as const, nome: "Moradores", icone: "👥" },
+        ]
+      : []),
 
-  { id: "locais-universais", nome: "Cadastro Universal", icone: "🌐" },
+    ...(podeVerPlanosPendentes
+      ? [
+          { id: "planos" as const, nome: "Planos", icone: "💳" },
+          { id: "pendentes" as const, nome: "Pendentes", icone: "⏳" },
+        ]
+      : []),
 
-  { id: "unidades", nome: "Unidades", icone: "🚪" },
-
-  { id: "moradores", nome: "Moradores", icone: "👥" },
-
-  { id: "planos", nome: "Planos", icone: "💳" },
-
-  { id: "pendentes", nome: "Pendentes", icone: "⏳" },
-
-  { id: "implantacao", nome: "Implantação", icone: "🚀" },
-
-  { id: "contingencia", nome: "Contingência", icone: "🛟" },
-];
-
+    ...(administradorMaster
+      ? [
+          { id: "implantacao" as const, nome: "Implantação", icone: "🚀" },
+          { id: "contingencia" as const, nome: "Contingência", icone: "🛟" },
+        ]
+      : []),
+  ];
   return (
     <main className="min-h-screen bg-slate-950 text-white">
       <header className="sticky top-0 z-40 flex items-center justify-between border-b border-slate-800 bg-slate-950 px-4 py-3 md:hidden">
@@ -2752,6 +2872,107 @@ setMenuMobileAberto(false);
                               <p className="mt-1 font-black text-white">
                                 {formatarTextoTipo(localAberto.tipo)}
                               </p>
+                            </div>
+
+                            <div>
+                              <p className="text-xs text-slate-500">CNPJ</p>
+                              {editandoLocal ? (
+                                <input
+                                  type="text"
+                                  value={cnpjLocalEdicao}
+                                  onChange={(e) => setCnpjLocalEdicao(e.target.value)}
+                                  placeholder="00.000.000/0000-00"
+                                  className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 font-bold text-white outline-none focus:border-blue-500"
+                                />
+                              ) : (
+                                <p className="mt-1 font-black text-white">
+                                  {localAberto.cnpj || "?"}
+                                </p>
+                              )}
+                            </div>
+
+                            <div>
+                              <p className="text-xs text-slate-500">CEP</p>
+                              {editandoLocal ? (
+                                <input
+                                  type="text"
+                                  value={cepLocalEdicao}
+                                  onChange={(e) => setCepLocalEdicao(e.target.value)}
+                                  placeholder="00000-000"
+                                  className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 font-bold text-white outline-none focus:border-blue-500"
+                                />
+                              ) : (
+                                <p className="mt-1 font-black text-white">
+                                  {localAberto.cep || "?"}
+                                </p>
+                              )}
+                            </div>
+
+                            <div>
+                              <p className="text-xs text-slate-500">Endere?o</p>
+                              {editandoLocal ? (
+                                <input
+                                  type="text"
+                                  value={enderecoLocalEdicao}
+                                  onChange={(e) => setEnderecoLocalEdicao(e.target.value)}
+                                  className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 font-bold text-white outline-none focus:border-blue-500"
+                                />
+                              ) : (
+                                <p className="mt-1 font-black text-white">
+                                  {localAberto.endereco || "?"}
+                                </p>
+                              )}
+                            </div>
+
+                            <div>
+                              <p className="text-xs text-slate-500">N?mero</p>
+                              {editandoLocal ? (
+                                <input
+                                  type="text"
+                                  value={numeroLocalEdicao}
+                                  onChange={(e) => setNumeroLocalEdicao(e.target.value)}
+                                  className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 font-bold text-white outline-none focus:border-blue-500"
+                                />
+                              ) : (
+                                <p className="mt-1 font-black text-white">
+                                  {localAberto.numero || "?"}
+                                </p>
+                              )}
+                            </div>
+
+                            <div>
+                              <p className="text-xs text-slate-500">Bairro</p>
+                              {editandoLocal ? (
+                                <input
+                                  type="text"
+                                  value={bairroLocalEdicao}
+                                  onChange={(e) => setBairroLocalEdicao(e.target.value)}
+                                  className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 font-bold text-white outline-none focus:border-blue-500"
+                                />
+                              ) : (
+                                <p className="mt-1 font-black text-white">
+                                  {localAberto.bairro || "?"}
+                                </p>
+                              )}
+                            </div>
+
+                            <div>
+                              <p className="text-xs text-slate-500">
+                                Telefone do local
+                              </p>
+                              {editandoLocal ? (
+                                <input
+                                  type="text"
+                                  value={telefoneLocalEdicao}
+                                  onChange={(e) => setTelefoneLocalEdicao(e.target.value)}
+                                  placeholder="Opcional"
+                                  className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 font-bold text-white outline-none focus:border-blue-500"
+                                />
+                              ) : (
+                                <p className="mt-1 font-black text-white">
+                                  {localAberto.telefoneLocal || "?"}
+                                </p>
+                              )}
                             </div>
 
                             <div>

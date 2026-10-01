@@ -1,12 +1,35 @@
-﻿"use client";
+"use client";
 
 import {
+  useRouter,
+} from "next/navigation";
+
+import {
+  obterModulosDashboard,
+} from "@/app/services/dashboard";
+
+import {
+  resolverPainelInicial,
+} from "@/app/services/navigation/ResolverPainelInicial";
+
+import {
+  useEffect,
   useMemo,
+  useState,
 } from "react";
 
 import {
   useAuth,
 } from "@/app/context/AuthContext";
+
+import {
+  onValue,
+  ref,
+} from "firebase/database";
+
+import {
+  db,
+} from "@/app/services/firebase";
 
 type Props = {
   aberto: boolean;
@@ -185,13 +208,159 @@ export default function ModalTrocarContexto({
   aberto,
   onFechar,
 }: Props) {
+  const router =
+    useRouter();
   const {
+    usuario,
     vinculosAtivos,
     vinculoSelecionadoId,
     selecionarVinculo,
     selecionarCarteiraGeral,
   } =
     useAuth();
+
+  const [nomesOficiais, setNomesOficiais] =
+    useState<Record<string, string>>({});
+
+  useEffect(() => {
+    const referencia =
+      ref(db, "locais-v2");
+
+    const parar =
+      onValue(
+        referencia,
+        (snapshot) => {
+          const dados =
+            snapshot.val();
+
+          const nomes:
+            Record<
+              string,
+              string
+            > = {};
+
+          if (
+            dados &&
+            typeof dados ===
+              "object"
+          ) {
+            Object.entries(
+              dados
+            ).forEach(
+              ([
+                localId,
+                valor,
+              ]) => {
+                if (
+                  !valor ||
+                  typeof valor !==
+                    "object"
+                ) {
+                  return;
+                }
+
+                const local =
+                  valor as any;
+
+                const nome =
+                  (
+                    local.nomeExibicao ||
+                    local.nome ||
+                    ""
+                  )
+                    .toString()
+                    .trim();
+
+                if (!nome) {
+                  return;
+                }
+
+                nomes[
+                  localId
+                ] = nome;
+
+                [
+                  local.id,
+                  local.slug,
+                  local.localId,
+                  local.localSlug,
+                  local.condominioId,
+                  local.condominioSlug,
+                ].forEach(
+                  (
+                    identificador
+                  ) => {
+                    const chave =
+                      (
+                        identificador ||
+                        ""
+                      )
+                        .toString()
+                        .trim();
+
+                    if (chave) {
+                      nomes[
+                        chave
+                      ] =
+                        nome;
+                    }
+                  }
+                );
+              }
+            );
+          }
+
+          setNomesOficiais(
+            nomes
+          );
+        }
+      );
+
+    return () =>
+      parar();
+  }, []);
+
+  function nomeLocalAtual(
+    vinculoId: string,
+    vinculo: any
+  ) {
+    const identificadores = [
+      vinculo.localId,
+      vinculo.localSlug,
+      vinculo.condominioId,
+      vinculo.condominioSlug,
+      vinculoId,
+    ];
+
+    for (
+      const identificador
+      of identificadores
+    ) {
+      const chave =
+        (
+          identificador ||
+          ""
+        )
+          .toString()
+          .trim();
+
+      if (
+        chave &&
+        nomesOficiais[
+          chave
+        ]
+      ) {
+        return nomesOficiais[
+          chave
+        ];
+      }
+    }
+
+    return nomeLocal(
+      vinculoId,
+      vinculo
+    );
+  }
 
   const locais =
     useMemo(
@@ -209,11 +378,11 @@ export default function ModalTrocarContexto({
               vinculoB,
             ]
           ) =>
-            nomeLocal(
+            nomeLocalAtual(
               idA,
               vinculoA
             ).localeCompare(
-              nomeLocal(
+              nomeLocalAtual(
                 idB,
                 vinculoB
               ),
@@ -222,6 +391,7 @@ export default function ModalTrocarContexto({
         ),
       [
         vinculosAtivos,
+        nomesOficiais,
       ]
     );
 
@@ -232,19 +402,79 @@ export default function ModalTrocarContexto({
   function escolherLocal(
     vinculoId: string
   ) {
+    const vinculo =
+      vinculosAtivos.find(
+        ([id]) =>
+          id === vinculoId
+      )?.[1];
+
+    if (!vinculo) {
+      return;
+    }
+
     selecionarVinculo(
       vinculoId
     );
 
+    const tipo =
+      (
+        vinculo.tipoLocal ||
+        ""
+      )
+        .toString()
+        .trim()
+        .toLowerCase();
+
+    let rota =
+      "";
+
+    if (
+      tipo ===
+      "condominio"
+    ) {
+      rota =
+        "/dashboard/condominio";
+    } else if (
+      tipo ===
+      "residencia"
+    ) {
+      rota =
+        "/dashboard/morador";
+    } else if (usuario) {
+      const modulosPermitidos =
+        obterModulosDashboard(
+          usuario,
+          vinculoId
+        );
+
+      rota =
+        resolverPainelInicial({
+          usuario,
+          vinculoId,
+          vinculo,
+          modulosPermitidos,
+        });
+    } else {
+      rota =
+        "/";
+    }
+
     onFechar();
+
+    router.push(
+      rota
+    );
   }
 
   function abrirCarteira() {
     selecionarCarteiraGeral();
 
     onFechar();
-  }
 
+    router.push(
+      "/"
+    );
+  }
   return (
     <div
       className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm"
@@ -355,7 +585,7 @@ export default function ModalTrocarContexto({
                         </p>
 
                         <h3 className="mt-1 truncate text-lg font-black text-white">
-                          {nomeLocal(
+                          {nomeLocalAtual(
                             vinculoId,
                             vinculo
                           )}
